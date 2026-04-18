@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it using the metadata below.
+  The preferred citation is the accompanying paper (currently under review).
+title: "psvr: Percentage-Error Support Vector Regression"
+version: 0.0.0.9000
+date-released: "2026-04-18"
+license: MIT
+url: "https://github.com/pbenavidesh/psvr"
+repository-code: "https://github.com/pbenavidesh/psvr"
+authors:
+  - family-names: Benavides-Herrera
+    given-names: Pablo
+    email: pbenavides@iteso.mx
+    orcid: "https://orcid.org/0000-0003-4926-4763"
+abstract: >-
+  R package implementing four support vector regression models derived from a
+  unified mathematical framework for percentage-error loss functions:
+  epsilon-SVR with MAPE, its symmetric kernel extension, LS-SVR with RMSPE,
+  and its symmetric counterpart. All models require strictly positive targets.
+  Includes tidymodels/parsnip integration for use in tidy modelling workflows.
+keywords:
+  - support vector regression
+  - MAPE
+  - RMSPE
+  - percentage error
+  - machine learning
+  - R
+preferred-citation:
+  type: article
+  title: >-
+    A Unified Family of Percentage-Error Support Vector Regression Models
+    with Symmetric Kernel Extensions
+  authors:
+    - family-names: Benavides-Herrera
+      given-names: Pablo
+      email: pbenavides@iteso.mx
+      orcid: "https://orcid.org/0000-0003-4926-4763"
+  journal: "Mathematics"
+  publisher:
+    name: MDPI
+  year: 2026
+  notes: "Under review"
+  doi: "10.3390/math"
