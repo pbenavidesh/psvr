@@ -2,6 +2,8 @@
 
 ### All vignettes
 
+- [Electricity Demand Forecasting with Percentage-Error
+  SVR](https://pbenavidesh.github.io/psvr/articles/electricity-forecasting.md):
 - [Getting Started with
   psvr](https://pbenavidesh.github.io/psvr/articles/getting-started.md):
 - [Python Replication: Numerical Equivalence
