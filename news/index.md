@@ -51,8 +51,11 @@ Four parsnip model specifications for use within tidymodels workflows:
 
 The kernel and (for symmetric models) symmetry parameter `a` are engine
 arguments supplied via `set_engine("psvr", kernel = ..., a = ...)`.
-Hyperparameters map to `dials::cost()` and `dials::svm_margin()` for
-compatibility with `tune_grid()`.
+Hyperparameters map to
+[`dials::cost()`](https://dials.tidymodels.org/reference/cost.html) and
+[`dials::svm_margin()`](https://dials.tidymodels.org/reference/cost.html)
+for compatibility with
+[`tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html).
 
 ### Testing
 

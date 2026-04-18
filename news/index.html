@@ -19,6 +19,7 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with psvr</a></li>
+    <li><a class="dropdown-item" href="../articles/tidymodels-workflow.html">tidymodels workflow with psvr</a></li>
   </ul></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-news" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">News</button>
@@ -67,7 +68,7 @@
 <code><a href="../reference/psvr_rmspe.html">psvr_rmspe()</a></code> — spec for Model 3; hyperparameter <code>cost</code> (maps to <code>Γ</code>).</li>
 <li>
 <code><a href="../reference/psvr_rmspe_sym.html">psvr_rmspe_sym()</a></code> — spec for Model 4; hyperparameter <code>cost</code> (maps to <code>Γ</code>).</li>
-</ul><p>The kernel and (for symmetric models) symmetry parameter <code>a</code> are engine arguments supplied via <code>set_engine("psvr", kernel = ..., a = ...)</code>. Hyperparameters map to <code>dials::cost()</code> and <code>dials::svm_margin()</code> for compatibility with <code>tune_grid()</code>.</p>
+</ul><p>The kernel and (for symmetric models) symmetry parameter <code>a</code> are engine arguments supplied via <code>set_engine("psvr", kernel = ..., a = ...)</code>. Hyperparameters map to <code><a href="https://dials.tidymodels.org/reference/cost.html" class="external-link">dials::cost()</a></code> and <code><a href="https://dials.tidymodels.org/reference/cost.html" class="external-link">dials::svm_margin()</a></code> for compatibility with <code><a href="https://tune.tidymodels.org/reference/tune_grid.html" class="external-link">tune_grid()</a></code>.</p>
 </div>
 <div class="section level3">
 <h3 id="testing-0-0-0-9000">Testing<a class="anchor" aria-label="anchor" href="#testing-0-0-0-9000"></a></h3>
