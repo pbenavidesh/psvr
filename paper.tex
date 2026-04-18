@@ -1,0 +1,1803 @@
+%  LaTeX support: latex@mdpi.com 
+%  For support, please attach all files needed for compiling as well as the log file, and specify your operating system, LaTeX version, and LaTeX editor.
+
+%=================================================================
+\documentclass[mathematics,article,submit,pdftex,moreauthors]{Definitions/mdpi} 
+
+%--------------------
+% Class Options:
+%--------------------
+%----------
+% journal
+%----------
+% Choose between the following MDPI journals:
+% acoustics, actuators, addictions, admsci, adolescents, aerobiology, aerospace, agriculture, agriengineering, agrochemicals, agronomy, ai, air, algorithms, allergies, alloys, analytica, analytics, anatomia, animals, antibiotics, antibodies, antioxidants, applbiosci, appliedchem, appliedmath, applmech, applmicrobiol, applnano, applsci, aquacj, architecture, arm, arthropoda, arts, asc, asi, astronomy, atmosphere, atoms, audiolres, automation, axioms, bacteria, batteries, bdcc, behavsci, beverages, biochem, bioengineering, biologics, biology, biomass, biomechanics, biomed, biomedicines, biomedinformatics, biomimetics, biomolecules, biophysica, biosensors, biotech, birds, bloods, blsf, brainsci, breath, buildings, businesses, cancers, carbon, cardiogenetics, catalysts, cells, ceramics, challenges, chemengineering, chemistry, chemosensors, chemproc, children, chips, cimb, civileng, cleantechnol, climate, clinpract, clockssleep, cmd, coasts, coatings, colloids, colorants, commodities, compounds, computation, computers, condensedmatter, conservation, constrmater, cosmetics, covid, crops, cryptography, crystals, csmf, ctn, curroncol, cyber, dairy, data, ddc, dentistry, dermato, dermatopathology, designs, devices, diabetology, diagnostics, dietetics, digital, disabilities, diseases, diversity, dna, drones, dynamics, earth, ebj, ecologies, econometrics, economies, education, ejihpe, electricity, electrochem, electronicmat, electronics, encyclopedia, endocrines, energies, eng, engproc, entomology, entropy, environments, environsciproc, epidemiologia, epigenomes, est, fermentation, fibers, fintech, fire, fishes, fluids, foods, forecasting, forensicsci, forests, foundations, fractalfract, fuels, future, futureinternet, futurepharmacol, futurephys, futuretransp, galaxies, games, gases, gastroent, gastrointestdisord, gels, genealogy, genes, geographies, geohazards, geomatics, geosciences, geotechnics, geriatrics, grasses, gucdd, hazardousmatters, healthcare, hearts, hemato, hematolrep, heritage, higheredu, highthroughput, histories, horticulturae, hospitals, humanities, humans, hydrobiology, hydrogen, hydrology, hygiene, idr, ijerph, ijfs, ijgi, ijms, ijns, ijpb, ijtm, ijtpp, ime, immuno, informatics, information, infrastructures, inorganics, insects, instruments, inventions, iot, j, jal, jcdd, jcm, jcp, jcs, jcto, jdb, jeta, jfb, jfmk, jimaging, jintelligence, jlpea, jmmp, jmp, jmse, jne, jnt, jof, joitmc, jor, journalmedia, jox, jpm, jrfm, jsan, jtaer, jvd, jzbg, kidneydial, kinasesphosphatases, knowledge, land, languages, laws, life, liquids, literature, livers, logics, logistics, lubricants, lymphatics, machines, macromol, magnetism, magnetochemistry, make, marinedrugs, materials, materproc, mathematics, mca, measurements, medicina, medicines, medsci, membranes, merits, metabolites, metals, meteorology, methane, metrology, micro, microarrays, microbiolres, micromachines, microorganisms, microplastics, minerals, mining, modelling, molbank, molecules, mps, msf, mti, muscles, nanoenergyadv, nanomanufacturing,\gdef\@continuouspages{yes}} nanomaterials, ncrna, ndt, network, neuroglia, neurolint, neurosci, nitrogen, notspecified, %%nri, nursrep, nutraceuticals, nutrients, obesities, oceans, ohbm, onco, %oncopathology, optics, oral, organics, organoids, osteology, oxygen, parasites, parasitologia, particles, pathogens, pathophysiology, pediatrrep, pharmaceuticals, pharmaceutics, pharmacoepidemiology,\gdef\@ISSN{2813-0618}\gdef\@continuous pharmacy, philosophies, photochem, photonics, phycology, physchem, physics, physiologia, plants, plasma, platforms, pollutants, polymers, polysaccharides, poultry, powders, preprints, proceedings, processes, prosthesis, proteomes, psf, psych, psychiatryint, psychoactives, publications, quantumrep, quaternary, qubs, radiation, reactions, receptors, recycling, regeneration, religions, remotesensing, reports, reprodmed, resources, rheumato, risks, robotics, ruminants, safety, sci, scipharm, sclerosis, seeds, sensors, separations, sexes, signals, sinusitis, skins, smartcities, sna, societies, socsci, software, soilsystems, solar, solids, spectroscj, sports, standards, stats, std, stresses, surfaces, surgeries, suschem, sustainability, symmetry, synbio, systems, targets, taxonomy, technologies, telecom, test, textiles, thalassrep, thermo, tomography, tourismhosp, toxics, toxins, transplantology, transportation, traumacare, traumas, tropicalmed, universe, urbansci, uro, vaccines, vehicles, venereology, vetsci, vibration, virtualworlds, viruses, vision, waste, water, wem, wevj, wind, women, world, youth, zoonoticdis 
+% For posting an early version of this manuscript as a preprint, you may use "preprints" as the journal. Changing "submit" to "accept" before posting will remove line numbers.
+
+%---------
+% article
+%---------
+% The default type of manuscript is "article", but can be replaced by: 
+% abstract, addendum, article, book, bookreview, briefreport, casereport, comment, commentary, communication, conferenceproceedings, correction, conferencereport, entry, expressionofconcern, extendedabstract, datadescriptor, editorial, essay, erratum, hypothesis, interestingimage, obituary, opinion, projectreport, reply, retraction, review, perspective, protocol, shortnote, studyprotocol, systematicreview, supfile, technicalnote, viewpoint, guidelines, registeredreport, tutorial
+% supfile = supplementary materials
+
+%----------
+% submit
+%----------
+% The class option "submit" will be changed to "accept" by the Editorial Office when the paper is accepted. This will only make changes to the frontpage (e.g., the logo of the journal will get visible), the headings, and the copyright information. Also, line numbering will be removed. Journal info and pagination for accepted papers will also be assigned by the Editorial Office.
+
+%------------------
+% moreauthors
+%------------------
+% If there is only one author the class option oneauthor should be used. Otherwise use the class option moreauthors.
+
+%---------
+% pdftex
+%---------
+% The option pdftex is for use with pdfLaTeX. Remove "pdftex" for (1) compiling with LaTeX & dvi2pdf (if eps figures are used) or for (2) compiling with XeLaTeX.
+
+%=================================================================
+% MDPI internal commands - do not modify
+\firstpage{1} 
+\makeatletter 
+\setcounter{page}{\@firstpage} 
+\makeatother
+\pubvolume{1}
+\issuenum{1}
+\articlenumber{0}
+\pubyear{2026}
+\copyrightyear{2026}
+%\externaleditor{Academic Editor: Firstname Lastname}
+\datereceived{ } 
+\daterevised{ } % Comment out if no revised date
+\dateaccepted{ } 
+\datepublished{ } 
+%\datecorrected{} % For corrected papers: "Corrected: XXX" date in the original paper.
+%\dateretracted{} % For corrected papers: "Retracted: XXX" date in the original paper.
+\hreflink{https://doi.org/} % If needed use \linebreak
+%\doinum{}
+%\pdfoutput=1 % Uncommented for upload to arXiv.org
+
+%=================================================================
+% Add packages and commands here. The following packages are loaded in our class file: fontenc, inputenc, calc, indentfirst, fancyhdr, graphicx, epstopdf, lastpage, ifthen, float, amsmath, amssymb, lineno, setspace, enumitem, mathpazo, booktabs, titlesec, etoolbox, tabto, xcolor, colortbl, soul, multirow, microtype, tikz, totcount, changepage, attrib, upgreek, array, tabularx, pbox, ragged2e, tocloft, marginnote, marginfix, enotez, amsthm, natbib, hyperref, cleveref, scrextend, url, geometry, newfloat, caption, draftwatermark, seqsplit
+% cleveref: load \crefname definitions after \begin{document}
+
+%=================================================================
+% Please use the following mathematics environments: Theorem, Lemma, Corollary, Proposition, Characterization, Property, Problem, Example, ExamplesandDefinitions, Hypothesis, Remark, Definition, Notation, Assumption
+%% For proofs, please use the proof environment (the amsthm package is loaded by the MDPI class).
+
+%=================================================================
+% Full title of the paper (Capitalized)
+\Title{A Unified Family of Percentage-Error Support Vector Regression Models with Symmetric Kernel Extensions}
+
+% MDPI internal command: Title for citation in the left column
+\TitleCitation{A Unified Family of Percentage-Error Support Vector Regression Models with Symmetric Kernel Extensions}
+
+% Author Orchid ID: enter ID or remove command
+\newcommand{\orcidauthorA}{0000-0003-4926-4763} % Add \orcidA{} behind the author's name
+\newcommand{\orcidauthorB}{0000-0002-9069-0994} % Add \orcidB{} behind the author's name
+\newcommand{\orcidauthorC}{0000-0002-7040-257X} % Add \orcidC{} behind the author's name
+\newcommand{\orcidauthorD}{0000-0001-6516-707X} % Add \orcidD{} behind the author's name
+
+% Authors, for the paper (add full first names)
+\Author{Pablo Benavides-Herrera $^{\dagger,\ddagger}$\orcidA{}, Gregorio \'Alvarez $^{\dagger,\ddagger}$\orcidB{}, Riemann Ruiz $^{\dagger,\ddagger}$\orcidC{} , and Juan Diego S\'anchez-Torres $^{\dagger,\ddagger}$*\orcidD{}}
+
+%\longauthorlist{yes}
+
+% MDPI internal command: Authors, for metadata in PDF
+\AuthorNames{Pablo Benavides-Herrera, Gregorio Álvarez-Álvarez, Riemann Ruiz-Cruz, and Juan Diego Sánchez-Torres}
+
+% MDPI internal command: Authors, for citation in the left column
+\AuthorCitation{Benavides-Herrera, P.; Álvarez-Álvarez, G.; Ruiz-Cruz, R.; Sánchez-Torres, J.D.}
+% If this is a Chicago style journal: Lastname, Firstname, Firstname Lastname, and Firstname Lastname.
+
+% Affiliations / Addresses (Add [1] after \address if there is only one affiliation.)
+\address{%
+%$^{1}$ \quad Department of Mathematics and Physics, ITESO; pbenavides@iteso.mx \\
+%$^{2}$ \quad Department of Mathematics and Physics, ITESO; galvarez.alvarez@iteso.mx \\
+%$^{3}$ \quad Department of Mathematics and Physics, ITESO; riemannruiz@iteso.mx \\
+%$^{4}$ \quad Department of Mathematics and Physics, ITESO; dsanchez@iteso.mx \\
+}
+
+% Contact information of the corresponding author
+\corres{Correspondence: dsanchez@iteso.mx}% Tel.: (optional; include country code; if there are multiple corresponding authors, add author initials) +xx-xxxx-xxx-xxxx (F.L.)}
+
+% Current address and/or shared authorship
+\firstnote{Department of Mathematics and Physics, ITESO} 
+\secondnote{These authors contributed equally to this work.}
+% The commands \thirdnote{} till \eighthnote{} are available for further notes
+
+%\simplesumm{} % Simple summary
+
+%\conference{} % An extended version of a conference paper
+
+% Abstract (Do not insert blank lines, i.e. \\) 
+\abstract{Support vector regression (SVR) is a well-established kernel-based method for nonlinear regression, yet its classical formulations minimize absolute-error losses that are misaligned with the scale-free accuracy criteria prevalent in forecasting and industrial applications. This paper develops a unified structural family of SVR models that incorporate percentage-error loss functions and optional symmetry constraints. Four formulations are derived: $\varepsilon$-SVR with mean absolute percentage error (MAPE), its symmetric kernel extension, least-squares SVR (LS-SVR) with root mean square percentage error (RMSPE), and its symmetric counterpart. For each model, the primal problem, Lagrangian, and dual formulation are derived from first principles via Karush--Kuhn--Tucker (KKT) analysis. The central structural finding is that percentage scaling induces sample-dependent box constraints in the $\varepsilon$-SVR paradigm and a target-weighted diagonal regularization matrix in the LS-SVR paradigm, while symmetry modifies only the effective kernel matrix and leaves the optimization structure unchanged. Convexity and the representer theorem are preserved throughout the family. Experiments on the Boston Housing and Diabetes benchmark datasets confirm that models optimized under percentage-error objectives consistently improve test-set MAPE and RMSPE relative to classical SVR, XGBoost, and Random Forest baselines, --- reducing MAPE from $15.23\%$ to $10.06\%$ on Boston Housing --- without systematic degradation of absolute-error metrics.}
+
+% Keywords
+\keyword{support vector regression; percentage-error loss; mean absolute percentage error; kernel methods; symmetry constraints; convex optimization; Lagrangian duality}
+
+% The fields PACS, MSC, and JEL may be left empty or commented out if not applicable
+%\PACS{J0101}
+%\MSC{}
+%\JEL{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Only for the journal Diversity
+%\LSID{\url{http://}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Only for the journal Applied Sciences
+%\featuredapplication{Authors are encouraged to provide a concise description of the specific application or a potential application of the work. This section is not mandatory.}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Only for the journal Data
+%\dataset{DOI number or link to the deposited data set if the data set is published separately. If the data set shall be published as a supplement to this paper, this field will be filled by the journal editors. In this case, please submit the data set as a supplement.}
+%\datasetlicense{License under which the data set is made available (CC0, CC-BY, CC-BY-SA, CC-BY-NC, etc.)}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Only for the journal Toxins
+%\keycontribution{The breakthroughs or highlights of the manuscript. Authors can write one or two sentences to describe the most important part of the paper.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Only for the journal Encyclopedia
+%\encyclopediadef{For entry manuscripts only: please provide a brief overview of the entry title instead of an abstract.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Only for the journal Advances in Respiratory Medicine
+%\addhighlights{yes}
+%\renewcommand{\addhighlights}{%
+
+%\noindent This is an obligatory section in “Advances in Respiratory Medicine”, whose goal is to increase the discoverability and readability of the article via search engines and other scholars. Highlights should not be a copy of the abstract, but a simple text allowing the reader to quickly and simplified find out what the article is about and what can be cited from it. Each of these parts should be devoted up to 2~bullet points.\vspace{3pt}\\
+%\textbf{What are the main findings?}
+% \begin{itemize}[labelsep=2.5mm,topsep=-3pt]
+% \item First bullet.
+% \item Second bullet.
+% \end{itemize}\vspace{3pt}
+%\textbf{What is the implication of the main finding?}
+% \begin{itemize}[labelsep=2.5mm,topsep=-3pt]
+% \item First bullet.
+% \item Second bullet.
+% \end{itemize}
+%}
+\pretolerance=8000
+\tolerance=8000
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}\label{sec:introduction}
+
+Support Vector Regression (SVR) remains one of the most
+influential kernel-based methods for nonlinear regression,
+combining margin control, convex optimization, and the
+kernel trick into a unified framework~\cite{Smola2004,Du2024}.
+
+Classical $\varepsilon$-SVR, introduced by Vapnik~\cite{Vapnik1995},
+minimizes an $\varepsilon$-insensitive absolute deviation,
+leading to a convex quadratic program in dual variables.
+An alternative formulation, Least-Squares SVR (LS-SVR),
+replaces the hinge-type loss with a quadratic penalty~\cite{Suykens1999},
+reducing the optimization problem to the solution of a
+linear system.
+
+Despite their theoretical elegance and computational
+maturity, both paradigms measure error in absolute terms.
+In many forecasting, energy, and economic applications,
+however, model performance is evaluated in relative
+rather than absolute scale.
+An error of fixed magnitude may be negligible for large
+targets yet unacceptable for small ones.
+Percentage-based metrics such as the Mean Absolute
+Percentage Error (MAPE) have therefore become standard
+evaluation tools in industrial practice~\cite{Hyndman2006,Makridakis1993,DeMyttenaere2016,Makridakis2020},
+including energy load forecasting where SVR-based models are routinely evaluated under MAPE~\cite{Wang2024}.
+
+Recent work has shown that $\varepsilon$-SVR can be
+reformulated so as to directly incorporate percentage-based
+residuals into the primal constraints, yielding a convex dual
+problem with sample-dependent box bounds
+\cite{benavides2025support}.
+This modification preserves kernel admissibility and
+convexity while aligning the optimization objective with
+scale-free performance criteria.
+
+Independently, symmetry constraints have been introduced
+in kernel-based regression to enforce structural properties
+of the target function, such as even or odd behavior,
+by modifying the kernel matrix accordingly~\cite{Espinoza2005,Espinoza2006}.
+Under appropriate symmetry conditions on the kernel,
+the resulting optimization problems remain convex and
+retain their representer structure~\cite{Scholkopf2002}.
+
+The present work unifies these two directions.
+We develop a structural family of support vector regression
+models defined by:
+
+\begin{itemize}
+    \item percentage-based residuals,
+    \item optional symmetry constraints,
+    \item and two optimization paradigms:
+    $\varepsilon$-insensitive and least-squares.
+\end{itemize}
+
+This yields four models:
+the classical $\varepsilon$ formulation with percentage loss,
+its symmetric counterpart,
+the least-squares percentage formulation,
+and its symmetric extension.
+
+Rather than treating these as unrelated constructions,
+we show that all four models constitute a structural family
+in which percentage scaling induces sample-dependent
+feasibility regions in the dual,
+while symmetry modifies the effective kernel matrix
+through symmetric kernel extensions.
+
+In every case, convexity and the representer theorem are preserved,
+and the resulting dual problems retain the structure of
+quadratic programs (or linear systems in the LS case).
+
+The contribution of this paper is therefore structural.
+We provide unified primal formulations,
+derive their associated Lagrangians,
+establish the corresponding dual problems,
+and characterize the influence of percentage scaling
+and symmetry on the feasible set.
+The analysis clarifies how scale-free residuals and
+kernel symmetrization interact within the SVR framework,
+without introducing additional non-convexity
+or solver modifications.
+
+The remainder of the paper is organized as follows.
+Section~\ref{sec:preliminaries} introduces the mathematical
+setting and recalls the classical SVR and LS-SVR formulations.
+Section~\ref{sec:main_results} presents the unified family of
+percentage-based and symmetric models together with
+their dual characterizations.
+Section~\ref{sec:case_studies} provides illustrative case studies.
+Section~\ref{sec:conclusions} concludes the paper.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Mathematical Preliminaries}\label{sec:preliminaries}
+
+\subsection{Notation and Setting}\label{subsec:notation}
+
+Let 
+\begin{linenomath}
+\begin{equation}\label{eq:dataset_def}
+\mathcal{D} = \{(x_k, y_k)\}_{k=1}^N
+\end{equation}
+\end{linenomath}
+be a regression dataset with $x_k \in \mathbb{R}^p$ and targets $y_k \in \mathbb{R}$.
+
+Let $\varphi : \mathbb{R}^p \to \mathcal{H}$ be a feature map into a (possibly infinite-dimensional) Hilbert space $\mathcal{H}$. 
+The regression function is defined as
+\begin{linenomath}
+\begin{equation}\label{eq:regression_function}
+f(x) = \omega^\top \varphi(x) + b,
+\end{equation}
+\end{linenomath}
+where $\omega \in \mathcal{H}$ and $b \in \mathbb{R}$.
+
+The associated kernel function is
+\begin{linenomath}
+\begin{equation}\label{eq:kernel_def}
+K(x_i, x_j) = \varphi(x_i)^\top \varphi(x_j).
+\end{equation}
+\end{linenomath}
+
+We denote by $\Omega \in \mathbb{R}^{N \times N}$ the kernel matrix with entries
+\begin{linenomath}
+\begin{equation}\label{eq:Omega_def}
+\Omega_{kl} = K(x_k,x_l), \quad k,l = 1,\ldots,N.
+\end{equation}
+\end{linenomath}
+
+Additionally, we denote by $\mathbf{1} = [1,\ldots,1]^\top \in \mathbb{R}^N$ the all-ones vector 
+and by $\mathbf{y} = [y_1,\ldots,y_N]^\top \in \mathbb{R}^N$ the target vector.
+
+\begin{Definition}[Percentage Residual]\label{def:percentage_residual}
+For $y_k \neq 0$, the percentage residual is defined as
+\begin{linenomath}
+\begin{equation}\label{eq:percentage_residual}
+r_k = \frac{y_k - f(x_k)}{y_k}.
+\end{equation}
+\end{linenomath}
+When expressed in percentage units, the residual is $100\,r_k$.
+\end{Definition}
+
+
+%============================================================
+\subsection{Assumptions}\label{subsec:assumptions}
+
+Throughout this work, we impose the following conditions:
+
+\begin{Assumption}[Positive definite kernel]\label{ass:kernel_pd}
+The kernel function $K: \mathbb{R}^p \times \mathbb{R}^p \to \mathbb{R}$ is symmetric and positive definite.
+\end{Assumption}
+
+\begin{Assumption}[Strictly positive targets]\label{ass:positive_targets}
+All target values satisfy $y_k > 0$ for $k = 1, \ldots, N$, ensuring that percentage residuals \eqref{eq:percentage_residual} are well-defined.
+\end{Assumption}
+
+\begin{Assumption}[Kernel symmetry]\label{ass:kernel_sym}
+For symmetric models, the kernel additionally satisfies:
+\begin{linenomath}
+\begin{align}
+K(-x_i, x_j) &= K(x_i, -x_j), \label{eq:kernel_sym_1}\\
+K(-x_i, -x_j) &= K(x_i, x_j). \label{eq:kernel_sym_2}
+\end{align}
+\end{linenomath}
+\end{Assumption}
+
+\begin{Remark}[Kernel examples satisfying Assumption~\ref{ass:kernel_sym}]\label{rem:kernel_examples}
+Common kernels satisfying \eqref{eq:kernel_sym_1}--\eqref{eq:kernel_sym_2} include the Gaussian (RBF) kernel 
+$K(x,x') = \exp(-\|x-x'\|^2/2\sigma^2)$ and polynomial kernels of even degree 
+$K(x,x') = (x^\top x' + c)^{2m}$.
+\end{Remark}
+
+
+%============================================================
+\subsection{$\varepsilon$-Support Vector Regression}\label{subsec:eps_classical}
+
+Classical $\varepsilon$-SVR \cite{Vapnik1995,Smola2004} solves
+\begin{linenomath}
+\begin{equation}\label{eq:eps_classical_primal}
+\min_{\omega,b,\xi,\xi^*}
+\quad
+\frac{1}{2}\|\omega\|^2
++ C \sum_{k=1}^N (\xi_k + \xi_k^*)
+\end{equation}
+\end{linenomath}
+subject to
+\begin{linenomath}
+\begin{align}
+y_k - \omega^\top\varphi(x_k) - b &\le \varepsilon + \xi_k, \label{eq:eps_classical_c1}\\
+\omega^\top\varphi(x_k) + b - y_k &\le \varepsilon + \xi_k^*, \label{eq:eps_classical_c2}\\
+\xi_k, \xi_k^* &\ge 0, \label{eq:eps_classical_slack}
+\end{align}
+\end{linenomath}
+for $k=1,\ldots,N$.
+
+Here, $C > 0$ is the regularization parameter balancing model complexity against training error, 
+and $\varepsilon \geq 0$ defines the insensitivity zone within which no penalty is incurred.
+
+Dualization via Lagrangian methods yields the convex quadratic program
+\begin{linenomath}
+\begin{equation}\label{eq:eps_classical_dual}
+\max_{\boldsymbol{\beta}}
+\quad
+-\frac{1}{2}\sum_{k,l=1}^N \beta_k \beta_l K(x_k,x_l)
++\sum_{k=1}^N \beta_k y_k
+-\varepsilon \sum_{k=1}^N |\beta_k|,
+\end{equation}
+\end{linenomath}
+subject to
+\begin{linenomath}
+\begin{equation}\label{eq:eps_classical_dual_constraints}
+\sum_{k=1}^N \beta_k = 0,
+\qquad
+|\beta_k| \le C, \quad k=1,\ldots,N,
+\end{equation}
+\end{linenomath}
+where $\beta_k = \alpha_k - \alpha_k^*$ and $|\beta_k| = \alpha_k + \alpha_k^*$.
+
+\begin{Remark}[Dual form]\label{rem:eps_classical_dual_derivation}
+Problem \eqref{eq:eps_classical_dual}--\eqref{eq:eps_classical_dual_constraints}
+is obtained via standard Lagrangian duality applied to
+\eqref{eq:eps_classical_primal}--\eqref{eq:eps_classical_slack};
+see~\cite{Smola2004} for a detailed derivation.
+The dual variables $\alpha_k, \alpha_k^* \geq 0$ are Lagrange multipliers for the inequality constraints 
+\eqref{eq:eps_classical_c1}--\eqref{eq:eps_classical_c2}.
+\end{Remark}
+
+
+%============================================================
+\subsection{Least-Squares Support Vector Regression}\label{subsec:ls_classical}
+
+The LS-SVR formulation \cite{Suykens1999,Suykens2002,Le2025,Liu2026} replaces the hinge-type loss with a quadratic penalty:
+\begin{linenomath}
+\begin{equation}\label{eq:ls_classical_primal}
+\min_{\omega,b,\mathbf{e}}
+\quad
+\frac{1}{2}\|\omega\|^2
++
+\frac{\Gamma}{2}\sum_{k=1}^N e_k^2
+\end{equation}
+\end{linenomath}
+subject to
+\begin{linenomath}
+\begin{equation}\label{eq:ls_classical_constraints}
+y_k = \omega^\top\varphi(x_k) + b + e_k, \quad k=1,\ldots,N,
+\end{equation}
+\end{linenomath}
+where $\Gamma > 0$ is the regularization parameter and $e_k \in \mathbb{R}$ are unconstrained error variables.
+
+The Karush--Kuhn--Tucker stationarity conditions yield
+\begin{linenomath}
+\begin{equation}\label{eq:ls_classical_stationarity}
+\omega = \sum_{k=1}^N \alpha_k \varphi(x_k),
+\qquad
+\sum_{k=1}^N \alpha_k = 0,
+\qquad
+e_k = \frac{\alpha_k}{\Gamma},
+\end{equation}
+\end{linenomath}
+where $\alpha_k \in \mathbb{R}$ are Lagrange multipliers for the equality constraints \eqref{eq:ls_classical_constraints}.
+
+Substituting these conditions into \eqref{eq:ls_classical_constraints} and applying the kernel trick 
+yields the linear system
+\begin{linenomath}
+\begin{equation}\label{eq:ls_classical_system}
+\begin{bmatrix}
+0 & \mathbf{1}^\top \\
+\mathbf{1} & \Omega + \Gamma^{-1} I
+\end{bmatrix}
+\begin{bmatrix}
+b \\ \boldsymbol{\alpha}
+\end{bmatrix}
+=
+\begin{bmatrix}
+0 \\ \mathbf{y}
+\end{bmatrix},
+\end{equation}
+\end{linenomath}
+where $I \in \mathbb{R}^{N \times N}$ is the identity matrix.
+
+\begin{Remark}[Comparison with ridge regression]\label{rem:ls_ridge}
+LS-SVR is equivalent to kernel ridge regression~\cite{Scholkopf2002}. The regularization term $\Gamma^{-1}I$ 
+in \eqref{eq:ls_classical_system} corresponds to Tikhonov regularization in the dual space.
+\end{Remark}
+
+
+%============================================================
+\subsection{Symmetry in Kernel-Based Regression}\label{subsec:symmetry}
+
+Symmetry constraints in kernel-based regression were introduced in~\cite{Espinoza2005,Espinoza2006} 
+to exploit known structural properties of the target function. 
+The following definition formalizes the notion used throughout this work.
+
+\begin{Definition}[Functional symmetry]\label{def:functional_symmetry}
+A regression function $f$ satisfies symmetry of type $a \in \{-1,1\}$ if
+\begin{linenomath}
+\begin{equation}\label{eq:functional_symmetry}
+f(x) = a\,f(-x) \quad \text{for all } x \in \mathbb{R}^p.
+\end{equation}
+\end{linenomath}
+The case $a = 1$ corresponds to even symmetry, and $a = -1$ to odd symmetry.
+\end{Definition}
+
+Under Assumption~\ref{ass:kernel_sym}, functional symmetry \eqref{eq:functional_symmetry} 
+can be enforced in kernel-based regression by employing the modified kernel
+\begin{linenomath}
+\begin{equation}\label{eq:kernel_symmetric}
+K_s(x_i,x_j) = K(x_i,x_j) + a\,K(x_i,-x_j).
+\end{equation}
+\end{linenomath}
+
+\begin{Remark}[Preservation of positive definiteness]\label{rem:kernel_pd_preservation}
+If $K$ is positive definite and satisfies Assumption~\ref{ass:kernel_sym},
+then $K_s$ defined in \eqref{eq:kernel_symmetric} remains positive definite~\cite{Steinwart2008}.
+This follows from the linearity of positive definiteness and the symmetry conditions 
+\eqref{eq:kernel_sym_1}--\eqref{eq:kernel_sym_2}.
+\end{Remark}
+
+
+%============================================================
+\subsection{Percentage-Error Structure}\label{subsec:percentage_structure}
+
+Replacing classical residuals by percentage residuals \eqref{eq:percentage_residual}
+introduces structural modifications to the optimization problems:
+\begin{itemize}
+\item In the $\varepsilon$-SVR paradigm, the box constraints on dual variables become sample-dependent, 
+scaling inversely with target magnitude.
+\item In the LS-SVR paradigm, a target-weighted diagonal regularization term appears in the system matrix, 
+scaling quadratically with target values.
+\end{itemize}
+
+These structural changes are formalized in Section~\ref{sec:main_results}, where we develop 
+four models arising from combinations of percentage-error loss and optional symmetry constraints.
+The $\varepsilon$-SVR case with MAPE was first presented in~\cite{benavides2025support}; 
+the present work extends and unifies that result within a broader framework.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Main Results}\label{sec:main_results}
+
+This section develops a structural family of support vector regression models defined by:
+(i) percentage-based residuals,
+(ii) optional symmetry constraints, and
+(iii) two optimization paradigms ($\varepsilon$-insensitive and least-squares).
+This yields four models whose dual formulations are characterized below.
+Throughout, we recall from Assumption~\ref{ass:positive_targets} that $y_k > 0$ ensures percentage residuals are well-defined.
+
+
+%============================================================
+\subsection{$\varepsilon$-SVR under Percentage Error}\label{subsec:eps_pe}
+
+We consider the primal problem
+\begin{linenomath}
+\begin{equation}\label{eq:eps_pe_primal}
+\min_{\omega,b,\xi,\xi^*}
+\quad
+\frac{1}{2}\|\omega\|^2 + C \sum_{k=1}^N(\xi_k+\xi_k^*)
+\end{equation}
+\end{linenomath}
+subject to, for $k=1,\dots,N$,
+\begin{linenomath}
+\begin{equation}\label{eq:eps_pe_constraints}
+\frac{100}{y_k}\bigl(y_k - \omega^T\varphi(x_k) - b\bigr) \le \varepsilon + \xi_k,
+\qquad
+\frac{100}{y_k}\bigl(\omega^T\varphi(x_k) + b - y_k\bigr) \le \varepsilon + \xi_k^*,
+\end{equation}
+\end{linenomath}
+\begin{linenomath}
+\begin{equation}\label{eq:eps_pe_slack}
+\xi_k,\xi_k^*\ge 0.
+\end{equation}
+\end{linenomath}
+
+\begin{Theorem}[Dual formulation of $\varepsilon$-SVR with MAPE]\label{thm:eps_mape_dual}
+Under Assumption~\ref{ass:kernel_pd}, the primal problem \eqref{eq:eps_pe_primal}--\eqref{eq:eps_pe_slack} 
+is equivalent to the dual problem:
+\begin{linenomath}
+\begin{equation}\label{eq:eps_pe_dual}
+\max_{\boldsymbol{\beta}}
+\quad
+-\frac{1}{2}\sum_{k,l=1}^N \beta_k\beta_l K(x_k,x_l)
++\sum_{k=1}^N \beta_k y_k
+-\frac{\varepsilon}{100}\sum_{k=1}^N |\beta_k|\,y_k,
+\end{equation}
+\end{linenomath}
+subject to
+\begin{linenomath}
+\begin{equation}\label{eq:eps_pe_dual_constraints}
+\sum_{k=1}^N \beta_k=0,
+\qquad
+|\beta_k| \le \frac{100C}{y_k}, \quad k=1,\ldots,N,
+\end{equation}
+\end{linenomath}
+where $\beta_k=\alpha_k-\alpha_k^*$ and $|\beta_k|=\alpha_k+\alpha_k^*$.
+\end{Theorem}
+
+\begin{proof}
+We construct the Lagrangian for \eqref{eq:eps_pe_primal}--\eqref{eq:eps_pe_slack} 
+with multipliers $\alpha_k, \alpha_k^* \geq 0$ for the inequality constraints \eqref{eq:eps_pe_constraints} 
+and $\eta_k, \eta_k^* \geq 0$ for the slack variable constraints \eqref{eq:eps_pe_slack}. 
+The Karush-Kuhn-Tucker stationarity conditions yield the representer theorem 
+$\omega = \sum_{k=1}^N (\alpha_k - \alpha_k^*)\varphi(x_k)$ and the balancing 
+condition $\sum_{k=1}^N (\alpha_k - \alpha_k^*) = 0$. 
+
+The percentage scaling in constraints \eqref{eq:eps_pe_constraints} 
+introduces target-dependent box bounds $0 \leq \alpha_k, \alpha_k^* \leq 100C/y_k$ through 
+the complementary slackness conditions. Eliminating primal variables and applying the 
+kernel trick $K(x_k, x_\ell) = \varphi(x_k)^T\varphi(x_\ell)$ yields 
+\eqref{eq:eps_pe_dual}--\eqref{eq:eps_pe_dual_constraints}. 
+Complete derivation is provided in Appendix~\ref{app:proof_eps_mape}.
+\end{proof}
+
+\begin{Remark}[Percentage effect in $\varepsilon$-SVR]\label{rem:eps_percent_effect}
+Percentage scaling appears structurally through the target-dependent box constraints in \eqref{eq:eps_pe_dual_constraints}. 
+Smaller target values impose tighter bounds $|\beta_k| \leq 100C/y_k$, reflecting increased sensitivity to absolute errors on low-magnitude observations.
+\end{Remark}
+
+\begin{Remark}[Weighted $\ell_1$ structure]\label{rem:eps_l1_structure}
+The term $\sum_k |\beta_k|\,y_k$ in \eqref{eq:eps_pe_dual} corresponds to a weighted $\ell_1$ penalty, 
+revealing structural similarity with weighted LASSO formulations in reproducing kernel Hilbert spaces~\cite{Scholkopf2002}.
+\end{Remark}
+
+
+%============================================================
+\subsection{Symmetric $\varepsilon$-SVR under Percentage Error}\label{subsec:eps_sym_pe}
+
+In several forecasting applications where percentage-error accuracy is critical,
+the target function exhibits known structural symmetry. Energy load profiles,
+for instance, often display even-symmetric patterns around a central reference
+point, while financial return series may exhibit odd-symmetric behavior under
+sign reversal. When such structure is present, enforcing it explicitly in the
+regression model can improve generalization and reduce the effective complexity
+of the dual problem~\cite{Espinoza2005,Espinoza2006}.
+The following result incorporates this prior structural knowledge into the
+$\varepsilon$-SVR percentage-error framework by requiring that the learned
+function $f$ satisfy $f(x) = a\,f(-x)$ for $a \in \{-1, 1\}$.
+
+Impose the symmetry constraint
+\begin{linenomath}
+\begin{equation}\label{eq:symmetry_constraint}
+\omega^T\varphi(x_k) = a\,\omega^T\varphi(-x_k), \qquad a\in\{-1,1\}, \quad k=1,\ldots,N.
+\end{equation}
+\end{linenomath}
+
+\begin{Theorem}[Dual formulation of symmetric $\varepsilon$-SVR with MAPE]\label{thm:sym_eps_mape_dual}
+Under Assumptions~\ref{ass:kernel_pd}--\ref{ass:kernel_sym}, the primal problem \eqref{eq:eps_pe_primal}--\eqref{eq:eps_pe_slack} 
+augmented with the symmetry constraint \eqref{eq:symmetry_constraint} is equivalent to the dual problem:
+\begin{linenomath}
+\begin{equation}\label{eq:eps_sym_pe_dual}
+\max_{\boldsymbol{\beta}}
+\quad
+-\frac{1}{4}\sum_{k,l=1}^N \beta_k\beta_l\,K_s(x_k,x_l)
++\sum_{k=1}^N \beta_k y_k
+-\frac{\varepsilon}{100}\sum_{k=1}^N |\beta_k|\,y_k,
+\end{equation}
+\end{linenomath}
+subject to the same constraints \eqref{eq:eps_pe_dual_constraints}, where the modified kernel is
+\begin{linenomath}
+\begin{equation}\label{eq:kernel_modified}
+K_s(x_i,x_j)=K(x_i,x_j)+aK(x_i,-x_j).
+\end{equation}
+\end{linenomath}
+\end{Theorem}
+
+\begin{proof}
+The symmetry constraint \eqref{eq:symmetry_constraint} is enforced by augmenting the Lagrangian from 
+Theorem~\ref{thm:eps_mape_dual} with multipliers $\mu_k \in \mathbb{R}$:
+\begin{linenomath}
+\begin{equation}\label{eq:eps_sym_lagrangian}
+\mathcal{L}_{\varepsilon}^{\mathrm{PE\text{-}sym}}
+=
+\mathcal{L}_{\varepsilon}^{\mathrm{PE}}
+-\sum_{k=1}^N \mu_k\bigl(\omega^T\varphi(x_k)-a\,\omega^T\varphi(-x_k)\bigr).
+\end{equation}
+\end{linenomath}
+Under Assumption~\ref{ass:kernel_sym}, the kernel satisfies $K(-x_i,x_j)=K(x_i,-x_j)$ and $K(-x_i,-x_j)=K(x_i,x_j)$.
+Stationarity with respect to $\omega$ modifies the representer theorem, and the elimination of primal variables yields 
+quadratic forms combining into the modified kernel evaluations $K(x_i,x_j)+aK(x_i,-x_j)$, producing \eqref{eq:kernel_modified}. 
+Importantly, the symmetry constraint affects only $\omega$; the dual variables $\beta_k$, bias $b$, and box constraints remain identical to the non-symmetric case.
+Complete derivation is provided in Appendix~\ref{app:proof_sym_eps_mape}.
+\end{proof}
+
+\begin{Remark}[Symmetry as kernel modification]\label{rem:eps_sym_mechanism}
+Symmetry modifies only the effective kernel (from $K$ to $K_s$) while preserving the quadratic programming structure. 
+All other dual variables, including the box constraints \eqref{eq:eps_pe_dual_constraints}, remain unchanged. 
+The factor $1/4$ in \eqref{eq:eps_sym_pe_dual} arises from the symmetrization procedure and ensures equivalence with \eqref{eq:symmetry_constraint}.
+\end{Remark}
+
+
+%============================================================
+\subsection{LS-SVR under Percentage Error}\label{subsec:ls_pe}
+
+Consider the LS formulation
+\begin{linenomath}
+\begin{equation}\label{eq:ls_pe_primal}
+\min_{\omega,b,\mathbf{e}}
+\quad
+\frac{1}{2}\|\omega\|^2
++
+\frac{\Gamma}{2}\sum_{k=1}^N\frac{e_k^2}{y_k^2}
+\end{equation}
+\end{linenomath}
+subject to
+\begin{linenomath}
+\begin{equation}\label{eq:ls_pe_constraints}
+y_k=\omega^T\varphi(x_k) + b + e_k,\qquad k=1,\dots,N.
+\end{equation}
+\end{linenomath}
+
+\begin{Theorem}[Linear system for LS-SVR with RMSPE]\label{thm:ls_rmspe_system}
+Under Assumption~\ref{ass:kernel_pd} and $\Gamma > 0$, the primal problem \eqref{eq:ls_pe_primal}--\eqref{eq:ls_pe_constraints} 
+is equivalent to the linear system:
+\begin{linenomath}
+\begin{equation}\label{eq:ls_pe_system}
+\begin{bmatrix}
+0 & \mathbf{1}^\top\\
+\mathbf{1} & \Omega + Y_\Gamma
+\end{bmatrix}
+\begin{bmatrix}
+b\\
+\boldsymbol{\alpha}
+\end{bmatrix}
+=
+\begin{bmatrix}
+0\\
+\mathbf{y}
+\end{bmatrix},
+\end{equation}
+\end{linenomath}
+where $\Omega_{kl}=K(x_k,x_l)$ and
+\begin{linenomath}
+\begin{equation}\label{eq:YGamma_def}
+Y_\Gamma=\mathrm{diag}\!\left(\frac{y_1^2}{\Gamma},\dots,\frac{y_N^2}{\Gamma}\right).
+\end{equation}
+\end{linenomath}
+\end{Theorem}
+
+\begin{proof}
+We construct the Lagrangian for \eqref{eq:ls_pe_primal}--\eqref{eq:ls_pe_constraints} 
+with multipliers $\alpha_k \in \mathbb{R}$. Stationarity conditions yield 
+$\omega = \sum_{k=1}^N \alpha_k\varphi(x_k)$, $\sum_{k=1}^N \alpha_k = 0$, 
+and $e_k = (y_k^2/\Gamma)\alpha_k$. The percentage scaling in the objective \eqref{eq:ls_pe_primal} 
+introduces the target-weighted diagonal matrix $Y_\Gamma$ in \eqref{eq:YGamma_def}. 
+Substituting these conditions and applying the kernel trick yields \eqref{eq:ls_pe_system}. 
+The augmented matrix is nonsingular since $\Omega + Y_\Gamma$ is positive definite 
+(Proposition~\ref{prop:ls_unique}). 
+Complete derivation is provided in Appendix~\ref{app:proof_ls_rmspe}.
+\end{proof}
+
+\begin{Remark}[Percentage effect in LS-SVR]\label{rem:ls_percent_effect}
+Percentage scaling appears as the target-dependent diagonal matrix $Y_\Gamma$ in \eqref{eq:ls_pe_system}. 
+Larger target values receive proportionally larger weights, inducing an adaptive regularization effect.
+\end{Remark}
+
+\begin{Remark}[Weighted regularization view]\label{rem:ls_weighted_view}
+The LS-percentage formulation is equivalent to a weighted least-squares penalty on residuals with weights proportional to $y_k^{-2}$, 
+connecting the model to weighted kernel ridge regression with instance-dependent regularization.~\cite{Scholkopf2002}
+\end{Remark}
+
+
+%============================================================
+\subsection{Symmetric LS-SVR under Percentage Error}\label{subsec:ls_sym_pe}
+
+\begin{Theorem}[Linear system for symmetric LS-SVR with RMSPE]\label{thm:sym_ls_rmspe_system}
+Under Assumptions~\ref{ass:kernel_pd}--\ref{ass:kernel_sym} and $\Gamma > 0$, 
+the primal problem \eqref{eq:ls_pe_primal}--\eqref{eq:ls_pe_constraints} 
+augmented with the symmetry constraint \eqref{eq:symmetry_constraint} is equivalent to:
+\begin{linenomath}
+\begin{equation}\label{eq:ls_sym_pe_system}
+\begin{bmatrix}
+0 & \mathbf{1}^\top\\
+\mathbf{1} & \Omega_s + Y_\Gamma
+\end{bmatrix}
+\begin{bmatrix}
+b\\
+\boldsymbol{\alpha}
+\end{bmatrix}
+=
+\begin{bmatrix}
+0\\
+\mathbf{y}
+\end{bmatrix},
+\end{equation}
+\end{linenomath}
+where the effective kernel matrix is
+\begin{linenomath}
+\begin{equation}\label{eq:ls_sym_effective_kernel}
+\Omega_s=\frac{1}{2}\bigl(\Omega+a\Omega^*\bigr),
+\qquad
+\Omega^*_{kl}=K(x_k,-x_l).
+\end{equation}
+\end{linenomath}
+\end{Theorem}
+
+\begin{proof}
+The symmetry constraint \eqref{eq:symmetry_constraint} is enforced by augmenting the Lagrangian from 
+Theorem~\ref{thm:ls_rmspe_system} with multipliers $\mu_k \in \mathbb{R}$:
+\begin{linenomath}
+\begin{equation}\label{eq:ls_sym_lagrangian}
+\mathcal{L}_{\mathrm{LS}}^{\mathrm{PE\text{-}sym}}
+=
+\mathcal{L}_{\mathrm{LS}}^{\mathrm{PE}}
+-\sum_{k=1}^N \mu_k\bigl(\omega^T\varphi(x_k)-a\,\omega^T\varphi(-x_k)\bigr).
+\end{equation}
+\end{linenomath}
+Under Assumption~\ref{ass:kernel_sym}, stationarity with respect to $\omega$ modifies the representer theorem, 
+and the kernel matrix combines into \eqref{eq:ls_sym_effective_kernel}. 
+As in the $\varepsilon$ case, symmetry affects only $\omega$; the dual variables $\alpha_k$, bias $b$, 
+and regularization matrix $Y_\Gamma$ remain unchanged.
+Complete derivation is provided in Appendix~\ref{app:proof_sym_ls_rmspe}.
+\end{proof}
+
+\begin{Remark}[Symmetry as kernel modification]\label{rem:ls_sym_mechanism}
+Symmetry modifies only the effective kernel matrix (from $\Omega$ to $\Omega_s$) while preserving the linear-system structure. 
+The symmetrization factor $1/2$ in \eqref{eq:ls_sym_effective_kernel} arises from the constraint \eqref{eq:symmetry_constraint} 
+and ensures consistency with the symmetric representer theorem.
+\end{Remark}
+
+
+%============================================================
+\subsection{Structural Properties}\label{subsec:structural_properties}
+
+\begin{Proposition}[Convexity of $\varepsilon$-percentage SVR]\label{prop:eps_convex}
+Under Assumption~\ref{ass:kernel_pd}, problems \eqref{eq:eps_pe_primal}--\eqref{eq:eps_pe_slack} 
+and their symmetric variant are convex.
+\end{Proposition}
+
+\begin{proof}
+The term $\frac{1}{2}\|\omega\|^2$ in \eqref{eq:eps_pe_primal} is strictly convex in $\omega$; the penalty $C\sum_k(\xi_k+\xi_k^*)$ is linear in $(\boldsymbol{\xi},\boldsymbol{\xi}^*)$. The joint objective is therefore convex (but not strictly convex) in $(\omega,\boldsymbol{\xi},\boldsymbol{\xi}^*)$.
+Constraints \eqref{eq:eps_pe_constraints}--\eqref{eq:eps_pe_slack} are affine, and the symmetry constraint \eqref{eq:symmetry_constraint} is linear in $\omega$. 
+Hence the feasible set is convex and the objective is convex.
+\end{proof}
+
+\begin{Proposition}[Existence and uniqueness in LS-percentage SVR]\label{prop:ls_unique}
+Under Assumption~\ref{ass:kernel_pd} and $\Gamma>0$, systems \eqref{eq:ls_pe_system} and \eqref{eq:ls_sym_pe_system} 
+admit unique solutions.
+\end{Proposition}
+
+\begin{proof}
+By Assumption~\ref{ass:kernel_pd}, $\Omega$ (and hence $\Omega_s$) is positive semidefinite. 
+Since $y_k>0$ and $\Gamma>0$, $Y_\Gamma$ in \eqref{eq:YGamma_def} is positive definite. 
+Therefore $\Omega+Y_\Gamma$ (and $\Omega_s + Y_\Gamma$) is positive definite, 
+which implies nonsingularity of the augmented matrices in \eqref{eq:ls_pe_system} and \eqref{eq:ls_sym_pe_system}.
+\end{proof}
+
+\begin{Corollary}[Spectral lower bound]\label{cor:spectral_bound}
+Let $\lambda_{\min}$ denote the smallest eigenvalue. Then
+\begin{linenomath}
+\begin{equation}\label{eq:spectral_bound}
+\lambda_{\min}(\Omega+Y_\Gamma)\ge \min_k \frac{y_k^2}{\Gamma},
+\qquad
+\lambda_{\min}(\Omega_s+Y_\Gamma)\ge \min_k \frac{y_k^2}{\Gamma}.
+\end{equation}
+\end{linenomath}
+\end{Corollary}
+
+\begin{proof}
+Since $\Omega$ (and $\Omega_s$) is positive semidefinite, $\lambda_{\min}(\Omega)\ge 0$ (and $\lambda_{\min}(\Omega_s) \geq 0$). 
+Also, $\lambda_{\min}(Y_\Gamma)=\min_k (y_k^2/\Gamma)$. 
+Weyl's inequality yields $\lambda_{\min}(\Omega+Y_\Gamma)\ge \lambda_{\min}(\Omega)+\lambda_{\min}(Y_\Gamma)$, 
+proving \eqref{eq:spectral_bound}. The bound for $\Omega_s$ follows identically.
+\end{proof}
+
+\begin{Theorem}[Symmetric extension as kernel modification]\label{thm:sym_kernel_equiv}
+Under Assumptions~\ref{ass:kernel_pd}--\ref{ass:kernel_sym}, the symmetric models obtained by augmenting the Lagrangians
+\eqref{eq:eps_sym_lagrangian} and \eqref{eq:ls_sym_lagrangian} are equivalent to replacing the kernel by $K_s$ in \eqref{eq:kernel_modified},
+or equivalently replacing $\Omega$ by $\Omega_s$ in \eqref{eq:ls_sym_effective_kernel}.
+\end{Theorem}
+
+\begin{proof}
+The symmetry constraint \eqref{eq:symmetry_constraint} couples evaluations at $x_k$ and $-x_k$ through linear terms in the augmented Lagrangians.
+Under Assumption~\ref{ass:kernel_sym}, quadratic forms in the dual/system combine into the modified kernel evaluations
+$K(x_i,x_j)+aK(x_i,-x_j)$, yielding \eqref{eq:kernel_modified} and \eqref{eq:ls_sym_effective_kernel}. 
+The symmetry modification affects only the weight vector $\omega$ through the representer theorem; 
+no additional nonlinearities are introduced, and all other primal and dual variables remain structurally unchanged. 
+Hence solver structure (quadratic programming for $\varepsilon$-SVR, linear systems for LS-SVR) is preserved.
+\end{proof}
+
+
+%============================================================
+\subsection{Unified Structural View}\label{subsec:unified_view}
+
+\begin{Remark}[Structural family]\label{rem:structural_family}
+Across the family, percentage scaling modifies the learning problem by:
+(i) inducing target-dependent box constraints in the $\varepsilon$ paradigm \eqref{eq:eps_pe_dual_constraints}, and
+(ii) introducing a target-weighted diagonal term in the LS paradigm \eqref{eq:YGamma_def}.
+Symmetry modifies the effective kernel via $K_s$ in \eqref{eq:kernel_modified} (or $\Omega_s$ in \eqref{eq:ls_sym_effective_kernel}) 
+while preserving the solver type: quadratic programming for \eqref{eq:eps_pe_dual} and linear systems for \eqref{eq:ls_pe_system}.
+Critically, symmetry affects only the kernel representation and does not alter the structure of dual variables, 
+box constraints, or regularization matrices.
+\end{Remark}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Case Studies}\label{sec:case_studies}
+
+This section presents illustrative experiments evaluating the
+percentage-error SVR family on two publicly available benchmark
+datasets.
+The goals are threefold:
+(i)~to verify that optimizing directly for a percentage-error
+loss yields consistent improvements on the corresponding
+test-set metric relative to standard baselines;
+(ii)~to confirm that the structural modifications derived in
+Section~\ref{sec:main_results} do not degrade absolute-error
+metrics; and
+(iii)~to provide an empirical illustration of the behavior
+of the LS-SVR percentage formulation.
+
+%============================================================
+\subsection{Experimental Setup}\label{subsec:setup}
+
+\subsubsection{Datasets}
+
+Two datasets from the \texttt{scikit-learn} library are
+used~\cite{Pedregosa2011}.
+
+\paragraph{Boston Housing.}
+
+This dataset contains 506 observations described by 13
+socioeconomic and structural features of residential
+neighborhoods in the Boston metropolitan area.
+The target variable is the median home value (MEDV) in
+thousands of US dollars; all targets satisfy $y_k > 0$,
+making MAPE well-defined.\footnote{The Boston Housing dataset
+was removed from \texttt{scikit-learn} in version~1.2 due to
+concerns regarding a variable used as a proxy for racial
+composition~\cite{Pedregosa2011}. It is used here solely for
+continuity with prior work~\cite{benavides2025support} and can
+be reproduced from the original source: Harrison, D.\ and
+Rubinfeld, D.L.\ (1978). \textit{Hedonic prices and the demand
+for clean air}. \textit{Journal of Environmental Economics and
+Management}, 5(1), 81--102.}
+
+
+\paragraph{Diabetes.}
+This dataset comprises 442 samples with 10 physiological
+baseline features, predicting a quantitative measure of
+disease progression one year after baseline.
+The target values are strictly positive, enabling
+percentage-error evaluation.
+
+Both datasets are canonical small-to-medium tabular regression
+benchmarks widely used in the SVR literature, enabling
+straightforward comparison with prior work~\cite{Smola2004,Du2024}.
+Boston Housing provides heterogeneous feature scales and ranges
+where scale-free metrics are especially informative, while
+Diabetes offers a lower-sample, noisier regime that stresses
+generalization.
+
+\subsubsection{Implementation}
+
+All models were implemented in Python using an RBF
+kernel~\cite{Pedregosa2011}.
+Hyperparameters were tuned via Bayesian
+optimization~\cite{Nogueira2014} targeting the MAPE metric.
+Performance on Boston Housing is reported over 30 randomized
+train/test splits following~\cite{benavides2025support},
+enabling robust comparison against baselines; results on
+Diabetes are reported on a representative 70/30 split.
+Baselines include Linear Regression, Random Forest,
+XGBoost, and classical $\varepsilon$-SVR, all tuned under
+the same protocol.
+
+%============================================================
+\subsection{$\varepsilon$-SVR under Percentage Error}\label{subsec:cs_eps_mape}
+
+Table~\ref{tab:boston_eps_mape} reports performance on the
+Boston Housing dataset.
+SVR-MAPE achieves a test-set MAPE of $10.29\%$, outperforming
+all baselines under the percentage-error criterion.
+Notably, this improvement does not sacrifice absolute-error
+metrics: SVR-MAPE attains $R^2 = 0.8602$ and
+$\mathrm{MSE} = 14.59$, which are competitive with the
+best-performing baselines.
+Applying symbolic feature transformation prior to
+fitting~\cite{Stephens2021} increases $R^2$ to $0.8744$ at the
+cost of a slight increase in MAPE to $10.51\%$, illustrating the
+trade-off between absolute-scale and relative-scale fit discussed
+in Remark~\ref{rem:eps_percent_effect}.
+
+\begin{table}[H]
+\caption{Performance comparison on Boston Housing.
+  Hyperparameters shown as ``--'' were not applicable or
+  tuned by a separate procedure.
+  Results for SVR-MAPE variants averaged over 30 randomized
+  train/test splits~\protect\cite{benavides2025support}.
+  \label{tab:boston_eps_mape}}
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+\begin{tabularx}{\textwidth}{lCCCCC}
+\toprule
+\textbf{Model} & $C$ & $\gamma$ & $\varepsilon$ &
+  $R^2$ & \textbf{MAPE\,(\%)} \\
+\midrule
+Linear Regression   & --     & --     & --     & 0.7122 & 17.85 \\
+Random Forest       & --     & --     & --     & 0.8246 & 11.84 \\
+XGBoost             & --     & --     & --     & 0.8495 & 11.83 \\
+$\varepsilon$-SVR   & 1      & 0.0769 & 1      & 0.5900 & 15.23 \\
+SVR-MAPE            & 15.63  & 0.0329 & 5.80   & 0.8602 & \textbf{10.29} \\
+SVR-MAPE + Sym. Transf. & 22.04 & 0.0211 & 2.53 & 0.8744 & 10.51 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The semi-linear relationship between $R^2$ and MAPE observed
+across Bayesian optimization iterations confirms the structural
+trade-off discussed in Section~\ref{sec:main_results}:
+optimizing for percentage error shifts the feasible region of
+the dual toward configurations that reduce relative residuals,
+which may slightly reduce absolute-scale fit as measured by
+$R^2$.
+This behavior is consistent with Remark~\ref{rem:eps_percent_effect}:
+smaller targets impose tighter box constraints, concentrating
+the model's capacity on low-magnitude observations.
+
+On the Diabetes dataset, SVR-MAPE consistently reduced test-set
+MAPE relative to $\varepsilon$-SVR, XGBoost, and Random Forest
+baselines, while maintaining competitive $R^2$ and
+RMSE~\cite{benavides2025support}.
+
+%============================================================
+\subsection{LS-SVR under Percentage Error}\label{subsec:cs_ls_rmspe}
+
+Table~\ref{tab:boston_ls_rmspe} reports results for the
+LS-SVR percentage formulation on Boston Housing under two
+optimization objectives: MAPE and RMSPE.
+
+\begin{table}[H]
+\caption{Performance comparison for LS-SVR percentage
+  formulations on Boston Housing, optimized under MAPE and
+  RMSPE objectives respectively.
+  Symbolic transformation (Sym. Transf.) denotes feature
+  engineering applied prior to fitting~\protect\cite{Stephens2021}.
+  \label{tab:boston_ls_rmspe}}
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+\begin{tabularx}{\textwidth}{lCCCC}
+\toprule
+\textbf{Model} & $R^2$ & \textbf{MAPE\,(\%)} &
+  \textbf{MSE} & \textbf{RMSPE\,(\%)} \\
+\midrule
+Linear Regression          & 0.7121 & 17.85 & 30.05 & 25.70 \\
+Random Forest              & 0.8220 & 12.26 & 18.59 & 20.32 \\
+XGBoost                    & 0.8579 & 12.12 & 14.83 & 18.91 \\
+$\varepsilon$-SVR          & 0.5900 & 15.23 & 42.81 & 24.22 \\
+LS-Percentage (MAPE opt.)  & 0.8959 & \textbf{10.06} & 10.87 & 17.83 \\
+LS-Percentage + Sym. Transf. (MAPE opt.) & 0.9136 & \textbf{9.02} & 9.59 & 17.17 \\
+LS-Percentage (RMSPE opt.) & 0.8400 & 10.93 & 16.71 & \textbf{16.48} \\
+LS-Percentage + Sym. Transf. (RMSPE opt.) & 0.8529 & 10.62 & 15.36 & \textbf{15.90} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The LS-percentage formulation optimized for MAPE achieves
+$R^2 = 0.8959$ and MAPE $= 10.06\%$, improving upon all
+baselines under both the percentage and absolute-error
+criteria simultaneously.
+When optimized for RMSPE, the model attains RMSPE $= 16.48\%$,
+the lowest among all configurations, at the cost of a modest
+increase in MAPE.
+This confirms the structural observation from
+Remark~\ref{rem:ls_percent_effect}: the target-weighted
+diagonal matrix $Y_\Gamma$ adapts the regularization to the
+scale of each target, and tuning $\Gamma$ under different
+percentage-error objectives produces systematically different
+bias-variance trade-offs.
+
+The non-linear relationship between MSE and MAPE during
+Bayesian optimization further illustrates the shift in
+optimal hyperparameter configurations when the training
+objective is changed from an absolute-error to a
+percentage-error metric.
+
+%============================================================
+\subsection{Discussion}\label{subsec:cs_discussion}
+
+Across both datasets and both optimization paradigms,
+the percentage-error SVR family consistently improves
+the test-set metric that was directly optimized, without
+systematic degradation of complementary metrics.
+The structural mechanism identified in
+Section~\ref{sec:main_results} is empirically confirmed:
+in the $\varepsilon$-SVR paradigm, the sample-dependent
+box constraints of \eqref{eq:eps_pe_dual_constraints}
+concentrate capacity on low-magnitude observations;
+in the LS-SVR paradigm, the diagonal matrix $Y_\Gamma$
+of \eqref{eq:YGamma_def} introduces an instance-dependent
+regularization that scales with target magnitude.
+
+The symmetric extensions (Theorems~\ref{thm:sym_eps_mape_dual}
+and~\ref{thm:sym_ls_rmspe_system}) modify only the effective
+kernel via $K_s$ in \eqref{eq:kernel_modified} or $\Omega_s$
+in \eqref{eq:ls_sym_effective_kernel}, leaving the
+optimization structure unchanged.
+Their empirical evaluation on datasets where the target
+function exhibits known symmetry properties constitutes
+a natural direction for future work.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusions}\label{sec:conclusions}
+
+This paper presented a unified structural family of support vector
+regression models incorporating percentage-error loss functions
+and optional symmetry constraints.
+Starting from Vapnik's primal formulation, we derived four models
+via Lagrangian duality and Karush--Kuhn--Tucker analysis:
+$\varepsilon$-SVR with MAPE (Theorem~\ref{thm:eps_mape_dual}),
+its symmetric extension (Theorem~\ref{thm:sym_eps_mape_dual}),
+LS-SVR with RMSPE (Theorem~\ref{thm:ls_rmspe_system}),
+and its symmetric counterpart (Theorem~\ref{thm:sym_ls_rmspe_system}).
+
+The central structural contribution is the identification of
+two complementary mechanisms by which percentage scaling enters
+the optimization:
+in the $\varepsilon$-SVR paradigm, it induces sample-dependent
+box constraints $|\beta_k| \leq 100C/y_k$, concentrating
+regularization capacity on low-magnitude observations;
+in the LS-SVR paradigm, it produces the target-weighted diagonal
+matrix $Y_\Gamma = \mathrm{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)$,
+introducing instance-dependent regularization that scales
+quadratically with target magnitude.
+Symmetry constraints, by contrast, affect only the effective
+kernel --- replacing $K$ by $K_s(x_i,x_j) = K(x_i,x_j) + aK(x_i,-x_j)$
+in the $\varepsilon$ case and $\Omega$ by $\Omega_s = \frac{1}{2}(\Omega + a\Omega^*)$
+in the LS case --- without altering dual variables, box constraints,
+or regularization matrices.
+Consequently, convexity is preserved throughout the family
+(Proposition~\ref{prop:eps_convex}), the LS systems admit unique
+solutions (Proposition~\ref{prop:ls_unique}), and the solver
+structure --- quadratic programming for $\varepsilon$-SVR,
+linear systems for LS-SVR --- is retained in all four variants
+(Theorem~\ref{thm:sym_kernel_equiv}).
+
+The case studies on Boston Housing and Diabetes confirmed
+these structural predictions empirically.
+Optimizing directly for MAPE reduced test-set percentage error
+relative to all baselines while maintaining competitive $R^2$
+and MSE.
+The LS-percentage formulation demonstrated that tuning the
+regularization parameter $\Gamma$ under RMSPE and MAPE objectives
+produces systematically different bias-variance configurations,
+consistent with the adaptive role of $Y_\Gamma$ in the linear system.
+
+Several directions remain open for future work.
+First, the empirical evaluation of the symmetric extensions
+(Theorems~\ref{thm:sym_eps_mape_dual}
+and~\ref{thm:sym_ls_rmspe_system}) on datasets where the
+target function exhibits known even or odd structure --- such
+as physical systems with reflection symmetry or periodic load
+patterns --- would provide direct validation of the kernel
+modification mechanism.
+Second, extending the percentage-error framework to targets
+that may approach zero, through differentiable MAPE
+approximations or regularized percentage losses, would broaden
+the applicability of the family to settings where the
+strict positivity assumption (Assumption~\ref{ass:positive_targets})
+cannot be guaranteed.
+Third, integrating the percentage-error dual into online and
+incremental SVR solvers would enable deployment in streaming
+forecasting applications where scale-free accuracy is paramount.
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace{6pt} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% optional
+%\supplementary{The following supporting information can be downloaded at:  \linksupplementary{s1}, Figure S1: title; Table S1: title; Video S1: title.}
+
+% Only for the journal Methods and Protocols:
+% If you wish to submit a video article, please do so with any other supplementary material.
+% \supplementary{The following supporting information can be downloaded at: \linksupplementary{s1}, Figure S1: title; Table S1: title; Video S1: title. A supporting video article is available at doi: link.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\authorcontributions{For research articles with several authors, a short paragraph specifying their individual contributions must be provided. The following statements should be used ``Conceptualization, X.X. and Y.Y.; methodology, X.X.; software, X.X.; validation, X.X., Y.Y. and Z.Z.; formal analysis, X.X.; investigation, X.X.; resources, X.X.; data curation, X.X.; writing---original draft preparation, X.X.; writing---review and editing, X.X.; visualization, X.X.; supervision, X.X.; project administration, X.X.; funding acquisition, Y.Y. All authors have read and agreed to the published version of the manuscript.'', please turn to the  \href{http://img.mdpi.org/data/contributor-role-instruction.pdf}{CRediT taxonomy} for the term explanation. Authorship must be limited to those who have contributed substantially to the work~reported.}
+
+\funding{Please add: ``This research received no external funding'' or ``This research was funded by NAME OF FUNDER grant number XXX.'' and  and ``The APC was funded by XXX''. Check carefully that the details given are accurate and use the standard spelling of funding agency names at \url{https://search.crossref.org/funding}, any errors may affect your future funding.}
+
+\institutionalreview{In this section, you should add the Institutional Review Board Statement and approval number, if relevant to your study. You might choose to exclude this statement if the study did not require ethical approval. Please note that the Editorial Office might ask you for further information. Please add “The study was conducted in accordance with the Declaration of Helsinki, and approved by the Institutional Review Board (or Ethics Committee) of NAME OF INSTITUTE (protocol code XXX and date of approval).” for studies involving humans. OR “The animal study protocol was approved by the Institutional Review Board (or Ethics Committee) of NAME OF INSTITUTE (protocol code XXX and date of approval).” for studies involving animals. OR “Ethical review and approval were waived for this study due to REASON (please provide a detailed justification).” OR “Not applicable” for studies not involving humans or animals.}
+
+\informedconsent{Any research article describing a study involving humans should contain this statement. Please add ``Informed consent was obtained from all subjects involved in the study.'' OR ``Patient consent was waived due to REASON (please provide a detailed justification).'' OR ``Not applicable'' for studies not involving humans. You might also choose to exclude this statement if the study did not involve humans.
+
+Written informed consent for publication must be obtained from participating patients who can be identified (including by the patients themselves). Please state ``Written informed consent has been obtained from the patient(s) to publish this paper'' if applicable.}
+
+\dataavailability{We encourage all authors of articles published in MDPI journals to share their research data. In this section, please provide details regarding where data supporting reported results can be found, including links to publicly archived datasets analyzed or generated during the study. Where no new data were created, or where data is unavailable due to privacy or ethical re-strictions, a statement is still required. Suggested Data Availability Statements are available in section “MDPI Research Data Policies” at \url{https://www.mdpi.com/ethics}.} 
+
+\acknowledgments{In this section you can acknowledge any support given which is not covered by the author contribution or funding sections. This may include administrative and technical support, or donations in kind (e.g., materials used for experiments).}
+
+\conflictsofinterest{Declare conflicts of interest or state ``The authors declare no conflict of interest.'' Authors must identify and declare any personal circumstances or interest that may be perceived as inappropriately influencing the representation or interpretation of reported research results. Any role of the funders in the design of the study; in the collection, analyses or interpretation of data; in the writing of the manuscript; or in the decision to publish the results must be declared in this section. If there is no role, please state ``The funders had no role in the design of the study; in the collection, analyses, or interpretation of data; in the writing of the manuscript; or in the decision to publish the~results''.} 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Optional
+\appendixtitles{yes} % Leave argument "no" if all appendix headings stay EMPTY (then no dot is printed after "Appendix A"). If the appendix sections contain a heading then change the argument to "yes".
+\appendixstart
+\appendix
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Derivation Details for Percentage-Error Models}
+\label{app:derivations}
+
+This appendix provides complete derivations of Theorems~\ref{thm:eps_mape_dual}--\ref{thm:sym_ls_rmspe_system}. 
+We show the Lagrangian construction, Karush-Kuhn-Tucker stationarity conditions, elimination of primal variables, 
+and application of the kernel trick for each model.
+
+
+%============================================================
+\subsection{Proof of Theorem~\ref{thm:eps_mape_dual}: $\varepsilon$-SVR with MAPE}
+\label{app:proof_eps_mape}
+
+\subsubsection{Lagrangian Construction}
+
+The Lagrangian for problem \eqref{eq:eps_pe_primal}--\eqref{eq:eps_pe_slack} 
+with multipliers $\alpha_k, \alpha_k^* \geq 0$ for constraints \eqref{eq:eps_pe_constraints} 
+and $\eta_k, \eta_k^* \geq 0$ for constraints \eqref{eq:eps_pe_slack} is:
+\begin{linenomath}
+\begin{equation}\label{eq:lagrangian_eps_mape_full}
+\begin{aligned}
+\mathcal{L}_{\varepsilon}^{\mathrm{PE}} 
+&= \frac{1}{2}\omega^T\omega + C\sum_{k=1}^N (\xi_k + \xi_k^*)\\
+&\quad - \sum_{k=1}^N \alpha_k\left[\varepsilon + \xi_k - \frac{100}{y_k}(y_k - \omega^T\varphi(x_k) - b)\right]\\
+&\quad - \sum_{k=1}^N \alpha_k^*\left[\varepsilon + \xi_k^* - \frac{100}{y_k}(\omega^T\varphi(x_k) + b - y_k)\right]\\
+&\quad - \sum_{k=1}^N (\eta_k\xi_k + \eta_k^*\xi_k^*).
+\end{aligned}
+\end{equation}
+\end{linenomath}
+
+\subsubsection{Karush-Kuhn-Tucker Stationarity Conditions}
+
+\paragraph{Condition with respect to $\omega$:}
+\begin{linenomath}
+\begin{align}
+\frac{\partial\mathcal{L}_{\varepsilon}^{\mathrm{PE}}}{\partial\omega} = 0 
+&\quad \Rightarrow \quad 
+\omega = \sum_{k=1}^N (\alpha_k - \alpha_k^*)\varphi(x_k). \label{eq:kkt_eps_omega_app}
+\end{align}
+\end{linenomath}
+
+\paragraph{Condition with respect to $b$:}
+\begin{linenomath}
+\begin{align}
+\frac{\partial\mathcal{L}_{\varepsilon}^{\mathrm{PE}}}{\partial b} = 0 
+&\quad \Rightarrow \quad 
+\sum_{k=1}^N (\alpha_k - \alpha_k^*) = 0. \label{eq:kkt_eps_b_app}
+\end{align}
+\end{linenomath}
+
+\paragraph{Condition with respect to $\xi_k$:}
+
+Differentiating \eqref{eq:lagrangian_eps_mape_full} with respect to $\xi_k$, noting that the
+Lagrangian contains the term $-\alpha_k(\varepsilon + \xi_k - \frac{100}{y_k}(\cdots))$,
+so $\xi_k$ appears as $C\xi_k - \alpha_k\xi_k - \eta_k\xi_k$:
+\begin{linenomath}
+\begin{equation}\label{eq:kkt_eps_xi_app}
+\frac{\partial\mathcal{L}_{\varepsilon}^{\mathrm{PE}}}{\partial\xi_k} = 0 
+\quad \Rightarrow \quad 
+C - \alpha_k - \eta_k = 0
+\quad \Rightarrow \quad
+0 \leq \alpha_k \leq C.
+\end{equation}
+\end{linenomath}
+
+\paragraph{Condition with respect to $\xi_k^*$:}
+\begin{linenomath}
+\begin{equation}\label{eq:kkt_eps_xistar_app}
+\frac{\partial\mathcal{L}_{\varepsilon}^{\mathrm{PE}}}{\partial\xi_k^*} = 0 
+\quad \Rightarrow \quad 
+C - \alpha_k^* - \eta_k^* = 0
+\quad \Rightarrow \quad
+0 \leq \alpha_k^* \leq C.
+\end{equation}
+\end{linenomath}
+
+\subsubsection{Derivation of Target-Dependent Box Bounds}
+
+The target-dependent bounds arise from the interaction between the regularization
+parameter $C$ and the percentage scaling $100/y_k$ in the primal constraints
+\eqref{eq:eps_pe_constraints}.
+Rewrite the first inequality in \eqref{eq:eps_pe_constraints} in equivalent
+absolute-residual form by multiplying through by $y_k/100 > 0$:
+\begin{linenomath}
+\begin{equation}\label{eq:rescaled_constraint_app}
+y_k - \omega^T\varphi(x_k) - b \;\leq\; \frac{y_k}{100}\bigl(\varepsilon + \xi_k\bigr).
+\end{equation}
+\end{linenomath}
+Define the rescaled multiplier $\tilde{\alpha}_k = \frac{y_k}{100}\,\alpha_k$.
+In terms of $\tilde{\alpha}_k$, the Lagrangian term associated with constraint
+\eqref{eq:rescaled_constraint_app} takes the standard form $-\tilde{\alpha}_k[\text{rhs} - \text{lhs}]$,
+and the stationarity condition with respect to $\xi_k$ is
+$C - \tilde{\alpha}_k - \eta_k = 0$, which gives $0 \le \tilde{\alpha}_k \le C$.
+Substituting back $\tilde{\alpha}_k = \frac{y_k}{100}\,\alpha_k$:
+\begin{linenomath}
+\begin{equation}\label{eq:box_bound_derivation_app}
+0 \;\leq\; \alpha_k \;\leq\; \frac{100C}{y_k}.
+\end{equation}
+\end{linenomath}
+An identical argument applied to $\alpha_k^*$ via the second inequality in
+\eqref{eq:eps_pe_constraints} yields
+\begin{linenomath}
+\begin{equation}\label{eq:box_bound_both_app}
+0 \leq \alpha_k,\;\alpha_k^* \leq \frac{100C}{y_k}, \quad k=1,\ldots,N.
+\end{equation}
+\end{linenomath}
+Thus, samples with smaller target values $y_k$ receive tighter dual bounds,
+concentrating model capacity on low-magnitude observations.
+
+\subsubsection{Elimination of Primal Variables}
+
+Substituting the KKT conditions \eqref{eq:kkt_eps_omega_app}--\eqref{eq:kkt_eps_xistar_app} 
+into the Lagrangian \eqref{eq:lagrangian_eps_mape_full}, we obtain (after algebraic simplification):
+\begin{linenomath}
+\begin{equation}\label{eq:dual_intermediate_eps_app}
+\mathcal{L}(\alpha, \alpha^*) = -\frac{1}{2}\sum_{k,\ell=1}^N (\alpha_k - \alpha_k^*)(\alpha_\ell - \alpha_\ell^*) \varphi(x_k)^T\varphi(x_\ell)
++ \sum_{k=1}^N (\alpha_k - \alpha_k^*) y_k - \frac{\varepsilon}{100}\sum_{k=1}^N (\alpha_k + \alpha_k^*) y_k.
+\end{equation}
+\end{linenomath}
+
+The key structural differences from classical SVR are:
+\begin{itemize}
+\item The $\varepsilon$-tube term becomes $\frac{\varepsilon}{100}\sum_{k=1}^N (\alpha_k + \alpha_k^*) y_k$ instead of $\varepsilon\sum_{k=1}^N (\alpha_k + \alpha_k^*)$.
+\item The box bounds are $0 \leq \alpha_k, \alpha_k^* \leq 100C/y_k$ instead of $[0, C]$.
+\end{itemize}
+
+\subsubsection{Application of Kernel Trick}
+
+Applying the kernel trick $K(x_k, x_\ell) = \varphi(x_k)^T\varphi(x_\ell)$ to \eqref{eq:dual_intermediate_eps_app}:
+\begin{linenomath}
+\begin{equation}\label{eq:dual_with_kernel_app}
+\mathcal{L}(\alpha, \alpha^*) = -\frac{1}{2}\sum_{k,\ell=1}^N (\alpha_k - \alpha_k^*)(\alpha_\ell - \alpha_\ell^*) K(x_k, x_\ell)
++ \sum_{k=1}^N (\alpha_k - \alpha_k^*) y_k - \frac{\varepsilon}{100}\sum_{k=1}^N (\alpha_k + \alpha_k^*) y_k.
+\end{equation}
+\end{linenomath}
+
+\subsubsection{Introduction of $\beta$-Variables}
+
+Define $\beta_k = \alpha_k - \alpha_k^*$. From the complementary slackness conditions, 
+at most one of $\alpha_k$ or $\alpha_k^*$ can be nonzero (they cannot both be strictly positive 
+because this would require both inequality constraints to be active simultaneously, which is impossible). Therefore:
+\begin{linenomath}
+\begin{equation}\label{eq:beta_absolute_value_app}
+|\beta_k| = \alpha_k + \alpha_k^*.
+\end{equation}
+\end{linenomath}
+
+From \eqref{eq:box_bound_both_app}:
+\begin{linenomath}
+\begin{equation}
+|\beta_k| = \alpha_k + \alpha_k^* \leq \frac{100C}{y_k}.
+\end{equation}
+\end{linenomath}
+
+Substituting $\beta_k = \alpha_k - \alpha_k^*$ and $|\beta_k| = \alpha_k + \alpha_k^*$ into 
+\eqref{eq:dual_with_kernel_app} yields \eqref{eq:eps_pe_dual}--\eqref{eq:eps_pe_dual_constraints}, 
+completing the proof of Theorem~\ref{thm:eps_mape_dual}.
+
+
+%============================================================
+\subsection{Proof of Theorem~\ref{thm:sym_eps_mape_dual}: Symmetric $\varepsilon$-SVR with MAPE}
+\label{app:proof_sym_eps_mape}
+
+\subsubsection{Augmented Lagrangian with Symmetry Constraint}
+
+The symmetry constraint \eqref{eq:symmetry_constraint} is enforced by augmenting 
+the Lagrangian \eqref{eq:lagrangian_eps_mape_full} with multipliers $\mu_k \in \mathbb{R}$:
+\begin{linenomath}
+\begin{equation}\label{eq:lagrangian_eps_sym_full}
+\begin{aligned}
+\mathcal{L}_{\varepsilon}^{\mathrm{PE\text{-}sym}} 
+&= \mathcal{L}_{\varepsilon}^{\mathrm{PE}}
+- \sum_{k=1}^N \mu_k\bigl(\omega^T\varphi(x_k) - a\,\omega^T\varphi(-x_k)\bigr)\\
+&= \frac{1}{2}\omega^T\omega + C\sum_{k=1}^N (\xi_k + \xi_k^*)\\
+&\quad - \sum_{k=1}^N \alpha_k\left[\varepsilon + \xi_k - \frac{100}{y_k}(y_k - \omega^T\varphi(x_k) - b)\right]\\
+&\quad - \sum_{k=1}^N \alpha_k^*\left[\varepsilon + \xi_k^* - \frac{100}{y_k}(\omega^T\varphi(x_k) + b - y_k)\right]\\
+&\quad - \sum_{k=1}^N (\eta_k\xi_k + \eta_k^*\xi_k^*)\\
+&\quad - \sum_{k=1}^N \mu_k\bigl(\omega^T\varphi(x_k) - a\,\omega^T\varphi(-x_k)\bigr).
+\end{aligned}
+\end{equation}
+\end{linenomath}
+
+\subsubsection{Modified KKT Condition for $\omega$}
+
+The stationarity condition with respect to $\omega$ becomes:
+\begin{linenomath}
+\begin{equation}\label{eq:kkt_sym_omega_app}
+\begin{aligned}
+\frac{\partial\mathcal{L}_{\varepsilon}^{\mathrm{PE\text{-}sym}}}{\partial\omega} = 0 
+&\quad \Rightarrow \quad 
+\omega = \sum_{k=1}^N (\alpha_k - \alpha_k^* + \mu_k)\varphi(x_k) - a\sum_{k=1}^N \mu_k\varphi(-x_k).
+\end{aligned}
+\end{equation}
+\end{linenomath}
+
+The conditions with respect to $b$, $\xi_k$, $\xi_k^*$ remain unchanged from Appendix~\ref{app:proof_eps_mape}.
+
+\subsubsection{Stationarity with Respect to $\mu_k$}
+
+The stationarity condition with respect to $\mu_k$ gives:
+\begin{linenomath}
+\begin{equation}\label{eq:kkt_mu_app}
+\frac{\partial\mathcal{L}_{\varepsilon}^{\mathrm{PE\text{-}sym}}}{\partial\mu_k} = 0 
+\quad \Rightarrow \quad 
+\omega^T\varphi(x_k) = a\,\omega^T\varphi(-x_k).
+\end{equation}
+\end{linenomath}
+
+This recovers the symmetry constraint \eqref{eq:symmetry_constraint}.
+
+\subsubsection{Symmetric Representer Theorem}
+
+From \eqref{eq:kkt_mu_app}, we have $\omega^T\varphi(x_k) = a\,\omega^T\varphi(-x_k)$. 
+Adding $a$ times the second expression to the first:
+\begin{linenomath}
+\begin{equation}
+\omega^T\varphi(x_k) + a^2\omega^T\varphi(-x_k) = a\omega^T\varphi(-x_k) + a\,\omega^T\varphi(x_k).
+\end{equation}
+\end{linenomath}
+
+Since $a^2 = 1$, this gives:
+\begin{linenomath}
+\begin{equation}
+\omega^T\varphi(x_k) + \omega^T\varphi(-x_k) = a\omega^T\varphi(-x_k) + a\,\omega^T\varphi(x_k).
+\end{equation}
+\end{linenomath}
+
+Rearranging:
+\begin{linenomath}
+\begin{equation}
+\omega^T\varphi(x_k) + a\omega^T\varphi(-x_k) = 2\omega^T\varphi(x_k).
+\end{equation}
+\end{linenomath}
+
+Therefore:
+\begin{linenomath}
+\begin{equation}\label{eq:symmetric_eval_app}
+\omega^T\varphi(x_k) = \frac{1}{2}\omega^T[\varphi(x_k) + a\varphi(-x_k)].
+\end{equation}
+\end{linenomath}
+
+\subsubsection{Kernel Evaluation in Symmetric Case}
+
+Substituting \eqref{eq:kkt_sym_omega_app} into \eqref{eq:symmetric_eval_app}:
+\begin{linenomath}
+\begin{equation}
+\begin{aligned}
+\omega^T\varphi(x_k) 
+&= \frac{1}{2}\left[\sum_{\ell=1}^N (\alpha_\ell - \alpha_\ell^* + \mu_\ell)\varphi(x_\ell) - a\sum_{\ell=1}^N \mu_\ell\varphi(-x_\ell)\right]^T[\varphi(x_k) + a\varphi(-x_k)]\\
+&= \frac{1}{2}\sum_{\ell=1}^N (\alpha_\ell - \alpha_\ell^* + \mu_\ell)[\varphi(x_\ell)^T\varphi(x_k) + a\varphi(x_\ell)^T\varphi(-x_k)]\\
+&\quad - \frac{a}{2}\sum_{\ell=1}^N \mu_\ell[\varphi(-x_\ell)^T\varphi(x_k) + a\varphi(-x_\ell)^T\varphi(-x_k)].
+\end{aligned}
+\end{equation}
+\end{linenomath}
+
+Under Assumption~\ref{ass:kernel_sym}, we have $K(-x_\ell, x_k) = K(x_\ell, -x_k)$ and $K(-x_\ell, -x_k) = K(x_\ell, x_k)$. 
+Applying the kernel trick:
+\begin{linenomath}
+\begin{equation}
+\begin{aligned}
+\omega^T\varphi(x_k) 
+&= \frac{1}{2}\sum_{\ell=1}^N (\alpha_\ell - \alpha_\ell^* + \mu_\ell)[K(x_\ell, x_k) + aK(x_\ell, -x_k)]\\
+&\quad - \frac{a}{2}\sum_{\ell=1}^N \mu_\ell[K(x_\ell, -x_k) + aK(x_\ell, x_k)].
+\end{aligned}
+\end{equation}
+\end{linenomath}
+
+Expanding the second term:
+\begin{linenomath}
+\begin{equation}
+\begin{aligned}
+\omega^T\varphi(x_k) 
+&= \frac{1}{2}\sum_{\ell=1}^N (\alpha_\ell - \alpha_\ell^*)[K(x_\ell, x_k) + aK(x_\ell, -x_k)]\\
+&\quad + \frac{1}{2}\sum_{\ell=1}^N \mu_\ell[K(x_\ell, x_k) + aK(x_\ell, -x_k) - aK(x_\ell, -x_k) - a^2K(x_\ell, x_k)].
+\end{aligned}
+\end{equation}
+\end{linenomath}
+
+Since $a^2 = 1$, the terms in the second sum cancel:
+\begin{linenomath}
+\begin{equation}
+\begin{aligned}
+\omega^T\varphi(x_k) 
+&= \frac{1}{2}\sum_{\ell=1}^N (\alpha_\ell - \alpha_\ell^*)[K(x_\ell, x_k) + aK(x_\ell, -x_k)]\\
+&\quad + \frac{1}{2}\sum_{\ell=1}^N \mu_\ell[K(x_\ell, x_k) - K(x_\ell, x_k)]\\
+&= \frac{1}{2}\sum_{\ell=1}^N (\alpha_\ell - \alpha_\ell^*)[K(x_\ell, x_k) + aK(x_\ell, -x_k)].
+\end{aligned}
+\end{equation}
+\end{linenomath}
+
+Therefore:
+\begin{linenomath}
+\begin{equation}\label{eq:symmetric_kernel_eval_app}
+\omega^T\varphi(x_k) = \frac{1}{2}\sum_{\ell=1}^N (\alpha_\ell - \alpha_\ell^*)[K(x_\ell, x_k) + aK(x_\ell, -x_k)].
+\end{equation}
+\end{linenomath}
+
+\subsubsection{Modified Kernel Definition}
+
+Define the symmetric kernel:
+\begin{linenomath}
+\begin{equation}
+K_s(x_k, x_\ell) = K(x_k, x_\ell) + aK(x_k, -x_\ell).
+\end{equation}
+\end{linenomath}
+
+Then \eqref{eq:symmetric_kernel_eval_app} becomes:
+\begin{linenomath}
+\begin{equation}
+\omega^T\varphi(x_k) = \frac{1}{2}\sum_{\ell=1}^N (\alpha_\ell - \alpha_\ell^*) K_s(x_\ell, x_k).
+\end{equation}
+\end{linenomath}
+
+\subsubsection{Dual Formulation}
+
+Following the same elimination procedure as in Appendix~\ref{app:proof_eps_mape}, 
+the dual objective becomes:
+\begin{linenomath}
+\begin{equation}
+\mathcal{L}(\alpha, \alpha^*) = -\frac{1}{2}\sum_{k,\ell=1}^N (\alpha_k - \alpha_k^*)(\alpha_\ell - \alpha_\ell^*) \cdot \frac{1}{2}K_s(x_k, x_\ell)
++ \sum_{k=1}^N (\alpha_k - \alpha_k^*) y_k - \frac{\varepsilon}{100}\sum_{k=1}^N (\alpha_k + \alpha_k^*) y_k.
+\end{equation}
+\end{linenomath}
+
+Simplifying the quadratic term:
+\begin{linenomath}
+\begin{equation}
+\mathcal{L}(\alpha, \alpha^*) = -\frac{1}{4}\sum_{k,\ell=1}^N (\alpha_k - \alpha_k^*)(\alpha_\ell - \alpha_\ell^*) K_s(x_k, x_\ell)
++ \sum_{k=1}^N (\alpha_k - \alpha_k^*) y_k - \frac{\varepsilon}{100}\sum_{k=1}^N (\alpha_k + \alpha_k^*) y_k.
+\end{equation}
+\end{linenomath}
+
+Defining $\beta_k = \alpha_k - \alpha_k^*$ and using $|\beta_k| = \alpha_k + \alpha_k^*$ yields 
+\eqref{eq:eps_sym_pe_dual} with the same box constraints \eqref{eq:eps_pe_dual_constraints}. 
+The factor $1/4$ arises from the symmetrization in \eqref{eq:symmetric_kernel_eval_app}, 
+completing the proof of Theorem~\ref{thm:sym_eps_mape_dual}.
+
+
+%============================================================
+\subsection{Proof of Theorem~\ref{thm:ls_rmspe_system}: LS-SVR with RMSPE}
+\label{app:proof_ls_rmspe}
+
+\subsubsection{Lagrangian Construction}
+
+The Lagrangian for problem \eqref{eq:ls_pe_primal}--\eqref{eq:ls_pe_constraints} 
+with multipliers $\alpha_k \in \mathbb{R}$ is:
+\begin{linenomath}
+\begin{equation}\label{eq:lagrangian_ls_full}
+\mathcal{L}_{\mathrm{LS}}^{\mathrm{PE}} 
+= \frac{1}{2}\omega^T\omega + \frac{\Gamma}{2}\sum_{k=1}^N\frac{e_k^2}{y_k^2}
+- \sum_{k=1}^N \alpha_k(\omega^T\varphi(x_k) + b + e_k - y_k).
+\end{equation}
+\end{linenomath}
+
+\subsubsection{Karush-Kuhn-Tucker Stationarity Conditions}
+
+\paragraph{Condition with respect to $\omega$:}
+\begin{linenomath}
+\begin{equation}\label{eq:kkt_ls_omega_app}
+\frac{\partial\mathcal{L}_{\mathrm{LS}}^{\mathrm{PE}}}{\partial\omega} = 0 
+\quad \Rightarrow \quad 
+\omega = \sum_{k=1}^N \alpha_k\varphi(x_k).
+\end{equation}
+\end{linenomath}
+
+\paragraph{Condition with respect to $b$:}
+\begin{linenomath}
+\begin{equation}\label{eq:kkt_ls_b_app}
+\frac{\partial\mathcal{L}_{\mathrm{LS}}^{\mathrm{PE}}}{\partial b} = 0 
+\quad \Rightarrow \quad 
+\sum_{k=1}^N \alpha_k = 0.
+\end{equation}
+\end{linenomath}
+
+\paragraph{Condition with respect to $e_k$:}
+\begin{linenomath}
+\begin{equation}\label{eq:kkt_ls_ek_app}
+\frac{\partial\mathcal{L}_{\mathrm{LS}}^{\mathrm{PE}}}{\partial e_k} = 0 
+\quad \Rightarrow \quad 
+\frac{\Gamma e_k}{y_k^2} - \alpha_k = 0
+\quad \Rightarrow \quad 
+e_k = \frac{y_k^2}{\Gamma}\alpha_k.
+\end{equation}
+\end{linenomath}
+
+\paragraph{Condition with respect to $\alpha_k$:}
+\begin{linenomath}
+\begin{equation}\label{eq:kkt_ls_alpha_app}
+\frac{\partial\mathcal{L}_{\mathrm{LS}}^{\mathrm{PE}}}{\partial\alpha_k} = 0 
+\quad \Rightarrow \quad 
+y_k = \omega^T\varphi(x_k) + b + e_k.
+\end{equation}
+\end{linenomath}
+
+\subsubsection{Substitution and System Derivation}
+
+Substituting \eqref{eq:kkt_ls_omega_app} and \eqref{eq:kkt_ls_ek_app} into \eqref{eq:kkt_ls_alpha_app}:
+\begin{linenomath}
+\begin{equation}
+y_k = \sum_{\ell=1}^N \alpha_\ell \varphi(x_\ell)^T\varphi(x_k) + b + \frac{y_k^2}{\Gamma}\alpha_k.
+\end{equation}
+\end{linenomath}
+
+Applying the kernel trick $K(x_\ell, x_k) = \varphi(x_\ell)^T\varphi(x_k)$:
+\begin{linenomath}
+\begin{equation}\label{eq:ls_system_scalar_app}
+y_k = \sum_{\ell=1}^N \alpha_\ell K(x_\ell, x_k) + b + \frac{y_k^2}{\Gamma}\alpha_k, \quad k=1,\ldots,N.
+\end{equation}
+\end{linenomath}
+
+Rearranging:
+\begin{linenomath}
+\begin{equation}
+\sum_{\ell=1}^N \alpha_\ell K(x_\ell, x_k) + \frac{y_k^2}{\Gamma}\alpha_k + b = y_k, \quad k=1,\ldots,N.
+\end{equation}
+\end{linenomath}
+
+\subsubsection{Matrix Formulation}
+
+Define:
+\begin{itemize}
+\item $\Omega \in \mathbb{R}^{N \times N}$ with $\Omega_{k\ell} = K(x_k, x_\ell)$
+\item $Y_\Gamma = \mathrm{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma) \in \mathbb{R}^{N \times N}$
+\item $\boldsymbol{\alpha} = [\alpha_1, \ldots, \alpha_N]^T \in \mathbb{R}^N$
+\item $\mathbf{y} = [y_1, \ldots, y_N]^T \in \mathbb{R}^N$
+\item $\mathbf{1} = [1, \ldots, 1]^T \in \mathbb{R}^N$
+\end{itemize}
+
+Then \eqref{eq:ls_system_scalar_app} in matrix form is:
+\begin{linenomath}
+\begin{equation}
+(\Omega + Y_\Gamma)\boldsymbol{\alpha} + b\mathbf{1} = \mathbf{y}.
+\end{equation}
+\end{linenomath}
+
+Combined with the balancing condition \eqref{eq:kkt_ls_b_app}, we obtain the augmented system:
+\begin{linenomath}
+\begin{equation}
+\begin{bmatrix}
+0 & \mathbf{1}^\top\\
+\mathbf{1} & \Omega + Y_\Gamma
+\end{bmatrix}
+\begin{bmatrix}
+b\\
+\boldsymbol{\alpha}
+\end{bmatrix}
+=
+\begin{bmatrix}
+0\\
+\mathbf{y}
+\end{bmatrix},
+\end{equation}
+\end{linenomath}
+which is \eqref{eq:ls_pe_system}, completing the proof of Theorem~\ref{thm:ls_rmspe_system}.
+
+
+%============================================================
+\subsection{Proof of Theorem~\ref{thm:sym_ls_rmspe_system}: Symmetric LS-SVR with RMSPE}
+\label{app:proof_sym_ls_rmspe}
+
+\subsubsection{Augmented Lagrangian with Symmetry Constraint}
+
+The symmetry constraint \eqref{eq:symmetry_constraint} is enforced by augmenting 
+the Lagrangian \eqref{eq:lagrangian_ls_full} with multipliers $\mu_k \in \mathbb{R}$:
+\begin{linenomath}
+\begin{equation}\label{eq:lagrangian_ls_sym_full}
+\begin{aligned}
+\mathcal{L}_{\mathrm{LS}}^{\mathrm{PE\text{-}sym}} 
+&= \mathcal{L}_{\mathrm{LS}}^{\mathrm{PE}}
+- \sum_{k=1}^N \mu_k\bigl(\omega^T\varphi(x_k) - a\,\omega^T\varphi(-x_k)\bigr)\\
+&= \frac{1}{2}\omega^T\omega + \frac{\Gamma}{2}\sum_{k=1}^N\frac{e_k^2}{y_k^2}\\
+&\quad - \sum_{k=1}^N \alpha_k(\omega^T\varphi(x_k) + b + e_k - y_k)\\
+&\quad - \sum_{k=1}^N \mu_k\bigl(\omega^T\varphi(x_k) - a\,\omega^T\varphi(-x_k)\bigr).
+\end{aligned}
+\end{equation}
+\end{linenomath}
+
+\subsubsection{Modified KKT Condition for $\omega$}
+
+The stationarity condition with respect to $\omega$ becomes:
+\begin{linenomath}
+\begin{equation}\label{eq:kkt_ls_sym_omega_app}
+\frac{\partial\mathcal{L}_{\mathrm{LS}}^{\mathrm{PE\text{-}sym}}}{\partial\omega} = 0 
+\quad \Rightarrow \quad 
+\omega = \sum_{k=1}^N (\alpha_k + \mu_k)\varphi(x_k) - a\sum_{k=1}^N \mu_k\varphi(-x_k).
+\end{equation}
+\end{linenomath}
+
+The conditions with respect to $b$, $e_k$, $\alpha_k$ remain unchanged from Appendix~\ref{app:proof_ls_rmspe}.
+
+\subsubsection{Stationarity with Respect to $\mu_k$}
+
+As in the $\varepsilon$ case:
+\begin{linenomath}
+\begin{equation}
+\frac{\partial\mathcal{L}_{\mathrm{LS}}^{\mathrm{PE\text{-}sym}}}{\partial\mu_k} = 0 
+\quad \Rightarrow \quad 
+\omega^T\varphi(x_k) = a\,\omega^T\varphi(-x_k).
+\end{equation}
+\end{linenomath}
+
+Therefore:
+\begin{linenomath}
+\begin{equation}
+\omega^T\varphi(x_k) = \frac{1}{2}\omega^T[\varphi(x_k) + a\varphi(-x_k)].
+\end{equation}
+\end{linenomath}
+
+\subsubsection{Kernel Evaluation in Symmetric Case}
+
+Following the same derivation as in Appendix~\ref{app:proof_sym_eps_mape}, 
+substituting \eqref{eq:kkt_ls_sym_omega_app} and using Assumption~\ref{ass:kernel_sym}:
+\begin{linenomath}
+\begin{equation}
+\begin{aligned}
+\omega^T\varphi(x_k) 
+&= \frac{1}{2}\sum_{\ell=1}^N (\alpha_\ell + \mu_\ell)[K(x_\ell, x_k) + aK(x_\ell, -x_k)]\\
+&\quad - \frac{a}{2}\sum_{\ell=1}^N \mu_\ell[K(x_\ell, -x_k) + aK(x_\ell, x_k)].
+\end{aligned}
+\end{equation}
+\end{linenomath}
+
+Since $a^2 = 1$, expanding and collecting terms:
+\begin{linenomath}
+\begin{equation}
+\begin{aligned}
+\omega^T\varphi(x_k) 
+&= \frac{1}{2}\sum_{\ell=1}^N \alpha_\ell[K(x_\ell, x_k) + aK(x_\ell, -x_k)]\\
+&\quad + \frac{1}{2}\sum_{\ell=1}^N \mu_\ell[K(x_\ell, x_k) + aK(x_\ell, -x_k) - aK(x_\ell, -x_k) - K(x_\ell, x_k)]\\
+&= \frac{1}{2}\sum_{\ell=1}^N \alpha_\ell[K(x_\ell, x_k) + aK(x_\ell, -x_k)].
+\end{aligned}
+\end{equation}
+\end{linenomath}
+
+The $\mu_\ell$ terms cancel, yielding:
+\begin{linenomath}
+\begin{equation}
+\omega^T\varphi(x_k) = \frac{1}{2}\sum_{\ell=1}^N \alpha_\ell[K(x_\ell, x_k) + aK(x_\ell, -x_k)].
+\end{equation}
+\end{linenomath}
+
+\subsubsection{Modified Kernel Matrix}
+
+Define:
+\begin{linenomath}
+\begin{equation}
+\Omega^*_{k\ell} = K(x_k, -x_\ell), \quad \Omega_s = \frac{1}{2}(\Omega + a\Omega^*).
+\end{equation}
+\end{linenomath}
+
+Then:
+\begin{linenomath}
+\begin{equation}
+\omega^T\varphi(x_k) = \sum_{\ell=1}^N (\Omega_s)_{k\ell} \alpha_\ell.
+\end{equation}
+\end{linenomath}
+
+\subsubsection{System Derivation}
+
+Substituting into \eqref{eq:kkt_ls_alpha_app} and following the same procedure as 
+in Appendix~\ref{app:proof_ls_rmspe}:
+\begin{linenomath}
+\begin{equation}
+y_k = \sum_{\ell=1}^N (\Omega_s)_{k\ell} \alpha_\ell + b + \frac{y_k^2}{\Gamma}\alpha_k.
+\end{equation}
+\end{linenomath}
+
+In matrix form:
+\begin{linenomath}
+\begin{equation}
+(\Omega_s + Y_\Gamma)\boldsymbol{\alpha} + b\mathbf{1} = \mathbf{y}.
+\end{equation}
+\end{linenomath}
+
+Combined with $\sum_{k=1}^N \alpha_k = 0$, this yields the augmented system:
+\begin{linenomath}
+\begin{equation}
+\begin{bmatrix}
+0 & \mathbf{1}^\top\\
+\mathbf{1} & \Omega_s + Y_\Gamma
+\end{bmatrix}
+\begin{bmatrix}
+b\\
+\boldsymbol{\alpha}
+\end{bmatrix}
+=
+\begin{bmatrix}
+0\\
+\mathbf{y}
+\end{bmatrix},
+\end{equation}
+\end{linenomath}
+which is \eqref{eq:ls_sym_pe_system}, completing the proof of Theorem~\ref{thm:sym_ls_rmspe_system}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{adjustwidth}{-\extralength}{0cm}
+%\printendnotes[custom] % Un-comment to print a list of endnotes
+
+\reftitle{References}
+
+% Please provide either the correct journal abbreviation (e.g. according to the “List of Title Word Abbreviations” http://www.issn.org/services/online-services/access-to-the-ltwa/) or the full name of the journal.
+% Citations and References in Supplementary files are permitted provided that they also appear in the reference list here. 
+
+%=====================================
+% References, variant A: external bibliography
+%=====================================
+%\bibliography{your_external_BibTeX_file}
+
+\bibliography{references}
+
+
+% If authors have biography, please use the format below
+%\section*{Short Biography of Authors}
+%\bio
+%{\raisebox{-0.35cm}{\includegraphics[width=3.5cm,height=5.3cm,clip,keepaspectratio]{Definitions/author1.pdf}}}
+%{\textbf{Firstname Lastname} Biography of first author}
+%
+%\bio
+%{\raisebox{-0.35cm}{\includegraphics[width=3.5cm,height=5.3cm,clip,keepaspectratio]{Definitions/author2.jpg}}}
+%{\textbf{Firstname Lastname} Biography of second author}
+
+% For the MDPI journals use author-date citation, please follow the formatting guidelines on http://www.mdpi.com/authors/references
+% To cite two works by the same author: \citeauthor{ref-journal-1a} (\citeyear{ref-journal-1a}, \citeyear{ref-journal-1b}). This produces: Whittaker (1967, 1975)
+% To cite two works by the same author with specific pages: \citeauthor{ref-journal-3a} (\citeyear{ref-journal-3a}, p. 328; \citeyear{ref-journal-3b}, p.475). This produces: Wong (1999, p. 328; 2000, p. 475)
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% for journal Sci
+%\reviewreports{\\
+%Reviewer 1 comments and authors’ response\\
+%Reviewer 2 comments and authors’ response\\
+%Reviewer 3 comments and authors’ response
+%}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\PublishersNote{}
+\end{adjustwidth}
+\end{document}
