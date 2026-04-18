@@ -59,9 +59,17 @@ An object of class `"psvr_mape_sym"`, a list with components:
 
   Numeric matrix of support vector inputs.
 
+- `y_sv`:
+
+  Numeric vector of support vector targets.
+
 - `kernel`:
 
   The kernel function used.
+
+- `C`:
+
+  The regularization parameter `C`.
 
 - `eps`:
 
@@ -70,6 +78,14 @@ An object of class `"psvr_mape_sym"`, a list with components:
 - `a`:
 
   The symmetry parameter.
+
+- `n_train`:
+
+  Number of training observations.
+
+- `p_train`:
+
+  Number of training features (columns).
 
 ## Details
 

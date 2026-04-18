@@ -56,9 +56,21 @@ An object of class `"psvr_rmspe_sym"`, a list with components:
 
   The kernel function used.
 
+- `gamma`:
+
+  The regularization parameter `Γ`.
+
 - `a`:
 
   The symmetry parameter.
+
+- `n_train`:
+
+  Number of training observations.
+
+- `p_train`:
+
+  Number of training features (columns).
 
 ## Details
 

@@ -44,6 +44,27 @@ Symmetric kernel extension of Model 3 (Theorem 4).
 - [`predict(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/predict.psvr_rmspe_sym.md)
   : Predict from a fitted symmetric LS-SVR with RMSPE model
 
+## Model methods
+
+S3 methods for inspecting and printing fitted psvr models.
+
+- [`print(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/print.psvr_mape.md)
+  : Print method for psvr_mape objects
+- [`print(`*`<psvr_mape_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/print.psvr_mape_sym.md)
+  : Print method for psvr_mape_sym objects
+- [`print(`*`<psvr_rmspe>`*`)`](https://pbenavidesh.github.io/psvr/reference/print.psvr_rmspe.md)
+  : Print method for psvr_rmspe objects
+- [`print(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/print.psvr_rmspe_sym.md)
+  : Print method for psvr_rmspe_sym objects
+- [`coef(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_mape.md)
+  : Extract coefficients from a psvr_mape model
+- [`coef(`*`<psvr_mape_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_mape_sym.md)
+  : Extract coefficients from a psvr_mape_sym model
+- [`coef(`*`<psvr_rmspe>`*`)`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_rmspe.md)
+  : Extract coefficients from a psvr_rmspe model
+- [`coef(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_rmspe_sym.md)
+  : Extract coefficients from a psvr_rmspe_sym model
+
 ## tidymodels / parsnip interface
 
 Parsnip model specifications for use in tidymodels workflows.

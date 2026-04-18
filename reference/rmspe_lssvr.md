@@ -49,6 +49,18 @@ An object of class `"psvr_rmspe"`, a list with components:
 
   The kernel function used.
 
+- `gamma`:
+
+  The regularization parameter `Γ`.
+
+- `n_train`:
+
+  Number of training observations.
+
+- `p_train`:
+
+  Number of training features (columns).
+
 ## Details
 
     [ 0   1ᵀ     ] [ b ]   [ 0 ]
