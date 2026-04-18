@@ -207,4 +207,4 @@ for clean air. *Journal of Environmental Economics and Management*,
 Benavides-Herrera, P., Álvarez-Álvarez, G., Ruiz-Cruz, R., &
 Sánchez-Torres, J. D. (2026). A unified family of percentage-error
 support vector regression models with symmetric kernel extensions.
-*Mathematics*, MDPI.
+*Mathematics*, MDPI. (under review)
