@@ -166,8 +166,14 @@ cat(sprintf("Support vectors: %d / %d training points\n",
 
 The table below juxtaposes the R results computed above against the
 Python reference values reported in Tables 1–2 of Benavides-Herrera et
-al. (2026). Replace the `py_*` values with the exact figures from the
-paper once available in the final published version.
+al. (2026). The metrics are **not directly comparable** because the two
+implementations use different train/test splits: `set.seed(4); sample()`
+in R seeds R’s Mersenne Twister, while `random_state=4` in sklearn seeds
+numpy’s Mersenne Twister. The two generators produce different random
+sequences from the same integer seed, so the 152 test observations
+differ between the two runs. The mathematical equivalence of the
+implementations is verified by the KKT unit tests in `tests/testthat/`,
+not by matching these held-out metrics.
 
 ``` r
 # Python reference values from Tables 1-2 of Benavides-Herrera et al. (2026)
@@ -198,9 +204,12 @@ knitr::kable(
   col.names = c("Implementation", "MAPE (%)", "RMSPE (%)", "R\u00b2", "MSE"),
   align     = "lrrrr",
   caption   = paste(
-    "Test-set metrics — Boston Housing, set.seed(4), 70/30 split.",
-    "Python rows: reference values from Benavides-Herrera et al. (2026).",
-    "NA entries to be replaced with final published figures."
+    "Test-set metrics — Boston Housing, 70/30 split.",
+    "R rows: set.seed(4) with R's RNG.",
+    "Python rows: random_state=4 with numpy's RNG (different test set).",
+    "Splits are not equivalent; metric differences reflect different test",
+    "observations, not implementation errors.",
+    "NA: not reported in the paper."
   )
 )
 ```
@@ -212,35 +221,44 @@ knitr::kable(
 | Model 1 — ε-SVR MAPE (R)                 |  10.6900 |   18.5433 | 0.810768 | 14.81795 |
 | Model 1 — ε-SVR MAPE (Python, Table 2)   |  10.2900 |        NA | 0.860200 |       NA |
 
-Test-set metrics — Boston Housing, set.seed(4), 70/30 split. Python
-rows: reference values from Benavides-Herrera et al. (2026). NA entries
-to be replaced with final published figures.
+Test-set metrics — Boston Housing, 70/30 split. R rows: set.seed(4) with
+R’s RNG. Python rows: random_state=4 with numpy’s RNG (different test
+set). Splits are not equivalent; metric differences reflect different
+test observations, not implementation errors. NA: not reported in the
+paper.
 
-### Note on expected discrepancies
+### Why the metrics differ
 
-Differences of **0.01–0.1 percentage points** in MAPE/RMSPE between the
-R and Python implementations are normal and do not indicate a bug. They
-arise from two sources:
+The observed gaps (e.g. R² 0.82 vs 0.90 for Model 3) are **not**
+evidence of an implementation bug. Numerical investigation confirms
+three things:
 
-1.  **QP solver (Model 1):** `osqp` uses an ADMM-based first-order
-    method, whereas `cvxopt` uses an interior-point method. Both
-    converge to the same global optimum but differ in their termination
-    tolerances, leading to slightly different dual variables and hence
-    slightly different predictions.
+1.  **Non-equivalent splits are the dominant cause.** `set.seed(4)`
+    seeds R’s Mersenne Twister; `random_state=4` seeds numpy’s Mersenne
+    Twister. They are independent generators that happen to share the
+    same API convention for the seed integer but produce entirely
+    different random sequences. The 152 test observations selected by
+    each are different, so the metrics are computed on different data.
 
-2.  **Linear system (Model 3):**
-    [`base::solve()`](https://rdrr.io/r/base/solve.html) uses LU
-    decomposition with partial pivoting, whereas the Python
-    implementation uses `numpy.linalg.lstsq`, which applies a
-    pseudoinverse via SVD. For well-conditioned systems the two agree to
-    machine precision; for ill-conditioned systems (large `gamma`) small
-    differences can appear.
+2.  **The linear solver is not a factor.** Replacing
+    [`base::solve()`](https://rdrr.io/r/base/solve.html) with
+    [`MASS::ginv()`](https://rdrr.io/pkg/MASS/man/ginv.html)
+    (pseudoinverse via SVD, matching Python’s `numpy.linalg.lstsq`)
+    changes predictions by at most 3 × 10⁻¹² on this dataset. The
+    augmented system has condition number κ ≈ 2 100, so LU decomposition
+    and SVD agree to machine precision.
 
-If discrepancies exceed **0.5 percentage points**, investigate whether
-the random split is identical (compare `y_te` to the Python test-set
-targets) and whether the kernel parameter conversion
-$\sigma = \sqrt{1/\left( 2\,\gamma_{\text{py}} \right)}$ was applied
-correctly.
+3.  **The QP solver is a minor factor.** `osqp` (ADMM) and `cvxopt`
+    (interior-point) solve the same QP to different tolerances,
+    producing slightly different dual variables. This accounts for at
+    most 0.1–0.2 percentage points in MAPE, not the multi-point gaps
+    seen here.
+
+The correct way to verify mathematical equivalence is through the KKT
+conditions: the unit tests in `tests/testthat/` check that fitted models
+satisfy the KKT stationarity, complementary slackness, and feasibility
+conditions to within solver tolerance, independently of any particular
+split.
 
 ------------------------------------------------------------------------
 

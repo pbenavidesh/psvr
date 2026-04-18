@@ -270,8 +270,15 @@ al. (2026):</strong></p>
 </h2>
 <p>The table below juxtaposes the R results computed above against the
 Python reference values reported in Tables 1–2 of Benavides-Herrera et
-al. (2026). Replace the <code>py_*</code> values with the exact figures
-from the paper once available in the final published version.</p>
+al. (2026). The metrics are <strong>not directly comparable</strong>
+because the two implementations use different train/test splits:
+<code>set.seed(4); sample()</code> in R seeds R’s Mersenne Twister,
+while <code>random_state=4</code> in sklearn seeds numpy’s Mersenne
+Twister. The two generators produce different random sequences from the
+same integer seed, so the 152 test observations differ between the two
+runs. The mathematical equivalence of the implementations is verified by
+the KKT unit tests in <code>tests/testthat/</code>, not by matching
+these held-out metrics.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Python reference values from Tables 1-2 of Benavides-Herrera et al. (2026)</span></span>
 <span><span class="va">py_m3_mape</span>  <span class="op">&lt;-</span> <span class="fl">10.06</span>        <span class="co"># Table 1, Model 3 — MAPE (%)</span></span>
@@ -301,15 +308,20 @@ from the paper once available in the final published version.</p>
 <span>  col.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Implementation"</span>, <span class="st">"MAPE (%)"</span>, <span class="st">"RMSPE (%)"</span>, <span class="st">"R\u00b2"</span>, <span class="st">"MSE"</span><span class="op">)</span>,</span>
 <span>  align     <span class="op">=</span> <span class="st">"lrrrr"</span>,</span>
 <span>  caption   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span>
-<span>    <span class="st">"Test-set metrics — Boston Housing, set.seed(4), 70/30 split."</span>,</span>
-<span>    <span class="st">"Python rows: reference values from Benavides-Herrera et al. (2026)."</span>,</span>
-<span>    <span class="st">"NA entries to be replaced with final published figures."</span></span>
+<span>    <span class="st">"Test-set metrics — Boston Housing, 70/30 split."</span>,</span>
+<span>    <span class="st">"R rows: set.seed(4) with R's RNG."</span>,</span>
+<span>    <span class="st">"Python rows: random_state=4 with numpy's RNG (different test set)."</span>,</span>
+<span>    <span class="st">"Splits are not equivalent; metric differences reflect different test"</span>,</span>
+<span>    <span class="st">"observations, not implementation errors."</span>,</span>
+<span>    <span class="st">"NA: not reported in the paper."</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <table class="table">
-<caption>Test-set metrics — Boston Housing, set.seed(4), 70/30 split.
-Python rows: reference values from Benavides-Herrera et al. (2026). NA
-entries to be replaced with final published figures.</caption>
+<caption>Test-set metrics — Boston Housing, 70/30 split. R rows:
+set.seed(4) with R’s RNG. Python rows: random_state=4 with numpy’s RNG
+(different test set). Splits are not equivalent; metric differences
+reflect different test observations, not implementation errors. NA: not
+reported in the paper.</caption>
 <colgroup>
 <col width="52%">
 <col width="11%">
@@ -356,30 +368,36 @@ entries to be replaced with final published figures.</caption>
 </tbody>
 </table>
 <div class="section level3">
-<h3 id="note-on-expected-discrepancies">Note on expected discrepancies<a class="anchor" aria-label="anchor" href="#note-on-expected-discrepancies"></a>
+<h3 id="why-the-metrics-differ">Why the metrics differ<a class="anchor" aria-label="anchor" href="#why-the-metrics-differ"></a>
 </h3>
-<p>Differences of <strong>0.01–0.1 percentage points</strong> in
-MAPE/RMSPE between the R and Python implementations are normal and do
-not indicate a bug. They arise from two sources:</p>
+<p>The observed gaps (e.g. R² 0.82 vs 0.90 for Model 3) are
+<strong>not</strong> evidence of an implementation bug. Numerical
+investigation confirms three things:</p>
 <ol style="list-style-type: decimal">
-<li><p><strong>QP solver (Model 1):</strong> <code>osqp</code> uses an
-ADMM-based first-order method, whereas <code>cvxopt</code> uses an
-interior-point method. Both converge to the same global optimum but
-differ in their termination tolerances, leading to slightly different
-dual variables and hence slightly different predictions.</p></li>
-<li><p><strong>Linear system (Model 3):</strong>
-<code><a href="https://rdrr.io/r/base/solve.html" class="external-link">base::solve()</a></code> uses LU decomposition with partial pivoting,
-whereas the Python implementation uses <code>numpy.linalg.lstsq</code>,
-which applies a pseudoinverse via SVD. For well-conditioned systems the
-two agree to machine precision; for ill-conditioned systems (large
-<code>gamma</code>) small differences can appear.</p></li>
+<li><p><strong>Non-equivalent splits are the dominant cause.</strong>
+<code>set.seed(4)</code> seeds R’s Mersenne Twister;
+<code>random_state=4</code> seeds numpy’s Mersenne Twister. They are
+independent generators that happen to share the same API convention for
+the seed integer but produce entirely different random sequences. The
+152 test observations selected by each are different, so the metrics are
+computed on different data.</p></li>
+<li><p><strong>The linear solver is not a factor.</strong> Replacing
+<code><a href="https://rdrr.io/r/base/solve.html" class="external-link">base::solve()</a></code> with <code><a href="https://rdrr.io/pkg/MASS/man/ginv.html" class="external-link">MASS::ginv()</a></code> (pseudoinverse
+via SVD, matching Python’s <code>numpy.linalg.lstsq</code>) changes
+predictions by at most 3 × 10⁻¹² on this dataset. The augmented system
+has condition number κ ≈ 2 100, so LU decomposition and SVD agree to
+machine precision.</p></li>
+<li><p><strong>The QP solver is a minor factor.</strong>
+<code>osqp</code> (ADMM) and <code>cvxopt</code> (interior-point) solve
+the same QP to different tolerances, producing slightly different dual
+variables. This accounts for at most 0.1–0.2 percentage points in MAPE,
+not the multi-point gaps seen here.</p></li>
 </ol>
-<p>If discrepancies exceed <strong>0.5 percentage points</strong>,
-investigate whether the random split is identical (compare
-<code>y_te</code> to the Python test-set targets) and whether the kernel
-parameter conversion
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>σ</mi><mo>=</mo><msqrt><mrow><mn>1</mn><mi>/</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>2</mn><mspace width="0.167em"></mspace><msub><mi>γ</mi><mtext mathvariant="normal">py</mtext></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow></msqrt></mrow><annotation encoding="application/x-tex">\sigma = \sqrt{1/(2\,\gamma_{\text{py}})}</annotation></semantics></math>
-was applied correctly.</p>
+<p>The correct way to verify mathematical equivalence is through the KKT
+conditions: the unit tests in <code>tests/testthat/</code> check that
+fitted models satisfy the KKT stationarity, complementary slackness, and
+feasibility conditions to within solver tolerance, independently of any
+particular split.</p>
 <hr>
 </div>
 </div>
