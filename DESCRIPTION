@@ -11,7 +11,7 @@ Description: Implements four support vector regression models derived from a
     and its symmetric counterpart. All models require strictly positive targets.
     The epsilon-SVR models are solved via quadratic programming (osqp) and the
     LS-SVR models via a linear system (base R). See Benavides-Herrera et al.
-    (2026) <doi:10.3390/math> for the mathematical derivations.
+    (2026, under review at MDPI Mathematics) for the mathematical derivations.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
