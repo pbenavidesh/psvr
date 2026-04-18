@@ -37,6 +37,12 @@ preferred-citation:
       given-names: Pablo
       email: pbenavides@iteso.mx
       orcid: "https://orcid.org/0000-0003-4926-4763"
+    - family-names: Álvarez-Álvarez
+      given-names: Gerardo
+    - family-names: Ruiz-Cruz
+      given-names: Riemann
+    - family-names: Sánchez-Torres
+      given-names: Juan Diego
   journal: "Mathematics"
   publisher:
     name: MDPI
