@@ -83,7 +83,10 @@ up an extra `½`.
 
 **Prediction:** `f(x) = ½ Σk βk Ks(xk, x) + b`
 
-**Implementation:** QP via `osqp` with `Ks` kernel matrix. Key files: `R/mape_sym_svr.R`.
+**Implementation:** QP via `osqp`. Build `Ks = Ω + a·Ω*` inline (no `½`), then pass
+`P = ¼·Ks` as the QP quadratic matrix — the `¼` factor is absorbed into `P` directly.
+Do **not** use `sym_kernel_matrix()` here; that helper returns `½(Ω + a·Ω*)` = `Ωs`,
+which is only correct for Model 4. Key files: `R/mape_sym_svr.R`.
 
 ---
 
@@ -174,9 +177,9 @@ Required for Models 2 and 4:
 
 1. [x] `CLAUDE.md` — this file
 2. [x] Package scaffolding: `DESCRIPTION`, `NAMESPACE`, directory structure
-3. [ ] `R/kernel.R` — `make_kernel()` helper
-4. [ ] `R/rmspe_lssvr.R` — Model 3: `rmspe_lssvr()` + `predict.psvr_rmspe()`
-5. [ ] `R/rmspe_sym_lssvr.R` — Model 4: `rmspe_sym_lssvr()` + `predict.psvr_rmspe_sym()`
+3. [x] `R/kernel.R` — `make_kernel()` helper
+4. [x] `R/rmspe_lssvr.R` — Model 3: `rmspe_lssvr()` + `predict.psvr_rmspe()`
+5. [x] `R/rmspe_sym_lssvr.R` — Model 4: `rmspe_sym_lssvr()` + `predict.psvr_rmspe_sym()`
 6. [ ] `R/mape_svr.R` — Model 1: `mape_svr()` + `predict.psvr_mape()`
 7. [ ] `R/mape_sym_svr.R` — Model 2: `mape_sym_svr()` + `predict.psvr_mape_sym()`
 8. [ ] `tests/` — testthat unit tests for all four models
