@@ -3,3 +3,5 @@
 ^psvr\.Rproj$
 ^\.Rproj\.user$
 ^.*\.pdf$
+^\.claude$
+^LICENSE\.md$
