@@ -37,3 +37,5 @@ Suggests:
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 URL: https://pbenavidesh.github.io/psvr/
+Config/Needs/website: rmarkdown, tsibbledata, tsibble, lubridate, ggplot2,
+    plotly, kableExtra, kernlab, scales, tidyr
