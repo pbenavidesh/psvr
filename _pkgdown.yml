@@ -53,6 +53,18 @@ reference:
       - rmspe_sym_lssvr
       - predict.psvr_rmspe_sym
 
+  - title: "Model methods"
+    desc: "S3 methods for inspecting and printing fitted psvr models."
+    contents:
+      - print.psvr_mape
+      - print.psvr_mape_sym
+      - print.psvr_rmspe
+      - print.psvr_rmspe_sym
+      - coef.psvr_mape
+      - coef.psvr_mape_sym
+      - coef.psvr_rmspe
+      - coef.psvr_rmspe_sym
+
   - title: "tidymodels / parsnip interface"
     desc: "Parsnip model specifications for use in tidymodels workflows."
     contents:
