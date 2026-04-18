@@ -8,6 +8,7 @@ date-released: "2026-04-18"
 license: MIT
 url: "https://github.com/pbenavidesh/psvr"
 repository-code: "https://github.com/pbenavidesh/psvr"
+doi: "10.5281/zenodo.19643526"
 authors:
   - family-names: Benavides-Herrera
     given-names: Pablo
