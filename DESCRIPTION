@@ -25,6 +25,7 @@ Suggests:
     dials,
     dplyr,
     knitr,
+    MASS,
     recipes,
     rmarkdown,
     rsample,
