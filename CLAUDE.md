@@ -180,9 +180,19 @@ Required for Models 2 and 4:
 3. [x] `R/kernel.R` — `make_kernel()` helper
 4. [x] `R/rmspe_lssvr.R` — Model 3: `rmspe_lssvr()` + `predict.psvr_rmspe()`
 5. [x] `R/rmspe_sym_lssvr.R` — Model 4: `rmspe_sym_lssvr()` + `predict.psvr_rmspe_sym()`
-6. [ ] `R/mape_svr.R` — Model 1: `mape_svr()` + `predict.psvr_mape()`
-7. [ ] `R/mape_sym_svr.R` — Model 2: `mape_sym_svr()` + `predict.psvr_mape_sym()`
-8. [ ] `tests/` — testthat unit tests for all four models
+6. [x] `R/mape_svr.R` — Model 1: `mape_svr()` + `predict.psvr_mape()`
+7. [x] `R/mape_sym_svr.R` — Model 2: `mape_sym_svr()` + `predict.psvr_mape_sym()`
+8. [x] `tests/` — testthat unit tests for all four models (84 tests, 0 failures)
+
+---
+
+## R environment
+
+- **R 4.5.2** at `C:\Program Files\R\R-4.5.2\bin\Rscript.exe`
+- Run from PowerShell: `& "C:\Program Files\R\R-4.5.2\bin\Rscript.exe" script.R`
+- Always use forward slashes or single-quoted strings in PowerShell to avoid `\U` Unicode escape errors
+- **osqp 1.0.0** uses `solve_osqp(P, q, A, l, u, pars)` directly — not `osqp(...)$solve()` (S7 object, old R6 API is gone)
+- Load package in R session: `devtools::load_all("C:/Users/behep/OneDrive - ITESO/PhD/00-Tesis/psvr")`
 
 ---
 

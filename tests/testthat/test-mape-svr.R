@@ -1,0 +1,85 @@
+set.seed(303)
+X_tr <- matrix(rnorm(30), 15, 2)
+y_tr <- abs(rnorm(15)) + 1
+K    <- make_kernel("rbf", sigma = 1)
+
+# ── shape and class ──────────────────────────────────────────────────────────
+
+test_that("mape_svr returns psvr_mape object with expected fields", {
+  fit <- mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5)
+  expect_s3_class(fit, "psvr_mape")
+  expect_named(fit, c("beta", "b", "X_sv", "y_sv", "kernel", "eps"))
+  expect_true(is.numeric(fit$beta))
+  expect_true(is.numeric(fit$b) && length(fit$b) == 1L)
+  expect_equal(ncol(fit$X_sv), ncol(X_tr))
+  expect_equal(nrow(fit$X_sv), length(fit$beta))
+  expect_equal(length(fit$y_sv), length(fit$beta))
+})
+
+test_that("predict.psvr_mape returns vector of correct length", {
+  fit   <- mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5)
+  X_new <- matrix(rnorm(10), 5, 2)
+  preds <- predict(fit, X_new)
+  expect_true(is.numeric(preds))
+  expect_length(preds, nrow(X_new))
+})
+
+# ── input validation ─────────────────────────────────────────────────────────
+
+test_that("mape_svr errors when any y <= 0", {
+  y_bad    <- y_tr
+  y_bad[5] <- -1
+  expect_error(mape_svr(X_tr, y_bad, kernel = K, C = 10, eps = 5),
+               "strictly positive")
+})
+
+test_that("mape_svr errors when any y == 0", {
+  y_bad    <- y_tr
+  y_bad[1] <- 0
+  expect_error(mape_svr(X_tr, y_bad, kernel = K, C = 10, eps = 5),
+               "strictly positive")
+})
+
+test_that("mape_svr errors when C <= 0", {
+  expect_error(mape_svr(X_tr, y_tr, kernel = K, C =  0, eps = 5), "`C`")
+  expect_error(mape_svr(X_tr, y_tr, kernel = K, C = -1, eps = 5), "`C`")
+})
+
+test_that("mape_svr errors when eps < 0", {
+  expect_error(mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = -1), "`eps`")
+})
+
+# ── box constraints: |βk| ≤ 100C/yk for all support vectors ─────────────────
+
+test_that("mape_svr dual variables satisfy box constraints", {
+  C   <- 5
+  fit <- mape_svr(X_tr, y_tr, kernel = K, C = C, eps = 5)
+
+  # Per-sample upper bound on |β| at each support vector
+  upper <- 100 * C / fit$y_sv
+
+  # Allow a small numerical tolerance from the QP solver
+  expect_true(all(abs(fit$beta) <= upper + 1e-4),
+              info = paste("max violation:",
+                           max(abs(fit$beta) - upper)))
+})
+
+# ── predictions are finite ───────────────────────────────────────────────────
+
+test_that("mape_svr predictions on training data are all finite", {
+  fit   <- mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5)
+  preds <- predict(fit, X_tr)
+  expect_true(all(is.finite(preds)))
+})
+
+# ── eps = 0 gives a tighter fit ──────────────────────────────────────────────
+
+test_that("mape_svr with eps = 0 fits training data more tightly than eps = 10", {
+  fit0  <- mape_svr(X_tr, y_tr, kernel = K, C = 50, eps =  0)
+  fit10 <- mape_svr(X_tr, y_tr, kernel = K, C = 50, eps = 10)
+
+  mape0  <- mean(abs(predict(fit0,  X_tr) - y_tr) / y_tr)
+  mape10 <- mean(abs(predict(fit10, X_tr) - y_tr) / y_tr)
+
+  expect_lt(mape0, mape10 + 1e-6)
+})

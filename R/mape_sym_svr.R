@@ -87,8 +87,7 @@ mape_sym_svr <- function(X, y, kernel, C, eps, a = 1, tol = 1e-5) {
     eps_rel  = 1e-8,
     max_iter = 10000L
   )
-  prob <- osqp::osqp(P, q, A, l, u, pars = settings)
-  res  <- prob$solve()
+  res <- osqp::solve_osqp(P, q, A, l, u, pars = settings)
 
   if (!startsWith(res$info$status, "solved")) {
     warning("osqp status: ", res$info$status)
@@ -133,6 +132,7 @@ mape_sym_svr <- function(X, y, kernel, C, eps, a = 1, tol = 1e-5) {
       beta   = beta[sv_idx],
       b      = b,
       X_sv   = X[sv_idx, , drop = FALSE],
+      y_sv   = y[sv_idx],
       kernel = kernel,
       eps    = eps,
       a      = a
