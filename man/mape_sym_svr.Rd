@@ -28,9 +28,13 @@ An object of class \code{"psvr_mape_sym"}, a list with components:
 \item{\code{beta}}{Numeric vector of non-zero dual differences \code{βk}.}
 \item{\code{b}}{Numeric scalar bias term.}
 \item{\code{X_sv}}{Numeric matrix of support vector inputs.}
+\item{\code{y_sv}}{Numeric vector of support vector targets.}
 \item{\code{kernel}}{The kernel function used.}
+\item{\code{C}}{The regularization parameter \code{C}.}
 \item{\code{eps}}{The \code{ε} value used.}
 \item{\code{a}}{The symmetry parameter.}
+\item{\code{n_train}}{Number of training observations.}
+\item{\code{p_train}}{Number of training features (columns).}
 }
 }
 \description{

@@ -8,21 +8,41 @@ K    <- make_kernel("rbf", sigma = 1)
 test_that("mape_sym_svr returns psvr_mape_sym object with expected fields", {
   fit <- mape_sym_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5, a = 1)
   expect_s3_class(fit, "psvr_mape_sym")
-  expect_named(fit, c("beta", "b", "X_sv", "y_sv", "kernel", "eps", "a"))
+  expect_named(fit, c("beta", "b", "X_sv", "y_sv", "kernel",
+                      "C", "eps", "a", "n_train", "p_train"))
   expect_true(is.numeric(fit$beta))
   expect_true(is.numeric(fit$b) && length(fit$b) == 1L)
   expect_equal(ncol(fit$X_sv), ncol(X_tr))
   expect_equal(nrow(fit$X_sv), length(fit$beta))
   expect_equal(length(fit$y_sv), length(fit$beta))
   expect_equal(fit$a, 1)
+  expect_equal(fit$C, 10)
+  expect_equal(fit$n_train, nrow(X_tr))
+  expect_equal(fit$p_train, ncol(X_tr))
 })
 
-test_that("predict.psvr_mape_sym returns vector of correct length", {
+test_that("predict.psvr_mape_sym returns plain numeric vector of correct length", {
   fit   <- mape_sym_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5, a = 1)
   X_new <- matrix(rnorm(10), 5, 2)
   preds <- predict(fit, X_new)
   expect_true(is.numeric(preds))
+  expect_true(is.vector(preds))
   expect_length(preds, nrow(X_new))
+})
+
+test_that("predict.psvr_mape_sym returns plain vector for single-row newdata", {
+  fit   <- mape_sym_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5, a = 1)
+  preds <- predict(fit, X_tr[1L, , drop = FALSE])
+  expect_true(is.vector(preds))
+  expect_length(preds, 1L)
+})
+
+# ── newdata column validation ────────────────────────────────────────────────
+
+test_that("predict.psvr_mape_sym errors on column mismatch", {
+  fit   <- mape_sym_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5, a = 1)
+  X_bad <- matrix(rnorm(20), 5, 4)
+  expect_error(predict(fit, X_bad), "4 columns but model was trained on 2")
 })
 
 # ── input validation ─────────────────────────────────────────────────────────
@@ -85,4 +105,27 @@ test_that("mape_sym_svr and mape_svr give different predictions (Ks != Ω)", {
   p2   <- predict(fit2, X_tr)
   # The two models use different kernel matrices so predictions will differ
   expect_false(isTRUE(all.equal(p1, p2, tolerance = 1e-6)))
+})
+
+# ── print() ──────────────────────────────────────────────────────────────────
+
+test_that("print.psvr_mape_sym produces output and returns object invisibly", {
+  fit <- mape_sym_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5, a = 1)
+  out <- capture.output(ret <- print(fit))
+  expect_true(length(out) > 0)
+  expect_identical(ret, fit)
+  expect_true(any(grepl("psvr_mape_sym", out)))
+  expect_true(any(grepl("Symmetry", out)))
+  expect_true(any(grepl("Support vectors", out)))
+})
+
+# ── coef() ───────────────────────────────────────────────────────────────────
+
+test_that("coef.psvr_mape_sym returns named list with alpha, b, X_sv", {
+  fit <- mape_sym_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5, a = 1)
+  co  <- coef(fit)
+  expect_named(co, c("alpha", "b", "X_sv"))
+  expect_identical(co$alpha, fit$beta)
+  expect_identical(co$b,     fit$b)
+  expect_identical(co$X_sv,  fit$X_sv)
 })

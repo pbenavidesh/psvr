@@ -22,6 +22,9 @@ An object of class \code{"psvr_rmspe"}, a list with components:
 \item{\code{b}}{Numeric scalar bias term.}
 \item{\code{X_train}}{The training matrix \code{X} (kept for prediction).}
 \item{\code{kernel}}{The kernel function used.}
+\item{\code{gamma}}{The regularization parameter \code{Γ}.}
+\item{\code{n_train}}{Number of training observations.}
+\item{\code{p_train}}{Number of training features (columns).}
 }
 }
 \description{

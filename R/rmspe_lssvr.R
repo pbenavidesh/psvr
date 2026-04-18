@@ -22,6 +22,9 @@
 #'     \item{`b`}{Numeric scalar bias term.}
 #'     \item{`X_train`}{The training matrix `X` (kept for prediction).}
 #'     \item{`kernel`}{The kernel function used.}
+#'     \item{`gamma`}{The regularization parameter `Γ`.}
+#'     \item{`n_train`}{Number of training observations.}
+#'     \item{`p_train`}{Number of training features (columns).}
 #'   }
 #'
 #' @examples
@@ -58,7 +61,10 @@ rmspe_lssvr <- function(X, y, kernel, gamma) {
       alpha   = sol[2L:(N + 1L)],
       b       = sol[1L],
       X_train = X,
-      kernel  = kernel
+      kernel  = kernel,
+      gamma   = gamma,
+      n_train = N,
+      p_train = ncol(X)
     ),
     class = "psvr_rmspe"
   )
@@ -82,11 +88,50 @@ rmspe_lssvr <- function(X, y, kernel, gamma) {
 #' @export
 predict.psvr_rmspe <- function(object, newdata, ...) {
   newdata <- as.matrix(newdata)
+  p <- ncol(newdata)
+  if (p != object$p_train)
+    stop(sprintf("newdata has %d column%s but model was trained on %d",
+                 p, if (p == 1L) "" else "s", object$p_train))
   M <- nrow(newdata)
   preds <- numeric(M)
   for (i in seq_len(M)) {
     kv <- kernel_matrix(object$kernel, object$X_train, newdata[i, , drop = FALSE])
     preds[i] <- sum(object$alpha * kv) + object$b
   }
-  preds
+  as.numeric(preds)
+}
+
+#' Print method for psvr_rmspe objects
+#'
+#' @param x An object of class `"psvr_rmspe"`.
+#' @param ... Ignored.
+#'
+#' @return `x`, invisibly.
+#'
+#' @export
+print.psvr_rmspe <- function(x, ...) {
+  ki    <- attr(x$kernel, "kernel_info")
+  kdesc <- .kernel_desc(ki)
+  cat(sprintf(
+    "\nLS-SVR with RMSPE loss  [psvr_rmspe]\n\n  Kernel:        %s\n  Gamma:         %g\n  Training obs.: %d\n\n",
+    kdesc, x$gamma, x$n_train
+  ))
+  invisible(x)
+}
+
+#' Extract coefficients from a psvr_rmspe model
+#'
+#' @param object An object of class `"psvr_rmspe"`.
+#' @param ... Ignored.
+#'
+#' @return A named list with components:
+#'   \describe{
+#'     \item{`alpha`}{Dual variables / Lagrange multipliers (length N).}
+#'     \item{`b`}{Bias term.}
+#'     \item{`X_sv`}{Training input matrix (all N observations).}
+#'   }
+#'
+#' @export
+coef.psvr_rmspe <- function(object, ...) {
+  list(alpha = object$alpha, b = object$b, X_sv = object$X_train)
 }

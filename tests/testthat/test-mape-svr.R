@@ -8,20 +8,40 @@ K    <- make_kernel("rbf", sigma = 1)
 test_that("mape_svr returns psvr_mape object with expected fields", {
   fit <- mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5)
   expect_s3_class(fit, "psvr_mape")
-  expect_named(fit, c("beta", "b", "X_sv", "y_sv", "kernel", "eps"))
+  expect_named(fit, c("beta", "b", "X_sv", "y_sv", "kernel",
+                      "C", "eps", "n_train", "p_train"))
   expect_true(is.numeric(fit$beta))
   expect_true(is.numeric(fit$b) && length(fit$b) == 1L)
   expect_equal(ncol(fit$X_sv), ncol(X_tr))
   expect_equal(nrow(fit$X_sv), length(fit$beta))
   expect_equal(length(fit$y_sv), length(fit$beta))
+  expect_equal(fit$C, 10)
+  expect_equal(fit$n_train, nrow(X_tr))
+  expect_equal(fit$p_train, ncol(X_tr))
 })
 
-test_that("predict.psvr_mape returns vector of correct length", {
+test_that("predict.psvr_mape returns plain numeric vector of correct length", {
   fit   <- mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5)
   X_new <- matrix(rnorm(10), 5, 2)
   preds <- predict(fit, X_new)
   expect_true(is.numeric(preds))
+  expect_true(is.vector(preds))
   expect_length(preds, nrow(X_new))
+})
+
+test_that("predict.psvr_mape returns plain vector for single-row newdata", {
+  fit   <- mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5)
+  preds <- predict(fit, X_tr[1L, , drop = FALSE])
+  expect_true(is.vector(preds))
+  expect_length(preds, 1L)
+})
+
+# ── newdata column validation ────────────────────────────────────────────────
+
+test_that("predict.psvr_mape errors on column mismatch", {
+  fit   <- mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5)
+  X_bad <- matrix(rnorm(15), 5, 3)
+  expect_error(predict(fit, X_bad), "3 columns but model was trained on 2")
 })
 
 # ── input validation ─────────────────────────────────────────────────────────
@@ -82,4 +102,27 @@ test_that("mape_svr with eps = 0 fits training data more tightly than eps = 10",
   mape10 <- mean(abs(predict(fit10, X_tr) - y_tr) / y_tr)
 
   expect_lt(mape0, mape10 + 1e-6)
+})
+
+# ── print() ──────────────────────────────────────────────────────────────────
+
+test_that("print.psvr_mape produces output and returns object invisibly", {
+  fit <- mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5)
+  out <- capture.output(ret <- print(fit))
+  expect_true(length(out) > 0)
+  expect_identical(ret, fit)
+  expect_true(any(grepl("psvr_mape", out)))
+  expect_true(any(grepl("C", out)))
+  expect_true(any(grepl("Support vectors", out)))
+})
+
+# ── coef() ───────────────────────────────────────────────────────────────────
+
+test_that("coef.psvr_mape returns named list with alpha, b, X_sv", {
+  fit <- mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5)
+  co  <- coef(fit)
+  expect_named(co, c("alpha", "b", "X_sv"))
+  expect_identical(co$alpha, fit$beta)
+  expect_identical(co$b,     fit$b)
+  expect_identical(co$X_sv,  fit$X_sv)
 })

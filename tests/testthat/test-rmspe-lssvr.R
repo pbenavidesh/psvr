@@ -8,17 +8,37 @@ K    <- make_kernel("rbf", sigma = 1)
 test_that("rmspe_lssvr returns psvr_rmspe object with expected fields", {
   fit <- rmspe_lssvr(X_tr, y_tr, kernel = K, gamma = 1)
   expect_s3_class(fit, "psvr_rmspe")
-  expect_named(fit, c("alpha", "b", "X_train", "kernel"))
+  expect_named(fit, c("alpha", "b", "X_train", "kernel",
+                      "gamma", "n_train", "p_train"))
   expect_length(fit$alpha, nrow(X_tr))
   expect_true(is.numeric(fit$b) && length(fit$b) == 1L)
+  expect_equal(fit$gamma, 1)
+  expect_equal(fit$n_train, nrow(X_tr))
+  expect_equal(fit$p_train, ncol(X_tr))
 })
 
-test_that("predict.psvr_rmspe returns vector of correct length", {
+test_that("predict.psvr_rmspe returns plain numeric vector of correct length", {
   fit   <- rmspe_lssvr(X_tr, y_tr, kernel = K, gamma = 1)
   X_new <- matrix(rnorm(10), 5, 2)
   preds <- predict(fit, X_new)
   expect_true(is.numeric(preds))
+  expect_true(is.vector(preds))
   expect_length(preds, nrow(X_new))
+})
+
+test_that("predict.psvr_rmspe returns plain vector for single-row newdata", {
+  fit   <- rmspe_lssvr(X_tr, y_tr, kernel = K, gamma = 1)
+  preds <- predict(fit, X_tr[1L, , drop = FALSE])
+  expect_true(is.vector(preds))
+  expect_length(preds, 1L)
+})
+
+# ── newdata column validation ────────────────────────────────────────────────
+
+test_that("predict.psvr_rmspe errors on column mismatch", {
+  fit   <- rmspe_lssvr(X_tr, y_tr, kernel = K, gamma = 1)
+  X_bad <- matrix(rnorm(5), 5, 1)
+  expect_error(predict(fit, X_bad), "1 column but model was trained on 2")
 })
 
 # ── input validation ─────────────────────────────────────────────────────────
@@ -60,4 +80,26 @@ test_that("rmspe_lssvr solution satisfies the KKT equality f(xk) + ek = yk", {
 test_that("rmspe_lssvr solution satisfies balance condition sum(alpha) == 0", {
   fit <- rmspe_lssvr(X_tr, y_tr, kernel = K, gamma = 1)
   expect_equal(sum(fit$alpha), 0, tolerance = 1e-10)
+})
+
+# ── print() ──────────────────────────────────────────────────────────────────
+
+test_that("print.psvr_rmspe produces output and returns object invisibly", {
+  fit <- rmspe_lssvr(X_tr, y_tr, kernel = K, gamma = 1)
+  out <- capture.output(ret <- print(fit))
+  expect_true(length(out) > 0)
+  expect_identical(ret, fit)
+  expect_true(any(grepl("psvr_rmspe", out)))
+  expect_true(any(grepl("Gamma", out)))
+})
+
+# ── coef() ───────────────────────────────────────────────────────────────────
+
+test_that("coef.psvr_rmspe returns named list with alpha, b, X_sv", {
+  fit <- rmspe_lssvr(X_tr, y_tr, kernel = K, gamma = 1)
+  co  <- coef(fit)
+  expect_named(co, c("alpha", "b", "X_sv"))
+  expect_identical(co$alpha, fit$alpha)
+  expect_identical(co$b,     fit$b)
+  expect_identical(co$X_sv,  fit$X_train)
 })

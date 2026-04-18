@@ -33,9 +33,13 @@
 #'     \item{`beta`}{Numeric vector of non-zero dual differences `βk`.}
 #'     \item{`b`}{Numeric scalar bias term.}
 #'     \item{`X_sv`}{Numeric matrix of support vector inputs.}
+#'     \item{`y_sv`}{Numeric vector of support vector targets.}
 #'     \item{`kernel`}{The kernel function used.}
+#'     \item{`C`}{The regularization parameter `C`.}
 #'     \item{`eps`}{The `ε` value used.}
 #'     \item{`a`}{The symmetry parameter.}
+#'     \item{`n_train`}{Number of training observations.}
+#'     \item{`p_train`}{Number of training features (columns).}
 #'   }
 #'
 #' @examples
@@ -129,13 +133,16 @@ mape_sym_svr <- function(X, y, kernel, C, eps, a = 1, tol = 1e-5) {
 
   structure(
     list(
-      beta   = beta[sv_idx],
-      b      = b,
-      X_sv   = X[sv_idx, , drop = FALSE],
-      y_sv   = y[sv_idx],
-      kernel = kernel,
-      eps    = eps,
-      a      = a
+      beta    = beta[sv_idx],
+      b       = b,
+      X_sv    = X[sv_idx, , drop = FALSE],
+      y_sv    = y[sv_idx],
+      kernel  = kernel,
+      C       = C,
+      eps     = eps,
+      a       = a,
+      n_train = N,
+      p_train = ncol(X)
     ),
     class = "psvr_mape_sym"
   )
@@ -163,13 +170,54 @@ mape_sym_svr <- function(X, y, kernel, C, eps, a = 1, tol = 1e-5) {
 #' @export
 predict.psvr_mape_sym <- function(object, newdata, ...) {
   newdata <- as.matrix(newdata)
-  M       <- nrow(newdata)
-  preds   <- numeric(M)
+  p <- ncol(newdata)
+  if (p != object$p_train)
+    stop(sprintf("newdata has %d column%s but model was trained on %d",
+                 p, if (p == 1L) "" else "s", object$p_train))
+  M     <- nrow(newdata)
+  preds <- numeric(M)
   for (i in seq_len(M)) {
     # sym_kernel_vector returns ½·Ks(xk, x) for each support vector k
     kv       <- sym_kernel_vector(object$kernel, object$X_sv,
                                   newdata[i, ], object$a)
     preds[i] <- sum(object$beta * kv) + object$b
   }
-  preds
+  as.numeric(preds)
+}
+
+#' Print method for psvr_mape_sym objects
+#'
+#' @param x An object of class `"psvr_mape_sym"`.
+#' @param ... Ignored.
+#'
+#' @return `x`, invisibly.
+#'
+#' @export
+print.psvr_mape_sym <- function(x, ...) {
+  ki    <- attr(x$kernel, "kernel_info")
+  kdesc <- .kernel_desc(ki)
+  nsv   <- length(x$beta)
+  sym   <- if (x$a == 1L) "even  (a = 1)" else "odd   (a = -1)"
+  cat(sprintf(
+    "\nSymmetric epsilon-SVR with MAPE loss  [psvr_mape_sym]\n\n  Kernel:          %s\n  C:               %g\n  eps:             %g\n  Symmetry:        %s\n  Training obs.:   %d\n  Support vectors: %d (%.1f%%)\n\n",
+    kdesc, x$C, x$eps, sym, x$n_train, nsv, 100 * nsv / x$n_train
+  ))
+  invisible(x)
+}
+
+#' Extract coefficients from a psvr_mape_sym model
+#'
+#' @param object An object of class `"psvr_mape_sym"`.
+#' @param ... Ignored.
+#'
+#' @return A named list with components:
+#'   \describe{
+#'     \item{`alpha`}{Dual variable differences `βk = αk − αk*` for support vectors.}
+#'     \item{`b`}{Bias term.}
+#'     \item{`X_sv`}{Support vector input matrix.}
+#'   }
+#'
+#' @export
+coef.psvr_mape_sym <- function(object, ...) {
+  list(alpha = object$beta, b = object$b, X_sv = object$X_sv)
 }

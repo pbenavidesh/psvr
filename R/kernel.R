@@ -40,7 +40,7 @@
 make_kernel <- function(type = c("rbf", "linear", "polynomial"),
                         sigma = 1, degree = 3L, coef0 = 1) {
   type <- match.arg(type)
-  switch(
+  fn <- switch(
     type,
     rbf = {
       if (sigma <= 0) stop("`sigma` must be positive")
@@ -59,6 +59,9 @@ make_kernel <- function(type = c("rbf", "linear", "polynomial"),
       function(xi, xj) (sum(xi * xj) + coef0)^degree
     }
   )
+  attr(fn, "kernel_info") <- list(type = type, sigma = sigma,
+                                  degree = as.integer(degree), coef0 = coef0)
+  fn
 }
 
 #' Compute a kernel matrix between two sets of points

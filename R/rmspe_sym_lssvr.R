@@ -30,7 +30,10 @@
 #'     \item{`b`}{Numeric scalar bias term.}
 #'     \item{`X_train`}{The training matrix `X` (kept for prediction).}
 #'     \item{`kernel`}{The kernel function used.}
+#'     \item{`gamma`}{The regularization parameter `Γ`.}
 #'     \item{`a`}{The symmetry parameter.}
+#'     \item{`n_train`}{Number of training observations.}
+#'     \item{`p_train`}{Number of training features (columns).}
 #'   }
 #'
 #' @examples
@@ -69,7 +72,10 @@ rmspe_sym_lssvr <- function(X, y, kernel, gamma, a = 1) {
       b       = sol[1L],
       X_train = X,
       kernel  = kernel,
-      a       = a
+      gamma   = gamma,
+      a       = a,
+      n_train = N,
+      p_train = ncol(X)
     ),
     class = "psvr_rmspe_sym"
   )
@@ -96,11 +102,51 @@ rmspe_sym_lssvr <- function(X, y, kernel, gamma, a = 1) {
 #' @export
 predict.psvr_rmspe_sym <- function(object, newdata, ...) {
   newdata <- as.matrix(newdata)
+  p <- ncol(newdata)
+  if (p != object$p_train)
+    stop(sprintf("newdata has %d column%s but model was trained on %d",
+                 p, if (p == 1L) "" else "s", object$p_train))
   M <- nrow(newdata)
   preds <- numeric(M)
   for (i in seq_len(M)) {
     kv <- sym_kernel_vector(object$kernel, object$X_train, newdata[i, ], object$a)
     preds[i] <- sum(object$alpha * kv) + object$b
   }
-  preds
+  as.numeric(preds)
+}
+
+#' Print method for psvr_rmspe_sym objects
+#'
+#' @param x An object of class `"psvr_rmspe_sym"`.
+#' @param ... Ignored.
+#'
+#' @return `x`, invisibly.
+#'
+#' @export
+print.psvr_rmspe_sym <- function(x, ...) {
+  ki    <- attr(x$kernel, "kernel_info")
+  kdesc <- .kernel_desc(ki)
+  sym   <- if (x$a == 1L) "even  (a = 1)" else "odd   (a = -1)"
+  cat(sprintf(
+    "\nSymmetric LS-SVR with RMSPE loss  [psvr_rmspe_sym]\n\n  Kernel:        %s\n  Gamma:         %g\n  Symmetry:      %s\n  Training obs.: %d\n\n",
+    kdesc, x$gamma, sym, x$n_train
+  ))
+  invisible(x)
+}
+
+#' Extract coefficients from a psvr_rmspe_sym model
+#'
+#' @param object An object of class `"psvr_rmspe_sym"`.
+#' @param ... Ignored.
+#'
+#' @return A named list with components:
+#'   \describe{
+#'     \item{`alpha`}{Dual variables / Lagrange multipliers (length N).}
+#'     \item{`b`}{Bias term.}
+#'     \item{`X_sv`}{Training input matrix (all N observations).}
+#'   }
+#'
+#' @export
+coef.psvr_rmspe_sym <- function(object, ...) {
+  list(alpha = object$alpha, b = object$b, X_sv = object$X_train)
 }
