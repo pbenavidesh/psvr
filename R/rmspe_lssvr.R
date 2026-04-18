@@ -1,0 +1,92 @@
+#' Fit LS-SVR with RMSPE loss (Model 3)
+#'
+#' Solves the linear system derived in Theorem 3 of Benavides-Herrera et al.
+#' (2026). The primal objective is
+#' `½‖ω‖² + (Γ/2) Σ eₖ²/yₖ²`, leading to the (N+1)×(N+1) system
+#'
+#' ```
+#' [ 0   1ᵀ     ] [ b ]   [ 0 ]
+#' [ 1   Ω + YΓ ] [ α ] = [ y ]
+#' ```
+#'
+#' where `YΓ = diag(y₁²/Γ, …, yN²/Γ)` is added to the diagonal of Ω.
+#'
+#' @param X Numeric matrix of training inputs, one observation per row (N × p).
+#' @param y Numeric vector of training targets, length N. Must satisfy `y > 0`.
+#' @param kernel A kernel function created by [make_kernel()].
+#' @param gamma Regularization parameter `Γ > 0`.
+#'
+#' @return An object of class `"psvr_rmspe"`, a list with components:
+#'   \describe{
+#'     \item{`alpha`}{Numeric vector of dual variables (length N).}
+#'     \item{`b`}{Numeric scalar bias term.}
+#'     \item{`X_train`}{The training matrix `X` (kept for prediction).}
+#'     \item{`kernel`}{The kernel function used.}
+#'   }
+#'
+#' @examples
+#' X <- matrix(c(1, 2, 3, 4, 5, 6), ncol = 2)
+#' y <- c(2.1, 3.8, 6.2)
+#' K <- make_kernel("rbf", sigma = 1)
+#' fit <- rmspe_lssvr(X, y, kernel = K, gamma = 1)
+#' predict(fit, X)
+#'
+#' @export
+rmspe_lssvr <- function(X, y, kernel, gamma) {
+  X <- as.matrix(X)
+  y <- as.numeric(y)
+  if (!all(y > 0)) stop("all targets `y` must be strictly positive")
+  if (gamma <= 0)  stop("`gamma` must be positive")
+
+  N <- nrow(X)
+
+  Omega <- kernel_matrix(kernel, X)
+  diag(Omega) <- diag(Omega) + y^2 / gamma   # add YΓ to diagonal in place
+
+  # Augmented (N+1)×(N+1) system: [0, 1ᵀ; 1, Ω+YΓ][b; α] = [0; y]
+  A <- matrix(0.0, N + 1L, N + 1L)
+  A[1L, 2L:(N + 1L)] <- 1.0           # top row:    [0, 1ᵀ]
+  A[2L:(N + 1L), 1L] <- 1.0           # left col:   [0; 1]
+  A[2L:(N + 1L), 2L:(N + 1L)] <- Omega
+
+  rhs <- c(0.0, y)
+
+  sol <- solve(A, rhs)
+
+  structure(
+    list(
+      alpha   = sol[2L:(N + 1L)],
+      b       = sol[1L],
+      X_train = X,
+      kernel  = kernel
+    ),
+    class = "psvr_rmspe"
+  )
+}
+
+#' Predict from a fitted LS-SVR with RMSPE model
+#'
+#' @param object An object of class `"psvr_rmspe"` from [rmspe_lssvr()].
+#' @param newdata Numeric matrix of new inputs, one observation per row (M × p).
+#' @param ... Ignored.
+#'
+#' @return Numeric vector of length M with predicted values.
+#'
+#' @examples
+#' X <- matrix(c(1, 2, 3, 4, 5, 6), ncol = 2)
+#' y <- c(2.1, 3.8, 6.2)
+#' K <- make_kernel("rbf", sigma = 1)
+#' fit <- rmspe_lssvr(X, y, kernel = K, gamma = 1)
+#' predict(fit, X)
+#'
+#' @export
+predict.psvr_rmspe <- function(object, newdata, ...) {
+  newdata <- as.matrix(newdata)
+  M <- nrow(newdata)
+  preds <- numeric(M)
+  for (i in seq_len(M)) {
+    kv <- kernel_matrix(object$kernel, object$X_train, newdata[i, , drop = FALSE])
+    preds[i] <- sum(object$alpha * kv) + object$b
+  }
+  preds
+}
