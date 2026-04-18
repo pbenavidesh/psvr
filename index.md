@@ -86,4 +86,4 @@ a linear baseline — see
 Benavides-Herrera, P., Álvarez-Álvarez, G., Ruiz-Cruz, R., &
 Sánchez-Torres, J. D. (2026). A unified family of percentage-error
 support vector regression models with symmetric kernel extensions.
-*Mathematics*, MDPI. <https://doi.org/10.3390/math>
+*Mathematics*, MDPI. (under review)
