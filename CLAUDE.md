@@ -188,8 +188,8 @@ Required for Models 2 and 4:
 
 ## R environment
 
-- **R 4.5.2** at `C:\Program Files\R\R-4.5.2\bin\Rscript.exe`
-- Run from PowerShell: `& "C:\Program Files\R\R-4.5.2\bin\Rscript.exe" script.R`
+- **R 4.5.3** at `C:\Program Files\R\R-4.5.3\bin\Rscript.exe`
+- Run from PowerShell: `& "C:\Program Files\R\R-4.5.3\bin\Rscript.exe" script.R`
 - Always use forward slashes or single-quoted strings in PowerShell to avoid `\U` Unicode escape errors
 - **osqp 1.0.0** uses `solve_osqp(P, q, A, l, u, pars)` directly — not `osqp(...)$solve()` (S7 object, old R6 API is gone)
 - Load package in R session: `devtools::load_all("C:/Users/behep/OneDrive - ITESO/PhD/00-Tesis/psvr")`
