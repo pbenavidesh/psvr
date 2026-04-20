@@ -8,11 +8,9 @@ library(tsibble)
 library(lubridate)
 library(dplyr)
 library(ggplot2)
-library(plotly)
 library(knitr)
 library(kableExtra)
 library(kernlab)
-library(scales)
 library(psvr)
 
 theme_set(
@@ -24,7 +22,7 @@ theme_set(
     )
 )
 
-vpal <- viridis_pal(option = "D")(6)
+vpal <- scales::viridis_pal(option = "D")(6)
 
 mape_fn  <- function(y, yhat) mean(abs(y - yhat) / y) * 100
 rmspe_fn <- function(y, yhat) sqrt(mean(((y - yhat) / y)^2)) * 100
@@ -54,14 +52,14 @@ elec_daily <- vic_elec |>
   mutate(Date = as.Date(Time)) |>
   group_by(Date) |>
   summarise(
-1    Demand      = sum(Demand,       na.rm = TRUE),
-2    Temperature = mean(Temperature, na.rm = TRUE),
-3    IsHoliday   = any(Holiday),
+    Demand      = sum(Demand,       na.rm = TRUE),   # sum 48 half-hourly readings → MWh/day
+    Temperature = mean(Temperature, na.rm = TRUE),   # daily average temperature
+    IsHoliday   = any(Holiday),                      # TRUE if any half-hour is a public holiday
     .groups = "drop"
   ) |>
   mutate(
-4    Temperature2 = Temperature^2,
-5    DayOfWeek    = wday(Date, week_start = 1),
+    Temperature2 = Temperature^2,                    # U-shaped demand-temperature relationship
+    DayOfWeek    = wday(Date, week_start = 1),       # Monday = 1, Sunday = 7
     Month        = month(Date),
     IsWeekend    = as.integer(DayOfWeek >= 6),
     IsHoliday    = as.integer(IsHoliday)
@@ -69,59 +67,39 @@ elec_daily <- vic_elec |>
 
 cat(sprintf("Rows: %d  |  Dates: %s – %s\n",
             nrow(elec_daily), min(elec_daily$Date), max(elec_daily$Date)))
+```
+
+    Rows: 1097  |  Dates: 2011-12-31 – 2014-12-31
+
+``` r
 cat(sprintf("Demand range: %.0f – %.0f MWh/day\n",
             min(elec_daily$Demand), max(elec_daily$Demand)))
+```
+
+    Demand range: 82532 – 351460 MWh/day
+
+``` r
 cat(sprintf("Public holidays: %d  |  Weekend days: %d\n",
             sum(elec_daily$IsHoliday), sum(elec_daily$IsWeekend)))
 ```
 
-- 1:
-
-  Sum all 48 half-hourly readings to get total daily demand in MWh.
-
-- 2:
-
-  Average temperature across the day.
-
-- 3:
-
-  `Holiday` in `vic_elec` is a logical vector — `any(Holiday)` is `TRUE`
-  if any half-hour in that day is flagged as a public holiday.
-
-- 4:
-
-  Squared temperature to capture the U-shaped demand–temperature
-  relationship (high AC demand in summer, high heating demand in
-  winter).
-
-- 5:
-
-  `week_start = 1` → Monday = 1, Sunday = 7.
-
-    Rows: 1097  |  Dates: 2011-12-31 – 2014-12-31
-    Demand range: 82532 – 351460 MWh/day
     Public holidays: 58  |  Weekend days: 314
 
 Code
 
 ``` r
-p_ts <- elec_daily |>
-  ggplot(aes(x = Date, y = Demand / 1e3, colour = Temperature,
-             text = paste0("Date: ", Date,
-                           "<br>Demand: ", round(Demand / 1e3, 1), " GWh",
-                           "<br>Temp: ", round(Temperature, 1), "°C"))) +
+elec_daily |>
+  ggplot(aes(x = Date, y = Demand / 1e3, colour = Temperature)) +
   geom_line(linewidth = 0.4, alpha = 0.85) +
   scale_colour_viridis_c(option = "C", name = "Temp (°C)") +
-  scale_y_continuous(labels = comma) +
+  scale_y_continuous(labels = scales::label_comma()) +
   labs(x = NULL, y = "Demand (GWh/day)",
        title = "Victoria daily electricity demand — 2012–2014",
        subtitle = "Colour = mean daily temperature") +
-  theme_bw() +
   theme(legend.position = "right")
-
-ggplotly(p_ts, tooltip = "text") |>
-  layout(hoverlabel = list(bgcolor = "white"), width = NULL, height = 450)
 ```
+
+![](electricity-forecasting_files/figure-html/fig-ts-1.png)
 
 Figure 1: Daily electricity demand in Victoria, 2012–2014. Colour
 encodes mean daily temperature. The summer (Dec–Feb) heat-wave spikes
@@ -166,7 +144,7 @@ tibble(
        title = "Asymmetric impact of a fixed 10 GWh error",
        subtitle = "Same absolute error — very different relative cost") +
   scale_y_continuous(labels = function(x) paste0(x, "%")) +
-  scale_x_continuous(labels = comma)
+  scale_x_continuous(labels = scales::label_comma())
 ```
 
 ![](electricity-forecasting_files/figure-html/fig-asymmetric-cost-1.png)
@@ -337,7 +315,7 @@ temporal split — all of 2012–2013 for training, all of 2014 for testing
 feature_cols <- c("Temperature", "Temperature2", "DayOfWeek",
                   "Month", "IsWeekend", "IsHoliday")
 
-1train <- elec_daily |> filter(year(Date) <= 2013)
+train <- elec_daily |> filter(year(Date) <= 2013)   # strict temporal split; no shuffling
 test  <- elec_daily |> filter(year(Date) == 2014)
 
 X_raw_tr <- as.matrix(train[, feature_cols])
@@ -345,46 +323,42 @@ y_tr     <- train$Demand
 X_raw_te <- as.matrix(test[, feature_cols])
 y_te     <- test$Demand
 
-2# Standardise features using training statistics only
+# Standardise using training statistics only (apply same shift/scale to test set)
 cm   <- colMeans(X_raw_tr)
 cs   <- apply(X_raw_tr, 2, sd)
 X_tr <- scale(X_raw_tr, center = cm, scale = cs)
 X_te <- scale(X_raw_te, center = cm, scale = cs)
 
-3# Scale targets to ~ [1.6, 3.5] for numerical conditioning
+# Scale targets to ~[1.6, 3.5] for numerical conditioning; multiply back after prediction
 y_scale <- 1e5
 y_tr_s  <- y_tr / y_scale
 y_te_s  <- y_te / y_scale
 
 cat(sprintf("Train: %d days  (%s – %s)\n",
             nrow(train), min(train$Date), max(train$Date)))
+```
+
+    Train: 732 days  (2011-12-31 – 2013-12-31)
+
+``` r
 cat(sprintf("Test:  %d days  (%s – %s)\n",
             nrow(test),  min(test$Date),  max(test$Date)))
+```
+
+    Test:  365 days  (2014-01-01 – 2014-12-31)
+
+``` r
 cat(sprintf("Scaled target range (train): %.3f – %.3f\n",
             min(y_tr_s), max(y_tr_s)))
+```
+
+    Scaled target range (train): 0.825 – 3.162
+
+``` r
 cat(sprintf("Scaled target range (test):  %.3f – %.3f\n",
             min(y_te_s), max(y_te_s)))
 ```
 
-- 1:
-
-  A strict temporal split: no shuffling, future data never touches
-  training.
-
-- 2:
-
-  `colMeans` and `sd` computed **on training data only**, then applied
-  identically to the test set. This is the only safe way to standardize.
-
-- 3:
-
-  Raw daily demand (~160,000–305,000 MWh) is divided by 1e5 to give
-  scaled targets ~1.6–3.5. Predictions from each model are multiplied by
-  1e5 to recover MWh units before metric evaluation.
-
-    Train: 732 days  (2011-12-31 – 2013-12-31)
-    Test:  365 days  (2014-01-01 – 2014-12-31)
-    Scaled target range (train): 0.825 – 3.162
     Scaled target range (test):  1.050 – 3.515
 
 Code
@@ -398,7 +372,7 @@ elec_daily |>
            ymin = -Inf, ymax = Inf, fill = "grey90", alpha = 0.5) +
   geom_line(linewidth = 0.35, alpha = 0.8) +
   scale_colour_manual(values = c(vpal[2], vpal[5]), name = NULL) +
-  scale_y_continuous(labels = comma) +
+  scale_y_continuous(labels = scales::label_comma()) +
   annotate("text", x = as.Date("2014-07-01"), y = 315,
            label = "Test (2014)", colour = "grey40", size = 3.5) +
   labs(x = NULL, y = "Demand (GWh/day)",
@@ -428,34 +402,17 @@ standard RBF kernel and uniform box constraints. This is the model most
 practitioners would reach for first.
 
 ``` r
-1fit_base <- ksvm(
+fit_base <- ksvm(                             # kernlab eps-SVR, uniform |beta_k| <= C for all k
   X_tr, y_tr_s,
   type    = "eps-svr",
   kernel  = "rbfdot",
-2  kpar    = list(sigma = 1),
+  kpar    = list(sigma = 1),                  # sigma=1: exp(-3)≈0.05, useful for 6-dim std. data
   C       = 10,
   epsilon = 0.05,
-3  scaled  = FALSE
+  scaled  = FALSE                             # already standardised externally
 )
 fit_base
 ```
-
-- 1:
-
-  [`ksvm()`](https://rdrr.io/pkg/kernlab/man/ksvm.html) from **kernlab**
-  — classical ε-SVR, **uniform** box constraints $|\beta_{k}| \leq C$
-  for all $k$.
-
-- 2:
-
-  RBF sigma = 1 on 6-dimensional standardized features (typical squared
-  distance between points is ~6; sigma = 1 gives exp(-3) ≈ 0.05 which is
-  in a useful range).
-
-- 3:
-
-  `scaled = FALSE`: we already standardised externally so kernlab should
-  not re-scale.
 
     Support Vector Machine object of class "ksvm"
 
@@ -494,8 +451,8 @@ tibble(actual = y_te / 1e3, pred = pred_base / 1e3,
   geom_point(alpha = 0.5, size = 1.5) +
   geom_abline(slope = 1, intercept = 0, colour = "grey30", linetype = "dashed") +
   scale_colour_viridis_d(option = "D", name = "Month") +
-  scale_x_continuous(labels = comma) +
-  scale_y_continuous(labels = comma) +
+  scale_x_continuous(labels = scales::label_comma()) +
+  scale_y_continuous(labels = scales::label_comma()) +
   labs(x = "Actual demand (GWh/day)", y = "Predicted demand (GWh/day)",
        title = "Baseline: classical ε-SVR",
        subtitle = sprintf("MAPE = %.2f%%   R² = %.4f",
@@ -519,62 +476,36 @@ $Y_{\Gamma} = \text{diag}(y_{1}^{2}/\Gamma,\ldots,y_{N}^{2}/\Gamma)$,
 causing the linear system to directly minimise the root mean squared
 percentage error.
 
-Code
-
 ``` r
-cf_m3 <- coef(fit_m3)
-# alpha: N dual variables; each training day's kernel contribution is weighted by alpha_k
-#        in f(x) = sum_k alpha_k K(x_k, x) + b  (no sparsity — every day contributes)
-# b:     bias / intercept term
-# X_sv:  all N training inputs stored for prediction
-cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
-            cf_m3$b, min(cf_m3$alpha), max(cf_m3$alpha)))
-```
+K3 <- make_kernel("rbf", sigma = 2)    # closure accepts negated inputs for symmetric models
 
-    b = 2.1212  |  alpha range: [-42.5000, 22.5903]
-
-``` r
-1K3 <- make_kernel("rbf", sigma = 2)
-
-2fit_m3 <- rmspe_lssvr(
+fit_m3 <- rmspe_lssvr(                 # solves (N+1)x(N+1) linear system via base::solve()
   X_tr, y_tr_s,
   kernel = K3,
-3  gamma  = 500
+  gamma  = 500                         # larger Gamma → YGamma shrinks → tighter fit
 )
 
-4print(fit_m3)
+print(fit_m3)                          # reports kernel, Gamma, and training size
 ```
-
-- 1:
-
-  RBF kernel with $\sigma = 2$. The
-  [`make_kernel()`](https://pbenavidesh.github.io/psvr/reference/make_kernel.md)
-  factory returns a closure that accepts arbitrary real inputs,
-  including the negated vectors needed by the symmetric models.
-
-- 2:
-
-  [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
-  solves the $(N + 1) \times (N + 1)$ linear system in a single call to
-  [`base::solve()`](https://rdrr.io/r/base/solve.html). No QP solver
-  needed.
-
-- 3:
-
-  Regularisation parameter $\Gamma = 500$ on the **scaled** targets.
-  Larger $\Gamma$ → the $Y_{\Gamma}$ diagonal shrinks → tighter
-  interpolation of training data.
-
-- 4:
-
-  The new [`print()`](https://rdrr.io/r/base/print.html) method confirms
-  kernel, $\Gamma$, and training size at a glance.
 
     LS-SVR with RMSPE loss  [psvr_rmspe]
 
       Kernel:        RBF (sigma = 2)
       Gamma:         500
       Training obs.: 732
+
+Code
+
+``` r
+cf_m3 <- coef(fit_m3)
+# alpha: N dual variables weighted by alpha_k in f(x) = sum_k alpha_k K(x_k,x) + b
+# b:     bias / intercept term
+# X_sv:  all N training inputs (LS-SVR has no sparsity)
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_m3$b, min(cf_m3$alpha), max(cf_m3$alpha)))
+```
+
+    b = 2.1212  |  alpha range: [-42.5000, 22.5903]
 
 > **Mathematical detail: Theorem 3 linear system**
 >
@@ -624,8 +555,8 @@ bind_rows(
   geom_point(alpha = 0.35, size = 1.2) +
   geom_abline(slope = 1, intercept = 0, colour = "grey30", linetype = "dashed") +
   scale_colour_manual(values = c(vpal[2], vpal[5]), name = NULL) +
-  scale_x_continuous(labels = comma) +
-  scale_y_continuous(labels = comma) +
+  scale_x_continuous(labels = scales::label_comma()) +
+  scale_y_continuous(labels = scales::label_comma()) +
   labs(x = "Actual (GWh/day)", y = "Predicted (GWh/day)",
        title = "Baseline vs Model 3",
        subtitle = sprintf("Model 3 — MAPE: %.2f%%   R²: %.4f",
@@ -657,57 +588,18 @@ accuracy just as much as a peak summer day.
 > RAM and potentially hours of compute. Daily aggregation is the
 > practical choice for this solver.
 
-Code
-
 ``` r
-cf_m1 <- coef(fit_m1)
-# alpha: beta_k = alpha_k - alpha_k* for each support vector; non-zero for training
-#        days outside the percentage-error ε-tube (sparse)
-# b:     bias / intercept term
-# X_sv:  training rows for support vectors only
-cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
-            cf_m1$b, min(cf_m1$alpha), max(cf_m1$alpha)))
-```
+K1 <- make_kernel("rbf", sigma = 1)   # sigma=1 chosen by grid search
 
-    b = 2.1185  |  alpha range: [-291.1579, 259.9121]
-
-``` r
-1K1 <- make_kernel("rbf", sigma = 1)
-
-2fit_m1 <- mape_svr(
+fit_m1 <- mape_svr(                   # 2Nx2N QP via osqp (ADMM), P as sparse dgCMatrix
   X_tr, y_tr_s,
   kernel = K1,
-3  C      = 5,
-4  eps    = 2
+  C      = 5,                         # per-sample bound: |beta_k| <= 100*5/y_k
+  eps    = 2                          # tube: ±2% of each scaled target → zero loss
 )
 
-5print(fit_m1)
+print(fit_m1)                         # reports support vector count and hyperparameters
 ```
-
-- 1:
-
-  RBF kernel with $\sigma = 1$ (chosen by grid search).
-
-- 2:
-
-  [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md)
-  solves a $2N \times 2N$ QP via **osqp** (ADMM interior point). The P
-  matrix is built as a sparse `dgCMatrix`.
-
-- 3:
-
-  `C = 5` controls flatness vs. tolerance for outliers. Per-sample upper
-  bound on $|\beta_{k}|$ is $100 \times 5/y_{k}$.
-
-- 4:
-
-  `eps = 2` — the insensitivity tube width **as a percentage** of each
-  scaled target. Points within ±2% of $y_{k}$ incur zero loss.
-
-- 5:
-
-  The [`print()`](https://rdrr.io/r/base/print.html) method reports
-  support vector count and the fitted hyperparameters.
 
     Epsilon-SVR with MAPE loss  [psvr_mape]
 
@@ -716,6 +608,19 @@ cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
       eps:             2
       Training obs.:   732
       Support vectors: 375 (51.2%)
+
+Code
+
+``` r
+cf_m1 <- coef(fit_m1)
+# alpha: beta_k = alpha_k - alpha_k* per support vector (non-zero outside ε-tube, sparse)
+# b:     bias / intercept term
+# X_sv:  training rows for support vectors only
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_m1$b, min(cf_m1$alpha), max(cf_m1$alpha)))
+```
+
+    b = 2.1185  |  alpha range: [-291.1579, 259.9121]
 
 > **Mathematical detail: Theorem 1 QP formulation**
 >
@@ -761,7 +666,7 @@ Code
 tibble(y_sv = fit_m1$y_sv * y_scale / 1e3) |>
   ggplot(aes(y_sv)) +
   geom_histogram(bins = 30, fill = vpal[4], colour = "white", alpha = 0.85) +
-  scale_x_continuous(labels = comma) +
+  scale_x_continuous(labels = scales::label_comma()) +
   labs(x = "Support vector demand (GWh/day)", y = "Count",
        title = "Model 1: support vector demand distribution",
        subtitle = sprintf("%d support vectors out of %d training days (%.1f%%)",
@@ -815,21 +720,34 @@ Section 9 provide empirical evidence for this dataset.
 ``` r
 K4 <- make_kernel("rbf", sigma = 2)   # same kernel as Model 3
 
-1fit_m4 <- rmspe_sym_lssvr(
+fit_m4 <- rmspe_sym_lssvr(            # Omega replaced by Omega_s = 0.5*(Omega + a*Omega*)
   X_tr, y_tr_s,
   kernel = K4,
   gamma  = 500,
-2  a      = 1
+  a      = 1                          # even symmetry: f(x) = f(-x)
 )
 print(fit_m4)
+```
 
+    Symmetric LS-SVR with RMSPE loss  [psvr_rmspe_sym]
+
+      Kernel:        RBF (sigma = 2)
+      Gamma:         500
+      Symmetry:      even  (a = 1)
+      Training obs.: 732
+
+``` r
 cf_m4 <- coef(fit_m4)
-# alpha: N dual variables; used in f(x) = sum_k alpha_k * Ks(x_k, x) / 2 + b
+# alpha: N dual variables; f(x) = sum_k alpha_k * Ks(x_k,x)/2 + b
 # b:     bias / intercept term
 # X_sv:  all N training inputs (symmetric LS-SVR has no sparsity)
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf_m4$b, min(cf_m4$alpha), max(cf_m4$alpha)))
+```
 
+    b = 2.2273  |  alpha range: [-41.3483, 24.0013]
+
+``` r
 pred_m4   <- predict(fit_m4, X_te) * y_scale
 metrics_m4 <- tibble(
   Model = "Model 4 — Sym LS-SVR RMSPE",
@@ -839,26 +757,6 @@ metrics_m4 <- tibble(
   MSE   = mse_fn(y_te,  pred_m4)
 )
 ```
-
-- 1:
-
-  [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md)
-  replaces the kernel matrix $\Omega$ with the symmetrized version
-  $\Omega_{s} = \frac{1}{2}(\Omega + a\,\Omega^{*})$, where
-  $\Omega_{kl}^{*} = K(x_{k},-x_{l})$.
-
-- 2:
-
-  `a = 1` selects even symmetry: $f(x) = f(-x)$.
-
-    Symmetric LS-SVR with RMSPE loss  [psvr_rmspe_sym]
-
-      Kernel:        RBF (sigma = 2)
-      Gamma:         500
-      Symmetry:      even  (a = 1)
-      Training obs.: 732
-
-    b = 2.2273  |  alpha range: [-41.3483, 24.0013]
 
 > **Mathematical detail: Theorem 4 linear system**
 >
@@ -885,7 +783,7 @@ metrics_m4 <- tibble(
 ``` r
 K2 <- make_kernel("rbf", sigma = 1)   # same kernel as Model 1
 
-1fit_m2 <- mape_sym_svr(
+fit_m2 <- mape_sym_svr(               # Ks = Omega + a*Omega*, P = (1/4)*Ks in QP (Appendix A.2)
   X_tr, y_tr_s,
   kernel = K2,
   C      = 5,
@@ -893,31 +791,7 @@ K2 <- make_kernel("rbf", sigma = 1)   # same kernel as Model 1
   a      = 1
 )
 print(fit_m2)
-
-cf_m2 <- coef(fit_m2)
-# alpha: beta_k = alpha_k - alpha_k* for each support vector (sparse)
-# b:     bias / intercept term
-# X_sv:  training rows for support vectors only
-cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
-            cf_m2$b, min(cf_m2$alpha), max(cf_m2$alpha)))
-
-pred_m2   <- predict(fit_m2, X_te) * y_scale
-metrics_m2 <- tibble(
-  Model = "Model 2 — Sym ε-SVR MAPE",
-  MAPE  = mape_fn(y_te,  pred_m2),
-  RMSPE = rmspe_fn(y_te, pred_m2),
-  R2    = r2_fn(y_te,   pred_m2),
-  MSE   = mse_fn(y_te,  pred_m2)
-)
 ```
-
-- 1:
-
-  [`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md)
-  builds the symmetric kernel matrix $K_{s} = \Omega + a\,\Omega^{*}$
-  and sets $P = \frac{1}{4}K_{s}$ in the QP (the $\frac{1}{4}$ absorbs
-  both the QP $\frac{1}{2}$ and the symmetric representer $\frac{1}{2}$;
-  see Appendix A.2).
 
     Symmetric epsilon-SVR with MAPE loss  [psvr_mape_sym]
 
@@ -928,7 +802,27 @@ metrics_m2 <- tibble(
       Training obs.:   732
       Support vectors: 369 (50.4%)
 
+``` r
+cf_m2 <- coef(fit_m2)
+# alpha: beta_k = alpha_k - alpha_k* per support vector (sparse)
+# b:     bias / intercept term
+# X_sv:  training rows for support vectors only
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_m2$b, min(cf_m2$alpha), max(cf_m2$alpha)))
+```
+
     b = 2.1620  |  alpha range: [-291.1579, 259.9121]
+
+``` r
+pred_m2   <- predict(fit_m2, X_te) * y_scale
+metrics_m2 <- tibble(
+  Model = "Model 2 — Sym ε-SVR MAPE",
+  MAPE  = mape_fn(y_te,  pred_m2),
+  RMSPE = rmspe_fn(y_te, pred_m2),
+  R2    = r2_fn(y_te,   pred_m2),
+  MSE   = mse_fn(y_te,  pred_m2)
+)
+```
 
 For full derivations of the symmetric kernel extensions see Theorems 2
 and 4 in Benavides-Herrera et al. (2026).
@@ -981,7 +875,7 @@ kable(fmt,
 Table 1: Test-set performance for all five models on the 2014 hold-out.
 **Bold** values mark the best in each column.
 
-### Interactive: test-set forecasts
+### Test-set forecasts
 
 Code
 
@@ -1007,10 +901,8 @@ preds_long <- test |>
     Demand = Demand / 1e3
   )
 
-p_ts_pred <- preds_long |>
-  ggplot(aes(Date, Demand, colour = Model, linetype = Model,
-             text = paste0(Model, "<br>", Date,
-                           "<br>", round(Demand, 1), " GWh"))) +
+preds_long |>
+  ggplot(aes(Date, Demand, colour = Model, linetype = Model)) +
   geom_line(aes(linewidth = Model, alpha = Model)) +
   scale_colour_manual(
     values = c("Actual" = "black", "Baseline" = vpal[1], "Model 1" = vpal[3],
@@ -1032,18 +924,16 @@ p_ts_pred <- preds_long |>
                "Model 2" = 0.75, "Model 3" = 0.75, "Model 4" = 0.75),
     guide = "none"
   ) +
-  scale_y_continuous(labels = comma) +
+  scale_y_continuous(labels = scales::label_comma()) +
   labs(x = NULL, y = "Demand (GWh/day)",
        title = "2014 test set: all five models vs actual (dotted)") +
-  theme_bw() +
   theme(legend.position = "top")
-
-ggplotly(p_ts_pred, tooltip = "text") |>
-  layout(hoverlabel = list(bgcolor = "white"), width = NULL, height = 450)
 ```
 
-Figure 9: Interactive time series of model predictions vs actual daily
-demand for 2014. Click legend entries to toggle models on/off.
+![](electricity-forecasting_files/figure-html/fig-forecast-1.png)
+
+Figure 9: Model predictions vs actual daily demand for 2014. Dotted
+black line = observed demand; coloured lines = model forecasts.
 
 ### Percentage residuals by day of week
 
