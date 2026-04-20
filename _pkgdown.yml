@@ -98,7 +98,7 @@ articles:
 
   - title: "Case Studies"
     contents:
-      - electricity-forecasting
+      - articles/electricity-forecasting
       # Future article: "When to Use Percentage-Error SVR"
 
   - title: "Technical Notes"
