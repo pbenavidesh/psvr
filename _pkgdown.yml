@@ -65,16 +65,47 @@ reference:
       - coef.psvr_rmspe
       - coef.psvr_rmspe_sym
 
-  - title: "tidymodels / parsnip interface"
-    desc: "Parsnip model specifications for use in tidymodels workflows."
+  - title: "tidymodels / parsnip interface — ε-SVR with MAPE (Model 1)"
+    desc: "Parsnip model specifications for Model 1 (one per kernel type)."
     contents:
-      - psvr_mape
-      - psvr_mape_sym
-      - psvr_rmspe
-      - psvr_rmspe_sym
+      - psvr_mape_specs
+
+  - title: "tidymodels / parsnip interface — Symmetric ε-SVR with MAPE (Model 2)"
+    desc: "Parsnip model specifications for Model 2 (one per kernel type)."
+    contents:
+      - psvr_mape_sym_specs
+
+  - title: "tidymodels / parsnip interface — LS-SVR with RMSPE (Model 3)"
+    desc: "Parsnip model specifications for Model 3 (one per kernel type)."
+    contents:
+      - psvr_rmspe_specs
+
+  - title: "tidymodels / parsnip interface — Symmetric LS-SVR with RMSPE (Model 4)"
+    desc: "Parsnip model specifications for Model 4 (one per kernel type)."
+    contents:
+      - psvr_rmspe_sym_specs
+
+  - title: "Internal fit wrappers"
+    desc: "Low-level bridge functions called by parsnip; not for direct use."
+    contents:
       - psvr-fit-wrappers
+
+articles:
+  - title: "Get Started"
+    contents:
+      - getting-started
+      - tidymodels-workflow
+
+  - title: "Case Studies"
+    contents:
+      - electricity-forecasting
+      # Future article: "When to Use Percentage-Error SVR"
+
+  - title: "Technical Notes"
+    contents:
+      - python-replication
 
 news:
   releases:
-  - text: "psvr 0.0.0.9000"
+  - text: "psvr 0.0.0.9001"
     href: news/index.html

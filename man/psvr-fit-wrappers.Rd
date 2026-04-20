@@ -2,32 +2,71 @@
 % Please edit documentation in R/parsnip.R
 \name{psvr-fit-wrappers}
 \alias{psvr-fit-wrappers}
-\alias{psvr_mape_fit}
-\alias{psvr_mape_sym_fit}
-\alias{psvr_rmspe_fit}
-\alias{psvr_rmspe_sym_fit}
+\alias{psvr_mape_rbf_fit}
+\alias{psvr_mape_poly_fit}
+\alias{psvr_mape_linear_fit}
+\alias{psvr_mape_sym_rbf_fit}
+\alias{psvr_mape_sym_poly_fit}
+\alias{psvr_mape_sym_linear_fit}
+\alias{psvr_rmspe_rbf_fit}
+\alias{psvr_rmspe_poly_fit}
+\alias{psvr_rmspe_linear_fit}
+\alias{psvr_rmspe_sym_rbf_fit}
+\alias{psvr_rmspe_sym_poly_fit}
+\alias{psvr_rmspe_sym_linear_fit}
 \title{Fit wrappers for parsnip engine dispatch}
 \usage{
-psvr_mape_fit(x, y, kernel, C, eps, tol = 1e-05)
+psvr_mape_rbf_fit(x, y, C, eps, rbf_sigma = 1, tol = 1e-05)
 
-psvr_mape_sym_fit(x, y, kernel, C, eps, a = 1L, tol = 1e-05)
+psvr_mape_poly_fit(x, y, C, eps, degree = 3L, scale_factor = 1, tol = 1e-05)
 
-psvr_rmspe_fit(x, y, kernel, gamma)
+psvr_mape_linear_fit(x, y, C, eps, tol = 1e-05)
 
-psvr_rmspe_sym_fit(x, y, kernel, gamma, a = 1L)
+psvr_mape_sym_rbf_fit(x, y, C, eps, rbf_sigma = 1, a = 1L, tol = 1e-05)
+
+psvr_mape_sym_poly_fit(
+  x,
+  y,
+  C,
+  eps,
+  degree = 3L,
+  scale_factor = 1,
+  a = 1L,
+  tol = 1e-05
+)
+
+psvr_mape_sym_linear_fit(x, y, C, eps, a = 1L, tol = 1e-05)
+
+psvr_rmspe_rbf_fit(x, y, gamma, rbf_sigma = 1)
+
+psvr_rmspe_poly_fit(x, y, gamma, degree = 3L, scale_factor = 1)
+
+psvr_rmspe_linear_fit(x, y, gamma)
+
+psvr_rmspe_sym_rbf_fit(x, y, gamma, rbf_sigma = 1, a = 1L)
+
+psvr_rmspe_sym_poly_fit(x, y, gamma, degree = 3L, scale_factor = 1, a = 1L)
+
+psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L)
 }
 \arguments{
 \item{x}{Numeric predictor matrix (parsnip matrix interface).}
 
-\item{y}{Numeric outcome vector.}
+\item{y}{Numeric outcome vector (strictly positive).}
 
-\item{kernel}{A kernel function from \code{\link[=make_kernel]{make_kernel()}}.}
+\item{C}{Regularization parameter for MAPE models (see \code{\link[=mape_svr]{mape_svr()}}).}
 
-\item{C, eps}{Hyperparameters for MAPE models (see \code{\link[=mape_svr]{mape_svr()}}).}
+\item{eps}{Epsilon tube half-width for MAPE models.}
+
+\item{rbf_sigma}{RBF bandwidth σ > 0.}
 
 \item{tol}{Solver zero-threshold (see \code{\link[=mape_svr]{mape_svr()}}).}
 
-\item{a}{Symmetry parameter (\code{1} or \code{-1}) for symmetric models.}
+\item{degree}{Polynomial degree ≥ 1.}
+
+\item{scale_factor}{Polynomial constant term (coef₀).}
+
+\item{a}{Symmetry parameter (\code{1L} or \code{-1L}) for symmetric models.}
 
 \item{gamma}{Regularization parameter for RMSPE models (see \code{\link[=rmspe_lssvr]{rmspe_lssvr()}}).}
 }

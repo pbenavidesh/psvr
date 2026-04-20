@@ -18,8 +18,8 @@ knitr::opts_chunk$set(
 
 This vignette demonstrates the full tidymodels pipeline with **psvr**: data
 splitting, preprocessing, hyperparameter tuning by cross-validation, and final
-model evaluation.  We use `psvr_rmspe()` (LS-SVR with RMSPE loss) and tune
-the regularisation parameter `cost` ($\Gamma$) against MAPE.
+model evaluation.  We use `psvr_rmspe_rbf()` (LS-SVR with RMSPE loss, RBF
+kernel) and tune the regularisation parameter `cost` ($\Gamma$) against MAPE.
 
 ```{r libs}
 library(psvr)
@@ -68,15 +68,13 @@ rec <- recipe(y ~ x1 + x2, data = train) |>
 
 ## 3 — Model spec with `tune()`
 
-`cost` is a `tune()` placeholder here; it maps to the $\Gamma$ regularisation
-parameter inside `rmspe_lssvr()`.  The RBF kernel is fixed as an engine
-argument.
+`cost` is a `tune()` placeholder that maps to the $\Gamma$ regularisation
+parameter inside `rmspe_lssvr()`.  The RBF bandwidth `rbf_sigma` is fixed at
+1; it can also be tuned with `tune()`.
 
 ```{r spec}
-K    <- make_kernel("rbf", sigma = 1)
-
-spec <- psvr_rmspe(cost = tune()) |>
-  set_engine("psvr", kernel = K)
+spec <- psvr_rmspe_rbf(cost = tune(), rbf_sigma = 1) |>
+  set_engine("psvr")
 ```
 
 ## 4 — Workflow
@@ -147,7 +145,7 @@ predict(extract_workflow(final_fit), new_data = new_obs)
 
 ## 8 — Inspecting the fitted psvr model
 
-The tidymodels layer wraps a `psvr_rmspe` object. Extract it to use `print()` and `coef()` directly.
+The tidymodels layer wraps a `psvr_rmspe` object (returned by `rmspe_lssvr()`). Extract it to use `print()` and `coef()` directly.
 
 ```{r engine-fit}
 # extract_fit_engine() unwraps the parsnip/workflow layer to the raw psvr object
