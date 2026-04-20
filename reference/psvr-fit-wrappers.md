@@ -12,13 +12,38 @@ directly instead.
 ## Usage
 
 ``` r
-psvr_mape_fit(x, y, kernel, C, eps, tol = 1e-05)
+psvr_mape_rbf_fit(x, y, C, eps, rbf_sigma = 1, tol = 1e-05)
 
-psvr_mape_sym_fit(x, y, kernel, C, eps, a = 1L, tol = 1e-05)
+psvr_mape_poly_fit(x, y, C, eps, degree = 3L, scale_factor = 1, tol = 1e-05)
 
-psvr_rmspe_fit(x, y, kernel, gamma)
+psvr_mape_linear_fit(x, y, C, eps, tol = 1e-05)
 
-psvr_rmspe_sym_fit(x, y, kernel, gamma, a = 1L)
+psvr_mape_sym_rbf_fit(x, y, C, eps, rbf_sigma = 1, a = 1L, tol = 1e-05)
+
+psvr_mape_sym_poly_fit(
+  x,
+  y,
+  C,
+  eps,
+  degree = 3L,
+  scale_factor = 1,
+  a = 1L,
+  tol = 1e-05
+)
+
+psvr_mape_sym_linear_fit(x, y, C, eps, a = 1L, tol = 1e-05)
+
+psvr_rmspe_rbf_fit(x, y, gamma, rbf_sigma = 1)
+
+psvr_rmspe_poly_fit(x, y, gamma, degree = 3L, scale_factor = 1)
+
+psvr_rmspe_linear_fit(x, y, gamma)
+
+psvr_rmspe_sym_rbf_fit(x, y, gamma, rbf_sigma = 1, a = 1L)
+
+psvr_rmspe_sym_poly_fit(x, y, gamma, degree = 3L, scale_factor = 1, a = 1L)
+
+psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L)
 ```
 
 ## Arguments
@@ -29,26 +54,37 @@ psvr_rmspe_sym_fit(x, y, kernel, gamma, a = 1L)
 
 - y:
 
-  Numeric outcome vector.
+  Numeric outcome vector (strictly positive).
 
-- kernel:
+- C:
 
-  A kernel function from
-  [`make_kernel()`](https://pbenavidesh.github.io/psvr/reference/make_kernel.md).
-
-- C, eps:
-
-  Hyperparameters for MAPE models (see
+  Regularization parameter for MAPE models (see
   [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md)).
+
+- eps:
+
+  Epsilon tube half-width for MAPE models.
+
+- rbf_sigma:
+
+  RBF bandwidth σ \> 0.
 
 - tol:
 
   Solver zero-threshold (see
   [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md)).
 
+- degree:
+
+  Polynomial degree ≥ 1.
+
+- scale_factor:
+
+  Polynomial constant term (coef₀).
+
 - a:
 
-  Symmetry parameter (`1` or `-1`) for symmetric models.
+  Symmetry parameter (`1L` or `-1L`) for symmetric models.
 
 - gamma:
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -16,17 +16,11 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/electricity-forecasting.html">Electricity Demand Forecasting with Percentage-Error SVR</a></li>
-    <li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with psvr</a></li>
-    <li><a class="dropdown-item" href="../articles/python-replication.html">Python Replication: Numerical Equivalence Check</a></li>
-    <li><a class="dropdown-item" href="../articles/tidymodels-workflow.html">tidymodels workflow with psvr</a></li>
-  </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-news" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">News</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-news"><li><h6 class="dropdown-header" data-toc-skip>Releases</h6></li>
-    <li><a class="dropdown-item" href="../news/index.html">psvr 0.0.0.9000</a></li>
+    <li><a class="dropdown-item" href="../news/index.html">psvr 0.0.0.9001</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../news/index.html">Changelog</a></li>
   </ul></li>
@@ -43,6 +37,29 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.0.9001" id="psvr-0009001">psvr 0.0.0.9001<a class="anchor" aria-label="anchor" href="#psvr-0009001"></a></h2>
+<div class="section level3">
+<h3 id="tidymodels--parsnip-integration--breaking-change-0-0-0-9001">tidymodels / parsnip integration — breaking change<a class="anchor" aria-label="anchor" href="#tidymodels--parsnip-integration--breaking-change-0-0-0-9001"></a></h3>
+<p>Expanded parsnip integration from 4 to 12 model specs following the tidymodels pattern used by <code><a href="https://parsnip.tidymodels.org/reference/svm_rbf.html" class="external-link">svm_rbf()</a></code>, <code><a href="https://parsnip.tidymodels.org/reference/svm_poly.html" class="external-link">svm_poly()</a></code>, and <code><a href="https://parsnip.tidymodels.org/reference/svm_linear.html" class="external-link">svm_linear()</a></code>:</p>
+<ul><li>
+<code><a href="../reference/psvr_mape_specs.html">psvr_mape_rbf()</a></code>, <code><a href="../reference/psvr_mape_specs.html">psvr_mape_poly()</a></code>, <code><a href="../reference/psvr_mape_specs.html">psvr_mape_linear()</a></code> — Model 1 specs.</li>
+<li>
+<code><a href="../reference/psvr_mape_sym_specs.html">psvr_mape_sym_rbf()</a></code>, <code><a href="../reference/psvr_mape_sym_specs.html">psvr_mape_sym_poly()</a></code>, <code><a href="../reference/psvr_mape_sym_specs.html">psvr_mape_sym_linear()</a></code> — Model 2 specs.</li>
+<li>
+<code><a href="../reference/psvr_rmspe_specs.html">psvr_rmspe_rbf()</a></code>, <code><a href="../reference/psvr_rmspe_specs.html">psvr_rmspe_poly()</a></code>, <code><a href="../reference/psvr_rmspe_specs.html">psvr_rmspe_linear()</a></code> — Model 3 specs.</li>
+<li>
+<code><a href="../reference/psvr_rmspe_sym_specs.html">psvr_rmspe_sym_rbf()</a></code>, <code><a href="../reference/psvr_rmspe_sym_specs.html">psvr_rmspe_sym_poly()</a></code>, <code><a href="../reference/psvr_rmspe_sym_specs.html">psvr_rmspe_sym_linear()</a></code> — Model 4 specs.</li>
+</ul><p>Kernel parameters are now tunable parsnip args mapped to existing dials params: <code>rbf_sigma</code> → <code><a href="https://dials.tidymodels.org/reference/rbf_sigma.html" class="external-link">dials::rbf_sigma()</a></code>, <code>degree</code> → <code><a href="https://dials.tidymodels.org/reference/degree.html" class="external-link">dials::degree()</a></code>, <code>scale_factor</code> → <code><a href="https://dials.tidymodels.org/reference/rbf_sigma.html" class="external-link">dials::scale_factor()</a></code>. The kernel closure is built inside each fit wrapper and no longer appears in the parsnip layer.</p>
+<p>The old single-spec API (<code>psvr_mape()</code>, <code>psvr_mape_sym()</code>, <code>psvr_rmspe()</code>, <code>psvr_rmspe_sym()</code>) has been removed. Migrate by replacing, for example, <code>psvr_rmspe(cost = tune()) |&gt; set_engine("psvr", kernel = K)</code> with <code>psvr_rmspe_rbf(cost = tune(), rbf_sigma = 1) |&gt; set_engine("psvr")</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="documentation-and-testing-0-0-0-9001">Documentation and testing<a class="anchor" aria-label="anchor" href="#documentation-and-testing-0-0-0-9001"></a></h3>
+<ul><li>All vignettes and pkgdown articles updated to the new spec-based API.</li>
+<li>12 new smoke tests (fit + predict) for all specs in <code>tests/testthat/test-parsnip.R</code>.</li>
+<li>pkgdown articles reorganised into three named groups: <em>Get Started</em>, <em>Case Studies</em>, and <em>Technical Notes</em>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.0.9000" id="psvr-0009000">psvr 0.0.0.9000<a class="anchor" aria-label="anchor" href="#psvr-0009000"></a></h2>
 <p>Initial development release.</p>
@@ -63,13 +80,13 @@
 <h3 id="tidymodels--parsnip-integration-0-0-0-9000">tidymodels / parsnip integration<a class="anchor" aria-label="anchor" href="#tidymodels--parsnip-integration-0-0-0-9000"></a></h3>
 <p>Four parsnip model specifications for use within tidymodels workflows:</p>
 <ul><li>
-<code><a href="../reference/psvr_mape.html">psvr_mape()</a></code> — spec for Model 1; hyperparameters <code>cost</code> and <code>svm_margin</code>.</li>
+<code>psvr_mape()</code> — spec for Model 1; hyperparameters <code>cost</code> and <code>svm_margin</code>.</li>
 <li>
-<code><a href="../reference/psvr_mape_sym.html">psvr_mape_sym()</a></code> — spec for Model 2; hyperparameters <code>cost</code> and <code>svm_margin</code>.</li>
+<code>psvr_mape_sym()</code> — spec for Model 2; hyperparameters <code>cost</code> and <code>svm_margin</code>.</li>
 <li>
-<code><a href="../reference/psvr_rmspe.html">psvr_rmspe()</a></code> — spec for Model 3; hyperparameter <code>cost</code> (maps to <code>Γ</code>).</li>
+<code>psvr_rmspe()</code> — spec for Model 3; hyperparameter <code>cost</code> (maps to <code>Γ</code>).</li>
 <li>
-<code><a href="../reference/psvr_rmspe_sym.html">psvr_rmspe_sym()</a></code> — spec for Model 4; hyperparameter <code>cost</code> (maps to <code>Γ</code>).</li>
+<code>psvr_rmspe_sym()</code> — spec for Model 4; hyperparameter <code>cost</code> (maps to <code>Γ</code>).</li>
 </ul><p>The kernel and (for symmetric models) symmetry parameter <code>a</code> are engine arguments supplied via <code>set_engine("psvr", kernel = ..., a = ...)</code>. Hyperparameters map to <code><a href="https://dials.tidymodels.org/reference/cost.html" class="external-link">dials::cost()</a></code> and <code><a href="https://dials.tidymodels.org/reference/cost.html" class="external-link">dials::svm_margin()</a></code> for compatibility with <code><a href="https://tune.tidymodels.org/reference/tune_grid.html" class="external-link">tune_grid()</a></code>.</p>
 </div>
 <div class="section level3">

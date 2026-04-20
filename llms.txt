@@ -155,33 +155,75 @@ S3 methods for inspecting and printing fitted psvr models.
 - [`coef(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_rmspe_sym.md)
   : Extract coefficients from a psvr_rmspe_sym model
 
-## tidymodels / parsnip interface
+## tidymodels / parsnip interface — ε-SVR with MAPE (Model 1)
 
-Parsnip model specifications for use in tidymodels workflows.
+Parsnip model specifications for Model 1 (one per kernel type).
 
-- [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
-  : Parsnip model spec: epsilon-SVR with MAPE loss (Model 1)
-- [`psvr_mape_sym()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym.md)
-  : Parsnip model spec: symmetric epsilon-SVR with MAPE loss (Model 2)
-- [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
-  : Parsnip model spec: LS-SVR with RMSPE loss (Model 3)
-- [`psvr_rmspe_sym()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym.md)
-  : Parsnip model spec: symmetric LS-SVR with RMSPE loss (Model 4)
-- [`psvr_mape_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
-  [`psvr_mape_sym_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
-  [`psvr_rmspe_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
-  [`psvr_rmspe_sym_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
+- [`psvr_mape_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md)
+  [`psvr_mape_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md)
+  [`psvr_mape_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md)
+  : Parsnip model specs: epsilon-SVR with MAPE loss (Model 1)
+
+## tidymodels / parsnip interface — Symmetric ε-SVR with MAPE (Model 2)
+
+Parsnip model specifications for Model 2 (one per kernel type).
+
+- [`psvr_mape_sym_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.md)
+  [`psvr_mape_sym_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.md)
+  [`psvr_mape_sym_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.md)
+  : Parsnip model specs: symmetric epsilon-SVR with MAPE loss (Model 2)
+
+## tidymodels / parsnip interface — LS-SVR with RMSPE (Model 3)
+
+Parsnip model specifications for Model 3 (one per kernel type).
+
+- [`psvr_rmspe_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md)
+  [`psvr_rmspe_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md)
+  [`psvr_rmspe_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md)
+  : Parsnip model specs: LS-SVR with RMSPE loss (Model 3)
+
+## tidymodels / parsnip interface — Symmetric LS-SVR with RMSPE (Model 4)
+
+Parsnip model specifications for Model 4 (one per kernel type).
+
+- [`psvr_rmspe_sym_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.md)
+  [`psvr_rmspe_sym_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.md)
+  [`psvr_rmspe_sym_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.md)
+  : Parsnip model specs: symmetric LS-SVR with RMSPE loss (Model 4)
+
+## Internal fit wrappers
+
+Low-level bridge functions called by parsnip; not for direct use.
+
+- [`psvr_mape_rbf_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
+  [`psvr_mape_poly_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
+  [`psvr_mape_linear_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
+  [`psvr_mape_sym_rbf_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
+  [`psvr_mape_sym_poly_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
+  [`psvr_mape_sym_linear_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
+  [`psvr_rmspe_rbf_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
+  [`psvr_rmspe_poly_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
+  [`psvr_rmspe_linear_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
+  [`psvr_rmspe_sym_rbf_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
+  [`psvr_rmspe_sym_poly_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
+  [`psvr_rmspe_sym_linear_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
   : Fit wrappers for parsnip engine dispatch
 
 # Articles
 
-### All vignettes
+### Get Started
+
+- [Getting Started with
+  psvr](https://pbenavidesh.github.io/psvr/articles/getting-started.md):
+- [tidymodels workflow with
+  psvr](https://pbenavidesh.github.io/psvr/articles/tidymodels-workflow.md):
+
+### Case Studies
 
 - [Electricity Demand Forecasting with Percentage-Error
   SVR](https://pbenavidesh.github.io/psvr/articles/electricity-forecasting.md):
-- [Getting Started with
-  psvr](https://pbenavidesh.github.io/psvr/articles/getting-started.md):
+
+### Technical Notes
+
 - [Python Replication: Numerical Equivalence
   Check](https://pbenavidesh.github.io/psvr/articles/python-replication.md):
-- [tidymodels workflow with
-  psvr](https://pbenavidesh.github.io/psvr/articles/tidymodels-workflow.md):

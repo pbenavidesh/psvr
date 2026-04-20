@@ -11,7 +11,7 @@ rmspe_lssvr(), or rmspe_sym_lssvr() directly instead."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,17 +20,11 @@ rmspe_lssvr(), or rmspe_sym_lssvr() directly instead."></head><body>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/electricity-forecasting.html">Electricity Demand Forecasting with Percentage-Error SVR</a></li>
-    <li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with psvr</a></li>
-    <li><a class="dropdown-item" href="../articles/python-replication.html">Python Replication: Numerical Equivalence Check</a></li>
-    <li><a class="dropdown-item" href="../articles/tidymodels-workflow.html">tidymodels workflow with psvr</a></li>
-  </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-news" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">News</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-news"><li><h6 class="dropdown-header" data-toc-skip>Releases</h6></li>
-    <li><a class="dropdown-item" href="../news/index.html">psvr 0.0.0.9000</a></li>
+    <li><a class="dropdown-item" href="../news/index.html">psvr 0.0.0.9001</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../news/index.html">Changelog</a></li>
   </ul></li>
@@ -56,13 +50,38 @@ Not intended for direct use; call <code><a href="mape_svr.html">mape_svr()</a></
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">psvr_mape_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">kernel</span>, <span class="va">C</span>, <span class="va">eps</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">psvr_mape_rbf_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, rbf_sigma <span class="op">=</span> <span class="fl">1</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">psvr_mape_sym_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">kernel</span>, <span class="va">C</span>, <span class="va">eps</span>, a <span class="op">=</span> <span class="fl">1L</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span>
+<span><span class="fu">psvr_mape_poly_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, degree <span class="op">=</span> <span class="fl">3L</span>, scale_factor <span class="op">=</span> <span class="fl">1</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">psvr_rmspe_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">kernel</span>, <span class="va">gamma</span><span class="op">)</span></span>
+<span><span class="fu">psvr_mape_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">psvr_rmspe_sym_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">kernel</span>, <span class="va">gamma</span>, a <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">psvr_mape_sym_rbf_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, rbf_sigma <span class="op">=</span> <span class="fl">1</span>, a <span class="op">=</span> <span class="fl">1L</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">psvr_mape_sym_poly_fit</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  <span class="va">y</span>,</span>
+<span>  <span class="va">C</span>,</span>
+<span>  <span class="va">eps</span>,</span>
+<span>  degree <span class="op">=</span> <span class="fl">3L</span>,</span>
+<span>  scale_factor <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  a <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>  tol <span class="op">=</span> <span class="fl">1e-05</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">psvr_mape_sym_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, a <span class="op">=</span> <span class="fl">1L</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">psvr_rmspe_rbf_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, rbf_sigma <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">psvr_rmspe_poly_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, degree <span class="op">=</span> <span class="fl">3L</span>, scale_factor <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">psvr_rmspe_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">psvr_rmspe_sym_rbf_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, rbf_sigma <span class="op">=</span> <span class="fl">1</span>, a <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">psvr_rmspe_sym_poly_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, degree <span class="op">=</span> <span class="fl">3L</span>, scale_factor <span class="op">=</span> <span class="fl">1</span>, a <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">psvr_rmspe_sym_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, a <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -74,23 +93,35 @@ Not intended for direct use; call <code><a href="mape_svr.html">mape_svr()</a></
 
 
 <dt id="arg-y">y<a class="anchor" aria-label="anchor" href="#arg-y"></a></dt>
-<dd><p>Numeric outcome vector.</p></dd>
+<dd><p>Numeric outcome vector (strictly positive).</p></dd>
 
 
-<dt id="arg-kernel">kernel<a class="anchor" aria-label="anchor" href="#arg-kernel"></a></dt>
-<dd><p>A kernel function from <code><a href="make_kernel.html">make_kernel()</a></code>.</p></dd>
+<dt id="arg-c">C<a class="anchor" aria-label="anchor" href="#arg-c"></a></dt>
+<dd><p>Regularization parameter for MAPE models (see <code><a href="mape_svr.html">mape_svr()</a></code>).</p></dd>
 
 
-<dt id="arg-c-eps">C, eps<a class="anchor" aria-label="anchor" href="#arg-c-eps"></a></dt>
-<dd><p>Hyperparameters for MAPE models (see <code><a href="mape_svr.html">mape_svr()</a></code>).</p></dd>
+<dt id="arg-eps">eps<a class="anchor" aria-label="anchor" href="#arg-eps"></a></dt>
+<dd><p>Epsilon tube half-width for MAPE models.</p></dd>
+
+
+<dt id="arg-rbf-sigma">rbf_sigma<a class="anchor" aria-label="anchor" href="#arg-rbf-sigma"></a></dt>
+<dd><p>RBF bandwidth σ &gt; 0.</p></dd>
 
 
 <dt id="arg-tol">tol<a class="anchor" aria-label="anchor" href="#arg-tol"></a></dt>
 <dd><p>Solver zero-threshold (see <code><a href="mape_svr.html">mape_svr()</a></code>).</p></dd>
 
 
+<dt id="arg-degree">degree<a class="anchor" aria-label="anchor" href="#arg-degree"></a></dt>
+<dd><p>Polynomial degree ≥ 1.</p></dd>
+
+
+<dt id="arg-scale-factor">scale_factor<a class="anchor" aria-label="anchor" href="#arg-scale-factor"></a></dt>
+<dd><p>Polynomial constant term (coef₀).</p></dd>
+
+
 <dt id="arg-a">a<a class="anchor" aria-label="anchor" href="#arg-a"></a></dt>
-<dd><p>Symmetry parameter (<code>1</code> or <code>-1</code>) for symmetric models.</p></dd>
+<dd><p>Symmetry parameter (<code>1L</code> or <code>-1L</code>) for symmetric models.</p></dd>
 
 
 <dt id="arg-gamma">gamma<a class="anchor" aria-label="anchor" href="#arg-gamma"></a></dt>

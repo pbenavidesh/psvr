@@ -3,9 +3,9 @@
 This vignette demonstrates the full tidymodels pipeline with **psvr**:
 data splitting, preprocessing, hyperparameter tuning by
 cross-validation, and final model evaluation. We use
-[`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
-(LS-SVR with RMSPE loss) and tune the regularisation parameter `cost`
-($\Gamma$) against MAPE.
+[`psvr_rmspe_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md)
+(LS-SVR with RMSPE loss, RBF kernel) and tune the regularisation
+parameter `cost` ($\Gamma$) against MAPE.
 
 ``` r
 library(psvr)
@@ -57,16 +57,14 @@ rec <- recipe(y ~ x1 + x2, data = train) |>
 
 `cost` is a
 [`tune()`](https://hardhat.tidymodels.org/reference/tune.html)
-placeholder here; it maps to the $\Gamma$ regularisation parameter
-inside
+placeholder that maps to the $\Gamma$ regularisation parameter inside
 [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md).
-The RBF kernel is fixed as an engine argument.
+The RBF bandwidth `rbf_sigma` is fixed at 1; it can also be tuned with
+[`tune()`](https://hardhat.tidymodels.org/reference/tune.html).
 
 ``` r
-K    <- make_kernel("rbf", sigma = 1)
-
-spec <- psvr_rmspe(cost = tune()) |>
-  set_engine("psvr", kernel = K)
+spec <- psvr_rmspe_rbf(cost = tune(), rbf_sigma = 1) |>
+  set_engine("psvr")
 ```
 
 ## 4 — Workflow
@@ -171,8 +169,9 @@ predict(extract_workflow(final_fit), new_data = new_obs)
 
 ## 8 — Inspecting the fitted psvr model
 
-The tidymodels layer wraps a `psvr_rmspe` object. Extract it to use
-[`print()`](https://rdrr.io/r/base/print.html) and
+The tidymodels layer wraps a `psvr_rmspe` object (returned by
+[`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)).
+Extract it to use [`print()`](https://rdrr.io/r/base/print.html) and
 [`coef()`](https://rdrr.io/r/stats/coef.html) directly.
 
 ``` r

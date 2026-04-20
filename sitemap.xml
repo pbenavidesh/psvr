@@ -29,10 +29,10 @@
 <url><loc>https://pbenavidesh.github.io/psvr/reference/print.psvr_rmspe.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/print.psvr_rmspe_sym.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.html</loc></url>
-<url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_mape.html</loc></url>
-<url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym.html</loc></url>
-<url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.html</loc></url>
-<url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym.html</loc></url>
+<url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.html</loc></url>
+<url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.html</loc></url>
+<url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.html</loc></url>
+<url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/sym_kernel_matrix.html</loc></url>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -16,17 +16,11 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
-<li class="nav-item dropdown">
-  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/electricity-forecasting.html">Electricity Demand Forecasting with Percentage-Error SVR</a></li>
-    <li><a class="dropdown-item" href="../articles/getting-started.html">Getting Started with psvr</a></li>
-    <li><a class="dropdown-item" href="../articles/python-replication.html">Python Replication: Numerical Equivalence Check</a></li>
-    <li><a class="dropdown-item" href="../articles/tidymodels-workflow.html">tidymodels workflow with psvr</a></li>
-  </ul></li>
+<li class="nav-item"><a class="nav-link" href="../articles/index.html">Articles</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-news" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">News</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-news"><li><h6 class="dropdown-header" data-toc-skip>Releases</h6></li>
-    <li><a class="dropdown-item" href="../news/index.html">psvr 0.0.0.9000</a></li>
+    <li><a class="dropdown-item" href="../news/index.html">psvr 0.0.0.9001</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../news/index.html">Changelog</a></li>
   </ul></li>
@@ -216,9 +210,9 @@
         </dt>
         <dd>Extract coefficients from a psvr_rmspe_sym model</dd>
       </dl></div><div class="section level2">
-      <h2 id="tidymodels-parsnip-interface">tidymodels / parsnip interface<a class="anchor" aria-label="anchor" href="#tidymodels-parsnip-interface"></a></h2>
+      <h2 id="tidymodels-parsnip-interface-svr-with-mape-model-">tidymodels / parsnip interface — ε-SVR with MAPE (Model 1)<a class="anchor" aria-label="anchor" href="#tidymodels-parsnip-interface-svr-with-mape-model-"></a></h2>
 
-      <div class="section-desc"><p>Parsnip model specifications for use in tidymodels workflows.</p></div>
+      <div class="section-desc"><p>Parsnip model specifications for Model 1 (one per kernel type).</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -227,35 +221,71 @@
 
       <dl><dt>
 
-          <code><a href="psvr_mape.html">psvr_mape()</a></code>
+          <code><a href="psvr_mape_specs.html">psvr_mape_rbf()</a></code> <code><a href="psvr_mape_specs.html">psvr_mape_poly()</a></code> <code><a href="psvr_mape_specs.html">psvr_mape_linear()</a></code>
 
         </dt>
-        <dd>Parsnip model spec: epsilon-SVR with MAPE loss (Model 1)</dd>
+        <dd>Parsnip model specs: epsilon-SVR with MAPE loss (Model 1)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="tidymodels-parsnip-interface-symmetric-svr-with-mape-model-">tidymodels / parsnip interface — Symmetric ε-SVR with MAPE (Model 2)<a class="anchor" aria-label="anchor" href="#tidymodels-parsnip-interface-symmetric-svr-with-mape-model-"></a></h2>
 
-        <dt>
+      <div class="section-desc"><p>Parsnip model specifications for Model 2 (one per kernel type).</p></div>
 
-          <code><a href="psvr_mape_sym.html">psvr_mape_sym()</a></code>
+      <dl></dl></div><div class="section level2">
 
-        </dt>
-        <dd>Parsnip model spec: symmetric epsilon-SVR with MAPE loss (Model 2)</dd>
 
-        <dt>
 
-          <code><a href="psvr_rmspe.html">psvr_rmspe()</a></code>
 
-        </dt>
-        <dd>Parsnip model spec: LS-SVR with RMSPE loss (Model 3)</dd>
+      <dl><dt>
 
-        <dt>
-
-          <code><a href="psvr_rmspe_sym.html">psvr_rmspe_sym()</a></code>
+          <code><a href="psvr_mape_sym_specs.html">psvr_mape_sym_rbf()</a></code> <code><a href="psvr_mape_sym_specs.html">psvr_mape_sym_poly()</a></code> <code><a href="psvr_mape_sym_specs.html">psvr_mape_sym_linear()</a></code>
 
         </dt>
-        <dd>Parsnip model spec: symmetric LS-SVR with RMSPE loss (Model 4)</dd>
+        <dd>Parsnip model specs: symmetric epsilon-SVR with MAPE loss (Model 2)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="tidymodels-parsnip-interface-ls-svr-with-rmspe-model-">tidymodels / parsnip interface — LS-SVR with RMSPE (Model 3)<a class="anchor" aria-label="anchor" href="#tidymodels-parsnip-interface-ls-svr-with-rmspe-model-"></a></h2>
 
-        <dt>
+      <div class="section-desc"><p>Parsnip model specifications for Model 3 (one per kernel type).</p></div>
 
-          <code><a href="psvr-fit-wrappers.html">psvr_mape_fit()</a></code> <code><a href="psvr-fit-wrappers.html">psvr_mape_sym_fit()</a></code> <code><a href="psvr-fit-wrappers.html">psvr_rmspe_fit()</a></code> <code><a href="psvr-fit-wrappers.html">psvr_rmspe_sym_fit()</a></code>
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="psvr_rmspe_specs.html">psvr_rmspe_rbf()</a></code> <code><a href="psvr_rmspe_specs.html">psvr_rmspe_poly()</a></code> <code><a href="psvr_rmspe_specs.html">psvr_rmspe_linear()</a></code>
+
+        </dt>
+        <dd>Parsnip model specs: LS-SVR with RMSPE loss (Model 3)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="tidymodels-parsnip-interface-symmetric-ls-svr-with-rmspe-model-">tidymodels / parsnip interface — Symmetric LS-SVR with RMSPE (Model 4)<a class="anchor" aria-label="anchor" href="#tidymodels-parsnip-interface-symmetric-ls-svr-with-rmspe-model-"></a></h2>
+
+      <div class="section-desc"><p>Parsnip model specifications for Model 4 (one per kernel type).</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="psvr_rmspe_sym_specs.html">psvr_rmspe_sym_rbf()</a></code> <code><a href="psvr_rmspe_sym_specs.html">psvr_rmspe_sym_poly()</a></code> <code><a href="psvr_rmspe_sym_specs.html">psvr_rmspe_sym_linear()</a></code>
+
+        </dt>
+        <dd>Parsnip model specs: symmetric LS-SVR with RMSPE loss (Model 4)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="internal-fit-wrappers">Internal fit wrappers<a class="anchor" aria-label="anchor" href="#internal-fit-wrappers"></a></h2>
+
+      <div class="section-desc"><p>Low-level bridge functions called by parsnip; not for direct use.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="psvr-fit-wrappers.html">psvr_mape_rbf_fit()</a></code> <code><a href="psvr-fit-wrappers.html">psvr_mape_poly_fit()</a></code> <code><a href="psvr-fit-wrappers.html">psvr_mape_linear_fit()</a></code> <code><a href="psvr-fit-wrappers.html">psvr_mape_sym_rbf_fit()</a></code> <code><a href="psvr-fit-wrappers.html">psvr_mape_sym_poly_fit()</a></code> <code><a href="psvr-fit-wrappers.html">psvr_mape_sym_linear_fit()</a></code> <code><a href="psvr-fit-wrappers.html">psvr_rmspe_rbf_fit()</a></code> <code><a href="psvr-fit-wrappers.html">psvr_rmspe_poly_fit()</a></code> <code><a href="psvr-fit-wrappers.html">psvr_rmspe_linear_fit()</a></code> <code><a href="psvr-fit-wrappers.html">psvr_rmspe_sym_rbf_fit()</a></code> <code><a href="psvr-fit-wrappers.html">psvr_rmspe_sym_poly_fit()</a></code> <code><a href="psvr-fit-wrappers.html">psvr_rmspe_sym_linear_fit()</a></code>
 
         </dt>
         <dd>Fit wrappers for parsnip engine dispatch</dd>

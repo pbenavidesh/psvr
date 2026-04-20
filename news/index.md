@@ -1,5 +1,57 @@
 # Changelog
 
+## psvr 0.0.0.9001
+
+### tidymodels / parsnip integration — breaking change
+
+Expanded parsnip integration from 4 to 12 model specs following the
+tidymodels pattern used by
+[`svm_rbf()`](https://parsnip.tidymodels.org/reference/svm_rbf.html),
+[`svm_poly()`](https://parsnip.tidymodels.org/reference/svm_poly.html),
+and
+[`svm_linear()`](https://parsnip.tidymodels.org/reference/svm_linear.html):
+
+- [`psvr_mape_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md),
+  [`psvr_mape_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md),
+  [`psvr_mape_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md)
+  — Model 1 specs.
+- [`psvr_mape_sym_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.md),
+  [`psvr_mape_sym_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.md),
+  [`psvr_mape_sym_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.md)
+  — Model 2 specs.
+- [`psvr_rmspe_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md),
+  [`psvr_rmspe_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md),
+  [`psvr_rmspe_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md)
+  — Model 3 specs.
+- [`psvr_rmspe_sym_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.md),
+  [`psvr_rmspe_sym_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.md),
+  [`psvr_rmspe_sym_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.md)
+  — Model 4 specs.
+
+Kernel parameters are now tunable parsnip args mapped to existing dials
+params: `rbf_sigma` →
+[`dials::rbf_sigma()`](https://dials.tidymodels.org/reference/rbf_sigma.html),
+`degree` →
+[`dials::degree()`](https://dials.tidymodels.org/reference/degree.html),
+`scale_factor` →
+[`dials::scale_factor()`](https://dials.tidymodels.org/reference/rbf_sigma.html).
+The kernel closure is built inside each fit wrapper and no longer
+appears in the parsnip layer.
+
+The old single-spec API (`psvr_mape()`, `psvr_mape_sym()`,
+`psvr_rmspe()`, `psvr_rmspe_sym()`) has been removed. Migrate by
+replacing, for example,
+`psvr_rmspe(cost = tune()) |> set_engine("psvr", kernel = K)` with
+`psvr_rmspe_rbf(cost = tune(), rbf_sigma = 1) |> set_engine("psvr")`.
+
+### Documentation and testing
+
+- All vignettes and pkgdown articles updated to the new spec-based API.
+- 12 new smoke tests (fit + predict) for all specs in
+  `tests/testthat/test-parsnip.R`.
+- pkgdown articles reorganised into three named groups: *Get Started*,
+  *Case Studies*, and *Technical Notes*.
+
 ## psvr 0.0.0.9000
 
 Initial development release.
@@ -40,14 +92,14 @@ proofs.
 
 Four parsnip model specifications for use within tidymodels workflows:
 
-- [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
-  — spec for Model 1; hyperparameters `cost` and `svm_margin`.
-- [`psvr_mape_sym()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym.md)
-  — spec for Model 2; hyperparameters `cost` and `svm_margin`.
-- [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
-  — spec for Model 3; hyperparameter `cost` (maps to `Γ`).
-- [`psvr_rmspe_sym()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym.md)
-  — spec for Model 4; hyperparameter `cost` (maps to `Γ`).
+- `psvr_mape()` — spec for Model 1; hyperparameters `cost` and
+  `svm_margin`.
+- `psvr_mape_sym()` — spec for Model 2; hyperparameters `cost` and
+  `svm_margin`.
+- `psvr_rmspe()` — spec for Model 3; hyperparameter `cost` (maps to
+  `Γ`).
+- `psvr_rmspe_sym()` — spec for Model 4; hyperparameter `cost` (maps to
+  `Γ`).
 
 The kernel and (for symmetric models) symmetry parameter `a` are engine
 arguments supplied via `set_engine("psvr", kernel = ..., a = ...)`.

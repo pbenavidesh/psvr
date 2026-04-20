@@ -211,9 +211,9 @@ failures)
 
 ## R environment
 
-- **R 4.5.2** at `C:\Program Files\R\R-4.5.2\bin\Rscript.exe`
+- **R 4.5.3** at `C:\Program Files\R\R-4.5.3\bin\Rscript.exe`
 - Run from PowerShell:
-  `& "C:\Program Files\R\R-4.5.2\bin\Rscript.exe" script.R`
+  `& "C:\Program Files\R\R-4.5.3\bin\Rscript.exe" script.R`
 - Always use forward slashes or single-quoted strings in PowerShell to
   avoid `\U` Unicode escape errors
 - **osqp 1.0.0** uses `solve_osqp(P, q, A, l, u, pars)` directly — not
