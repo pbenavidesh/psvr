@@ -94,6 +94,11 @@ reference:
       - psvr-fit-wrappers
 
 articles:
+  - title: ~
+    navbar: ~
+    contents:
+      - getting-started
+
   - title: "Workflows"
     contents:
       - tidymodels-workflow
