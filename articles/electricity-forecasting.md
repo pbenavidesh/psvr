@@ -116,6 +116,7 @@ p_ts <- elec_daily |>
   labs(x = NULL, y = "Demand (GWh/day)",
        title = "Victoria daily electricity demand — 2012–2014",
        subtitle = "Colour = mean daily temperature") +
+  theme_bw() +
   theme(legend.position = "right")
 
 ggplotly(p_ts, tooltip = "text") |>
@@ -985,38 +986,56 @@ Table 1: Test-set performance for all five models on the 2014 hold-out.
 Code
 
 ``` r
-preds_df <- test |>
-  select(Date, Demand) |>
+preds_long <- test |>
+  select(Date) |>
   mutate(
-    Baseline = pred_base,
-    `Model 3` = pred_m3,
+    Actual    = y_te,
+    Baseline  = pred_base,
     `Model 1` = pred_m1,
-    `Model 4` = pred_m4,
-    `Model 2` = pred_m2
+    `Model 2` = pred_m2,
+    `Model 3` = pred_m3,
+    `Model 4` = pred_m4
+  ) |>
+  tidyr::pivot_longer(
+    cols      = c(Actual, Baseline, `Model 1`, `Model 2`, `Model 3`, `Model 4`),
+    names_to  = "Model",
+    values_to = "Demand"
+  ) |>
+  mutate(
+    Model  = factor(Model, levels = c("Actual", "Baseline",
+                                      "Model 1", "Model 2", "Model 3", "Model 4")),
+    Demand = Demand / 1e3
   )
 
-p_ts_pred <- preds_df |>
-  tidyr::pivot_longer(cols = c(Baseline, `Model 3`, `Model 1`,
-                                `Model 4`, `Model 2`),
-                      names_to = "model", values_to = "pred") |>
-  mutate(pred_gwh = pred / 1e3) |>
-  ggplot(aes(Date, pred_gwh, colour = model,
-             text = paste0(model, "<br>", Date,
-                           "<br>Pred: ", round(pred / 1e3, 1), " GWh"))) +
-  geom_line(alpha = 0.75, linewidth = 0.45) +
-  geom_line(data = preds_df |> mutate(Actual = Demand / 1e3),
-            aes(Date, Actual),
-            colour = "black", linewidth = 0.6, linetype = "dotted",
-            inherit.aes = FALSE) +
+p_ts_pred <- preds_long |>
+  ggplot(aes(Date, Demand, colour = Model, linetype = Model,
+             text = paste0(Model, "<br>", Date,
+                           "<br>", round(Demand, 1), " GWh"))) +
+  geom_line(aes(linewidth = Model, alpha = Model)) +
   scale_colour_manual(
-    values = c("Baseline" = vpal[1], "Model 3" = vpal[2],
-               "Model 1" = vpal[3], "Model 4" = vpal[4],
-               "Model 2" = vpal[5]),
+    values = c("Actual" = "black", "Baseline" = vpal[1], "Model 1" = vpal[3],
+               "Model 2" = vpal[5], "Model 3" = vpal[2], "Model 4" = vpal[4]),
     name = NULL
+  ) +
+  scale_linetype_manual(
+    values = c("Actual" = "dotted", "Baseline" = "solid", "Model 1" = "solid",
+               "Model 2" = "solid", "Model 3" = "solid", "Model 4" = "solid"),
+    guide = "none"
+  ) +
+  scale_linewidth_manual(
+    values = c("Actual" = 0.6, "Baseline" = 0.45, "Model 1" = 0.45,
+               "Model 2" = 0.45, "Model 3" = 0.45, "Model 4" = 0.45),
+    guide = "none"
+  ) +
+  scale_alpha_manual(
+    values = c("Actual" = 1, "Baseline" = 0.75, "Model 1" = 0.75,
+               "Model 2" = 0.75, "Model 3" = 0.75, "Model 4" = 0.75),
+    guide = "none"
   ) +
   scale_y_continuous(labels = comma) +
   labs(x = NULL, y = "Demand (GWh/day)",
        title = "2014 test set: all five models vs actual (dotted)") +
+  theme_bw() +
   theme(legend.position = "top")
 
 ggplotly(p_ts_pred, tooltip = "text") |>
