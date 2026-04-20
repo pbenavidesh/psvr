@@ -16,6 +16,9 @@ navbar:
     left:  [intro, reference, articles, news]
     right: [github]
   components:
+    intro:
+      text: "Get Started"
+      href: articles/getting-started.html
     github:
       icon: fab fa-github
       href: https://github.com/pbenavidesh/psvr
@@ -91,9 +94,8 @@ reference:
       - psvr-fit-wrappers
 
 articles:
-  - title: "Get Started"
+  - title: "Workflows"
     contents:
-      - getting-started
       - tidymodels-workflow
 
   - title: "Case Studies"
@@ -106,6 +108,4 @@ articles:
       - python-replication
 
 news:
-  releases:
-  - text: "psvr 0.0.0.9001"
-    href: news/index.html
+  one_page_per_version: true
