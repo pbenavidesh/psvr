@@ -100,15 +100,18 @@ articles:
       - getting-started
 
   - title: "Workflows"
+    navbar: true
     contents:
       - tidymodels-workflow
 
   - title: "Case Studies"
+    navbar: true
     contents:
       - articles/electricity-forecasting
       # Future article: "When to Use Percentage-Error SVR"
 
   - title: "Technical Notes"
+    navbar: true
     contents:
       - python-replication
 
