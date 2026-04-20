@@ -39,6 +39,7 @@ thousands of USD), making MAPE well-defined throughout.
 
 ``` r
 library(psvr)
+library(ggplot2)
 
 # Boston Housing is available in the MASS package
 data("Boston", package = "MASS")
@@ -114,17 +115,37 @@ where
 $Y_{\Gamma} = \operatorname{diag}\left( y_{1}^{2}/\Gamma,\ldots,y_{N}^{2}/\Gamma \right)$.
 
 ``` r
+# make_kernel() returns a closure K(xi, xj) = exp(-||xi - xj||^2 / (2 sigma^2))
 K <- make_kernel("rbf", sigma = 1)
 
+# gamma = 5000: regularisation; larger gamma -> smaller Y_Gamma diagonal -> tighter fit
 fit_ls <- rmspe_lssvr(X_tr, y_tr, kernel = K, gamma = 5000)
 pred_ls <- predict(fit_ls, X_te)
 
 cat(sprintf("LS-SVR RMSPE  — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
             mape(y_te, pred_ls), rmspe(y_te, pred_ls), r2(y_te, pred_ls)))
 #> LS-SVR RMSPE  — MAPE: 15.46%  RMSPE: 27.21%  R²: 0.7277
+print(fit_ls)
+#> 
+#> LS-SVR with RMSPE loss  [psvr_rmspe]
+#> 
+#>   Kernel:        RBF (sigma = 1)
+#>   Gamma:         5000
+#>   Training obs.: 354
 ```
 
 ![](getting-started_files/figure-html/rmspe-plot-1.png)
+
+``` r
+cf_ls <- coef(fit_ls)
+# alpha: N dual variables; weight each training point's kernel contribution
+#        in f(x) = sum_k alpha_k K(x_k, x) + b (all N points, no sparsity)
+# b:     bias / intercept term
+# X_sv:  all N training inputs stored for prediction
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_ls$b, min(cf_ls$alpha), max(cf_ls$alpha)))
+#> b = 22.5268  |  alpha range: [-59.7536, 43.7327]
+```
 
 ## Model 1: ε-SVR with MAPE
 
@@ -134,6 +155,7 @@ for small targets, concentrating model capacity on low-magnitude
 observations.
 
 ``` r
+# C = 10: per-sample box bound |beta_k| <= 100*C/y_k; eps = 1: tube width (% of y_k)
 fit_ep <- mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = 1)
 pred_ep <- predict(fit_ep, X_te)
 
@@ -142,9 +164,29 @@ cat(sprintf("ε-SVR MAPE    — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
 #> ε-SVR MAPE    — MAPE: 15.77%  RMSPE: 27.54%  R²: 0.7617
 cat(sprintf("Support vectors: %d / %d\n", length(fit_ep$beta), nrow(X_tr)))
 #> Support vectors: 328 / 354
+print(fit_ep)
+#> 
+#> Epsilon-SVR with MAPE loss  [psvr_mape]
+#> 
+#>   Kernel:          RBF (sigma = 1)
+#>   C:               10
+#>   eps:             1
+#>   Training obs.:   354
+#>   Support vectors: 328 (92.7%)
 ```
 
 ![](getting-started_files/figure-html/mape-plot-1.png)
+
+``` r
+cf_ep <- coef(fit_ep)
+# alpha: beta_k = alpha_k - alpha_k* for each support vector; non-zero only for
+#        training points outside the percentage-error ε-tube (sparse)
+# b:     bias / intercept term
+# X_sv:  training rows corresponding to support vectors only
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_ep$b, min(cf_ep$alpha), max(cf_ep$alpha)))
+#> b = 23.1097  |  alpha range: [-111.5553, 82.6446]
+```
 
 ## Comparing objectives
 

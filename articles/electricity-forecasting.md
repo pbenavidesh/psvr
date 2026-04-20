@@ -119,7 +119,7 @@ p_ts <- elec_daily |>
   theme(legend.position = "right")
 
 ggplotly(p_ts, tooltip = "text") |>
-  layout(hoverlabel = list(bgcolor = "white"))
+  layout(hoverlabel = list(bgcolor = "white"), width = NULL, height = 450)
 ```
 
 Figure 1: Daily electricity demand in Victoria, 2012–2014. Colour
@@ -518,6 +518,20 @@ $Y_{\Gamma} = \text{diag}(y_{1}^{2}/\Gamma,\ldots,y_{N}^{2}/\Gamma)$,
 causing the linear system to directly minimise the root mean squared
 percentage error.
 
+Code
+
+``` r
+cf_m3 <- coef(fit_m3)
+# alpha: N dual variables; each training day's kernel contribution is weighted by alpha_k
+#        in f(x) = sum_k alpha_k K(x_k, x) + b  (no sparsity — every day contributes)
+# b:     bias / intercept term
+# X_sv:  all N training inputs stored for prediction
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_m3$b, min(cf_m3$alpha), max(cf_m3$alpha)))
+```
+
+    b = 2.1212  |  alpha range: [-42.5000, 22.5903]
+
 ``` r
 1K3 <- make_kernel("rbf", sigma = 2)
 
@@ -641,6 +655,20 @@ accuracy just as much as a peak summer day.
 > $\sim \! 34,000 \times 34,000$ dense matrix requiring several GB of
 > RAM and potentially hours of compute. Daily aggregation is the
 > practical choice for this solver.
+
+Code
+
+``` r
+cf_m1 <- coef(fit_m1)
+# alpha: beta_k = alpha_k - alpha_k* for each support vector; non-zero for training
+#        days outside the percentage-error ε-tube (sparse)
+# b:     bias / intercept term
+# X_sv:  training rows for support vectors only
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_m1$b, min(cf_m1$alpha), max(cf_m1$alpha)))
+```
+
+    b = 2.1185  |  alpha range: [-291.1579, 259.9121]
 
 ``` r
 1K1 <- make_kernel("rbf", sigma = 1)
@@ -794,6 +822,13 @@ K4 <- make_kernel("rbf", sigma = 2)   # same kernel as Model 3
 )
 print(fit_m4)
 
+cf_m4 <- coef(fit_m4)
+# alpha: N dual variables; used in f(x) = sum_k alpha_k * Ks(x_k, x) / 2 + b
+# b:     bias / intercept term
+# X_sv:  all N training inputs (symmetric LS-SVR has no sparsity)
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_m4$b, min(cf_m4$alpha), max(cf_m4$alpha)))
+
 pred_m4   <- predict(fit_m4, X_te) * y_scale
 metrics_m4 <- tibble(
   Model = "Model 4 — Sym LS-SVR RMSPE",
@@ -821,6 +856,8 @@ metrics_m4 <- tibble(
       Gamma:         500
       Symmetry:      even  (a = 1)
       Training obs.: 732
+
+    b = 2.2273  |  alpha range: [-41.3483, 24.0013]
 
 > **Mathematical detail: Theorem 4 linear system**
 >
@@ -856,6 +893,13 @@ K2 <- make_kernel("rbf", sigma = 1)   # same kernel as Model 1
 )
 print(fit_m2)
 
+cf_m2 <- coef(fit_m2)
+# alpha: beta_k = alpha_k - alpha_k* for each support vector (sparse)
+# b:     bias / intercept term
+# X_sv:  training rows for support vectors only
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_m2$b, min(cf_m2$alpha), max(cf_m2$alpha)))
+
 pred_m2   <- predict(fit_m2, X_te) * y_scale
 metrics_m2 <- tibble(
   Model = "Model 2 — Sym ε-SVR MAPE",
@@ -882,6 +926,8 @@ metrics_m2 <- tibble(
       Symmetry:        even  (a = 1)
       Training obs.:   732
       Support vectors: 369 (50.4%)
+
+    b = 2.1620  |  alpha range: [-291.1579, 259.9121]
 
 For full derivations of the symmetric kernel extensions see Theorems 2
 and 4 in Benavides-Herrera et al. (2026).
@@ -974,7 +1020,7 @@ p_ts_pred <- preds_df |>
   theme(legend.position = "top")
 
 ggplotly(p_ts_pred, tooltip = "text") |>
-  layout(hoverlabel = list(bgcolor = "white"))
+  layout(hoverlabel = list(bgcolor = "white"), width = NULL, height = 450)
 ```
 
 Figure 9: Interactive time series of model predictions vs actual daily

@@ -168,3 +168,31 @@ predict(extract_workflow(final_fit), new_data = new_obs)
 #> 2  3.59
 #> 3  8.05
 ```
+
+## 8 — Inspecting the fitted psvr model
+
+The tidymodels layer wraps a `psvr_rmspe` object. Extract it to use
+[`print()`](https://rdrr.io/r/base/print.html) and
+[`coef()`](https://rdrr.io/r/stats/coef.html) directly.
+
+``` r
+# extract_fit_engine() unwraps the parsnip/workflow layer to the raw psvr object
+psvr_fit <- extract_fit_engine(extract_workflow(final_fit))
+print(psvr_fit)
+#> 
+#> LS-SVR with RMSPE loss  [psvr_rmspe]
+#> 
+#>   Kernel:        RBF (sigma = 1)
+#>   Gamma:         100
+#>   Training obs.: 150
+```
+
+``` r
+cf <- coef(psvr_fit)
+# alpha: N dual variables; weight each training point in f(x) = sum_k alpha_k K(x_k, x) + b
+# b:     bias / intercept term
+# X_sv:  all N training inputs (LS-SVR has no sparsity — every training point contributes)
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf$b, min(cf$alpha), max(cf$alpha)))
+#> b = 9.6421  |  alpha range: [-3.2795, 4.3316]
+```

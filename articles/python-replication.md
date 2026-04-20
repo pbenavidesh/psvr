@@ -29,6 +29,7 @@ reported metrics.
 
 ``` r
 library(psvr)
+library(ggplot2)
 
 # Boston Housing — all 506 observations, MEDV strictly positive
 data("Boston", package = "MASS")
@@ -118,9 +119,26 @@ cat(sprintf(
   m3_mape, m3_rmspe, m3_r2, m3_mse
 ))
 #> Model 3 (R) — MAPE: 11.0496%  RMSPE: 18.7205%  R²: 0.819582  MSE: 14.127739
+print(fit_m3)
+#> 
+#> LS-SVR with RMSPE loss  [psvr_rmspe]
+#> 
+#>   Kernel:        RBF (sigma = 3.13213)
+#>   Gamma:         16962.5
+#>   Training obs.: 354
 ```
 
 ![](python-replication_files/figure-html/model3-plot-1.png)
+
+``` r
+cf_m3 <- coef(fit_m3)
+# alpha: N dual variables; weight each training point in f(x) = sum_k alpha_k K(x_k, x) + b
+# b:     bias / intercept term
+# X_sv:  all N training inputs (LS-SVR — no sparsity, every point contributes)
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_m3$b, min(cf_m3$alpha), max(cf_m3$alpha)))
+#> b = 25.1360  |  alpha range: [-774.6276, 307.9745]
+```
 
 ------------------------------------------------------------------------
 
@@ -156,9 +174,29 @@ cat(sprintf(
 cat(sprintf("Support vectors: %d / %d training points\n",
             sum(fit_m1$beta != 0), nrow(X_tr)))
 #> Support vectors: 214 / 354 training points
+print(fit_m1)
+#> 
+#> Epsilon-SVR with MAPE loss  [psvr_mape]
+#> 
+#>   Kernel:          RBF (sigma = 3.89722)
+#>   C:               15.6313
+#>   eps:             5.8046
+#>   Training obs.:   354
+#>   Support vectors: 214 (60.5%)
 ```
 
 ![](python-replication_files/figure-html/model1-plot-1.png)
+
+``` r
+cf_m1 <- coef(fit_m1)
+# alpha: beta_k = alpha_k - alpha_k* for each support vector; non-zero for
+#        points outside the percentage-error ε-tube (sparse)
+# b:     bias / intercept term
+# X_sv:  training rows for support vectors only
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_m1$b, min(cf_m1$alpha), max(cf_m1$alpha)))
+#> b = 25.4618  |  alpha range: [-248.1156, 165.5386]
+```
 
 ------------------------------------------------------------------------
 

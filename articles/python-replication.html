@@ -104,6 +104,7 @@ order of 0.01–0.1 percentage points in the reported metrics.</p>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pbenavidesh.github.io/psvr/">psvr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Boston Housing — all 506 observations, MEDV strictly positive</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"Boston"</span>, package <span class="op">=</span> <span class="st">"MASS"</span><span class="op">)</span></span>
@@ -207,8 +208,23 @@ with
 <span>  <span class="st">"Model 3 (R) — MAPE: %.4f%%  RMSPE: %.4f%%  R²: %.6f  MSE: %.6f\n"</span>,</span>
 <span>  <span class="va">m3_mape</span>, <span class="va">m3_rmspe</span>, <span class="va">m3_r2</span>, <span class="va">m3_mse</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Model 3 (R) — MAPE: 11.0496%  RMSPE: 18.7205%  R²: 0.819582  MSE: 14.127739</span></span></code></pre></div>
+<span><span class="co">#&gt; Model 3 (R) — MAPE: 11.0496%  RMSPE: 18.7205%  R²: 0.819582  MSE: 14.127739</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_m3</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; LS-SVR with RMSPE loss  [psvr_rmspe]</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;   Kernel:        RBF (sigma = 3.13213)</span></span>
+<span><span class="co">#&gt;   Gamma:         16962.5</span></span>
+<span><span class="co">#&gt;   Training obs.: 354</span></span></code></pre></div>
 <p><img src="python-replication_files/figure-html/model3-plot-1.png" class="r-plt" alt="" width="576"></p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">cf_m3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_m3</span><span class="op">)</span></span>
+<span><span class="co"># alpha: N dual variables; weight each training point in f(x) = sum_k alpha_k K(x_k, x) + b</span></span>
+<span><span class="co"># b:     bias / intercept term</span></span>
+<span><span class="co"># X_sv:  all N training inputs (LS-SVR — no sparsity, every point contributes)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"b = %.4f  |  alpha range: [%.4f, %.4f]\n"</span>,</span>
+<span>            <span class="va">cf_m3</span><span class="op">$</span><span class="va">b</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">cf_m3</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">cf_m3</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; b = 25.1360  |  alpha range: [-774.6276, 307.9745]</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level2">
@@ -241,7 +257,7 @@ al. (2026):</strong></p>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sigma_m1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="fl">0.032920</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Model 1 — sigma:"</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">sigma_m1</span>, <span class="fl">6</span><span class="op">)</span>, <span class="st">"\n"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Model 1 — sigma: 3.897221</span></span>
@@ -262,8 +278,26 @@ al. (2026):</strong></p>
 <span><span class="co">#&gt; Model 1 (R) — MAPE: 10.6900%  RMSPE: 18.5433%  R²: 0.810768  MSE: 14.817948</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Support vectors: %d / %d training points\n"</span>,</span>
 <span>            <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">fit_m1</span><span class="op">$</span><span class="va">beta</span> <span class="op">!=</span> <span class="fl">0</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">X_tr</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Support vectors: 214 / 354 training points</span></span></code></pre></div>
+<span><span class="co">#&gt; Support vectors: 214 / 354 training points</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_m1</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; Epsilon-SVR with MAPE loss  [psvr_mape]</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;   Kernel:          RBF (sigma = 3.89722)</span></span>
+<span><span class="co">#&gt;   C:               15.6313</span></span>
+<span><span class="co">#&gt;   eps:             5.8046</span></span>
+<span><span class="co">#&gt;   Training obs.:   354</span></span>
+<span><span class="co">#&gt;   Support vectors: 214 (60.5%)</span></span></code></pre></div>
 <p><img src="python-replication_files/figure-html/model1-plot-1.png" class="r-plt" alt="" width="576"></p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">cf_m1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_m1</span><span class="op">)</span></span>
+<span><span class="co"># alpha: beta_k = alpha_k - alpha_k* for each support vector; non-zero for</span></span>
+<span><span class="co">#        points outside the percentage-error ε-tube (sparse)</span></span>
+<span><span class="co"># b:     bias / intercept term</span></span>
+<span><span class="co"># X_sv:  training rows for support vectors only</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"b = %.4f  |  alpha range: [%.4f, %.4f]\n"</span>,</span>
+<span>            <span class="va">cf_m1</span><span class="op">$</span><span class="va">b</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">cf_m1</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">cf_m1</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; b = 25.4618  |  alpha range: [-248.1156, 165.5386]</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level2">
@@ -280,7 +314,7 @@ same integer seed, so the 152 test observations differ between the two
 runs. The mathematical equivalence of the implementations is verified by
 the KKT unit tests in <code>tests/testthat/</code>, not by matching
 these held-out metrics.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Python reference values from Tables 1-2 of Benavides-Herrera et al. (2026)</span></span>
 <span><span class="va">py_m3_mape</span>  <span class="op">&lt;-</span> <span class="fl">10.06</span>        <span class="co"># Table 1, Model 3 — MAPE (%)</span></span>
 <span><span class="va">py_m3_rmspe</span> <span class="op">&lt;-</span> <span class="cn">NA_real_</span>     <span class="co"># Table 1, Model 3 — RMSPE (%) not reported</span></span>
