@@ -55,6 +55,7 @@ thousands of USD), making MAPE well-defined throughout.
 
 ```{r data}
 library(psvr)
+library(ggplot2)
 
 # Boston Housing is available in the MASS package
 data("Boston", package = "MASS")
@@ -122,23 +123,37 @@ $$
 where $Y_\Gamma = \operatorname{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)$.
 
 ```{r rmspe-lssvr}
+# make_kernel() returns a closure K(xi, xj) = exp(-||xi - xj||^2 / (2 sigma^2))
 K <- make_kernel("rbf", sigma = 1)
 
+# gamma = 5000: regularisation; larger gamma -> smaller Y_Gamma diagonal -> tighter fit
 fit_ls <- rmspe_lssvr(X_tr, y_tr, kernel = K, gamma = 5000)
 pred_ls <- predict(fit_ls, X_te)
 
 cat(sprintf("LS-SVR RMSPE  — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
             mape(y_te, pred_ls), rmspe(y_te, pred_ls), r2(y_te, pred_ls)))
+print(fit_ls)
 ```
 
 ```{r rmspe-plot, echo = FALSE}
 lim <- range(c(y_te, pred_ls))
-plot(y_te, pred_ls,
-     xlab = "Actual MEDV", ylab = "Predicted MEDV",
-     main = "Model 3: LS-SVR with RMSPE",
-     pch = 16, col = "#2c7bb6aa",
-     xlim = lim, ylim = lim)
-abline(0, 1, lty = 2, col = "grey40")
+data.frame(actual = y_te, predicted = pred_ls) |>
+  ggplot(aes(actual, predicted)) +
+  geom_point(colour = "#2c7bb6", alpha = 0.65, size = 1.8) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey40") +
+  coord_equal(xlim = lim, ylim = lim) +
+  labs(x = "Actual MEDV", y = "Predicted MEDV",
+       title = "Model 3: LS-SVR with RMSPE")
+```
+
+```{r rmspe-coef}
+cf_ls <- coef(fit_ls)
+# alpha: N dual variables; weight each training point's kernel contribution
+#        in f(x) = sum_k alpha_k K(x_k, x) + b (all N points, no sparsity)
+# b:     bias / intercept term
+# X_sv:  all N training inputs stored for prediction
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_ls$b, min(cf_ls$alpha), max(cf_ls$alpha)))
 ```
 
 ## Model 1: ε-SVR with MAPE
@@ -148,22 +163,35 @@ constraints** $|\beta_k| \le 100C/y_k$: tighter bounds for small
 targets, concentrating model capacity on low-magnitude observations.
 
 ```{r mape-svr}
+# C = 10: per-sample box bound |beta_k| <= 100*C/y_k; eps = 1: tube width (% of y_k)
 fit_ep <- mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = 1)
 pred_ep <- predict(fit_ep, X_te)
 
 cat(sprintf("ε-SVR MAPE    — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
             mape(y_te, pred_ep), rmspe(y_te, pred_ep), r2(y_te, pred_ep)))
 cat(sprintf("Support vectors: %d / %d\n", length(fit_ep$beta), nrow(X_tr)))
+print(fit_ep)
 ```
 
 ```{r mape-plot, echo = FALSE}
 lim <- range(c(y_te, pred_ep))
-plot(y_te, pred_ep,
-     xlab = "Actual MEDV", ylab = "Predicted MEDV",
-     main = "Model 1: \u03b5-SVR with MAPE",
-     pch = 16, col = "#d7191caa",
-     xlim = lim, ylim = lim)
-abline(0, 1, lty = 2, col = "grey40")
+data.frame(actual = y_te, predicted = pred_ep) |>
+  ggplot(aes(actual, predicted)) +
+  geom_point(colour = "#d7191c", alpha = 0.65, size = 1.8) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey40") +
+  coord_equal(xlim = lim, ylim = lim) +
+  labs(x = "Actual MEDV", y = "Predicted MEDV",
+       title = "Model 1: \u03b5-SVR with MAPE")
+```
+
+```{r mape-coef}
+cf_ep <- coef(fit_ep)
+# alpha: beta_k = alpha_k - alpha_k* for each support vector; non-zero only for
+#        training points outside the percentage-error ε-tube (sparse)
+# b:     bias / intercept term
+# X_sv:  training rows corresponding to support vectors only
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_ep$b, min(cf_ep$alpha), max(cf_ep$alpha)))
 ```
 
 ## Comparing objectives

@@ -21,6 +21,11 @@ execute:
   warning: false
   message: false
   cache: false
+knitr:
+  opts_chunk:
+    fig.width: 7
+    fig.asp: 0.618
+    out.width: "90%"
 ---
 
 ```{r}
@@ -128,7 +133,7 @@ p_ts <- elec_daily |>
   theme(legend.position = "right")
 
 ggplotly(p_ts, tooltip = "text") |>
-  layout(hoverlabel = list(bgcolor = "white"))
+  layout(hoverlabel = list(bgcolor = "white"), width = NULL, height = 450)
 ```
 
 ::: {.callout-note}
@@ -495,6 +500,18 @@ fit_m3 <- rmspe_lssvr(                 # <2>
 print(fit_m3)                          # <4>
 ```
 
+```{r}
+#| label: m3-coef
+
+cf_m3 <- coef(fit_m3)
+# alpha: N dual variables; each training day's kernel contribution is weighted by alpha_k
+#        in f(x) = sum_k alpha_k K(x_k, x) + b  (no sparsity — every day contributes)
+# b:     bias / intercept term
+# X_sv:  all N training inputs stored for prediction
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_m3$b, min(cf_m3$alpha), max(cf_m3$alpha)))
+```
+
 1. RBF kernel with $\sigma = 2$. The `make_kernel()` factory returns a closure
    that accepts arbitrary real inputs, including the negated vectors needed by
    the symmetric models.
@@ -598,6 +615,18 @@ fit_m1 <- mape_svr(                   # <2>
 )
 
 print(fit_m1)                         # <5>
+```
+
+```{r}
+#| label: m1-coef
+
+cf_m1 <- coef(fit_m1)
+# alpha: beta_k = alpha_k - alpha_k* for each support vector; non-zero for training
+#        days outside the percentage-error ε-tube (sparse)
+# b:     bias / intercept term
+# X_sv:  training rows for support vectors only
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_m1$b, min(cf_m1$alpha), max(cf_m1$alpha)))
 ```
 
 1. RBF kernel with $\sigma = 1$ (chosen by grid search).
@@ -720,6 +749,13 @@ fit_m4 <- rmspe_sym_lssvr(            # <1>
 )
 print(fit_m4)
 
+cf_m4 <- coef(fit_m4)
+# alpha: N dual variables; used in f(x) = sum_k alpha_k * Ks(x_k, x) / 2 + b
+# b:     bias / intercept term
+# X_sv:  all N training inputs (symmetric LS-SVR has no sparsity)
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_m4$b, min(cf_m4$alpha), max(cf_m4$alpha)))
+
 pred_m4   <- predict(fit_m4, X_te) * y_scale
 metrics_m4 <- tibble(
   Model = "Model 4 — Sym LS-SVR RMSPE",
@@ -769,6 +805,13 @@ fit_m2 <- mape_sym_svr(               # <1>
   a      = 1
 )
 print(fit_m2)
+
+cf_m2 <- coef(fit_m2)
+# alpha: beta_k = alpha_k - alpha_k* for each support vector (sparse)
+# b:     bias / intercept term
+# X_sv:  training rows for support vectors only
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_m2$b, min(cf_m2$alpha), max(cf_m2$alpha)))
 
 pred_m2   <- predict(fit_m2, X_te) * y_scale
 metrics_m2 <- tibble(
@@ -870,7 +913,7 @@ p_ts_pred <- preds_df |>
   theme(legend.position = "top")
 
 ggplotly(p_ts_pred, tooltip = "text") |>
-  layout(hoverlabel = list(bgcolor = "white"))
+  layout(hoverlabel = list(bgcolor = "white"), width = NULL, height = 450)
 ```
 
 ### Percentage residuals by day of week

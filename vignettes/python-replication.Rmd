@@ -42,6 +42,7 @@ percentage points in the reported metrics.
 
 ```{r setup}
 library(psvr)
+library(ggplot2)
 
 # Boston Housing — all 506 observations, MEDV strictly positive
 data("Boston", package = "MASS")
@@ -126,17 +127,27 @@ cat(sprintf(
   "Model 3 (R) — MAPE: %.4f%%  RMSPE: %.4f%%  R²: %.6f  MSE: %.6f\n",
   m3_mape, m3_rmspe, m3_r2, m3_mse
 ))
+print(fit_m3)
 ```
 
 ```{r model3-plot, echo = FALSE}
 lim <- range(c(y_te, pred_m3))
-plot(y_te, pred_m3,
-     xlab = "Actual MEDV (thousands USD)",
-     ylab = "Predicted MEDV",
-     main = "Model 3: LS-SVR with RMSPE — R vs actual",
-     pch = 16, col = "#2c7bb6aa",
-     xlim = lim, ylim = lim)
-abline(0, 1, lty = 2, col = "grey40")
+data.frame(actual = y_te, predicted = pred_m3) |>
+  ggplot(aes(actual, predicted)) +
+  geom_point(colour = "#2c7bb6", alpha = 0.65, size = 1.8) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey40") +
+  coord_equal(xlim = lim, ylim = lim) +
+  labs(x = "Actual MEDV (thousands USD)", y = "Predicted MEDV",
+       title = "Model 3: LS-SVR with RMSPE — R vs actual")
+```
+
+```{r model3-coef}
+cf_m3 <- coef(fit_m3)
+# alpha: N dual variables; weight each training point in f(x) = sum_k alpha_k K(x_k, x) + b
+# b:     bias / intercept term
+# X_sv:  all N training inputs (LS-SVR — no sparsity, every point contributes)
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_m3$b, min(cf_m3$alpha), max(cf_m3$alpha)))
 ```
 
 ---
@@ -170,17 +181,28 @@ cat(sprintf(
 ))
 cat(sprintf("Support vectors: %d / %d training points\n",
             sum(fit_m1$beta != 0), nrow(X_tr)))
+print(fit_m1)
 ```
 
 ```{r model1-plot, echo = FALSE}
 lim <- range(c(y_te, pred_m1))
-plot(y_te, pred_m1,
-     xlab = "Actual MEDV (thousands USD)",
-     ylab = "Predicted MEDV",
-     main = "Model 1: \u03b5-SVR with MAPE \u2014 R vs actual",
-     pch = 16, col = "#d7191caa",
-     xlim = lim, ylim = lim)
-abline(0, 1, lty = 2, col = "grey40")
+data.frame(actual = y_te, predicted = pred_m1) |>
+  ggplot(aes(actual, predicted)) +
+  geom_point(colour = "#d7191c", alpha = 0.65, size = 1.8) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey40") +
+  coord_equal(xlim = lim, ylim = lim) +
+  labs(x = "Actual MEDV (thousands USD)", y = "Predicted MEDV",
+       title = "Model 1: \u03b5-SVR with MAPE \u2014 R vs actual")
+```
+
+```{r model1-coef}
+cf_m1 <- coef(fit_m1)
+# alpha: beta_k = alpha_k - alpha_k* for each support vector; non-zero for
+#        points outside the percentage-error ε-tube (sparse)
+# b:     bias / intercept term
+# X_sv:  training rows for support vectors only
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_m1$b, min(cf_m1$alpha), max(cf_m1$alpha)))
 ```
 
 ---
