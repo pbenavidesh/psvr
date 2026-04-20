@@ -68,12 +68,11 @@ rec <- recipe(y ~ x1 + x2, data = train) |>
 
 ## 3 — Model spec with `tune()`
 
-`cost` is a `tune()` placeholder that maps to the $\Gamma$ regularisation
-parameter inside `rmspe_lssvr()`.  The RBF bandwidth `rbf_sigma` is fixed at
-1; it can also be tuned with `tune()`.
+Both `cost` (maps to $\Gamma$) and `rbf_sigma` (the RBF bandwidth $\sigma$)
+are `tune()` placeholders; the grid search will explore all combinations.
 
 ```{r spec}
-spec <- psvr_rmspe_rbf(cost = tune(), rbf_sigma = 1) |>
+spec <- psvr_rmspe_rbf(cost = tune(), rbf_sigma = tune()) |>
   set_engine("psvr")
 ```
 
@@ -87,14 +86,18 @@ wf <- workflow() |>
 
 ## 5 — Tune with 5-fold CV
 
-We search five candidate values of `cost` and evaluate each fold by MAPE.
-`rmspe_lssvr()` only solves a linear system, so 25 fits complete in seconds.
+We search over a $5 \times 3$ grid of `cost` and `rbf_sigma` values (15
+combinations) and evaluate each fold by MAPE.  `rmspe_lssvr()` only solves a
+linear system, so 75 fits complete in seconds.
 
 ```{r tune}
 set.seed(2)
 folds <- vfold_cv(train, v = 5)
 
-cost_grid <- tibble::tibble(cost = c(0.01, 0.1, 1, 10, 100))
+cost_grid <- tidyr::crossing(
+  cost      = c(0.01, 0.1, 1, 10, 100),
+  rbf_sigma = c(0.5, 1, 2)
+)
 
 tune_res <- tune_grid(
   wf,
@@ -107,7 +110,7 @@ tune_res <- tune_grid(
 Cross-validated MAPE for each candidate (lower is better):
 
 ```{r tune-results}
-collect_metrics(tune_res)[, c("cost", "mean", "std_err")]
+collect_metrics(tune_res)[, c("cost", "rbf_sigma", "mean", "std_err")]
 ```
 
 ## 6 — Select best
