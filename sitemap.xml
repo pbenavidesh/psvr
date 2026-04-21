@@ -34,9 +34,11 @@
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.html</loc></url>
+<url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_option_add.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.html</loc></url>
+<url><loc>https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr_data.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/sigma_heuristic.html</loc></url>

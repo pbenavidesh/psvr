@@ -37,5 +37,5 @@ A scalar numeric: the median pairwise Euclidean distance.
 ``` r
 X <- matrix(rnorm(200), ncol = 4)
 sigma_heuristic(X)
-#> [1] 2.673608
+#> [1] 2.627999
 ```

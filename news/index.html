@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9002</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9003</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,6 +45,17 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.0.9003" id="psvr-0009003">psvr 0.0.0.9003<a class="anchor" aria-label="anchor" href="#psvr-0009003"></a></h2>
+<div class="section level3">
+<h3 id="ux-improvements-0-0-0-9003">UX improvements<a class="anchor" aria-label="anchor" href="#ux-improvements-0-0-0-9003"></a></h3>
+<ul><li><p>New function <code><a href="../reference/rbf_sigma_psvr_data.html">rbf_sigma_psvr_data()</a></code>: combines <code><a href="../reference/sigma_heuristic.html">sigma_heuristic()</a></code> and <code><a href="../reference/rbf_sigma_psvr.html">rbf_sigma_psvr()</a></code> in a single call, returning a dials parameter with a data-driven search range centred on the median pairwise distance.</p></li>
+<li><p>New function <code><a href="../reference/psvr_option_add.html">psvr_option_add()</a></code>: applies <code>option_add()</code> to every psvr workflow (those whose <code>wflow_id</code> matches <code>m1|m2|m3|m4</code>) in a workflow set simultaneously, replacing the <code>rbf_sigma</code> parameter with a data-driven one. Replaces four individual <code>option_add()</code> calls in typical workflows.</p></li>
+<li><p>Symmetric model specs (<code>psvr_mape_sym_*</code>, <code>psvr_rmspe_sym_*</code>): even symmetry (<code>a = 1L</code>) is now the default engine argument. Calling <code>set_engine("psvr")</code> without <code>a = 1L</code> now produces the same result as before — no action required for existing code that already passed <code>a = 1L</code>.</p></li>
+<li><p>All four core fitting functions now emit a warning when <code>N &gt; 2000</code> to remind users that the O(n²) kernel matrix may be expensive.</p></li>
+<li><p>The <code>y &gt; 0</code> input check in all four core fitting functions now reports the number of offending values and their minimum, making it easier to diagnose data issues.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.0.9002" id="psvr-0009002">psvr 0.0.0.9002<a class="anchor" aria-label="anchor" href="#psvr-0009002"></a></h2>
 <div class="section level3">

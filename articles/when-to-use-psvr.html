@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9002</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9003</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -235,7 +235,7 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 <span>  svm_margin <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  rbf_sigma  <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"psvr"</span>, a <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"psvr"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">spec_m3</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr_rmspe_specs.html">psvr_rmspe_rbf</a></span><span class="op">(</span></span>
 <span>  cost      <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>,</span>
@@ -247,7 +247,7 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 <span>  cost      <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  rbf_sigma <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"psvr"</span>, a <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"psvr"</span><span class="op">)</span></span></code></pre></div>
 </details>
 </div>
 <div>
@@ -266,20 +266,16 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 </div>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Compute median pairwise distance on the normalised training predictors</span></span>
-<span><span class="va">train_baked</span>  <span class="op">&lt;-</span> <span class="va">rec_base</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://recipes.tidymodels.org/reference/prep.html" class="external-link">prep</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://recipes.tidymodels.org/reference/bake.html" class="external-link">bake</a></span><span class="op">(</span>new_data <span class="op">=</span> <span class="va">train</span><span class="op">)</span></span>
-<span><span class="va">sigma_med</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sigma_heuristic.html">sigma_heuristic</a></span><span class="op">(</span><span class="va">train_baked</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">compressive_strength</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">rbf_sigma_custom</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rbf_sigma_psvr.html">rbf_sigma_psvr</a></span><span class="op">(</span></span>
-<span>  range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">sigma_med</span> <span class="op">/</span> <span class="fl">10</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">sigma_med</span> <span class="op">*</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># Compute data-driven rbf_sigma parameter from the normalised training predictors</span></span>
+<span><span class="va">train_baked</span>      <span class="op">&lt;-</span> <span class="va">rec_base</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://recipes.tidymodels.org/reference/prep.html" class="external-link">prep</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://recipes.tidymodels.org/reference/bake.html" class="external-link">bake</a></span><span class="op">(</span>new_data <span class="op">=</span> <span class="va">train</span><span class="op">)</span></span>
+<span><span class="va">rbf_sigma_custom</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rbf_sigma_psvr_data.html">rbf_sigma_psvr_data</a></span><span class="op">(</span></span>
+<span>  <span class="va">train_baked</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">compressive_strength</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"sigma_med = %.3f  →  rbf_sigma range: [%.3f, %.3f]\n"</span>,</span>
-<span>            <span class="va">sigma_med</span>,</span>
-<span>            <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">sigma_med</span> <span class="op">/</span> <span class="fl">10</span><span class="op">)</span>,</span>
-<span>            <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">sigma_med</span> <span class="op">*</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">r</span> <span class="op">&lt;-</span> <span class="fu">dials</span><span class="fu">::</span><span class="fu"><a href="https://dials.tidymodels.org/reference/range_validate.html" class="external-link">range_get</a></span><span class="op">(</span><span class="va">rbf_sigma_custom</span>, original <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"rbf_sigma range: [%.3f, %.3f]\n"</span>, <span class="va">r</span><span class="op">$</span><span class="va">lower</span>, <span class="va">r</span><span class="op">$</span><span class="va">upper</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>sigma_med = 3.688  →  rbf_sigma range: [-0.433, 1.567]</code></pre>
+<pre><code>rbf_sigma range: [-0.433, 1.567]</code></pre>
 </div>
 </div>
 <hr></section></section><section class="level2"><h2 id="workflow-set">Workflow set<a class="anchor" aria-label="anchor" href="#workflow-set"></a>
@@ -300,30 +296,7 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 <span>    m4_rmspe_sym <span class="op">=</span> <span class="va">spec_m4</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">option_add</span><span class="op">(</span></span>
-<span>    param_info <span class="op">=</span> <span class="fu"><a href="https://workflows.tidymodels.org/reference/workflow.html" class="external-link">workflow</a></span><span class="op">(</span><span class="va">rec_base</span>, <span class="va">spec_m1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>      <span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_parameter_set_dials</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>      <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span>rbf_sigma <span class="op">=</span> <span class="va">rbf_sigma_custom</span><span class="op">)</span>,</span>
-<span>    id <span class="op">=</span> <span class="st">"base_m1_mape"</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">option_add</span><span class="op">(</span></span>
-<span>    param_info <span class="op">=</span> <span class="fu"><a href="https://workflows.tidymodels.org/reference/workflow.html" class="external-link">workflow</a></span><span class="op">(</span><span class="va">rec_base</span>, <span class="va">spec_m2</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>      <span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_parameter_set_dials</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>      <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span>rbf_sigma <span class="op">=</span> <span class="va">rbf_sigma_custom</span><span class="op">)</span>,</span>
-<span>    id <span class="op">=</span> <span class="st">"base_m2_mape_sym"</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">option_add</span><span class="op">(</span></span>
-<span>    param_info <span class="op">=</span> <span class="fu"><a href="https://workflows.tidymodels.org/reference/workflow.html" class="external-link">workflow</a></span><span class="op">(</span><span class="va">rec_base</span>, <span class="va">spec_m3</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>      <span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_parameter_set_dials</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>      <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span>rbf_sigma <span class="op">=</span> <span class="va">rbf_sigma_custom</span><span class="op">)</span>,</span>
-<span>    id <span class="op">=</span> <span class="st">"base_m3_rmspe"</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">option_add</span><span class="op">(</span></span>
-<span>    param_info <span class="op">=</span> <span class="fu"><a href="https://workflows.tidymodels.org/reference/workflow.html" class="external-link">workflow</a></span><span class="op">(</span><span class="va">rec_base</span>, <span class="va">spec_m4</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>      <span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_parameter_set_dials</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>      <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span>rbf_sigma <span class="op">=</span> <span class="va">rbf_sigma_custom</span><span class="op">)</span>,</span>
-<span>    id <span class="op">=</span> <span class="st">"base_m4_rmspe_sym"</span></span>
-<span>  <span class="op">)</span></span>
+<span>  <span class="fu"><a href="../reference/psvr_option_add.html">psvr_option_add</a></span><span class="op">(</span><span class="va">train_baked</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">compressive_strength</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">wf_set</span></span></code></pre></div>
 </details><div class="cell-output cell-output-stdout">
@@ -448,44 +421,44 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 </tr>
 <tr class="odd">
 <td style="text-align: right;">3</td>
-<td style="text-align: left;">base_m1_mape</td>
-<td style="text-align: right;">12.98</td>
-<td style="text-align: right;">0.62</td>
-<td style="text-align: right;">10</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">4</td>
 <td style="text-align: left;">base_svm_rbf</td>
 <td style="text-align: right;">14.70</td>
 <td style="text-align: right;">0.57</td>
 <td style="text-align: right;">10</td>
 </tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">base_m1_mape</td>
+<td style="text-align: right;">22.24</td>
+<td style="text-align: right;">0.70</td>
+<td style="text-align: right;">10</td>
+</tr>
 <tr class="odd">
 <td style="text-align: right;">5</td>
 <td style="text-align: left;">base_m2_mape_sym</td>
-<td style="text-align: right;">15.41</td>
-<td style="text-align: right;">0.64</td>
-<td style="text-align: right;">10</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">6</td>
-<td style="text-align: left;">base_m3_rmspe</td>
-<td style="text-align: right;">20.73</td>
-<td style="text-align: right;">0.44</td>
-<td style="text-align: right;">10</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">7</td>
-<td style="text-align: left;">base_m4_rmspe_sym</td>
-<td style="text-align: right;">27.23</td>
+<td style="text-align: right;">28.91</td>
 <td style="text-align: right;">0.71</td>
 <td style="text-align: right;">10</td>
 </tr>
 <tr class="even">
-<td style="text-align: right;">8</td>
+<td style="text-align: right;">6</td>
 <td style="text-align: left;">base_lm</td>
 <td style="text-align: right;">30.82</td>
 <td style="text-align: right;">0.75</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">7</td>
+<td style="text-align: left;">base_m3_rmspe</td>
+<td style="text-align: right;">50.66</td>
+<td style="text-align: right;">1.30</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">8</td>
+<td style="text-align: left;">base_m4_rmspe_sym</td>
+<td style="text-align: right;">51.51</td>
+<td style="text-align: right;">1.17</td>
 <td style="text-align: right;">10</td>
 </tr>
 </tbody>
@@ -657,7 +630,6 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
  infer        * 1.1.0      2025-12-18 [1] RSPM
  ipred          0.9-15     2024-07-18 [1] RSPM
  jsonlite       2.0.0      2025-03-27 [1] RSPM
- kernlab        0.9-33     2024-08-13 [1] RSPM
  knitr          1.51       2025-12-20 [1] RSPM
  labeling       0.4.3      2023-08-29 [1] RSPM
  lattice        0.22-9     2026-02-09 [3] CRAN (R 4.5.3)
@@ -677,10 +649,9 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
  pillar         1.11.1     2025-09-17 [1] RSPM
  pkgconfig      2.0.3      2019-09-22 [1] RSPM
  prodlim        2026.03.11 2026-03-11 [1] RSPM
- psvr         * 0.0.0.9002 2026-04-21 [1] local
+ psvr         * 0.0.0.9003 2026-04-21 [1] local
  purrr        * 1.2.2      2026-04-10 [1] RSPM
  R6             2.6.1      2025-02-15 [1] RSPM
- ranger         0.18.0     2026-01-16 [1] RSPM
  RColorBrewer   1.1-3      2022-04-03 [1] RSPM
  Rcpp           1.1.1-1    2026-04-16 [1] RSPM
  readr        * 2.2.0      2026-02-19 [1] RSPM
@@ -693,7 +664,6 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
  S7             0.2.1-1    2025-11-14 [1] RSPM
  scales       * 1.4.0      2025-04-24 [1] RSPM
  sessioninfo    1.2.3      2025-02-05 [1] any (@1.2.3)
- sfd            0.1.0      2024-01-08 [1] RSPM
  sparsevctrs    0.3.6      2026-01-27 [1] RSPM
  stringi        1.8.7      2025-03-27 [1] RSPM
  stringr      * 1.6.0      2025-11-04 [1] RSPM

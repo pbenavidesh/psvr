@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9002</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9003</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -147,47 +147,51 @@ combinations.</p>
 <div class="section level2">
 <h2 id="tune-with-5-fold-cv">5 — Tune with 5-fold CV<a class="anchor" aria-label="anchor" href="#tune-with-5-fold-cv"></a>
 </h2>
-<p>We search over a
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>5</mn><mo>×</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">5 \times 3</annotation></semantics></math>
-grid of <code>cost</code> and <code>rbf_sigma</code> values (15
-combinations) and evaluate each fold by MAPE. <code><a href="../reference/rmspe_lssvr.html">rmspe_lssvr()</a></code>
+<p>We search over a 15-point Latin hypercube of <code>cost</code> and
+<code>rbf_sigma</code> values and evaluate each fold by MAPE. The
+<code>rbf_sigma</code> search range is set data-adaptively using
+<code><a href="../reference/rbf_sigma_psvr_data.html">rbf_sigma_psvr_data()</a></code>, centred on the median pairwise
+distance in the normalised feature space. <code><a href="../reference/rmspe_lssvr.html">rmspe_lssvr()</a></code>
 only solves a linear system, so 75 fits complete in seconds.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span></span>
 <span><span class="va">folds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rsample.tidymodels.org/reference/vfold_cv.html" class="external-link">vfold_cv</a></span><span class="op">(</span><span class="va">train</span>, v <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">cost_grid</span> <span class="op">&lt;-</span> <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/expand.html" class="external-link">crossing</a></span><span class="op">(</span></span>
-<span>  cost      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.01</span>, <span class="fl">0.1</span>, <span class="fl">1</span>, <span class="fl">10</span>, <span class="fl">100</span><span class="op">)</span>,</span>
-<span>  rbf_sigma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.5</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
+<span><span class="co"># Data-driven rbf_sigma range centred on median pairwise distance</span></span>
+<span><span class="va">train_baked</span>      <span class="op">&lt;-</span> <span class="va">rec</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://recipes.tidymodels.org/reference/prep.html" class="external-link">prep</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://recipes.tidymodels.org/reference/bake.html" class="external-link">bake</a></span><span class="op">(</span>new_data <span class="op">=</span> <span class="va">train</span><span class="op">)</span></span>
+<span><span class="va">rbf_sigma_custom</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rbf_sigma_psvr_data.html">rbf_sigma_psvr_data</a></span><span class="op">(</span><span class="va">train_baked</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">y</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">wf_params</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_parameter_set_dials</a></span><span class="op">(</span><span class="va">wf</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span>rbf_sigma <span class="op">=</span> <span class="va">rbf_sigma_custom</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">tune_res</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tune.tidymodels.org/reference/tune_grid.html" class="external-link">tune_grid</a></span><span class="op">(</span></span>
 <span>  <span class="va">wf</span>,</span>
-<span>  resamples <span class="op">=</span> <span class="va">folds</span>,</span>
-<span>  grid      <span class="op">=</span> <span class="va">cost_grid</span>,</span>
-<span>  metrics   <span class="op">=</span> <span class="fu"><a href="https://yardstick.tidymodels.org/reference/metric_set.html" class="external-link">metric_set</a></span><span class="op">(</span><span class="va">mape</span><span class="op">)</span></span>
+<span>  resamples  <span class="op">=</span> <span class="va">folds</span>,</span>
+<span>  grid       <span class="op">=</span> <span class="fl">15</span>,</span>
+<span>  param_info <span class="op">=</span> <span class="va">wf_params</span>,</span>
+<span>  metrics    <span class="op">=</span> <span class="fu"><a href="https://yardstick.tidymodels.org/reference/metric_set.html" class="external-link">metric_set</a></span><span class="op">(</span><span class="va">mape</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Cross-validated MAPE for each candidate (lower is better):</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_metrics</a></span><span class="op">(</span><span class="va">tune_res</span><span class="op">)</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"cost"</span>, <span class="st">"rbf_sigma"</span>, <span class="st">"mean"</span>, <span class="st">"std_err"</span><span class="op">)</span><span class="op">]</span></span>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 15 × 4</span></span></span>
-<span><span class="co">#&gt;      cost rbf_sigma  mean std_err</span></span>
-<span><span class="co">#&gt;     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>   0.01       0.5 41.8   1.07  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span>   0.01       1   41.8   1.07  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span>   0.01       2   42.0   1.06  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span>   0.1        0.5 40.0   1.09  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span>   0.1        1   40.3   1.08  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span>   0.1        2   41.6   1.07  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span>   1          0.5 29.9   1.02  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span>   1          1   30.2   1.10  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span>   1          2   38.6   1.11  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span>  10          0.5 13.6   0.366 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span>  10          1   12.4   0.398 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span>  10          2   23.1   1.02  </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span> 100          0.5  4.68  0.104 </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span> 100          1    4.88  0.073<span style="text-decoration: underline;">6</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> 100          2    6.30  0.203</span></span></code></pre></div>
+<span><span class="co">#&gt;        cost rbf_sigma  mean std_err</span></span>
+<span><span class="co">#&gt;       <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 1</span>    0.25      4.78  42.0   1.07  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 2</span>    0.453     0.478 35.0   1.13  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 3</span>    0.820     1.78  38.2   1.11  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 4</span>    1.49     12.8   42.0   1.07  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 5</span>    2.69      0.178 34.0   1.13  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 6</span>    4.88      0.665 16.9   0.538 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 7</span>    8.83      2.48  30.4   1.17  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 8</span>   16         9.23  41.8   1.13  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;"> 9</span>   29.0       0.248 14.7   0.472 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">10</span>   52.5       0.923  6.18  0.118 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">11</span>   95.1       3.44  18.8   0.897 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">12</span>  172.       17.8   41.8   1.22  </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">13</span>  312.        0.344  4.05  0.322 </span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">14</span>  565.        1.28   2.99  0.074<span style="text-decoration: underline;">3</span></span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">15</span> <span style="text-decoration: underline;">1</span>024         6.65  20.0   0.951</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="select-best">6 — Select best<a class="anchor" aria-label="anchor" href="#select-best"></a>
@@ -198,7 +202,7 @@ only solves a linear system, so 75 fits complete in seconds.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 3</span></span></span>
 <span><span class="co">#&gt;    cost rbf_sigma .config         </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>           </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>   100       0.5 pre0_mod13_post0</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  565.      1.28 pre0_mod14_post0</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="final-fit-and-test-set-evaluation">7 — Final fit and test-set evaluation<a class="anchor" aria-label="anchor" href="#final-fit-and-test-set-evaluation"></a>
@@ -214,7 +218,7 @@ data.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 1 × 4</span></span></span>
 <span><span class="co">#&gt;   .metric .estimator .estimate .config        </span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          </span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> mape    standard        5.24 pre0_mod0_post0</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span> mape    standard        3.14 pre0_mod0_post0</span></span></code></pre></div>
 <p>Predictions on the test set:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">preds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_predictions</a></span><span class="op">(</span><span class="va">final_fit</span><span class="op">)</span></span>
@@ -222,12 +226,12 @@ data.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 6 × 3</span></span></span>
 <span><span class="co">#&gt;    .row     y .pred</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>     3  5.99  6.00</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>     4  6.20  6.25</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>     5  4.69  4.90</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>     6  1.96  2.14</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>     8  6.70  6.87</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>     9  3.93  3.96</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>     3  5.99  6.05</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>     4  6.20  6.14</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>     5  4.69  4.88</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>     6  1.96  2.02</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>     8  6.70  6.77</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>     9  3.93  4.03</span></span></code></pre></div>
 <p>The fitted workflow can also be used directly for new data:</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">new_obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>x1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="op">-</span><span class="fl">2</span><span class="op">)</span>, x2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
@@ -235,9 +239,9 @@ data.</p>
 <span><span class="co">#&gt; <span style="color: #949494;"># A tibble: 3 × 1</span></span></span>
 <span><span class="co">#&gt;   .pred</span></span>
 <span><span class="co">#&gt;   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  2.06</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>  3.51</span></span>
-<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>  8.15</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">1</span>  1.97</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">2</span>  3.53</span></span>
+<span><span class="co">#&gt; <span style="color: #BCBCBC;">3</span>  8.13</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="inspecting-the-fitted-psvr-model">8 — Inspecting the fitted psvr model<a class="anchor" aria-label="anchor" href="#inspecting-the-fitted-psvr-model"></a>
@@ -252,8 +256,8 @@ and <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; LS-SVR with RMSPE loss  [psvr_rmspe]</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;   Kernel:        RBF (sigma = 0.5)</span></span>
-<span><span class="co">#&gt;   Gamma:         100</span></span>
+<span><span class="co">#&gt;   Kernel:        RBF (sigma = 1.28306)</span></span>
+<span><span class="co">#&gt;   Gamma:         565.294</span></span>
 <span><span class="co">#&gt;   Training obs.: 150</span></span></code></pre></div>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cf</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">psvr_fit</span><span class="op">)</span></span>
@@ -262,7 +266,7 @@ and <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef
 <span><span class="co"># X_sv:  all N training inputs (LS-SVR has no sparsity — every training point contributes)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"b = %.4f  |  alpha range: [%.4f, %.4f]\n"</span>,</span>
 <span>            <span class="va">cf</span><span class="op">$</span><span class="va">b</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">cf</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">cf</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; b = 7.6271  |  alpha range: [-3.5482, 2.1956]</span></span></code></pre></div>
+<span><span class="co">#&gt; b = 12.6350  |  alpha range: [-18.4063, 21.9110]</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

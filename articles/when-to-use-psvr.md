@@ -204,7 +204,7 @@ spec_m2 <- psvr_mape_sym_rbf(
   svm_margin = tune(),
   rbf_sigma  = tune()
 ) |>
-  set_engine("psvr", a = 1L)
+  set_engine("psvr")
 
 spec_m3 <- psvr_rmspe_rbf(
   cost      = tune(),
@@ -216,7 +216,7 @@ spec_m4 <- psvr_rmspe_sym_rbf(
   cost      = tune(),
   rbf_sigma = tune()
 ) |>
-  set_engine("psvr", a = 1L)
+  set_engine("psvr")
 ```
 
 > **Hyperparameter search ranges**
@@ -240,21 +240,17 @@ spec_m4 <- psvr_rmspe_sym_rbf(
 >   — see the code below.
 
 ``` r
-# Compute median pairwise distance on the normalised training predictors
-train_baked  <- rec_base |> prep() |> bake(new_data = train)
-sigma_med    <- sigma_heuristic(train_baked |> select(-compressive_strength))
-
-rbf_sigma_custom <- rbf_sigma_psvr(
-  range = c(log10(sigma_med / 10), log10(sigma_med * 10))
+# Compute data-driven rbf_sigma parameter from the normalised training predictors
+train_baked      <- rec_base |> prep() |> bake(new_data = train)
+rbf_sigma_custom <- rbf_sigma_psvr_data(
+  train_baked |> select(-compressive_strength)
 )
 
-cat(sprintf("sigma_med = %.3f  →  rbf_sigma range: [%.3f, %.3f]\n",
-            sigma_med,
-            log10(sigma_med / 10),
-            log10(sigma_med * 10)))
+r <- dials::range_get(rbf_sigma_custom, original = FALSE)
+cat(sprintf("rbf_sigma range: [%.3f, %.3f]\n", r$lower, r$upper))
 ```
 
-    sigma_med = 3.688  →  rbf_sigma range: [-0.433, 1.567]
+    rbf_sigma range: [-0.433, 1.567]
 
 ------------------------------------------------------------------------
 
@@ -280,30 +276,7 @@ wf_set <- workflow_set(
     m4_rmspe_sym = spec_m4
   )
 ) |>
-  option_add(
-    param_info = workflow(rec_base, spec_m1) |>
-      extract_parameter_set_dials() |>
-      update(rbf_sigma = rbf_sigma_custom),
-    id = "base_m1_mape"
-  ) |>
-  option_add(
-    param_info = workflow(rec_base, spec_m2) |>
-      extract_parameter_set_dials() |>
-      update(rbf_sigma = rbf_sigma_custom),
-    id = "base_m2_mape_sym"
-  ) |>
-  option_add(
-    param_info = workflow(rec_base, spec_m3) |>
-      extract_parameter_set_dials() |>
-      update(rbf_sigma = rbf_sigma_custom),
-    id = "base_m3_rmspe"
-  ) |>
-  option_add(
-    param_info = workflow(rec_base, spec_m4) |>
-      extract_parameter_set_dials() |>
-      update(rbf_sigma = rbf_sigma_custom),
-    id = "base_m4_rmspe_sym"
-  )
+  psvr_option_add(train_baked |> select(-compressive_strength))
 
 wf_set
 ```
@@ -414,12 +387,12 @@ rank_res |>
 |-----:|:------------------|------:|-----:|------:|
 |    1 | base_xgb          | 10.18 | 0.27 |    10 |
 |    2 | base_rf           | 12.67 | 0.50 |    10 |
-|    3 | base_m1_mape      | 12.98 | 0.62 |    10 |
-|    4 | base_svm_rbf      | 14.70 | 0.57 |    10 |
-|    5 | base_m2_mape_sym  | 15.41 | 0.64 |    10 |
-|    6 | base_m3_rmspe     | 20.73 | 0.44 |    10 |
-|    7 | base_m4_rmspe_sym | 27.23 | 0.71 |    10 |
-|    8 | base_lm           | 30.82 | 0.75 |    10 |
+|    3 | base_svm_rbf      | 14.70 | 0.57 |    10 |
+|    4 | base_m1_mape      | 22.24 | 0.70 |    10 |
+|    5 | base_m2_mape_sym  | 28.91 | 0.71 |    10 |
+|    6 | base_lm           | 30.82 | 0.75 |    10 |
+|    7 | base_m3_rmspe     | 50.66 | 1.30 |    10 |
+|    8 | base_m4_rmspe_sym | 51.51 | 1.17 |    10 |
 
 Cross-validated MAPE — best configuration per workflow
 
@@ -617,7 +590,6 @@ sessioninfo::session_info()
      infer        * 1.1.0      2025-12-18 [1] RSPM
      ipred          0.9-15     2024-07-18 [1] RSPM
      jsonlite       2.0.0      2025-03-27 [1] RSPM
-     kernlab        0.9-33     2024-08-13 [1] RSPM
      knitr          1.51       2025-12-20 [1] RSPM
      labeling       0.4.3      2023-08-29 [1] RSPM
      lattice        0.22-9     2026-02-09 [3] CRAN (R 4.5.3)
@@ -637,10 +609,9 @@ sessioninfo::session_info()
      pillar         1.11.1     2025-09-17 [1] RSPM
      pkgconfig      2.0.3      2019-09-22 [1] RSPM
      prodlim        2026.03.11 2026-03-11 [1] RSPM
-     psvr         * 0.0.0.9002 2026-04-21 [1] local
+     psvr         * 0.0.0.9003 2026-04-21 [1] local
      purrr        * 1.2.2      2026-04-10 [1] RSPM
      R6             2.6.1      2025-02-15 [1] RSPM
-     ranger         0.18.0     2026-01-16 [1] RSPM
      RColorBrewer   1.1-3      2022-04-03 [1] RSPM
      Rcpp           1.1.1-1    2026-04-16 [1] RSPM
      readr        * 2.2.0      2026-02-19 [1] RSPM
@@ -653,7 +624,6 @@ sessioninfo::session_info()
      S7             0.2.1-1    2025-11-14 [1] RSPM
      scales       * 1.4.0      2025-04-24 [1] RSPM
      sessioninfo    1.2.3      2025-02-05 [1] any (@1.2.3)
-     sfd            0.1.0      2024-01-08 [1] RSPM
      sparsevctrs    0.3.6      2026-01-27 [1] RSPM
      stringi        1.8.7      2025-03-27 [1] RSPM
      stringr      * 1.6.0      2025-11-04 [1] RSPM

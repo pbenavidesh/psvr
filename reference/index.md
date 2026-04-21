@@ -111,6 +111,10 @@ Custom dials parameters and tuning helpers for psvr models.
   : Median-distance heuristic for RBF kernel bandwidth
 - [`rbf_sigma_psvr()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.md)
   : RBF sigma parameter for psvr models
+- [`rbf_sigma_psvr_data()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr_data.md)
+  : RBF sigma parameter with data-driven range for psvr models
+- [`psvr_option_add()`](https://pbenavidesh.github.io/psvr/reference/psvr_option_add.md)
+  : Apply data-driven rbf_sigma to all psvr workflows in a workflow set
 - [`cost_psvr()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr.md)
   : Cost parameter with extended range for psvr models
 

@@ -2,8 +2,10 @@
 
 Create parsnip model specifications for
 [`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md)
-with a fixed kernel type. The symmetry parameter `a` is an engine
-argument passed via `set_engine("psvr", a = 1L)`.
+with a fixed kernel type. Even symmetry (`a = 1L`) is the default and
+does not need to be specified in
+[`set_engine()`](https://parsnip.tidymodels.org/reference/set_engine.html).
+Pass `set_engine("psvr", a = -1L)` to request odd symmetry instead.
 
 ## Usage
 
@@ -93,13 +95,13 @@ A parsnip `model_spec` object of the corresponding class.
 if (FALSE) { # \dontrun{
 library(parsnip)
 spec <- psvr_mape_sym_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1) |>
-  set_engine("psvr", a = 1L)
+  set_engine("psvr")
 
 spec_poly <- psvr_mape_sym_poly(cost = 10, svm_margin = 1, degree = 2,
                                 scale_factor = 1) |>
-  set_engine("psvr", a = 1L)
+  set_engine("psvr")
 
 spec_lin <- psvr_mape_sym_linear(cost = 10, svm_margin = 1) |>
-  set_engine("psvr", a = 1L)
+  set_engine("psvr")
 } # }
 ```
