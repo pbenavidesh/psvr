@@ -47,19 +47,29 @@ psvr_mape_sym_linear(
 
   Regularization parameter `C > 0`. Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
-  to optimize.
+  to optimize. Mapped to
+  [`cost_psvr()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr.md)
+  with range `[-2, 10]` on the log2 scale — wider than
+  [`dials::cost()`](https://dials.tidymodels.org/reference/cost.html) to
+  cover the larger values needed by LS-SVR models.
 
 - svm_margin:
 
-  Epsilon tube half-width `ε ≥ 0` (percentage units). Use
+  Epsilon tube half-width `ε ≥ 0` expressed as a percentage of each
+  target value. Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
-  to optimize.
+  to optimize. Mapped to
+  [`margin_percentage()`](https://pbenavidesh.github.io/psvr/reference/margin_percentage.md)
+  with default range `[1, 20]` (percentage units).
 
 - rbf_sigma:
 
   RBF bandwidth σ \> 0. Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
-  to optimize. (RBF specs only.)
+  to optimize. Mapped to
+  [`rbf_sigma_psvr()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.md);
+  the search range auto-finalizes using the median-distance heuristic
+  when training data are available. (RBF specs only.)
 
 - degree:
 

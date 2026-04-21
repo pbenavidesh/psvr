@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -281,6 +281,43 @@
 
         </dt>
         <dd>Parsnip model specs: symmetric LS-SVR with RMSPE loss (Model 4)</dd>
+      </dl></div><div class="section level2">
+      <h2 id="hyperparameter-utilities">Hyperparameter utilities<a class="anchor" aria-label="anchor" href="#hyperparameter-utilities"></a></h2>
+
+      <div class="section-desc"><p>Custom dials parameters and tuning helpers for psvr models.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="margin_percentage.html">margin_percentage()</a></code>
+
+        </dt>
+        <dd>Insensitivity margin in percentage units</dd>
+
+        <dt>
+
+          <code><a href="sigma_heuristic.html">sigma_heuristic()</a></code>
+
+        </dt>
+        <dd>Median-distance heuristic for RBF kernel bandwidth</dd>
+
+        <dt>
+
+          <code><a href="rbf_sigma_psvr.html">rbf_sigma_psvr()</a></code>
+
+        </dt>
+        <dd>RBF sigma parameter with median-distance finalization</dd>
+
+        <dt>
+
+          <code><a href="cost_psvr.html">cost_psvr()</a></code>
+
+        </dt>
+        <dd>Cost parameter with extended range for psvr models</dd>
       </dl></div><div class="section level2">
       <h2 id="internal-fit-wrappers">Internal fit wrappers<a class="anchor" aria-label="anchor" href="#internal-fit-wrappers"></a></h2>
 

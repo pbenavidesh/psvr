@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -45,6 +45,16 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.0.9002" id="psvr-0009002">psvr 0.0.0.9002<a class="anchor" aria-label="anchor" href="#psvr-0009002"></a></h2>
+<div class="section level3">
+<h3 id="user-friendly-hyperparameter-defaults-0-0-0-9002">User-friendly hyperparameter defaults<a class="anchor" aria-label="anchor" href="#user-friendly-hyperparameter-defaults-0-0-0-9002"></a></h3>
+<ul><li><p>New function <code><a href="../reference/margin_percentage.html">margin_percentage()</a></code>: a dials parameter for the epsilon tube half-width in MAPE models, expressed in percentage units with default range <code>[1, 20]</code>. Replaces the absolute-unit <code><a href="https://dials.tidymodels.org/reference/cost.html" class="external-link">dials::svm_margin()</a></code> for all 6 MAPE specs.</p></li>
+<li><p>New function <code><a href="../reference/sigma_heuristic.html">sigma_heuristic()</a></code>: returns the median pairwise Euclidean distance of a predictor matrix — a standard data-driven starting point for the RBF kernel bandwidth (Schölkopf &amp; Smola, 2002).</p></li>
+<li><p>New function <code><a href="../reference/rbf_sigma_psvr.html">rbf_sigma_psvr()</a></code>: a dials parameter for the RBF kernel bandwidth with a <code>finalize</code> hook that auto-sets the search range using <code><a href="../reference/sigma_heuristic.html">sigma_heuristic()</a></code> when training data are available. Replaces <code><a href="https://dials.tidymodels.org/reference/rbf_sigma.html" class="external-link">dials::rbf_sigma()</a></code> for all RBF specs.</p></li>
+<li><p>New function <code><a href="../reference/cost_psvr.html">cost_psvr()</a></code>: a dials parameter for the regularisation parameter with range <code>[-2, 10]</code> on the log2 scale (approx. 0.25 to 1024), wider than <code><a href="https://dials.tidymodels.org/reference/cost.html" class="external-link">dials::cost()</a></code> to accommodate the larger values typically needed by LS-SVR models. Replaces <code><a href="https://dials.tidymodels.org/reference/cost.html" class="external-link">dials::cost()</a></code> for all 12 specs.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.0.9001" id="psvr-0009001">psvr 0.0.0.9001<a class="anchor" aria-label="anchor" href="#psvr-0009001"></a></h2>
 <div class="section level3">

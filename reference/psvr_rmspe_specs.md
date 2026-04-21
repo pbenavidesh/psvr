@@ -40,13 +40,20 @@ psvr_rmspe_linear(mode = "regression", engine = "psvr", cost = NULL)
 
   Regularization parameter `Γ > 0`. Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
-  to optimize.
+  to optimize. Mapped to
+  [`cost_psvr()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr.md)
+  with range `[-2, 10]` on the log2 scale — wider than
+  [`dials::cost()`](https://dials.tidymodels.org/reference/cost.html) to
+  cover the larger values needed by LS-SVR models.
 
 - rbf_sigma:
 
   RBF bandwidth σ \> 0. Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
-  to optimize. (RBF specs only.)
+  to optimize. Mapped to
+  [`rbf_sigma_psvr()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.md);
+  the search range auto-finalizes using the median-distance heuristic
+  when training data are available. (RBF specs only.)
 
 - degree:
 

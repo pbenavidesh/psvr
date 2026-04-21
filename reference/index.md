@@ -101,6 +101,19 @@ Parsnip model specifications for Model 4 (one per kernel type).
   [`psvr_rmspe_sym_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.md)
   : Parsnip model specs: symmetric LS-SVR with RMSPE loss (Model 4)
 
+## Hyperparameter utilities
+
+Custom dials parameters and tuning helpers for psvr models.
+
+- [`margin_percentage()`](https://pbenavidesh.github.io/psvr/reference/margin_percentage.md)
+  : Insensitivity margin in percentage units
+- [`sigma_heuristic()`](https://pbenavidesh.github.io/psvr/reference/sigma_heuristic.md)
+  : Median-distance heuristic for RBF kernel bandwidth
+- [`rbf_sigma_psvr()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.md)
+  : RBF sigma parameter with median-distance finalization
+- [`cost_psvr()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr.md)
+  : Cost parameter with extended range for psvr models
+
 ## Internal fit wrappers
 
 Low-level bridge functions called by parsnip; not for direct use.

@@ -9,7 +9,7 @@ type.  cost maps to the regularization parameter Γ."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -86,11 +86,15 @@ type.  <code>cost</code> maps to the regularization parameter <code>Γ</code>.</
 
 
 <dt id="arg-cost">cost<a class="anchor" aria-label="anchor" href="#arg-cost"></a></dt>
-<dd><p>Regularization parameter <code>Γ &gt; 0</code>.  Use <code><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">hardhat::tune()</a></code> to optimize.</p></dd>
+<dd><p>Regularization parameter <code>Γ &gt; 0</code>.  Use <code><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">hardhat::tune()</a></code> to optimize.
+Mapped to <code><a href="cost_psvr.html">cost_psvr()</a></code> with range <code>[-2, 10]</code> on the log2 scale — wider
+than <code><a href="https://dials.tidymodels.org/reference/cost.html" class="external-link">dials::cost()</a></code> to cover the larger values needed by LS-SVR models.</p></dd>
 
 
 <dt id="arg-rbf-sigma">rbf_sigma<a class="anchor" aria-label="anchor" href="#arg-rbf-sigma"></a></dt>
 <dd><p>RBF bandwidth σ &gt; 0.  Use <code><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">hardhat::tune()</a></code> to optimize.
+Mapped to <code><a href="rbf_sigma_psvr.html">rbf_sigma_psvr()</a></code>; the search range auto-finalizes using the
+median-distance heuristic when training data are available.
 (RBF specs only.)</p></dd>
 
 
