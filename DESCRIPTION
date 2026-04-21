@@ -38,4 +38,5 @@ Config/testthat/edition: 3
 VignetteBuilder: knitr
 URL: https://pbenavidesh.github.io/psvr/
 Config/Needs/website: rmarkdown, tsibbledata, tsibble, lubridate, ggplot2,
-    kableExtra, kernlab, scales, tidyr
+    kableExtra, kernlab, scales, tidyr, tidyverse, tidymodels, modeldata,
+    doParallel, ranger, xgboost, ggrepel, sessioninfo

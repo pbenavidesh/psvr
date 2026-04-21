@@ -108,7 +108,7 @@ articles:
     navbar: "Case Studies"
     contents:
       - articles/electricity-forecasting
-      # Future article: "When to Use Percentage-Error SVR"
+      - articles/when-to-use-psvr
 
   - title: "Technical Notes"
     navbar: "Technical Notes"

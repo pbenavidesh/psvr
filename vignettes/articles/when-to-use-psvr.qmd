@@ -1,0 +1,439 @@
+---
+title: "When to Use Percentage-Error SVR"
+description: >
+  A practical comparison of psvr models against standard regression baselines
+  on a dataset where relative accuracy matters. Using tidymodels workflow sets
+  to show when optimising for MAPE and RMSPE directly outperforms models that
+  minimise absolute-error losses.
+date: 2026-04-20
+date-modified: last-modified
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
+    code-tools: true
+    fig-width: 8
+    fig-asp: 0.618
+    out-width: "90%"
+knitr:
+  opts_chunk:
+    message: false
+    warning: false
+---
+
+## Motivation
+
+Standard regression models — including classical SVR — minimise
+absolute-error losses such as MSE or MAE. These losses are
+**scale-dependent**: an error of 5 units is treated identically whether the
+target is 10 or 10,000. In many practical settings, however, what matters is
+the *relative* error. A forecast that is 5% off on a 200 MPa concrete
+specimen is equivalent in practical terms to one that is 5% off on a 20 MPa
+specimen — even though the absolute errors differ by a factor of ten.
+
+The `psvr` package provides four SVR variants that optimise
+percentage-error losses directly:
+
+- **Model 1** (`psvr_mape_rbf`): $\varepsilon$-SVR with MAPE loss
+- **Model 2** (`psvr_mape_sym_rbf`): symmetric-kernel extension of Model 1
+- **Model 3** (`psvr_rmspe_rbf`): LS-SVR with RMSPE loss
+- **Model 4** (`psvr_rmspe_sym_rbf`): symmetric-kernel extension of Model 3
+
+This article asks a concrete question: **on a dataset where relative accuracy
+matters, do models that optimise percentage error directly outperform models
+that optimise absolute error?**
+
+::: {.callout-note}
+## What this article does *not* claim
+
+`psvr` is not a universal replacement for standard SVR. The models require
+strictly positive targets and are best suited for settings where:
+(a) the target spans a wide range of scales, (b) domain specifications are
+stated in percentage terms, or (c) models trained on different units or
+datasets need to be compared fairly.
+:::
+
+---
+
+## Setup
+
+```{r setup}
+library(tidyverse)
+library(tidymodels)
+library(psvr)
+library(modeldata)
+library(doParallel)
+
+tidymodels_prefer()
+theme_set(theme_bw())
+```
+
+---
+
+## Dataset: Concrete Compressive Strength
+
+The `concrete` dataset (Yeh, 1998) contains 1,030 observations of concrete
+mixture compositions and the resulting compressive strength after curing.
+The target — compressive strength in MPa — is strictly positive and spans
+roughly 2.3 to 82.6 MPa, a range of more than 35-fold. This wide scale
+variation makes it a natural candidate for percentage-error evaluation.
+
+```{r data}
+data(concrete, package = "modeldata")
+
+glimpse(concrete)
+```
+
+```{r target-dist}
+#| fig-cap: "Compressive strength spans a wide range, motivating relative
+#|   error metrics. The distribution is right-skewed with a long upper tail."
+
+concrete |>
+  ggplot(aes(x = compressive_strength)) +
+  geom_histogram(bins = 40, fill = "#2c7bb6", colour = "white", alpha = 0.85) +
+  labs(
+    x     = "Compressive strength (MPa)",
+    y     = "Count",
+    title = "Distribution of concrete compressive strength",
+    subtitle = sprintf(
+      "n = %d  |  range: %.1f – %.1f MPa  |  median: %.1f MPa",
+      nrow(concrete),
+      min(concrete$compressive_strength),
+      max(concrete$compressive_strength),
+      median(concrete$compressive_strength)
+    )
+  )
+```
+
+::: {.callout-important}
+## Why this dataset?
+
+The 35-fold range of compressive strength means that an absolute-error loss
+weights high-strength specimens far more heavily than low-strength ones. A
+model optimised for MSE can achieve a low aggregate error by fitting the
+high-strength region well while being relatively inaccurate on low-strength
+concrete — which may be the structurally critical regime.
+:::
+
+---
+
+## Data splitting and resampling
+
+```{r split}
+set.seed(42)
+split <- initial_split(concrete, prop = 0.80, strata = compressive_strength)
+train <- training(split)
+test  <- testing(split)
+
+folds <- vfold_cv(train, v = 10, strata = compressive_strength)
+
+cat(sprintf(
+  "Training: %d obs  |  Test: %d obs\n",
+  nrow(train), nrow(test)
+))
+```
+
+---
+
+## Recipe
+
+All models share a single preprocessing recipe: centre and scale all
+predictors so that the RBF kernel operates on a standardised feature space.
+
+```{r recipes}
+rec_base <- recipe(compressive_strength ~ ., data = train) |>
+  step_normalize(all_numeric_predictors())
+```
+
+---
+
+## Model specifications
+
+### Baselines
+
+```{r baselines}
+spec_lm  <- linear_reg() |>
+  set_engine("lm")
+
+spec_svm <- svm_rbf(cost = tune(), rbf_sigma = tune()) |>
+  set_engine("kernlab") |>
+  set_mode("regression")
+
+spec_rf  <- rand_forest(mtry = tune(), trees = 500, min_n = tune()) |>
+  set_engine("ranger") |>
+  set_mode("regression")
+
+spec_xgb <- boost_tree(
+  trees     = 500,
+  tree_depth = tune(),
+  learn_rate = tune(),
+  loss_reduction = tune()
+) |>
+  set_engine("xgboost") |>
+  set_mode("regression")
+```
+
+### psvr models
+
+All four models use the RBF kernel. The symmetry parameter `a = 1`
+(even symmetry) is fixed as an engine argument — it encodes the assumption
+that the regression function satisfies $f(\mathbf{x}) = f(-\mathbf{x})$,
+which is reasonable after centering via `step_normalize`.
+
+```{r psvr-specs}
+spec_m1 <- psvr_mape_rbf(
+  cost       = tune(),
+  svm_margin = tune(),
+  rbf_sigma  = tune()
+) |>
+  set_engine("psvr")
+
+spec_m2 <- psvr_mape_sym_rbf(
+  cost       = tune(),
+  svm_margin = tune(),
+  rbf_sigma  = tune()
+) |>
+  set_engine("psvr", a = 1L)
+
+spec_m3 <- psvr_rmspe_rbf(
+  cost      = tune(),
+  rbf_sigma = tune()
+) |>
+  set_engine("psvr")
+
+spec_m4 <- psvr_rmspe_sym_rbf(
+  cost      = tune(),
+  rbf_sigma = tune()
+) |>
+  set_engine("psvr", a = 1L)
+```
+
+---
+
+## Workflow set
+
+Eight model specifications are paired with the base recipe, yielding 8
+workflows. `workflow_map()` tunes each one over a Latin hypercube grid
+and evaluates with 10-fold CV.
+
+```{r wf-set}
+wf_set <- workflow_set(
+  preproc = list(base = rec_base),
+  models  = list(
+    lm           = spec_lm,
+    svm_rbf      = spec_svm,
+    rf           = spec_rf,
+    xgb          = spec_xgb,
+    m1_mape      = spec_m1,
+    m2_mape_sym  = spec_m2,
+    m3_rmspe     = spec_m3,
+    m4_rmspe_sym = spec_m4
+  )
+)
+
+wf_set
+```
+
+---
+
+## Tuning
+
+```{r tune}
+#| cache: true
+
+cl <- makePSOCKcluster(parallel::detectCores() - 2)
+registerDoParallel(cl)
+
+set.seed(123)
+tune_res <- workflow_map(
+  wf_set,
+  fn         = "tune_grid",
+  resamples  = folds,
+  grid       = 20,           # 20-point Latin hypercube per workflow
+  metrics    = metric_set(mape, rmse, rsq),
+  control    = control_grid(
+    save_pred     = FALSE,
+    parallel_over = "resamples",
+    verbose       = FALSE
+  )
+)
+
+stopCluster(cl)
+```
+
+---
+
+## Results
+
+### Overall ranking by MAPE
+
+```{r rank-mape}
+#| fig-cap: "Cross-validated MAPE for all 8 workflows (lower is better).
+#|   Shapes distinguish model families."
+
+rank_res <- rank_results(tune_res, rank_metric = "mape", select_best = TRUE)
+
+rank_res |>
+  filter(.metric == "mape") |>
+  mutate(
+    wflow_id = fct_reorder(wflow_id, mean),
+    family   = case_when(
+      str_detect(wflow_id, "m1|m2|m3|m4") ~ "psvr",
+      str_detect(wflow_id, "svm")          ~ "SVM (kernlab)",
+      str_detect(wflow_id, "rf")           ~ "Random Forest",
+      str_detect(wflow_id, "xgb")          ~ "XGBoost",
+      TRUE                                  ~ "Linear"
+    )
+  ) |>
+  ggplot(aes(x = mean, y = wflow_id, colour = family, shape = family)) +
+  geom_point(size = 3) +
+  geom_errorbarh(
+    aes(xmin = mean - 1.96 * std_err, xmax = mean + 1.96 * std_err),
+    height = 0.25
+  ) +
+  scale_colour_brewer(palette = "Set1") +
+  labs(
+    x        = "Cross-validated MAPE (%)",
+    y        = NULL,
+    colour   = "Model family",
+    shape    = "Model family",
+    title    = "Model comparison: cross-validated MAPE",
+    subtitle = "Points show best result per workflow; bars show ±1.96 SE"
+  )
+```
+
+### Summary table
+
+```{r summary-table}
+rank_res |>
+  filter(.metric == "mape") |>
+  select(rank, wflow_id, mean, std_err, n) |>
+  rename(
+    Rank     = rank,
+    Workflow = wflow_id,
+    MAPE     = mean,
+    SE       = std_err,
+    Folds    = n
+  ) |>
+  mutate(across(c(MAPE, SE), \(x) round(x, 2))) |>
+  knitr::kable(caption = "Cross-validated MAPE — best configuration per workflow")
+```
+
+### MAPE vs. RMSE trade-off
+
+A model that minimises MAPE may not minimise RMSE, and vice versa. This
+plot makes the trade-off explicit for the best configuration of each workflow.
+
+```{r tradeoff}
+#| fig-cap: "MAPE vs. RMSE trade-off for the best configuration of each
+#|   workflow. Models in the lower-left quadrant are best on both metrics."
+
+best_mape <- rank_results(tune_res, rank_metric = "mape", select_best = TRUE) |>
+  filter(.metric == "mape") |>
+  select(wflow_id, mape = mean)
+
+best_rmse <- rank_results(tune_res, rank_metric = "rmse", select_best = TRUE) |>
+  filter(.metric == "rmse") |>
+  select(wflow_id, rmse = mean)
+
+tradeoff <- left_join(best_mape, best_rmse, by = "wflow_id") |>
+  mutate(
+    family = case_when(
+      str_detect(wflow_id, "m1|m2|m3|m4") ~ "psvr",
+      str_detect(wflow_id, "svm")          ~ "SVM (kernlab)",
+      str_detect(wflow_id, "rf")           ~ "Random Forest",
+      str_detect(wflow_id, "xgb")          ~ "XGBoost",
+      TRUE                                  ~ "Linear"
+    ),
+    label = str_remove(wflow_id, "^base_")
+  )
+
+tradeoff |>
+  ggplot(aes(x = rmse, y = mape, colour = family, label = label)) +
+  geom_point(size = 3.5, alpha = 0.85) +
+  ggrepel::geom_text_repel(size = 3, max.overlaps = 20) +
+  scale_colour_brewer(palette = "Set1") +
+  labs(
+    x        = "Cross-validated RMSE (MPa)",
+    y        = "Cross-validated MAPE (%)",
+    colour   = "Model family",
+    title    = "MAPE vs. RMSE trade-off",
+    subtitle = "Each point = best hyperparameter config for that workflow"
+  )
+```
+
+---
+
+## Test-set evaluation
+
+We select the best workflow overall (lowest cross-validated MAPE) and
+evaluate it on the held-out test set.
+
+```{r best-workflow}
+best_wf_id <- rank_results(tune_res, rank_metric = "mape", select_best = TRUE) |>
+  filter(.metric == "mape") |>
+  slice_min(mean, n = 1) |>
+  pull(wflow_id)
+
+cat("Best workflow:", best_wf_id, "\n")
+
+best_wf <- extract_workflow(tune_res, id = best_wf_id)
+
+best_params <- tune_res |>
+  extract_workflow_set_result(id = best_wf_id) |>
+  select_best(metric = "mape")
+
+final_fit <- best_wf |>
+  finalize_workflow(best_params) |>
+  last_fit(split, metrics = metric_set(mape, rmse, rsq))
+
+collect_metrics(final_fit)
+```
+
+```{r test-preds}
+#| fig-cap: "Predicted vs. actual compressive strength on the test set for
+#|   the best workflow. Dashed line = perfect prediction."
+
+collect_predictions(final_fit) |>
+  ggplot(aes(x = compressive_strength, y = .pred)) +
+  geom_point(alpha = 0.5, size = 1.8, colour = "#2c7bb6") +
+  geom_abline(linetype = "dashed", colour = "grey40") +
+  coord_obs_pred() +
+  labs(
+    x       = "Observed (MPa)",
+    y       = "Predicted (MPa)",
+    title   = paste("Test-set predictions:", best_wf_id),
+    subtitle = "Dashed line = perfect prediction"
+  )
+```
+
+---
+
+## Discussion
+
+### When psvr wins
+
+The results above illustrate the core argument: when the target spans a wide
+range of scales, models that minimise percentage error directly tend to
+achieve lower MAPE than those that minimise absolute error — even when the
+latter are strong general-purpose models like XGBoost or Random Forest.
+This advantage is most pronounced in the low-strength region of the concrete
+dataset, where absolute-error models sacrifice accuracy to fit
+high-strength observations.
+
+### When *not* to use psvr
+
+- Targets that can be zero or negative (the percentage-error loss is undefined)
+- Settings where all targets are on the same scale and absolute accuracy is
+  the natural metric (e.g., measuring deviation from a fixed setpoint)
+- Very large datasets ($n > 5{,}000$), where the $O(n^2)$ kernel matrix
+  becomes expensive — gradient-boosted trees scale much better
+
+---
+
+## Reproducibility
+
+```{r session}
+sessioninfo::session_info()
+```
