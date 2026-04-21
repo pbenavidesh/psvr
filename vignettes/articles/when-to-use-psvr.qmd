@@ -16,6 +16,8 @@ format:
     fig-width: 8
     fig-asp: 0.618
     out-width: "90%"
+execute:
+  freeze: auto
 knitr:
   opts_chunk:
     message: false
