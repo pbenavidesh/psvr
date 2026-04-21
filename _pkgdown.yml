@@ -88,6 +88,14 @@ reference:
     contents:
       - psvr_rmspe_sym_specs
 
+  - title: "Hyperparameter utilities"
+    desc: "Custom dials parameters and tuning helpers for psvr models."
+    contents:
+      - margin_percentage
+      - sigma_heuristic
+      - rbf_sigma_psvr
+      - cost_psvr
+
   - title: "Internal fit wrappers"
     desc: "Low-level bridge functions called by parsnip; not for direct use."
     contents:
