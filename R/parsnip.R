@@ -154,9 +154,14 @@ psvr_rmspe_sym_linear_fit <- function(x, y, gamma, a = 1L) {
 #' @param mode   Only `"regression"` is supported.
 #' @param engine Only `"psvr"` is available.
 #' @param cost   Regularization parameter `C > 0`.  Use [tune()] to optimize.
-#' @param svm_margin Epsilon tube half-width `ε ≥ 0` (percentage units).
-#'   Use [tune()] to optimize.
+#'   Mapped to [cost_psvr()] with range `[-2, 10]` on the log2 scale — wider
+#'   than `dials::cost()` to cover the larger values needed by LS-SVR models.
+#' @param svm_margin Epsilon tube half-width `ε ≥ 0` expressed as a percentage
+#'   of each target value.  Use [tune()] to optimize.  Mapped to
+#'   [margin_percentage()] with default range `[1, 20]` (percentage units).
 #' @param rbf_sigma RBF bandwidth σ > 0.  Use [tune()] to optimize.
+#'   Mapped to [rbf_sigma_psvr()]; the search range auto-finalizes using the
+#'   median-distance heuristic when training data are available.
 #'   (RBF specs only.)
 #' @param degree Polynomial degree ≥ 1.  Use [tune()] to optimize.
 #'   (Polynomial specs only.)
@@ -340,7 +345,11 @@ psvr_mape_sym_linear <- function(mode = "regression", engine = "psvr",
 #' @param mode   Only `"regression"` is supported.
 #' @param engine Only `"psvr"` is available.
 #' @param cost   Regularization parameter `Γ > 0`.  Use [tune()] to optimize.
+#'   Mapped to [cost_psvr()] with range `[-2, 10]` on the log2 scale — wider
+#'   than `dials::cost()` to cover the larger values needed by LS-SVR models.
 #' @param rbf_sigma RBF bandwidth σ > 0.  Use [tune()] to optimize.
+#'   Mapped to [rbf_sigma_psvr()]; the search range auto-finalizes using the
+#'   median-distance heuristic when training data are available.
 #'   (RBF specs only.)
 #' @param degree Polynomial degree ≥ 1.  Use [tune()] to optimize.
 #'   (Polynomial specs only.)
@@ -725,10 +734,10 @@ update.psvr_rmspe_sym_linear_model <- function(object, parameters = NULL,
 }
 
 # Reusable arg-definition lists (list(parsnip_name, original_name, dials_func))
-.A_COST_C     <- list("cost",         "C",            list(pkg = "dials", fun = "cost"))
-.A_COST_GAMMA <- list("cost",         "gamma",        list(pkg = "dials", fun = "cost"))
-.A_MARGIN     <- list("svm_margin",   "eps",          list(pkg = "dials", fun = "svm_margin"))
-.A_SIGMA      <- list("rbf_sigma",    "rbf_sigma",    list(pkg = "dials", fun = "rbf_sigma"))
+.A_COST_C     <- list("cost",         "C",            list(pkg = "psvr", fun = "cost_psvr"))
+.A_COST_GAMMA <- list("cost",         "gamma",        list(pkg = "psvr", fun = "cost_psvr"))
+.A_MARGIN     <- list("svm_margin",   "eps",          list(pkg = "psvr", fun = "margin_percentage"))
+.A_SIGMA      <- list("rbf_sigma",    "rbf_sigma",    list(pkg = "psvr", fun = "rbf_sigma_psvr"))
 .A_DEGREE     <- list("degree",       "degree",       list(pkg = "dials", fun = "degree"))
 .A_SCALE      <- list("scale_factor", "scale_factor", list(pkg = "dials", fun = "scale_factor"))
 

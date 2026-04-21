@@ -29,9 +29,13 @@ psvr_rmspe_linear(mode = "regression", engine = "psvr", cost = NULL)
 
 \item{engine}{Only \code{"psvr"} is available.}
 
-\item{cost}{Regularization parameter \code{Γ > 0}.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.}
+\item{cost}{Regularization parameter \code{Γ > 0}.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
+Mapped to \code{\link[=cost_psvr]{cost_psvr()}} with range \verb{[-2, 10]} on the log2 scale — wider
+than \code{dials::cost()} to cover the larger values needed by LS-SVR models.}
 
 \item{rbf_sigma}{RBF bandwidth σ > 0.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
+Mapped to \code{\link[=rbf_sigma_psvr]{rbf_sigma_psvr()}}; the search range auto-finalizes using the
+median-distance heuristic when training data are available.
 (RBF specs only.)}
 
 \item{degree}{Polynomial degree ≥ 1.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.

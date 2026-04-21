@@ -36,12 +36,17 @@ psvr_mape_linear(
 
 \item{engine}{Only \code{"psvr"} is available.}
 
-\item{cost}{Regularization parameter \code{C > 0}.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.}
+\item{cost}{Regularization parameter \code{C > 0}.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
+Mapped to \code{\link[=cost_psvr]{cost_psvr()}} with range \verb{[-2, 10]} on the log2 scale — wider
+than \code{dials::cost()} to cover the larger values needed by LS-SVR models.}
 
-\item{svm_margin}{Epsilon tube half-width \verb{ε ≥ 0} (percentage units).
-Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.}
+\item{svm_margin}{Epsilon tube half-width \verb{ε ≥ 0} expressed as a percentage
+of each target value.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.  Mapped to
+\code{\link[=margin_percentage]{margin_percentage()}} with default range \verb{[1, 20]} (percentage units).}
 
 \item{rbf_sigma}{RBF bandwidth σ > 0.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
+Mapped to \code{\link[=rbf_sigma_psvr]{rbf_sigma_psvr()}}; the search range auto-finalizes using the
+median-distance heuristic when training data are available.
 (RBF specs only.)}
 
 \item{degree}{Polynomial degree ≥ 1.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.

@@ -1,3 +1,26 @@
+# psvr 0.0.0.9002
+
+## User-friendly hyperparameter defaults
+
+* New function `margin_percentage()`: a dials parameter for the epsilon tube
+  half-width in MAPE models, expressed in percentage units with default range
+  `[1, 20]`. Replaces the absolute-unit `dials::svm_margin()` for all 6 MAPE
+  specs.
+
+* New function `sigma_heuristic()`: returns the median pairwise Euclidean
+  distance of a predictor matrix — a standard data-driven starting point for
+  the RBF kernel bandwidth (Schölkopf & Smola, 2002).
+
+* New function `rbf_sigma_psvr()`: a dials parameter for the RBF kernel
+  bandwidth with a `finalize` hook that auto-sets the search range using
+  `sigma_heuristic()` when training data are available. Replaces
+  `dials::rbf_sigma()` for all RBF specs.
+
+* New function `cost_psvr()`: a dials parameter for the regularisation
+  parameter with range `[-2, 10]` on the log2 scale (approx. 0.25 to 1024),
+  wider than `dials::cost()` to accommodate the larger values typically needed
+  by LS-SVR models. Replaces `dials::cost()` for all 12 specs.
+
 # psvr 0.0.0.9001
 
 ## tidymodels / parsnip integration — breaking change
