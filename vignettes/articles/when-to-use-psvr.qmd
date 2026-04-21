@@ -63,7 +63,7 @@ library(tidyverse)
 library(tidymodels)
 library(psvr)
 library(modeldata)
-library(doParallel)
+library(future)
 
 tidymodels_prefer()
 theme_set(theme_bw())
@@ -126,11 +126,15 @@ split <- initial_split(concrete, prop = 0.80, strata = compressive_strength)
 train <- training(split)
 test  <- testing(split)
 
-folds <- vfold_cv(train, v = 10, strata = compressive_strength)
+# Subsample for tuning — QP-based models (m1, m2) scale as O(n²)
+# Full training set is used for the final fit via last_fit()
+set.seed(42)
+train_tune <- slice_sample(train, n = 300, replace = FALSE)
+folds <- vfold_cv(train_tune, v = 10, strata = compressive_strength)
 
 cat(sprintf(
-  "Training: %d obs  |  Test: %d obs\n",
-  nrow(train), nrow(test)
+  "Training: %d obs  |  Test: %d obs  |  Tuning subsample: %d obs\n",
+  nrow(train), nrow(test), nrow(train_tune)
 ))
 ```
 
@@ -211,11 +215,19 @@ spec_m4 <- psvr_rmspe_sym_rbf(
 
 ---
 
+::: {.callout-note}
+## Computational note
+The ε-SVR models (Models 1 and 2) solve a quadratic program at each fit,
+with cost O(n²) in the number of training observations. Hyperparameter
+tuning uses a random subsample of 300 observations to keep compute time
+manageable. The final model is fit on the full training set via `last_fit()`.
+:::
+
 ## Workflow set
 
 Eight model specifications are paired with the base recipe, yielding 8
 workflows. `workflow_map()` tunes each one over a Latin hypercube grid
-and evaluates with 10-fold CV.
+and evaluates with 10-fold CV on the 300-observation tuning subsample.
 
 ```{r wf-set}
 wf_set <- workflow_set(
@@ -242,8 +254,7 @@ wf_set
 ```{r tune}
 #| cache: true
 
-cl <- makePSOCKcluster(parallel::detectCores() - 2)
-registerDoParallel(cl)
+plan(multisession)
 
 set.seed(123)
 tune_res <- workflow_map(
@@ -254,12 +265,12 @@ tune_res <- workflow_map(
   metrics    = metric_set(mape, rmse, rsq),
   control    = control_grid(
     save_pred     = FALSE,
-    parallel_over = "resamples",
+    parallel_over = "everything",
     verbose       = FALSE
   )
 )
 
-stopCluster(cl)
+plan(sequential)
 ```
 
 ---
