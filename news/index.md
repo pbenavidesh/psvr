@@ -37,6 +37,14 @@
   [`dials::cost()`](https://dials.tidymodels.org/reference/cost.html)
   for all 12 specs.
 
+- [`rbf_sigma_psvr()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.md):
+  removed non-functional `finalize` hook. The search range must be set
+  manually using
+  [`sigma_heuristic()`](https://pbenavidesh.github.io/psvr/reference/sigma_heuristic.md)
+  and `option_add()`. See
+  [`?rbf_sigma_psvr`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.md)
+  for the recommended workflow.
+
 ## psvr 0.0.0.9001
 
 ### tidymodels / parsnip integration — breaking change

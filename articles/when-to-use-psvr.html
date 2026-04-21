@@ -252,23 +252,41 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 </div>
 <div>
 <blockquote>
-<p><strong>Hyperparameter search ranges (v0.0.0.9002+)</strong></p>
-<p>The psvr package supplies its own dials parameters, so no manual range overrides via <code>option_add()</code> are needed:</p>
+<p><strong>Hyperparameter search ranges</strong></p>
+<p>The <code>psvr</code> package supplies custom dials parameters with appropriate defaults for percentage-error models:</p>
 <ul>
 <li>
-<strong><code>svm_margin</code></strong> → <code><a href="../reference/margin_percentage.html">margin_percentage()</a></code>: default range [1, 20] in percentage units. The grid will search between 1% and 20% of each target value automatically.</li>
+<strong><code>svm_margin</code></strong> → <code><a href="../reference/margin_percentage.html">margin_percentage()</a></code>: default range [1, 20] in percentage units — no manual override needed.</li>
 <li>
-<strong><code>cost</code></strong> → <code><a href="../reference/cost_psvr.html">cost_psvr()</a></code>: default range [−2, 10] on the log₂ scale (approximately 0.25 to 1,024) — wider than <code><a href="https://dials.tidymodels.org/reference/cost.html" class="external-link">dials::cost()</a></code> to cover the larger regularisation values typically needed by LS-SVR models.</li>
+<strong><code>cost</code></strong> → <code><a href="../reference/cost_psvr.html">cost_psvr()</a></code>: default range [−2, 10] on the log₂ scale (~0.25 to 1,024) — no manual override needed.</li>
 <li>
-<strong><code>rbf_sigma</code></strong> → <code><a href="../reference/rbf_sigma_psvr.html">rbf_sigma_psvr()</a></code>: the search range auto-finalizes using <code><a href="../reference/sigma_heuristic.html">sigma_heuristic()</a></code>, which sets it to one order of magnitude above and below the median pairwise distance of the preprocessed training predictors. To inspect or override the heuristic value, call <code><a href="../reference/sigma_heuristic.html">sigma_heuristic()</a></code> directly on the baked training matrix.</li>
+<strong><code>rbf_sigma</code></strong> → <code><a href="../reference/rbf_sigma_psvr.html">rbf_sigma_psvr()</a></code>: default range [−3, 1] on the log₁₀ scale. <strong>This range should be adjusted</strong> using the median-distance heuristic via <code><a href="../reference/sigma_heuristic.html">sigma_heuristic()</a></code> — see the code below.</li>
 </ul>
 </blockquote>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Compute median pairwise distance on the normalised training predictors</span></span>
+<span><span class="va">train_baked</span>  <span class="op">&lt;-</span> <span class="va">rec_base</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://recipes.tidymodels.org/reference/prep.html" class="external-link">prep</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://recipes.tidymodels.org/reference/bake.html" class="external-link">bake</a></span><span class="op">(</span>new_data <span class="op">=</span> <span class="va">train</span><span class="op">)</span></span>
+<span><span class="va">sigma_med</span>    <span class="op">&lt;-</span> <span class="fu"><a href="../reference/sigma_heuristic.html">sigma_heuristic</a></span><span class="op">(</span><span class="va">train_baked</span> <span class="op">|&gt;</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="op">-</span><span class="va">compressive_strength</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">rbf_sigma_custom</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/rbf_sigma_psvr.html">rbf_sigma_psvr</a></span><span class="op">(</span></span>
+<span>  range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">sigma_med</span> <span class="op">/</span> <span class="fl">10</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">sigma_med</span> <span class="op">*</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"sigma_med = %.3f  →  rbf_sigma range: [%.3f, %.3f]\n"</span>,</span>
+<span>            <span class="va">sigma_med</span>,</span>
+<span>            <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">sigma_med</span> <span class="op">/</span> <span class="fl">10</span><span class="op">)</span>,</span>
+<span>            <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log10</a></span><span class="op">(</span><span class="va">sigma_med</span> <span class="op">*</span> <span class="fl">10</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>sigma_med = 3.688  →  rbf_sigma range: [-0.433, 1.567]</code></pre>
+</div>
 </div>
 <hr></section></section><section class="level2"><h2 id="workflow-set">Workflow set<a class="anchor" aria-label="anchor" href="#workflow-set"></a>
 </h2>
 <p>Eight model specifications are paired with the base recipe, yielding 8 workflows. <code>workflow_map()</code> tunes each one over a Latin hypercube grid and evaluates with 10-fold CV on the full training set.</p>
 <div class="cell">
-<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">wf_set</span> <span class="op">&lt;-</span> <span class="fu">workflow_set</span><span class="op">(</span></span>
 <span>  preproc <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>base <span class="op">=</span> <span class="va">rec_base</span><span class="op">)</span>,</span>
 <span>  models  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
@@ -276,30 +294,56 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 <span>    svm_rbf      <span class="op">=</span> <span class="va">spec_svm</span>,</span>
 <span>    rf           <span class="op">=</span> <span class="va">spec_rf</span>,</span>
 <span>    xgb          <span class="op">=</span> <span class="va">spec_xgb</span>,</span>
-<span>    <span class="co"># m1_mape      = spec_m1,</span></span>
-<span>    <span class="co"># m2_mape_sym  = spec_m2,</span></span>
+<span>    m1_mape      <span class="op">=</span> <span class="va">spec_m1</span>,</span>
+<span>    m2_mape_sym  <span class="op">=</span> <span class="va">spec_m2</span>,</span>
 <span>    m3_rmspe     <span class="op">=</span> <span class="va">spec_m3</span>,</span>
 <span>    m4_rmspe_sym <span class="op">=</span> <span class="va">spec_m4</span></span>
 <span>  <span class="op">)</span></span>
-<span><span class="op">)</span></span>
+<span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">option_add</span><span class="op">(</span></span>
+<span>    param_info <span class="op">=</span> <span class="fu"><a href="https://workflows.tidymodels.org/reference/workflow.html" class="external-link">workflow</a></span><span class="op">(</span><span class="va">rec_base</span>, <span class="va">spec_m1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_parameter_set_dials</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span>rbf_sigma <span class="op">=</span> <span class="va">rbf_sigma_custom</span><span class="op">)</span>,</span>
+<span>    id <span class="op">=</span> <span class="st">"base_m1_mape"</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">option_add</span><span class="op">(</span></span>
+<span>    param_info <span class="op">=</span> <span class="fu"><a href="https://workflows.tidymodels.org/reference/workflow.html" class="external-link">workflow</a></span><span class="op">(</span><span class="va">rec_base</span>, <span class="va">spec_m2</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_parameter_set_dials</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span>rbf_sigma <span class="op">=</span> <span class="va">rbf_sigma_custom</span><span class="op">)</span>,</span>
+<span>    id <span class="op">=</span> <span class="st">"base_m2_mape_sym"</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">option_add</span><span class="op">(</span></span>
+<span>    param_info <span class="op">=</span> <span class="fu"><a href="https://workflows.tidymodels.org/reference/workflow.html" class="external-link">workflow</a></span><span class="op">(</span><span class="va">rec_base</span>, <span class="va">spec_m3</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_parameter_set_dials</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span>rbf_sigma <span class="op">=</span> <span class="va">rbf_sigma_custom</span><span class="op">)</span>,</span>
+<span>    id <span class="op">=</span> <span class="st">"base_m3_rmspe"</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">option_add</span><span class="op">(</span></span>
+<span>    param_info <span class="op">=</span> <span class="fu"><a href="https://workflows.tidymodels.org/reference/workflow.html" class="external-link">workflow</a></span><span class="op">(</span><span class="va">rec_base</span>, <span class="va">spec_m4</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_parameter_set_dials</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span>rbf_sigma <span class="op">=</span> <span class="va">rbf_sigma_custom</span><span class="op">)</span>,</span>
+<span>    id <span class="op">=</span> <span class="st">"base_m4_rmspe_sym"</span></span>
+<span>  <span class="op">)</span></span>
 <span></span>
 <span><span class="va">wf_set</span></span></code></pre></div>
 </details><div class="cell-output cell-output-stdout">
-<pre><code># A workflow set/tibble: 6 × 4
+<pre><code># A workflow set/tibble: 8 × 4
   wflow_id          info             option    result
   &lt;chr&gt;             &lt;list&gt;           &lt;list&gt;    &lt;list&gt;
 1 base_lm           &lt;tibble [1 × 4]&gt; &lt;opts[0]&gt; &lt;list [0]&gt;
 2 base_svm_rbf      &lt;tibble [1 × 4]&gt; &lt;opts[0]&gt; &lt;list [0]&gt;
 3 base_rf           &lt;tibble [1 × 4]&gt; &lt;opts[0]&gt; &lt;list [0]&gt;
 4 base_xgb          &lt;tibble [1 × 4]&gt; &lt;opts[0]&gt; &lt;list [0]&gt;
-5 base_m3_rmspe     &lt;tibble [1 × 4]&gt; &lt;opts[0]&gt; &lt;list [0]&gt;
-6 base_m4_rmspe_sym &lt;tibble [1 × 4]&gt; &lt;opts[0]&gt; &lt;list [0]&gt;</code></pre>
+5 base_m1_mape      &lt;tibble [1 × 4]&gt; &lt;opts[1]&gt; &lt;list [0]&gt;
+6 base_m2_mape_sym  &lt;tibble [1 × 4]&gt; &lt;opts[1]&gt; &lt;list [0]&gt;
+7 base_m3_rmspe     &lt;tibble [1 × 4]&gt; &lt;opts[1]&gt; &lt;list [0]&gt;
+8 base_m4_rmspe_sym &lt;tibble [1 × 4]&gt; &lt;opts[1]&gt; &lt;list [0]&gt;</code></pre>
 </div>
 </div>
 <hr></section><section class="level2"><h2 id="tuning">Tuning<a class="anchor" aria-label="anchor" href="#tuning"></a>
 </h2>
 <div class="cell">
-<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb12"><pre class="downlit sourceCode r">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://future.futureverse.org/reference/plan.html" class="external-link">plan</a></span><span class="op">(</span><span class="va">multisession</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
@@ -324,7 +368,7 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 <section class="level3"><h3 id="overall-ranking-by-mape">Overall ranking by MAPE<a class="anchor" aria-label="anchor" href="#overall-ranking-by-mape"></a>
 </h3>
 <div class="cell">
-<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb13"><pre class="downlit sourceCode r">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rank_res</span> <span class="op">&lt;-</span> <span class="fu">rank_results</span><span class="op">(</span><span class="va">tune_res</span>, rank_metric <span class="op">=</span> <span class="st">"mape"</span>, select_best <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">rank_res</span> <span class="op">|&gt;</span></span>
@@ -364,7 +408,7 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 </section><section class="level3"><h3 id="summary-table">Summary table<a class="anchor" aria-label="anchor" href="#summary-table"></a>
 </h3>
 <div class="cell">
-<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb14"><pre class="downlit sourceCode r">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rank_res</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">.metric</span> <span class="op">==</span> <span class="st">"mape"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">rank</span>, <span class="va">wflow_id</span>, <span class="va">mean</span>, <span class="va">std_err</span>, <span class="va">n</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -404,44 +448,44 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 </tr>
 <tr class="odd">
 <td style="text-align: right;">3</td>
+<td style="text-align: left;">base_m1_mape</td>
+<td style="text-align: right;">12.98</td>
+<td style="text-align: right;">0.62</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
 <td style="text-align: left;">base_svm_rbf</td>
 <td style="text-align: right;">14.70</td>
 <td style="text-align: right;">0.57</td>
 <td style="text-align: right;">10</td>
 </tr>
-<tr class="even">
-<td style="text-align: right;">4</td>
-<td style="text-align: left;">base_m1_mape</td>
-<td style="text-align: right;">22.24</td>
-<td style="text-align: right;">0.70</td>
-<td style="text-align: right;">10</td>
-</tr>
 <tr class="odd">
 <td style="text-align: right;">5</td>
 <td style="text-align: left;">base_m2_mape_sym</td>
-<td style="text-align: right;">28.91</td>
-<td style="text-align: right;">0.71</td>
+<td style="text-align: right;">15.41</td>
+<td style="text-align: right;">0.64</td>
 <td style="text-align: right;">10</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">6</td>
-<td style="text-align: left;">base_lm</td>
-<td style="text-align: right;">30.82</td>
-<td style="text-align: right;">0.75</td>
+<td style="text-align: left;">base_m3_rmspe</td>
+<td style="text-align: right;">20.73</td>
+<td style="text-align: right;">0.44</td>
 <td style="text-align: right;">10</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">7</td>
-<td style="text-align: left;">base_m3_rmspe</td>
-<td style="text-align: right;">50.66</td>
-<td style="text-align: right;">1.30</td>
+<td style="text-align: left;">base_m4_rmspe_sym</td>
+<td style="text-align: right;">27.23</td>
+<td style="text-align: right;">0.71</td>
 <td style="text-align: right;">10</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">8</td>
-<td style="text-align: left;">base_m4_rmspe_sym</td>
-<td style="text-align: right;">51.51</td>
-<td style="text-align: right;">1.17</td>
+<td style="text-align: left;">base_lm</td>
+<td style="text-align: right;">30.82</td>
+<td style="text-align: right;">0.75</td>
 <td style="text-align: right;">10</td>
 </tr>
 </tbody>
@@ -452,7 +496,7 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 </h3>
 <p>A model that minimises MAPE may not minimise RMSE, and vice versa. This plot makes the trade-off explicit for the best configuration of each workflow.</p>
 <div class="cell">
-<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb15"><pre class="downlit sourceCode r">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">best_mape</span> <span class="op">&lt;-</span> <span class="fu">rank_results</span><span class="op">(</span><span class="va">tune_res</span>, rank_metric <span class="op">=</span> <span class="st">"mape"</span>, select_best <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">.metric</span> <span class="op">==</span> <span class="st">"mape"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">wflow_id</span>, mape <span class="op">=</span> <span class="va">mean</span><span class="op">)</span></span>
@@ -496,7 +540,7 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 </h2>
 <p>We select the best workflow overall (lowest cross-validated MAPE) and evaluate it on the held-out test set.</p>
 <div class="cell">
-<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb16"><pre class="downlit sourceCode r">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">best_wf_id</span> <span class="op">&lt;-</span> <span class="fu">rank_results</span><span class="op">(</span><span class="va">tune_res</span>, rank_metric <span class="op">=</span> <span class="st">"mape"</span>, select_best <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">.metric</span> <span class="op">==</span> <span class="st">"mape"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html" class="external-link">slice_min</a></span><span class="op">(</span><span class="va">mean</span>, n <span class="op">=</span> <span class="fl">1</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -506,7 +550,7 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 </details><div class="cell-output cell-output-stdout">
 <pre><code>Best workflow: base_xgb </code></pre>
 </div>
-<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb18"><pre class="downlit sourceCode r">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">best_wf</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_workflow</a></span><span class="op">(</span><span class="va">tune_res</span>, id <span class="op">=</span> <span class="va">best_wf_id</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">best_params</span> <span class="op">&lt;-</span> <span class="va">tune_res</span> <span class="op">|&gt;</span></span>
@@ -528,7 +572,7 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 </div>
 </div>
 <div class="cell">
-<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb20"><pre class="downlit sourceCode r">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb22"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_predictions</a></span><span class="op">(</span><span class="va">final_fit</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span>x <span class="op">=</span> <span class="va">compressive_strength</span>, y <span class="op">=</span> <span class="va">.pred</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>alpha <span class="op">=</span> <span class="fl">0.5</span>, size <span class="op">=</span> <span class="fl">1.8</span>, colour <span class="op">=</span> <span class="st">"#2c7bb6"</span><span class="op">)</span> <span class="op">+</span></span>
@@ -562,31 +606,31 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 <hr></section></section><section class="level2"><h2 id="reproducibility">Reproducibility<a class="anchor" aria-label="anchor" href="#reproducibility"></a>
 </h2>
 <div class="cell">
-<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb21"><pre class="downlit sourceCode r">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">sessioninfo</span><span class="fu">::</span><span class="fu"><a href="https://sessioninfo.r-lib.org/reference/session_info.html" class="external-link">session_info</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output cell-output-stdout">
 <pre><code>─ Session info ───────────────────────────────────────────────────────────────
  setting  value
- version  R version 4.5.3 (2026-03-11 ucrt)
- os       Windows 11 x64 (build 26200)
- system   x86_64, mingw32
- ui       RTerm
+ version  R version 4.5.3 (2026-03-11)
+ os       Ubuntu 24.04.4 LTS
+ system   x86_64, linux-gnu
+ ui       X11
  language en
- collate  Spanish_Mexico.utf8
- ctype    Spanish_Mexico.utf8
- tz       America/Mexico_City
+ collate  C.UTF-8
+ ctype    C.UTF-8
+ tz       UTC
  date     2026-04-21
- pandoc   3.6.3 @ C:/PROGRA~1/RStudio/RESOUR~1/app/bin/quarto/bin/tools/ (via rmarkdown)
- quarto   NA @ C:\\Users\\behep\\AppData\\Local\\Programs\\Quarto\\bin\\quarto.exe
+ pandoc   3.1.11 @ /opt/hostedtoolcache/pandoc/3.1.11/x64/ (via rmarkdown)
+ quarto   1.9.37 @ /usr/local/bin/quarto
 
 ─ Packages ───────────────────────────────────────────────────────────────────
  package      * version    date (UTC) lib source
  backports      1.5.1      2026-04-03 [1] RSPM
  broom        * 1.0.12     2026-01-27 [1] RSPM
  cachem         1.1.0      2024-05-16 [1] RSPM
- class          7.3-23     2025-01-01 [1] RSPM
+ class          7.3-23     2025-01-01 [3] CRAN (R 4.5.3)
  cli            3.6.6      2026-04-09 [1] RSPM
- codetools      0.2-20     2024-03-31 [1] RSPM
+ codetools      0.2-20     2024-03-31 [3] CRAN (R 4.5.3)
  conflicted     1.2.0      2023-02-01 [1] RSPM
  data.table     1.18.2.1   2026-01-27 [1] RSPM
  dials        * 1.4.3      2026-04-11 [1] RSPM
@@ -613,44 +657,47 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
  infer        * 1.1.0      2025-12-18 [1] RSPM
  ipred          0.9-15     2024-07-18 [1] RSPM
  jsonlite       2.0.0      2025-03-27 [1] RSPM
+ kernlab        0.9-33     2024-08-13 [1] RSPM
  knitr          1.51       2025-12-20 [1] RSPM
  labeling       0.4.3      2023-08-29 [1] RSPM
- lattice        0.22-9     2026-02-09 [1] RSPM
+ lattice        0.22-9     2026-02-09 [3] CRAN (R 4.5.3)
  lava           1.9.0      2026-04-05 [1] RSPM
  lifecycle      1.0.5      2026-01-08 [1] RSPM
  listenv        0.10.1     2026-03-10 [1] RSPM
  lubridate    * 1.9.5      2026-02-04 [1] RSPM
  magrittr       2.0.5      2026-04-04 [1] RSPM
- MASS           7.3-65     2025-02-28 [1] RSPM
- Matrix         1.7-5      2026-03-21 [1] RSPM
+ MASS           7.3-65     2025-02-28 [3] CRAN (R 4.5.3)
+ Matrix         1.7-4      2025-08-28 [3] CRAN (R 4.5.3)
  memoise        2.0.1      2021-11-26 [1] RSPM
  modeldata    * 1.5.1      2025-08-22 [1] RSPM
- nnet           7.3-20     2025-01-01 [1] RSPM
+ nnet           7.3-20     2025-01-01 [3] CRAN (R 4.5.3)
  otel           0.2.0      2025-08-29 [1] RSPM
  parallelly     1.47.0     2026-04-17 [1] RSPM
  parsnip      * 1.5.0      2026-04-09 [1] RSPM
  pillar         1.11.1     2025-09-17 [1] RSPM
  pkgconfig      2.0.3      2019-09-22 [1] RSPM
  prodlim        2026.03.11 2026-03-11 [1] RSPM
- psvr         * 0.0.0.9001 2026-04-21 [1] Github (pbenavidesh/psvr@5618725)
+ psvr         * 0.0.0.9002 2026-04-21 [1] local
  purrr        * 1.2.2      2026-04-10 [1] RSPM
  R6             2.6.1      2025-02-15 [1] RSPM
+ ranger         0.18.0     2026-01-16 [1] RSPM
  RColorBrewer   1.1-3      2022-04-03 [1] RSPM
  Rcpp           1.1.1-1    2026-04-16 [1] RSPM
  readr        * 2.2.0      2026-02-19 [1] RSPM
  recipes      * 1.3.2      2026-04-02 [1] RSPM
  rlang          1.2.0      2026-04-06 [1] RSPM
  rmarkdown      2.31       2026-03-26 [1] RSPM
- rpart          4.1.27     2026-03-27 [1] RSPM
+ rpart          4.1.24     2025-01-07 [3] CRAN (R 4.5.3)
  rsample      * 1.3.2      2026-01-30 [1] RSPM
  rstudioapi     0.18.0     2026-01-16 [1] RSPM
  S7             0.2.1-1    2025-11-14 [1] RSPM
  scales       * 1.4.0      2025-04-24 [1] RSPM
- sessioninfo    1.2.3      2025-02-05 [1] RSPM
+ sessioninfo    1.2.3      2025-02-05 [1] any (@1.2.3)
+ sfd            0.1.0      2024-01-08 [1] RSPM
  sparsevctrs    0.3.6      2026-01-27 [1] RSPM
  stringi        1.8.7      2025-03-27 [1] RSPM
  stringr      * 1.6.0      2025-11-04 [1] RSPM
- survival       3.8-6      2026-01-16 [1] RSPM
+ survival       3.8-6      2026-01-16 [3] CRAN (R 4.5.3)
  tailor       * 0.1.0      2025-08-25 [1] RSPM
  tibble       * 3.3.1      2026-01-11 [1] RSPM
  tidymodels   * 1.4.1      2025-09-08 [1] RSPM
@@ -671,8 +718,9 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
  yaml           2.3.12     2025-12-10 [1] RSPM
  yardstick    * 1.4.0      2026-04-07 [1] RSPM
 
- [1] C:/Users/behep/AppData/Local/R/win-library/4.5
- [2] C:/Program Files/R/R-4.5.3/library
+ [1] /home/runner/work/_temp/Library
+ [2] /opt/R/4.5.3/lib/R/site-library
+ [3] /opt/R/4.5.3/lib/R/library
  * ── Packages attached to the search path.
 
 ──────────────────────────────────────────────────────────────────────────────</code></pre>

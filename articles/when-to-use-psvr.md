@@ -219,31 +219,42 @@ spec_m4 <- psvr_rmspe_sym_rbf(
   set_engine("psvr", a = 1L)
 ```
 
-> **Hyperparameter search ranges (v0.0.0.9002+)**
+> **Hyperparameter search ranges**
 >
-> The psvr package supplies its own dials parameters, so no manual range
-> overrides via `option_add()` are needed:
+> The `psvr` package supplies custom dials parameters with appropriate
+> defaults for percentage-error models:
 >
 > - **`svm_margin`** →
 >   [`margin_percentage()`](https://pbenavidesh.github.io/psvr/reference/margin_percentage.md):
->   default range \[1, 20\] in percentage units. The grid will search
->   between 1% and 20% of each target value automatically.
+>   default range \[1, 20\] in percentage units — no manual override
+>   needed.
 > - **`cost`** →
 >   [`cost_psvr()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr.md):
->   default range \[−2, 10\] on the log₂ scale (approximately 0.25 to
->   1,024) — wider than
->   [`dials::cost()`](https://dials.tidymodels.org/reference/cost.html)
->   to cover the larger regularisation values typically needed by LS-SVR
->   models.
+>   default range \[−2, 10\] on the log₂ scale (~0.25 to 1,024) — no
+>   manual override needed.
 > - **`rbf_sigma`** →
 >   [`rbf_sigma_psvr()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.md):
->   the search range auto-finalizes using
->   [`sigma_heuristic()`](https://pbenavidesh.github.io/psvr/reference/sigma_heuristic.md),
->   which sets it to one order of magnitude above and below the median
->   pairwise distance of the preprocessed training predictors. To
->   inspect or override the heuristic value, call
+>   default range \[−3, 1\] on the log₁₀ scale. **This range should be
+>   adjusted** using the median-distance heuristic via
 >   [`sigma_heuristic()`](https://pbenavidesh.github.io/psvr/reference/sigma_heuristic.md)
->   directly on the baked training matrix.
+>   — see the code below.
+
+``` r
+# Compute median pairwise distance on the normalised training predictors
+train_baked  <- rec_base |> prep() |> bake(new_data = train)
+sigma_med    <- sigma_heuristic(train_baked |> select(-compressive_strength))
+
+rbf_sigma_custom <- rbf_sigma_psvr(
+  range = c(log10(sigma_med / 10), log10(sigma_med * 10))
+)
+
+cat(sprintf("sigma_med = %.3f  →  rbf_sigma range: [%.3f, %.3f]\n",
+            sigma_med,
+            log10(sigma_med / 10),
+            log10(sigma_med * 10)))
+```
+
+    sigma_med = 3.688  →  rbf_sigma range: [-0.433, 1.567]
 
 ------------------------------------------------------------------------
 
@@ -263,25 +274,51 @@ wf_set <- workflow_set(
     svm_rbf      = spec_svm,
     rf           = spec_rf,
     xgb          = spec_xgb,
-    # m1_mape      = spec_m1,
-    # m2_mape_sym  = spec_m2,
+    m1_mape      = spec_m1,
+    m2_mape_sym  = spec_m2,
     m3_rmspe     = spec_m3,
     m4_rmspe_sym = spec_m4
   )
-)
+) |>
+  option_add(
+    param_info = workflow(rec_base, spec_m1) |>
+      extract_parameter_set_dials() |>
+      update(rbf_sigma = rbf_sigma_custom),
+    id = "base_m1_mape"
+  ) |>
+  option_add(
+    param_info = workflow(rec_base, spec_m2) |>
+      extract_parameter_set_dials() |>
+      update(rbf_sigma = rbf_sigma_custom),
+    id = "base_m2_mape_sym"
+  ) |>
+  option_add(
+    param_info = workflow(rec_base, spec_m3) |>
+      extract_parameter_set_dials() |>
+      update(rbf_sigma = rbf_sigma_custom),
+    id = "base_m3_rmspe"
+  ) |>
+  option_add(
+    param_info = workflow(rec_base, spec_m4) |>
+      extract_parameter_set_dials() |>
+      update(rbf_sigma = rbf_sigma_custom),
+    id = "base_m4_rmspe_sym"
+  )
 
 wf_set
 ```
 
-    # A workflow set/tibble: 6 × 4
+    # A workflow set/tibble: 8 × 4
       wflow_id          info             option    result
       <chr>             <list>           <list>    <list>
     1 base_lm           <tibble [1 × 4]> <opts[0]> <list [0]>
     2 base_svm_rbf      <tibble [1 × 4]> <opts[0]> <list [0]>
     3 base_rf           <tibble [1 × 4]> <opts[0]> <list [0]>
     4 base_xgb          <tibble [1 × 4]> <opts[0]> <list [0]>
-    5 base_m3_rmspe     <tibble [1 × 4]> <opts[0]> <list [0]>
-    6 base_m4_rmspe_sym <tibble [1 × 4]> <opts[0]> <list [0]>
+    5 base_m1_mape      <tibble [1 × 4]> <opts[1]> <list [0]>
+    6 base_m2_mape_sym  <tibble [1 × 4]> <opts[1]> <list [0]>
+    7 base_m3_rmspe     <tibble [1 × 4]> <opts[1]> <list [0]>
+    8 base_m4_rmspe_sym <tibble [1 × 4]> <opts[1]> <list [0]>
 
 ------------------------------------------------------------------------
 
@@ -377,12 +414,12 @@ rank_res |>
 |-----:|:------------------|------:|-----:|------:|
 |    1 | base_xgb          | 10.18 | 0.27 |    10 |
 |    2 | base_rf           | 12.67 | 0.50 |    10 |
-|    3 | base_svm_rbf      | 14.70 | 0.57 |    10 |
-|    4 | base_m1_mape      | 22.24 | 0.70 |    10 |
-|    5 | base_m2_mape_sym  | 28.91 | 0.71 |    10 |
-|    6 | base_lm           | 30.82 | 0.75 |    10 |
-|    7 | base_m3_rmspe     | 50.66 | 1.30 |    10 |
-|    8 | base_m4_rmspe_sym | 51.51 | 1.17 |    10 |
+|    3 | base_m1_mape      | 12.98 | 0.62 |    10 |
+|    4 | base_svm_rbf      | 14.70 | 0.57 |    10 |
+|    5 | base_m2_mape_sym  | 15.41 | 0.64 |    10 |
+|    6 | base_m3_rmspe     | 20.73 | 0.44 |    10 |
+|    7 | base_m4_rmspe_sym | 27.23 | 0.71 |    10 |
+|    8 | base_lm           | 30.82 | 0.75 |    10 |
 
 Cross-validated MAPE — best configuration per workflow
 
@@ -534,26 +571,26 @@ sessioninfo::session_info()
 
     ─ Session info ───────────────────────────────────────────────────────────────
      setting  value
-     version  R version 4.5.3 (2026-03-11 ucrt)
-     os       Windows 11 x64 (build 26200)
-     system   x86_64, mingw32
-     ui       RTerm
+     version  R version 4.5.3 (2026-03-11)
+     os       Ubuntu 24.04.4 LTS
+     system   x86_64, linux-gnu
+     ui       X11
      language en
-     collate  Spanish_Mexico.utf8
-     ctype    Spanish_Mexico.utf8
-     tz       America/Mexico_City
+     collate  C.UTF-8
+     ctype    C.UTF-8
+     tz       UTC
      date     2026-04-21
-     pandoc   3.6.3 @ C:/PROGRA~1/RStudio/RESOUR~1/app/bin/quarto/bin/tools/ (via rmarkdown)
-     quarto   NA @ C:\\Users\\behep\\AppData\\Local\\Programs\\Quarto\\bin\\quarto.exe
+     pandoc   3.1.11 @ /opt/hostedtoolcache/pandoc/3.1.11/x64/ (via rmarkdown)
+     quarto   1.9.37 @ /usr/local/bin/quarto
 
     ─ Packages ───────────────────────────────────────────────────────────────────
      package      * version    date (UTC) lib source
      backports      1.5.1      2026-04-03 [1] RSPM
      broom        * 1.0.12     2026-01-27 [1] RSPM
      cachem         1.1.0      2024-05-16 [1] RSPM
-     class          7.3-23     2025-01-01 [1] RSPM
+     class          7.3-23     2025-01-01 [3] CRAN (R 4.5.3)
      cli            3.6.6      2026-04-09 [1] RSPM
-     codetools      0.2-20     2024-03-31 [1] RSPM
+     codetools      0.2-20     2024-03-31 [3] CRAN (R 4.5.3)
      conflicted     1.2.0      2023-02-01 [1] RSPM
      data.table     1.18.2.1   2026-01-27 [1] RSPM
      dials        * 1.4.3      2026-04-11 [1] RSPM
@@ -580,44 +617,47 @@ sessioninfo::session_info()
      infer        * 1.1.0      2025-12-18 [1] RSPM
      ipred          0.9-15     2024-07-18 [1] RSPM
      jsonlite       2.0.0      2025-03-27 [1] RSPM
+     kernlab        0.9-33     2024-08-13 [1] RSPM
      knitr          1.51       2025-12-20 [1] RSPM
      labeling       0.4.3      2023-08-29 [1] RSPM
-     lattice        0.22-9     2026-02-09 [1] RSPM
+     lattice        0.22-9     2026-02-09 [3] CRAN (R 4.5.3)
      lava           1.9.0      2026-04-05 [1] RSPM
      lifecycle      1.0.5      2026-01-08 [1] RSPM
      listenv        0.10.1     2026-03-10 [1] RSPM
      lubridate    * 1.9.5      2026-02-04 [1] RSPM
      magrittr       2.0.5      2026-04-04 [1] RSPM
-     MASS           7.3-65     2025-02-28 [1] RSPM
-     Matrix         1.7-5      2026-03-21 [1] RSPM
+     MASS           7.3-65     2025-02-28 [3] CRAN (R 4.5.3)
+     Matrix         1.7-4      2025-08-28 [3] CRAN (R 4.5.3)
      memoise        2.0.1      2021-11-26 [1] RSPM
      modeldata    * 1.5.1      2025-08-22 [1] RSPM
-     nnet           7.3-20     2025-01-01 [1] RSPM
+     nnet           7.3-20     2025-01-01 [3] CRAN (R 4.5.3)
      otel           0.2.0      2025-08-29 [1] RSPM
      parallelly     1.47.0     2026-04-17 [1] RSPM
      parsnip      * 1.5.0      2026-04-09 [1] RSPM
      pillar         1.11.1     2025-09-17 [1] RSPM
      pkgconfig      2.0.3      2019-09-22 [1] RSPM
      prodlim        2026.03.11 2026-03-11 [1] RSPM
-     psvr         * 0.0.0.9001 2026-04-21 [1] Github (pbenavidesh/psvr@5618725)
+     psvr         * 0.0.0.9002 2026-04-21 [1] local
      purrr        * 1.2.2      2026-04-10 [1] RSPM
      R6             2.6.1      2025-02-15 [1] RSPM
+     ranger         0.18.0     2026-01-16 [1] RSPM
      RColorBrewer   1.1-3      2022-04-03 [1] RSPM
      Rcpp           1.1.1-1    2026-04-16 [1] RSPM
      readr        * 2.2.0      2026-02-19 [1] RSPM
      recipes      * 1.3.2      2026-04-02 [1] RSPM
      rlang          1.2.0      2026-04-06 [1] RSPM
      rmarkdown      2.31       2026-03-26 [1] RSPM
-     rpart          4.1.27     2026-03-27 [1] RSPM
+     rpart          4.1.24     2025-01-07 [3] CRAN (R 4.5.3)
      rsample      * 1.3.2      2026-01-30 [1] RSPM
      rstudioapi     0.18.0     2026-01-16 [1] RSPM
      S7             0.2.1-1    2025-11-14 [1] RSPM
      scales       * 1.4.0      2025-04-24 [1] RSPM
-     sessioninfo    1.2.3      2025-02-05 [1] RSPM
+     sessioninfo    1.2.3      2025-02-05 [1] any (@1.2.3)
+     sfd            0.1.0      2024-01-08 [1] RSPM
      sparsevctrs    0.3.6      2026-01-27 [1] RSPM
      stringi        1.8.7      2025-03-27 [1] RSPM
      stringr      * 1.6.0      2025-11-04 [1] RSPM
-     survival       3.8-6      2026-01-16 [1] RSPM
+     survival       3.8-6      2026-01-16 [3] CRAN (R 4.5.3)
      tailor       * 0.1.0      2025-08-25 [1] RSPM
      tibble       * 3.3.1      2026-01-11 [1] RSPM
      tidymodels   * 1.4.1      2025-09-08 [1] RSPM
@@ -638,8 +678,9 @@ sessioninfo::session_info()
      yaml           2.3.12     2025-12-10 [1] RSPM
      yardstick    * 1.4.0      2026-04-07 [1] RSPM
 
-     [1] C:/Users/behep/AppData/Local/R/win-library/4.5
-     [2] C:/Program Files/R/R-4.5.3/library
+     [1] /home/runner/work/_temp/Library
+     [2] /opt/R/4.5.3/lib/R/site-library
+     [3] /opt/R/4.5.3/lib/R/library
      * ── Packages attached to the search path.
 
     ──────────────────────────────────────────────────────────────────────────────
