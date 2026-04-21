@@ -128,15 +128,11 @@ split <- initial_split(concrete, prop = 0.80, strata = compressive_strength)
 train <- training(split)
 test  <- testing(split)
 
-# Subsample for tuning — QP-based models (m1, m2) scale as O(n²)
-# Full training set is used for the final fit via last_fit()
-set.seed(42)
-train_tune <- slice_sample(train, n = 300, replace = FALSE)
-folds <- vfold_cv(train_tune, v = 10, strata = compressive_strength)
+folds <- vfold_cv(train, v = 10, strata = compressive_strength)
 
 cat(sprintf(
-  "Training: %d obs  |  Test: %d obs  |  Tuning subsample: %d obs\n",
-  nrow(train), nrow(test), nrow(train_tune)
+  "Training: %d obs  |  Test: %d obs\n",
+  nrow(train), nrow(test)
 ))
 ```
 
@@ -217,19 +213,11 @@ spec_m4 <- psvr_rmspe_sym_rbf(
 
 ---
 
-::: {.callout-note}
-## Computational note
-The ε-SVR models (Models 1 and 2) solve a quadratic program at each fit,
-with cost O(n²) in the number of training observations. Hyperparameter
-tuning uses a random subsample of 300 observations to keep compute time
-manageable. The final model is fit on the full training set via `last_fit()`.
-:::
-
 ## Workflow set
 
 Eight model specifications are paired with the base recipe, yielding 8
 workflows. `workflow_map()` tunes each one over a Latin hypercube grid
-and evaluates with 10-fold CV on the 300-observation tuning subsample.
+and evaluates with 10-fold CV on the full training set.
 
 ```{r wf-set}
 wf_set <- workflow_set(
