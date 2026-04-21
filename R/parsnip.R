@@ -251,8 +251,9 @@ psvr_mape_linear <- function(mode = "regression", engine = "psvr",
 #' Parsnip model specs: symmetric epsilon-SVR with MAPE loss (Model 2)
 #'
 #' Create parsnip model specifications for [mape_sym_svr()] with a fixed
-#' kernel type.  The symmetry parameter `a` is an engine argument passed via
-#' `set_engine("psvr", a = 1L)`.
+#' kernel type.  Even symmetry (`a = 1L`) is the default and does not need to
+#' be specified in `set_engine()`.  Pass `set_engine("psvr", a = -1L)` to
+#' request odd symmetry instead.
 #'
 #' @inheritParams psvr_mape_specs
 #'
@@ -262,14 +263,14 @@ psvr_mape_linear <- function(mode = "regression", engine = "psvr",
 #' \dontrun{
 #' library(parsnip)
 #' spec <- psvr_mape_sym_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1) |>
-#'   set_engine("psvr", a = 1L)
+#'   set_engine("psvr")
 #'
 #' spec_poly <- psvr_mape_sym_poly(cost = 10, svm_margin = 1, degree = 2,
 #'                                 scale_factor = 1) |>
-#'   set_engine("psvr", a = 1L)
+#'   set_engine("psvr")
 #'
 #' spec_lin <- psvr_mape_sym_linear(cost = 10, svm_margin = 1) |>
-#'   set_engine("psvr", a = 1L)
+#'   set_engine("psvr")
 #' }
 #'
 #' @name psvr_mape_sym_specs
@@ -432,8 +433,9 @@ psvr_rmspe_linear <- function(mode = "regression", engine = "psvr",
 #' Parsnip model specs: symmetric LS-SVR with RMSPE loss (Model 4)
 #'
 #' Create parsnip model specifications for [rmspe_sym_lssvr()] with a fixed
-#' kernel type.  The symmetry parameter `a` is an engine argument passed via
-#' `set_engine("psvr", a = 1L)`.
+#' kernel type.  Even symmetry (`a = 1L`) is the default and does not need to
+#' be specified in `set_engine()`.  Pass `set_engine("psvr", a = -1L)` to
+#' request odd symmetry instead.
 #'
 #' @inheritParams psvr_rmspe_specs
 #'
@@ -443,14 +445,14 @@ psvr_rmspe_linear <- function(mode = "regression", engine = "psvr",
 #' \dontrun{
 #' library(parsnip)
 #' spec <- psvr_rmspe_sym_rbf(cost = 1000, rbf_sigma = 1) |>
-#'   set_engine("psvr", a = 1L)
+#'   set_engine("psvr")
 #'
 #' spec_poly <- psvr_rmspe_sym_poly(cost = 1000, degree = 2,
 #'                                  scale_factor = 1) |>
-#'   set_engine("psvr", a = 1L)
+#'   set_engine("psvr")
 #'
 #' spec_lin <- psvr_rmspe_sym_linear(cost = 1000) |>
-#'   set_engine("psvr", a = 1L)
+#'   set_engine("psvr")
 #' }
 #'
 #' @name psvr_rmspe_sym_specs
@@ -682,7 +684,7 @@ update.psvr_rmspe_sym_linear_model <- function(object, parameters = NULL,
 # ---- Engine registration -------------------------------------------------
 
 # Helper: register one model/engine combination with parsnip.
-.reg_psvr <- function(model_name, fit_fun, arg_defs) {
+.reg_psvr <- function(model_name, fit_fun, arg_defs, defaults = list()) {
   parsnip::set_new_model(model_name)
   parsnip::set_model_mode(model_name, "regression")
   parsnip::set_model_engine(model_name, mode = "regression", eng = "psvr")
@@ -705,7 +707,7 @@ update.psvr_rmspe_sym_linear_model <- function(object, parameters = NULL,
       interface = "matrix",
       protect   = c("x", "y"),
       func      = c(pkg = "psvr", fun = fit_fun),
-      defaults  = list()
+      defaults  = defaults
     )
   )
 
@@ -757,11 +759,11 @@ make_psvr_engines <- function() {
 
   # ---- Model 2: symmetric epsilon-SVR with MAPE ----
   .reg_psvr("psvr_mape_sym_rbf_model",    "psvr_mape_sym_rbf_fit",
-            list(.A_COST_C, .A_MARGIN, .A_SIGMA))
+            list(.A_COST_C, .A_MARGIN, .A_SIGMA), defaults = list(a = 1L))
   .reg_psvr("psvr_mape_sym_poly_model",   "psvr_mape_sym_poly_fit",
-            list(.A_COST_C, .A_MARGIN, .A_DEGREE, .A_SCALE))
+            list(.A_COST_C, .A_MARGIN, .A_DEGREE, .A_SCALE), defaults = list(a = 1L))
   .reg_psvr("psvr_mape_sym_linear_model", "psvr_mape_sym_linear_fit",
-            list(.A_COST_C, .A_MARGIN))
+            list(.A_COST_C, .A_MARGIN), defaults = list(a = 1L))
 
   # ---- Model 3: LS-SVR with RMSPE ----
   .reg_psvr("psvr_rmspe_rbf_model",    "psvr_rmspe_rbf_fit",
@@ -773,11 +775,11 @@ make_psvr_engines <- function() {
 
   # ---- Model 4: symmetric LS-SVR with RMSPE ----
   .reg_psvr("psvr_rmspe_sym_rbf_model",    "psvr_rmspe_sym_rbf_fit",
-            list(.A_COST_GAMMA, .A_SIGMA))
+            list(.A_COST_GAMMA, .A_SIGMA), defaults = list(a = 1L))
   .reg_psvr("psvr_rmspe_sym_poly_model",   "psvr_rmspe_sym_poly_fit",
-            list(.A_COST_GAMMA, .A_DEGREE, .A_SCALE))
+            list(.A_COST_GAMMA, .A_DEGREE, .A_SCALE), defaults = list(a = 1L))
   .reg_psvr("psvr_rmspe_sym_linear_model", "psvr_rmspe_sym_linear_fit",
-            list(.A_COST_GAMMA))
+            list(.A_COST_GAMMA), defaults = list(a = 1L))
 }
 
 

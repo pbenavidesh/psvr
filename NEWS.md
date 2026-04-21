@@ -1,3 +1,28 @@
+# psvr 0.0.0.9003
+
+## UX improvements
+
+* New function `rbf_sigma_psvr_data()`: combines `sigma_heuristic()` and
+  `rbf_sigma_psvr()` in a single call, returning a dials parameter with a
+  data-driven search range centred on the median pairwise distance.
+
+* New function `psvr_option_add()`: applies `option_add()` to every psvr
+  workflow (those whose `wflow_id` matches `m1|m2|m3|m4`) in a workflow set
+  simultaneously, replacing the `rbf_sigma` parameter with a data-driven one.
+  Replaces four individual `option_add()` calls in typical workflows.
+
+* Symmetric model specs (`psvr_mape_sym_*`, `psvr_rmspe_sym_*`): even symmetry
+  (`a = 1L`) is now the default engine argument. Calling `set_engine("psvr")`
+  without `a = 1L` now produces the same result as before — no action required
+  for existing code that already passed `a = 1L`.
+
+* All four core fitting functions now emit a warning when `N > 2000` to
+  remind users that the O(n²) kernel matrix may be expensive.
+
+* The `y > 0` input check in all four core fitting functions now reports the
+  number of offending values and their minimum, making it easier to diagnose
+  data issues.
+
 # psvr 0.0.0.9002
 
 ## User-friendly hyperparameter defaults

@@ -196,7 +196,7 @@ spec_m2 <- psvr_mape_sym_rbf(
   svm_margin = tune(),
   rbf_sigma  = tune()
 ) |>
-  set_engine("psvr", a = 1L)
+  set_engine("psvr")
 
 spec_m3 <- psvr_rmspe_rbf(
   cost      = tune(),
@@ -208,7 +208,7 @@ spec_m4 <- psvr_rmspe_sym_rbf(
   cost      = tune(),
   rbf_sigma = tune()
 ) |>
-  set_engine("psvr", a = 1L)
+  set_engine("psvr")
 ```
 
 ::: {.callout-note}
@@ -230,18 +230,14 @@ defaults for percentage-error models:
 ```{r sigma-heuristic}
 #| code-fold: false
 
-# Compute median pairwise distance on the normalised training predictors
-train_baked  <- rec_base |> prep() |> bake(new_data = train)
-sigma_med    <- sigma_heuristic(train_baked |> select(-compressive_strength))
-
-rbf_sigma_custom <- rbf_sigma_psvr(
-  range = c(log10(sigma_med / 10), log10(sigma_med * 10))
+# Compute data-driven rbf_sigma parameter from the normalised training predictors
+train_baked      <- rec_base |> prep() |> bake(new_data = train)
+rbf_sigma_custom <- rbf_sigma_psvr_data(
+  train_baked |> select(-compressive_strength)
 )
 
-cat(sprintf("sigma_med = %.3f  →  rbf_sigma range: [%.3f, %.3f]\n",
-            sigma_med,
-            log10(sigma_med / 10),
-            log10(sigma_med * 10)))
+r <- dials::range_get(rbf_sigma_custom, original = FALSE)
+cat(sprintf("rbf_sigma range: [%.3f, %.3f]\n", r$lower, r$upper))
 ```
 
 ---
@@ -266,30 +262,7 @@ wf_set <- workflow_set(
     m4_rmspe_sym = spec_m4
   )
 ) |>
-  option_add(
-    param_info = workflow(rec_base, spec_m1) |>
-      extract_parameter_set_dials() |>
-      update(rbf_sigma = rbf_sigma_custom),
-    id = "base_m1_mape"
-  ) |>
-  option_add(
-    param_info = workflow(rec_base, spec_m2) |>
-      extract_parameter_set_dials() |>
-      update(rbf_sigma = rbf_sigma_custom),
-    id = "base_m2_mape_sym"
-  ) |>
-  option_add(
-    param_info = workflow(rec_base, spec_m3) |>
-      extract_parameter_set_dials() |>
-      update(rbf_sigma = rbf_sigma_custom),
-    id = "base_m3_rmspe"
-  ) |>
-  option_add(
-    param_info = workflow(rec_base, spec_m4) |>
-      extract_parameter_set_dials() |>
-      update(rbf_sigma = rbf_sigma_custom),
-    id = "base_m4_rmspe_sym"
-  )
+  psvr_option_add(train_baked |> select(-compressive_strength))
 
 wf_set
 ```

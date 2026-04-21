@@ -46,11 +46,25 @@
 mape_svr <- function(X, y, kernel, C, eps, tol = 1e-5) {
   X <- as.matrix(X)
   y <- as.numeric(y)
-  if (!all(y > 0)) stop("all targets `y` must be strictly positive")
+  if (!all(y > 0)) {
+    n_bad <- sum(y <= 0)
+    stop(sprintf(
+      paste0("%d target value%s non-positive (min = %g). ",
+             "All targets must be strictly positive for percentage-error loss."),
+      n_bad, if (n_bad == 1L) " is" else "s are", min(y)
+    ))
+  }
   if (C   <= 0)    stop("`C` must be positive")
   if (eps <  0)    stop("`eps` must be non-negative")
 
   N     <- nrow(X)
+  if (N > 2000L) {
+    warning(sprintf(
+      paste0("Large dataset (N = %d): kernel matrix is %d x %d (%.1f MB). ",
+             "Consider subsampling for hyperparameter tuning."),
+      N, N, N, N^2 * 8 / 1e6
+    ))
+  }
   scale <- eps / 100          # ε/100, used throughout
   ub    <- 100 * C / y        # per-sample upper bounds on αk and αk*
 

@@ -60,21 +60,22 @@ A parsnip \code{model_spec} object of the corresponding class.
 }
 \description{
 Create parsnip model specifications for \code{\link[=mape_sym_svr]{mape_sym_svr()}} with a fixed
-kernel type.  The symmetry parameter \code{a} is an engine argument passed via
-\code{set_engine("psvr", a = 1L)}.
+kernel type.  Even symmetry (\code{a = 1L}) is the default and does not need to
+be specified in \code{set_engine()}.  Pass \code{set_engine("psvr", a = -1L)} to
+request odd symmetry instead.
 }
 \examples{
 \dontrun{
 library(parsnip)
 spec <- psvr_mape_sym_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1) |>
-  set_engine("psvr", a = 1L)
+  set_engine("psvr")
 
 spec_poly <- psvr_mape_sym_poly(cost = 10, svm_margin = 1, degree = 2,
                                 scale_factor = 1) |>
-  set_engine("psvr", a = 1L)
+  set_engine("psvr")
 
 spec_lin <- psvr_mape_sym_linear(cost = 10, svm_margin = 1) |>
-  set_engine("psvr", a = 1L)
+  set_engine("psvr")
 }
 
 }

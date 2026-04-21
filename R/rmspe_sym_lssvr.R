@@ -47,11 +47,25 @@
 rmspe_sym_lssvr <- function(X, y, kernel, gamma, a = 1) {
   X <- as.matrix(X)
   y <- as.numeric(y)
-  if (!all(y > 0))      stop("all targets `y` must be strictly positive")
+  if (!all(y > 0)) {
+    n_bad <- sum(y <= 0)
+    stop(sprintf(
+      paste0("%d target value%s non-positive (min = %g). ",
+             "All targets must be strictly positive for percentage-error loss."),
+      n_bad, if (n_bad == 1L) " is" else "s are", min(y)
+    ))
+  }
   if (gamma <= 0)       stop("`gamma` must be positive")
   if (!a %in% c(-1, 1)) stop("`a` must be 1 (even) or -1 (odd)")
 
   N <- nrow(X)
+  if (N > 2000L) {
+    warning(sprintf(
+      paste0("Large dataset (N = %d): kernel matrix is %d x %d (%.1f MB). ",
+             "Consider subsampling for hyperparameter tuning."),
+      N, N, N, N^2 * 8 / 1e6
+    ))
+  }
 
   Omega_s <- sym_kernel_matrix(kernel, X, a)   # ½(Ω + a·Ω*)
   diag(Omega_s) <- diag(Omega_s) + y^2 / gamma # add YΓ to diagonal in place

@@ -94,6 +94,8 @@ reference:
       - margin_percentage
       - sigma_heuristic
       - rbf_sigma_psvr
+      - rbf_sigma_psvr_data
+      - psvr_option_add
       - cost_psvr
 
   - title: "Internal fit wrappers"

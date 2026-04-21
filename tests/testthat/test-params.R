@@ -55,6 +55,63 @@ test_that("rbf_sigma_psvr() has NULL finalize", {
   expect_null(p$finalize)
 })
 
+test_that("rbf_sigma_psvr_data() returns a quant_param with data-driven range", {
+  set.seed(42)
+  X <- matrix(rnorm(200), ncol = 4)
+  p <- rbf_sigma_psvr_data(X)
+  expect_s3_class(p, "quant_param")
+  r <- dials::range_get(p, original = FALSE)
+  expect_true(is.finite(r$lower))
+  expect_true(is.finite(r$upper))
+  expect_lt(r$lower, r$upper)
+})
+
+test_that("rbf_sigma_psvr_data() width argument changes range width", {
+  set.seed(42)
+  X <- matrix(rnorm(200), ncol = 4)
+  p1 <- rbf_sigma_psvr_data(X, width = 10)
+  p2 <- rbf_sigma_psvr_data(X, width = 100)
+  r1 <- dials::range_get(p1, original = FALSE)
+  r2 <- dials::range_get(p2, original = FALSE)
+  expect_lt(r1$upper - r1$lower, r2$upper - r2$lower)
+})
+
+test_that("psvr_option_add() updates rbf_sigma for psvr workflows only", {
+  skip_if_not_installed("workflowsets")
+  skip_if_not_installed("tune")
+  skip_if_not_installed("recipes")
+  skip_if_not_installed("parsnip")
+
+  rec <- recipes::recipe(mpg ~ ., data = mtcars) |>
+    recipes::step_normalize(recipes::all_numeric_predictors())
+
+  spec_m3 <- psvr_rmspe_rbf(cost = tune::tune(), rbf_sigma = tune::tune()) |>
+    parsnip::set_engine("psvr")
+  spec_lm <- parsnip::linear_reg() |> parsnip::set_engine("lm")
+
+  wf_set <- workflowsets::workflow_set(
+    preproc = list(base = rec),
+    models  = list(m3_rmspe = spec_m3, lm = spec_lm)
+  )
+
+  X_baked <- rec |> recipes::prep() |>
+    recipes::bake(new_data = mtcars) |>
+    dplyr::select(-mpg)
+
+  wf_set2 <- psvr_option_add(wf_set, X_baked, seed = 42L)
+
+  # psvr workflow should have options set; lm workflow should not
+  m3_opts <- workflowsets::extract_workflow_set_result  # check via wflow_id
+  psvr_wf_id <- wf_set2$wflow_id[grepl("m3|m1|m2|m4", wf_set2$wflow_id)]
+  lm_wf_id   <- wf_set2$wflow_id[!grepl("m3|m1|m2|m4", wf_set2$wflow_id)]
+
+  # psvr workflow has options; lm does not
+  psvr_opts <- wf_set2$option[[which(wf_set2$wflow_id == psvr_wf_id)]]
+  lm_opts   <- wf_set2$option[[which(wf_set2$wflow_id == lm_wf_id)]]
+  expect_true(length(psvr_opts) > 0)
+  expect_true(length(lm_opts)   == 0)
+})
+
 test_that("cost_psvr() returns a dials param with range [-2, 10]", {
   p <- cost_psvr()
   expect_s3_class(p, "quant_param")

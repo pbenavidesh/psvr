@@ -109,6 +109,85 @@ rbf_sigma_psvr <- function(range = c(-3, 1),
   )
 }
 
+#' RBF sigma parameter with data-driven range for psvr models
+#'
+#' A convenience wrapper that combines [sigma_heuristic()] and
+#' [rbf_sigma_psvr()] in a single call. It computes the median pairwise
+#' distance from `X` and returns a `quant_param` whose search range spans
+#' one order of magnitude either side of the heuristic value on the log10
+#' scale (i.e., `[log10(sigma_med / width), log10(sigma_med * width)]`).
+#'
+#' @param X A numeric matrix or data frame of predictors (already
+#'   preprocessed — centred, scaled, etc.).
+#' @param width Positive scalar. Multiplier that sets the half-width of the
+#'   search range around the heuristic sigma. Default `10` (one decade).
+#' @param sample_size Integer. Passed to [sigma_heuristic()]. Default `500L`.
+#' @param seed Integer seed for subsampling. Passed to [sigma_heuristic()].
+#'   Default `NULL`.
+#' @param trans A `scales` transformation object. Default `scales::log10_trans()`.
+#'
+#' @return A `quant_param` dials object with a data-driven search range.
+#'
+#' @seealso [sigma_heuristic()], [rbf_sigma_psvr()]
+#'
+#' @examples
+#' X <- matrix(rnorm(200), ncol = 4)
+#' rbf_sigma_psvr_data(X)
+#' rbf_sigma_psvr_data(X, width = 5)
+#'
+#' @export
+rbf_sigma_psvr_data <- function(X, width = 10, sample_size = 500L,
+                                 seed = NULL,
+                                 trans = scales::log10_trans()) {
+  sigma_med <- sigma_heuristic(X, sample_size = sample_size, seed = seed)
+  rbf_sigma_psvr(
+    range = c(log10(sigma_med / width), log10(sigma_med * width)),
+    trans = trans
+  )
+}
+
+#' Apply data-driven rbf_sigma to all psvr workflows in a workflow set
+#'
+#' A convenience wrapper that calls [workflowsets::option_add()] for every
+#' psvr workflow in `wf_set` (those whose `wflow_id` contains `"m1"`,
+#' `"m2"`, `"m3"`, or `"m4"`), replacing the `rbf_sigma` dials parameter
+#' with a data-driven one built from `X` via [rbf_sigma_psvr_data()].
+#'
+#' @param wf_set A `workflow_set` object.
+#' @param X A numeric matrix or data frame of preprocessed predictors.
+#' @param width Positive scalar. Passed to [rbf_sigma_psvr_data()].
+#'   Default `10`.
+#' @param sample_size Integer. Passed to [sigma_heuristic()]. Default `500L`.
+#' @param seed Integer seed for subsampling. Default `NULL`.
+#'
+#' @return The updated `workflow_set` (the same object with `option_add()`
+#'   applied to each psvr workflow).
+#'
+#' @seealso [rbf_sigma_psvr_data()], [sigma_heuristic()]
+#'
+#' @examples
+#' \dontrun{
+#' # After building wf_set and preprocessing:
+#' train_baked <- rec |> prep() |> bake(new_data = train)
+#' wf_set <- psvr_option_add(wf_set, train_baked |> select(-outcome))
+#' }
+#'
+#' @importFrom stats update
+#' @export
+psvr_option_add <- function(wf_set, X, width = 10, sample_size = 500L,
+                             seed = NULL) {
+  rbf_param <- rbf_sigma_psvr_data(X, width = width,
+                                    sample_size = sample_size, seed = seed)
+  psvr_ids <- wf_set$wflow_id[grepl("m1|m2|m3|m4", wf_set$wflow_id)]
+  for (id in psvr_ids) {
+    param_info <- workflowsets::extract_workflow(wf_set, id = id) |>
+      tune::extract_parameter_set_dials() |>
+      update(rbf_sigma = rbf_param)
+    wf_set <- workflowsets::option_add(wf_set, param_info = param_info, id = id)
+  }
+  wf_set
+}
+
 #' Cost parameter with extended range for psvr models
 #'
 #' A dials parameter for the regularisation parameter in psvr models.
