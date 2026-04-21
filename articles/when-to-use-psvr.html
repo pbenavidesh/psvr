@@ -172,18 +172,14 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 <span><span class="va">train</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rsample.tidymodels.org/reference/initial_split.html" class="external-link">training</a></span><span class="op">(</span><span class="va">split</span><span class="op">)</span></span>
 <span><span class="va">test</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rsample.tidymodels.org/reference/initial_split.html" class="external-link">testing</a></span><span class="op">(</span><span class="va">split</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Subsample for tuning — QP-based models (m1, m2) scale as O(n²)</span></span>
-<span><span class="co"># Full training set is used for the final fit via last_fit()</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">train_tune</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html" class="external-link">slice_sample</a></span><span class="op">(</span><span class="va">train</span>, n <span class="op">=</span> <span class="fl">300</span>, replace <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="va">folds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rsample.tidymodels.org/reference/vfold_cv.html" class="external-link">vfold_cv</a></span><span class="op">(</span><span class="va">train_tune</span>, v <span class="op">=</span> <span class="fl">10</span>, strata <span class="op">=</span> <span class="va">compressive_strength</span><span class="op">)</span></span>
+<span><span class="va">folds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rsample.tidymodels.org/reference/vfold_cv.html" class="external-link">vfold_cv</a></span><span class="op">(</span><span class="va">train</span>, v <span class="op">=</span> <span class="fl">10</span>, strata <span class="op">=</span> <span class="va">compressive_strength</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span></span>
-<span>  <span class="st">"Training: %d obs  |  Test: %d obs  |  Tuning subsample: %d obs\n"</span>,</span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">train</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">test</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">train_tune</span><span class="op">)</span></span>
+<span>  <span class="st">"Training: %d obs  |  Test: %d obs\n"</span>,</span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">train</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">test</span><span class="op">)</span></span>
 <span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output cell-output-stdout">
-<pre><code>Training: 822 obs  |  Test: 208 obs  |  Tuning subsample: 300 obs</code></pre>
+<pre><code>Training: 822 obs  |  Test: 208 obs</code></pre>
 </div>
 </div>
 <hr></section><section class="level2"><h2 id="recipe">Recipe<a class="anchor" aria-label="anchor" href="#recipe"></a>
@@ -254,16 +250,9 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 <span>  <span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"psvr"</span>, a <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></code></pre></div>
 </details>
 </div>
-<hr>
-<div>
-<blockquote>
-<p><strong>Computational note</strong></p>
-<p>The ε-SVR models (Models 1 and 2) solve a quadratic program at each fit, with cost O(n²) in the number of training observations. Hyperparameter tuning uses a random subsample of 300 observations to keep compute time manageable. The final model is fit on the full training set via <code><a href="https://tune.tidymodels.org/reference/last_fit.html" class="external-link">last_fit()</a></code>.</p>
-</blockquote>
-</div>
-</section></section><section class="level2"><h2 id="workflow-set">Workflow set<a class="anchor" aria-label="anchor" href="#workflow-set"></a>
+<hr></section></section><section class="level2"><h2 id="workflow-set">Workflow set<a class="anchor" aria-label="anchor" href="#workflow-set"></a>
 </h2>
-<p>Eight model specifications are paired with the base recipe, yielding 8 workflows. <code>workflow_map()</code> tunes each one over a Latin hypercube grid and evaluates with 10-fold CV on the 300-observation tuning subsample.</p>
+<p>Eight model specifications are paired with the base recipe, yielding 8 workflows. <code>workflow_map()</code> tunes each one over a Latin hypercube grid and evaluates with 10-fold CV on the full training set.</p>
 <div class="cell">
 <details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">wf_set</span> <span class="op">&lt;-</span> <span class="fu">workflow_set</span><span class="op">(</span></span>
@@ -390,57 +379,57 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 <tr class="odd">
 <td style="text-align: right;">1</td>
 <td style="text-align: left;">base_xgb</td>
-<td style="text-align: right;">13.92</td>
-<td style="text-align: right;">1.09</td>
+<td style="text-align: right;">10.18</td>
+<td style="text-align: right;">0.27</td>
 <td style="text-align: right;">10</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">2</td>
 <td style="text-align: left;">base_rf</td>
-<td style="text-align: right;">17.99</td>
-<td style="text-align: right;">1.02</td>
+<td style="text-align: right;">12.67</td>
+<td style="text-align: right;">0.50</td>
 <td style="text-align: right;">10</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">3</td>
 <td style="text-align: left;">base_svm_rbf</td>
-<td style="text-align: right;">18.82</td>
-<td style="text-align: right;">1.10</td>
+<td style="text-align: right;">14.70</td>
+<td style="text-align: right;">0.57</td>
 <td style="text-align: right;">10</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">4</td>
-<td style="text-align: left;">base_lm</td>
-<td style="text-align: right;">31.35</td>
-<td style="text-align: right;">1.41</td>
+<td style="text-align: left;">base_m1_mape</td>
+<td style="text-align: right;">22.24</td>
+<td style="text-align: right;">0.70</td>
 <td style="text-align: right;">10</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">5</td>
-<td style="text-align: left;">base_m1_mape</td>
-<td style="text-align: right;">31.94</td>
-<td style="text-align: right;">1.76</td>
+<td style="text-align: left;">base_m2_mape_sym</td>
+<td style="text-align: right;">28.91</td>
+<td style="text-align: right;">0.71</td>
 <td style="text-align: right;">10</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">6</td>
-<td style="text-align: left;">base_m2_mape_sym</td>
-<td style="text-align: right;">39.21</td>
-<td style="text-align: right;">2.03</td>
+<td style="text-align: left;">base_lm</td>
+<td style="text-align: right;">30.82</td>
+<td style="text-align: right;">0.75</td>
 <td style="text-align: right;">10</td>
 </tr>
 <tr class="odd">
 <td style="text-align: right;">7</td>
 <td style="text-align: left;">base_m3_rmspe</td>
-<td style="text-align: right;">50.88</td>
-<td style="text-align: right;">1.96</td>
+<td style="text-align: right;">50.66</td>
+<td style="text-align: right;">1.30</td>
 <td style="text-align: right;">10</td>
 </tr>
 <tr class="even">
 <td style="text-align: right;">8</td>
 <td style="text-align: left;">base_m4_rmspe_sym</td>
-<td style="text-align: right;">51.94</td>
-<td style="text-align: right;">1.81</td>
+<td style="text-align: right;">51.51</td>
+<td style="text-align: right;">1.17</td>
 <td style="text-align: right;">10</td>
 </tr>
 </tbody>

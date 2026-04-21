@@ -127,19 +127,15 @@ split <- initial_split(concrete, prop = 0.80, strata = compressive_strength)
 train <- training(split)
 test  <- testing(split)
 
-# Subsample for tuning — QP-based models (m1, m2) scale as O(n²)
-# Full training set is used for the final fit via last_fit()
-set.seed(42)
-train_tune <- slice_sample(train, n = 300, replace = FALSE)
-folds <- vfold_cv(train_tune, v = 10, strata = compressive_strength)
+folds <- vfold_cv(train, v = 10, strata = compressive_strength)
 
 cat(sprintf(
-  "Training: %d obs  |  Test: %d obs  |  Tuning subsample: %d obs\n",
-  nrow(train), nrow(test), nrow(train_tune)
+  "Training: %d obs  |  Test: %d obs\n",
+  nrow(train), nrow(test)
 ))
 ```
 
-    Training: 822 obs  |  Test: 208 obs  |  Tuning subsample: 300 obs
+    Training: 822 obs  |  Test: 208 obs
 
 ------------------------------------------------------------------------
 
@@ -225,20 +221,11 @@ spec_m4 <- psvr_rmspe_sym_rbf(
 
 ------------------------------------------------------------------------
 
-> **Computational note**
->
-> The ε-SVR models (Models 1 and 2) solve a quadratic program at each
-> fit, with cost O(n²) in the number of training observations.
-> Hyperparameter tuning uses a random subsample of 300 observations to
-> keep compute time manageable. The final model is fit on the full
-> training set via
-> [`last_fit()`](https://tune.tidymodels.org/reference/last_fit.html).
-
 ## Workflow set
 
 Eight model specifications are paired with the base recipe, yielding 8
 workflows. `workflow_map()` tunes each one over a Latin hypercube grid
-and evaluates with 10-fold CV on the 300-observation tuning subsample.
+and evaluates with 10-fold CV on the full training set.
 
 Code
 
@@ -364,14 +351,14 @@ rank_res |>
 
 | Rank | Workflow          |  MAPE |   SE | Folds |
 |-----:|:------------------|------:|-----:|------:|
-|    1 | base_xgb          | 13.92 | 1.09 |    10 |
-|    2 | base_rf           | 17.99 | 1.02 |    10 |
-|    3 | base_svm_rbf      | 18.82 | 1.10 |    10 |
-|    4 | base_lm           | 31.35 | 1.41 |    10 |
-|    5 | base_m1_mape      | 31.94 | 1.76 |    10 |
-|    6 | base_m2_mape_sym  | 39.21 | 2.03 |    10 |
-|    7 | base_m3_rmspe     | 50.88 | 1.96 |    10 |
-|    8 | base_m4_rmspe_sym | 51.94 | 1.81 |    10 |
+|    1 | base_xgb          | 10.18 | 0.27 |    10 |
+|    2 | base_rf           | 12.67 | 0.50 |    10 |
+|    3 | base_svm_rbf      | 14.70 | 0.57 |    10 |
+|    4 | base_m1_mape      | 22.24 | 0.70 |    10 |
+|    5 | base_m2_mape_sym  | 28.91 | 0.71 |    10 |
+|    6 | base_lm           | 30.82 | 0.75 |    10 |
+|    7 | base_m3_rmspe     | 50.66 | 1.30 |    10 |
+|    8 | base_m4_rmspe_sym | 51.51 | 1.17 |    10 |
 
 Cross-validated MAPE — best configuration per workflow
 
