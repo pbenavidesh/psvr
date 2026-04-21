@@ -50,9 +50,9 @@ test_that("rbf_sigma_psvr() returns a dials param with default range [-3, 1]", {
   expect_equal(r$upper, 1)
 })
 
-test_that("rbf_sigma_psvr() has a finalize function", {
+test_that("rbf_sigma_psvr() has NULL finalize", {
   p <- rbf_sigma_psvr()
-  expect_true(is.function(p$finalize))
+  expect_null(p$finalize)
 })
 
 test_that("cost_psvr() returns a dials param with range [-2, 10]", {

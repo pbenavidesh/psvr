@@ -21,13 +21,13 @@ Imports:
     osqp,
     Matrix,
     parsnip,
-    recipes,
     rlang,
     scales
 Suggests:
     dplyr,
     knitr,
     MASS,
+    recipes,
     rmarkdown,
     rsample,
     testthat (>= 3.0.0),

@@ -21,6 +21,10 @@
   wider than `dials::cost()` to accommodate the larger values typically needed
   by LS-SVR models. Replaces `dials::cost()` for all 12 specs.
 
+* `rbf_sigma_psvr()`: removed non-functional `finalize` hook. The search
+  range must be set manually using `sigma_heuristic()` and `option_add()`.
+  See `?rbf_sigma_psvr` for the recommended workflow.
+
 # psvr 0.0.0.9001
 
 ## tidymodels / parsnip integration — breaking change

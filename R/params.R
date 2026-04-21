@@ -58,23 +58,43 @@ sigma_heuristic <- function(X, sample_size = 500L, seed = NULL) {
   median(dist(X))
 }
 
-#' RBF sigma parameter with median-distance finalization
+#' RBF sigma parameter for psvr models
 #'
 #' A dials parameter for the RBF kernel bandwidth in psvr models.
-#' When used inside `tune_grid()` or `workflow_map()`, the `finalize`
-#' function automatically sets the search range using the median-distance
-#' heuristic computed from the preprocessed training data.
+#' The default range `[-3, 1]` on the log10 scale is a conservative
+#' fallback. For best results, override the range using
+#' [sigma_heuristic()] computed on the preprocessed training data:
+#'
+#' ```r
+#' train_baked <- rec |> prep() |> bake(new_data = train)
+#' sigma_med   <- sigma_heuristic(train_baked |> select(-outcome))
+#' rbf_sigma_custom <- rbf_sigma_psvr(
+#'   range = c(log10(sigma_med / 10), log10(sigma_med * 10))
+#' )
+#' # Then inject via option_add():
+#' wf_set |> option_add(
+#'   param_info = extract_parameter_set_dials(wf) |>
+#'     update(rbf_sigma = rbf_sigma_custom),
+#'   id = "your_workflow_id"
+#' )
+#' ```
 #'
 #' @param range Numeric vector of length 2 on the log10 scale.
-#'   Used as fallback if no training data are available.
 #'   Default `c(-3, 1)`.
 #' @param trans A `scales` transformation object.
 #'   Default `scales::log10_trans()`.
 #'
-#' @return A `quant_param` dials object with finalize support.
+#' @return A `quant_param` dials object.
+#'
+#' @seealso [sigma_heuristic()]
 #'
 #' @examples
 #' rbf_sigma_psvr()
+#'
+#' # Override with data-driven range:
+#' X <- matrix(rnorm(200), ncol = 4)
+#' sigma_med <- sigma_heuristic(X)
+#' rbf_sigma_psvr(range = c(log10(sigma_med / 10), log10(sigma_med * 10)))
 #'
 #' @export
 rbf_sigma_psvr <- function(range = c(-3, 1),
@@ -85,12 +105,7 @@ rbf_sigma_psvr <- function(range = c(-3, 1),
     inclusive = c(TRUE, TRUE),
     trans     = trans,
     label     = c(rbf_sigma = "RBF Sigma (psvr)"),
-    finalize  = function(x, training, ...) {
-      baked <- recipes::bake(training, new_data = NULL)
-      preds <- baked[, -ncol(baked), drop = FALSE]
-      sigma <- sigma_heuristic(preds)
-      dials::range_set(x, c(log10(sigma / 10), log10(sigma * 10)))
-    }
+    finalize  = NULL
   )
 }
 

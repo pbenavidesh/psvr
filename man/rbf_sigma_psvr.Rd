@@ -2,28 +2,49 @@
 % Please edit documentation in R/params.R
 \name{rbf_sigma_psvr}
 \alias{rbf_sigma_psvr}
-\title{RBF sigma parameter with median-distance finalization}
+\title{RBF sigma parameter for psvr models}
 \usage{
 rbf_sigma_psvr(range = c(-3, 1), trans = scales::log10_trans())
 }
 \arguments{
 \item{range}{Numeric vector of length 2 on the log10 scale.
-Used as fallback if no training data are available.
 Default \code{c(-3, 1)}.}
 
 \item{trans}{A \code{scales} transformation object.
 Default \code{scales::log10_trans()}.}
 }
 \value{
-A \code{quant_param} dials object with finalize support.
+A \code{quant_param} dials object.
 }
 \description{
 A dials parameter for the RBF kernel bandwidth in psvr models.
-When used inside \code{tune_grid()} or \code{workflow_map()}, the \code{finalize}
-function automatically sets the search range using the median-distance
-heuristic computed from the preprocessed training data.
+The default range \verb{[-3, 1]} on the log10 scale is a conservative
+fallback. For best results, override the range using
+\code{\link[=sigma_heuristic]{sigma_heuristic()}} computed on the preprocessed training data:
+}
+\details{
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{train_baked <- rec |> prep() |> bake(new_data = train)
+sigma_med   <- sigma_heuristic(train_baked |> select(-outcome))
+rbf_sigma_custom <- rbf_sigma_psvr(
+  range = c(log10(sigma_med / 10), log10(sigma_med * 10))
+)
+# Then inject via option_add():
+wf_set |> option_add(
+  param_info = extract_parameter_set_dials(wf) |>
+    update(rbf_sigma = rbf_sigma_custom),
+  id = "your_workflow_id"
+)
+}\if{html}{\out{</div>}}
 }
 \examples{
 rbf_sigma_psvr()
 
+# Override with data-driven range:
+X <- matrix(rnorm(200), ncol = 4)
+sigma_med <- sigma_heuristic(X)
+rbf_sigma_psvr(range = c(log10(sigma_med / 10), log10(sigma_med * 10)))
+
+}
+\seealso{
+\code{\link[=sigma_heuristic]{sigma_heuristic()}}
 }
