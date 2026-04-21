@@ -86,24 +86,29 @@ wf <- workflow() |>
 
 ## 5 — Tune with 5-fold CV
 
-We search over a $5 \times 3$ grid of `cost` and `rbf_sigma` values (15
-combinations) and evaluate each fold by MAPE.  `rmspe_lssvr()` only solves a
-linear system, so 75 fits complete in seconds.
+We search over a 15-point Latin hypercube of `cost` and `rbf_sigma` values and
+evaluate each fold by MAPE.  The `rbf_sigma` search range is set data-adaptively
+using `rbf_sigma_psvr_data()`, centred on the median pairwise distance in the
+normalised feature space.  `rmspe_lssvr()` only solves a linear system, so 75
+fits complete in seconds.
 
 ```{r tune}
 set.seed(2)
 folds <- vfold_cv(train, v = 5)
 
-cost_grid <- tidyr::crossing(
-  cost      = c(0.01, 0.1, 1, 10, 100),
-  rbf_sigma = c(0.5, 1, 2)
-)
+# Data-driven rbf_sigma range centred on median pairwise distance
+train_baked      <- rec |> prep() |> bake(new_data = train)
+rbf_sigma_custom <- rbf_sigma_psvr_data(train_baked |> select(-y))
+
+wf_params <- extract_parameter_set_dials(wf) |>
+  update(rbf_sigma = rbf_sigma_custom)
 
 tune_res <- tune_grid(
   wf,
-  resamples = folds,
-  grid      = cost_grid,
-  metrics   = metric_set(mape)
+  resamples  = folds,
+  grid       = 15,
+  param_info = wf_params,
+  metrics    = metric_set(mape)
 )
 ```
 
