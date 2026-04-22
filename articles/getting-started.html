@@ -329,6 +329,21 @@ SVR-MAPE reduces test-set MAPE from 15.23% (classical ε-SVR) to around
 10% relative to a linear baseline of 17.85%.</p>
 </div>
 <div class="section level2">
+<h2 id="using-psvr-with-tidymodels">Using psvr with tidymodels<a class="anchor" aria-label="anchor" href="#using-psvr-with-tidymodels"></a>
+</h2>
+<p>All four models are registered as parsnip engines and integrate
+seamlessly with the tidymodels ecosystem. This enables hyperparameter
+tuning via <code>tune_grid()</code>, resampling via
+<code>rsample</code>, and unified model comparison via
+<code>workflow_set()</code>.</p>
+<p>See the <a href="tidymodels-workflow.html">tidymodels workflow</a>
+article for a complete example using <code><a href="../reference/psvr_rmspe_specs.html">psvr_rmspe_rbf()</a></code> with
+<code>tune_grid()</code> and data-driven hyperparameter ranges via
+<code><a href="../reference/rbf_sigma_psvr_data.html">rbf_sigma_psvr_data()</a></code>. The <a href="when-to-use-psvr.html">When to Use Percentage-Error SVR</a>
+article shows a full <code>workflow_set()</code> comparison of all four
+models against standard baselines.</p>
+</div>
+<div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <p>Harrison, D. &amp; Rubinfeld, D. L. (1978). Hedonic prices and the
