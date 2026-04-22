@@ -41,4 +41,5 @@ VignetteBuilder: knitr
 URL: https://pbenavidesh.github.io/psvr/
 Config/Needs/website: rmarkdown, tsibbledata, tsibble, lubridate, ggplot2,
     kableExtra, kernlab, scales, tidyr, tidyverse, tidymodels, modeldata,
-    future, ranger, xgboost, ggrepel, sessioninfo
+    future, ranger, xgboost, ggrepel, sessioninfo, modeltime,
+    timetk, randomForest
