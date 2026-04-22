@@ -69,6 +69,7 @@ mape_svr <- function(X, y, kernel, C, eps, tol = 1e-5) {
   ub    <- 100 * C / y        # per-sample upper bounds on αk and αk*
 
   Omega <- kernel_matrix(kernel, X)
+  diag(Omega) <- diag(Omega) + 1e-6
 
   # ---- QP matrices ----
   # P = [Ω, -Ω; -Ω, Ω], upper triangular for osqp

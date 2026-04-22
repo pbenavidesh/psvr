@@ -68,6 +68,7 @@ rmspe_sym_lssvr <- function(X, y, kernel, gamma, a = 1) {
   }
 
   Omega_s <- sym_kernel_matrix(kernel, X, a)   # ½(Ω + a·Ω*)
+  diag(Omega_s) <- diag(Omega_s) + 1e-6
   diag(Omega_s) <- diag(Omega_s) + y^2 / gamma # add YΓ to diagonal in place
 
   # Augmented (N+1)×(N+1) system: [0, 1ᵀ; 1, Ωs+YΓ][b; α] = [0; y]

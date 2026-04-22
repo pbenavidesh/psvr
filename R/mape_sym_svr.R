@@ -80,6 +80,7 @@ mape_sym_svr <- function(X, y, kernel, C, eps, a = 1, tol = 1e-5) {
   Omega     <- kernel_matrix(kernel, X, X)
   Omega_neg <- kernel_matrix(kernel, X, -X)
   Ks        <- Omega + a * Omega_neg
+  diag(Ks) <- diag(Ks) + 1e-6
 
   # ---- QP matrices ----
   # P = ½[Ks,-Ks;-Ks,Ks] so that ½uᵀPu = ¼βᵀKsβ  (Theorem 2 coefficient)
