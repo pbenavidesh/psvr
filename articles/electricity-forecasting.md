@@ -156,7 +156,7 @@ r <- dials::range_get(rbf_sigma_custom, original = FALSE)
 cat(sprintf("rbf_sigma search range (log10): [%.3f, %.3f]\n", r$lower, r$upper))
 ```
 
-    rbf_sigma search range (log10): [-0.221, 1.779]
+    rbf_sigma search range (log10): [-0.219, 1.781]
 
 ------------------------------------------------------------------------
 
@@ -424,11 +424,11 @@ accuracy_tbl |>
 | Model        |   MAE | MAPE (%) | RMSPE (%) |  RMSE |   RSQ |
 |:-------------|------:|---------:|----------:|------:|------:|
 | rf           | 0.032 |    3.254 |    99.551 | 0.047 | 0.852 |
-| m2_mape_sym  | 0.036 |    3.628 |    99.562 | 0.048 | 0.858 |
-| m3_rmspe     | 0.044 |    4.603 |    99.543 | 0.056 | 0.825 |
-| m4_rmspe_sym | 0.048 |    4.694 |    99.570 | 0.062 | 0.828 |
+| m2_mape_sym  | 0.036 |    3.627 |    99.562 | 0.048 | 0.858 |
+| m3_rmspe     | 0.044 |    4.595 |    99.543 | 0.056 | 0.824 |
+| m4_rmspe_sym | 0.048 |    4.698 |    99.570 | 0.062 | 0.828 |
 | lm           | 0.055 |    5.480 |    99.561 | 0.077 | 0.595 |
-| m1_mape      | 0.053 |    5.599 |    99.537 | 0.065 | 0.814 |
+| m1_mape      | 0.053 |    5.593 |    99.537 | 0.064 | 0.814 |
 | ksvm         | 0.070 |    7.215 |    99.549 | 0.098 | 0.448 |
 
 Table 1: Test-set accuracy for all 7 models, sorted by MAPE (ascending).
@@ -468,52 +468,30 @@ lower-left quadrant perform well on both metrics simultaneously. Note
 that models optimising different losses occupy distinct regions of this
 space.
 
-### Best-model forecast
-
 Code
 
 ``` r
-best_id <- rank_results(tune_res, rank_metric = "mape", select_best = TRUE) |>
-  filter(.metric == "mape") |>
-  slice_min(mean, n = 1) |>
-  pull(wflow_id)
-
-cat("Best workflow:", best_id, "\n")
-```
-
-    Best workflow: base_rf 
-
-Code
-
-``` r
-res_best <- tune_res |> extract_workflow_set_result(best_id)
-wf_best  <- tune_res |> extract_workflow(best_id)
-
-if (inherits(res_best, "tune_results")) {
-  best_params <- select_best(res_best, metric = "mape")
-  wf_best     <- finalize_workflow(wf_best, best_params)
-}
-
-best_fit <- fit(wf_best, train)
-```
-
-Code
-
-``` r
-modeltime_table(best_fit) |>
-  modeltime_calibrate(new_data = test) |>
+calib_tbl |>
   modeltime_forecast(
     new_data    = test,
     actual_data = elec_daily_scaled
   ) |>
+  mutate(
+    .model_desc = case_when(
+      .key == "actual"    ~ "Actual",
+      TRUE                ~ str_remove(.model_desc, "^base_")
+    )
+  ) |>
   plot_modeltime_forecast(
-    .legend_show = TRUE,
-    .title       = paste("Best model:", best_id, "— test-set forecast vs actual"),
-    .interactive = TRUE
+    .legend_show      = TRUE,
+    .title            = "All models: test-set forecast vs actual",
+    .interactive      = TRUE,
+    .plotly_slider    = TRUE
   )
 ```
 
-Figure 5: Best model test-set forecast vs. actual daily demand.
+Figure 5: Test-set forecasts for all 7 models vs. actual daily demand.
+Use the range slider to zoom into specific periods.
 
 ------------------------------------------------------------------------
 
