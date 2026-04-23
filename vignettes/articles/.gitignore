@@ -1,5 +1,6 @@
 *.html
 *.R
+!case-studies/experiment_helpers.R
 
 /.quarto/
 **/*.quarto_ipynb
