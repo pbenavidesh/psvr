@@ -104,7 +104,7 @@ cv_grid <- function(X_tr, y_tr, fit_fn, pred_fn, grid, metric_fn,
       Xf_val   <- X_tr[ val_idx, , drop = FALSE]
       yf_val   <- y_tr[ val_idx]
       fit      <- tryCatch(
-        fit_fn(Xf_tr, yf_tr, grid[i, ]),
+        fit_fn(Xf_tr, yf_tr, grid[i, , drop = FALSE]),
         error = function(e) NULL
       )
       if (is.null(fit)) {
@@ -116,7 +116,7 @@ cv_grid <- function(X_tr, y_tr, fit_fn, pred_fn, grid, metric_fn,
     }
     scores[i] <- mean(fold_scores, na.rm = TRUE)
   }
-  grid[which.min(scores), ]
+  grid[which.min(scores), , drop = FALSE]
 }
 
 # ── SECTION 4: Model definitions ─────────────────────────────────────────────
@@ -136,7 +136,9 @@ cv_grid <- function(X_tr, y_tr, fit_fn, pred_fn, grid, metric_fn,
 make_models <- function(p) {
 
   # Shared hyperparameter grids
-  rbf_sigmas <- c(0.01, 0.1, 1, 10)
+  # Sigmas chosen to match e1071's gamma grid c(0.01, 0.1, 1, 10)
+  # via the equivalence gamma = 1/(2*sigma^2)
+  rbf_sigmas <- c(0.224, 0.707, 2.236, 7.071)
   Cs         <- c(0.1, 1, 10, 100)
   epsilons   <- c(0.01, 0.1, 1)
   Gammas     <- c(0.1, 1, 10, 100)
@@ -274,17 +276,19 @@ make_models <- function(p) {
     family    = "baseline",
     fit_fn    = function(X, y, params) {
       dtrain <- xgboost::xgb.DMatrix(data = X, label = y)
-      xgboost::xgboost(
-        data      = dtrain,
-        nrounds   = params$nrounds,
-        eta       = params$eta,
-        max_depth = params$max_depth,
-        objective = "reg:squarederror",
-        verbose   = 0
+      xgboost::xgb.train(
+        params = list(
+          objective     = "reg:squarederror",
+          learning_rate = params$eta,
+          max_depth     = params$max_depth
+        ),
+        data    = dtrain,
+        nrounds = params$nrounds,
+        verbose = 0
       )
     },
     pred_fn   = function(fit, Xn) {
-      xgboost::predict(fit, xgboost::xgb.DMatrix(data = Xn))
+      predict(fit, xgboost::xgb.DMatrix(data = Xn))
     },
     grid      = expand.grid(
       nrounds   = c(100L, 300L),
@@ -391,10 +395,18 @@ run_experiment <- function(X, y, dataset_name, seeds = 1:30,
     set.seed(s)
     n      <- nrow(X)
     tr_idx <- sample(n, floor(0.8 * n))
-    X_tr   <- X[ tr_idx, , drop = FALSE]
-    y_tr   <- y[ tr_idx]
-    X_te   <- X[-tr_idx, , drop = FALSE]
-    y_te   <- y[-tr_idx]
+    X_tr_raw <- X[ tr_idx, , drop = FALSE]
+    y_tr     <- y[ tr_idx]
+    X_te_raw <- X[-tr_idx, , drop = FALSE]
+    y_te     <- y[-tr_idx]
+
+    # Scale features using training statistics only
+    # (prevents data leakage from test set into scaling parameters)
+    sc   <- scale(X_tr_raw)
+    X_tr <- sc
+    X_te <- scale(X_te_raw,
+                  center = attr(sc, "scaled:center"),
+                  scale  = attr(sc, "scaled:scale"))
 
     for (mid in names(models)) {
       if (verbose)
@@ -536,4 +548,136 @@ wilcoxon_vs_best <- function(results, metric = "MAPE") {
       )
     ) |>
     dplyr::arrange(p_value)
+}
+
+# ── SECTION 7: Parallel experiment runner ────────────────────────────────────
+
+run_experiment_parallel <- function(X, y, dataset_name,
+                                    seeds   = 1:30,
+                                    workers = N_WORKERS) {
+
+  partial_dir <- file.path("results", "partial")
+  dir.create(partial_dir, showWarnings = FALSE, recursive = TRUE)
+
+  done <- seeds[file.exists(
+    file.path(partial_dir,
+              sprintf("%s_seed_%02d.rds", dataset_name, seeds))
+  )]
+  todo <- setdiff(seeds, done)
+
+  if (length(done) > 0L)
+    message(sprintf(
+      "[%s] Skipping %d completed seeds: %s",
+      dataset_name, length(done), paste(done, collapse = " ")))
+
+  if (length(todo) > 0L) {
+    message(sprintf(
+      "[%s] Running %d seeds on %d workers...",
+      dataset_name, length(todo),
+      min(workers, length(todo))))
+
+    plan(multisession, workers = min(workers, length(todo)))
+    t0 <- proc.time()
+
+    future_walk(todo, function(s) {
+      require(psvr,     quietly = TRUE)
+      require(e1071,    quietly = TRUE)
+      require(ranger,   quietly = TRUE)
+      require(xgboost,  quietly = TRUE)
+      require(quantreg, quietly = TRUE)
+      require(tibble,   quietly = TRUE)
+      require(dplyr,    quietly = TRUE)
+      require(purrr,    quietly = TRUE)
+
+      set.seed(s)
+      n      <- nrow(X)
+      tr_idx <- sample(n, floor(0.8 * n))
+      X_tr_raw <- X[ tr_idx, , drop = FALSE]
+      y_tr     <- y[ tr_idx]
+      X_te_raw <- X[-tr_idx, , drop = FALSE]
+      y_te     <- y[-tr_idx]
+
+      # Scale features using training statistics only
+      # (prevents data leakage from test set into scaling parameters)
+      sc   <- scale(X_tr_raw)
+      X_tr <- sc
+      X_te <- scale(X_te_raw,
+                    center = attr(sc, "scaled:center"),
+                    scale  = attr(sc, "scaled:scale"))
+
+      p      <- ncol(X)
+      models <- make_models(p)
+
+      seed_results <- purrr::map_dfr(names(models), function(mid) {
+        m    <- models[[mid]]
+        yhat <- tryCatch({
+          best <- cv_grid(X_tr, y_tr,
+                          fit_fn    = m$fit_fn,
+                          pred_fn   = m$pred_fn,
+                          grid      = m$grid,
+                          metric_fn = m$cv_metric,
+                          k         = 5L,
+                          seed      = s)
+          fit  <- m$fit_fn(X_tr, y_tr, best)
+          m$pred_fn(fit, X_te)
+        }, error = function(e) {
+          warning(sprintf("[%s] seed %d model %s: %s",
+                          dataset_name, s, mid,
+                          conditionMessage(e)))
+          rep(NA_real_, length(y_te))
+        })
+
+        met <- if (anyNA(yhat)) {
+          tibble::tibble(
+            MAPE=NA_real_, RMSPE=NA_real_, MAAPE=NA_real_,
+            MASE=NA_real_, MSE=NA_real_,  R2=NA_real_)
+        } else {
+          compute_metrics(y_te, yhat, y_tr)
+        }
+
+        dplyr::bind_cols(
+          tibble::tibble(
+            dataset  = dataset_name,
+            seed     = s,
+            model_id = mid,
+            label    = m$label,
+            abbrev   = m$abbrev,
+            family   = m$family),
+          met
+        )
+      })
+
+      saveRDS(seed_results,
+              file.path("results", "partial",
+                        sprintf("%s_seed_%02d.rds",
+                                dataset_name, s)))
+    }, .options = furrr_options(seed = TRUE,
+                                packages = character(0)))
+
+    plan(sequential)
+    elapsed <- round((proc.time() - t0)[["elapsed"]] / 60, 1)
+    message(sprintf("[%s] Seeds done in %.1f min.",
+                    dataset_name, elapsed))
+  }
+
+  # Combine partials into final CSV
+  rds_files <- file.path(
+    partial_dir,
+    sprintf("%s_seed_%02d.rds", dataset_name, seeds))
+  missing <- rds_files[!file.exists(rds_files)]
+  if (length(missing) > 0L)
+    stop(sprintf("[%s] Missing partials: %s",
+                 dataset_name,
+                 paste(basename(missing), collapse = ", ")))
+
+  results <- purrr::map_dfr(rds_files, readRDS)
+  out_csv  <- file.path("results",
+                        sprintf("%s-results.csv",
+                                gsub("_", "-", dataset_name)))
+  readr::write_csv(results, out_csv)
+  message(sprintf(
+    "[%s] Saved: %s  (%d rows, %d NA-MAPE)\n",
+    dataset_name, out_csv,
+    nrow(results), sum(is.na(results$MAPE))))
+  invisible(results)
 }
