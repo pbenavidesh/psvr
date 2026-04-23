@@ -227,7 +227,7 @@ a quadratic penalty on percentage residuals. The dual reduces to:</p>
 <span><span class="co"># X_sv:  all N training inputs stored for prediction</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"b = %.4f  |  alpha range: [%.4f, %.4f]\n"</span>,</span>
 <span>            <span class="va">cf_ls</span><span class="op">$</span><span class="va">b</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">cf_ls</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">cf_ls</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; b = 22.5268  |  alpha range: [-59.7536, 43.7327]</span></span></code></pre></div>
+<span><span class="co">#&gt; b = 22.5268  |  alpha range: [-59.7517, 43.7321]</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="model-1-ε-svr-with-mape">Model 1: ε-SVR with MAPE<a class="anchor" aria-label="anchor" href="#model-1-%CE%B5-svr-with-mape"></a>
@@ -265,7 +265,7 @@ low-magnitude observations.</p>
 <span><span class="co"># X_sv:  training rows corresponding to support vectors only</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"b = %.4f  |  alpha range: [%.4f, %.4f]\n"</span>,</span>
 <span>            <span class="va">cf_ep</span><span class="op">$</span><span class="va">b</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">cf_ep</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">cf_ep</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; b = 23.1097  |  alpha range: [-111.5553, 82.6446]</span></span></code></pre></div>
+<span><span class="co">#&gt; b = 23.1097  |  alpha range: [-111.5496, 82.6446]</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="comparing-objectives">Comparing objectives<a class="anchor" aria-label="anchor" href="#comparing-objectives"></a>

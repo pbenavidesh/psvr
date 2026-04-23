@@ -210,5 +210,5 @@ cf <- coef(psvr_fit)
 # X_sv:  all N training inputs (LS-SVR has no sparsity — every training point contributes)
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf$b, min(cf$alpha), max(cf$alpha)))
-#> b = 12.6350  |  alpha range: [-18.4063, 21.9110]
+#> b = 12.6350  |  alpha range: [-18.4036, 21.9087]
 ```

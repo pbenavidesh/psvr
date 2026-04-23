@@ -144,7 +144,7 @@ cf_ls <- coef(fit_ls)
 # X_sv:  all N training inputs stored for prediction
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf_ls$b, min(cf_ls$alpha), max(cf_ls$alpha)))
-#> b = 22.5268  |  alpha range: [-59.7536, 43.7327]
+#> b = 22.5268  |  alpha range: [-59.7517, 43.7321]
 ```
 
 ## Model 1: ε-SVR with MAPE
@@ -185,7 +185,7 @@ cf_ep <- coef(fit_ep)
 # X_sv:  training rows corresponding to support vectors only
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf_ep$b, min(cf_ep$alpha), max(cf_ep$alpha)))
-#> b = 23.1097  |  alpha range: [-111.5553, 82.6446]
+#> b = 23.1097  |  alpha range: [-111.5496, 82.6446]
 ```
 
 ## Comparing objectives

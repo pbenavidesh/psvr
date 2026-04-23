@@ -208,7 +208,7 @@ with
 <span>  <span class="st">"Model 3 (R) — MAPE: %.4f%%  RMSPE: %.4f%%  R²: %.6f  MSE: %.6f\n"</span>,</span>
 <span>  <span class="va">m3_mape</span>, <span class="va">m3_rmspe</span>, <span class="va">m3_r2</span>, <span class="va">m3_mse</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Model 3 (R) — MAPE: 11.0496%  RMSPE: 18.7205%  R²: 0.819582  MSE: 14.127739</span></span>
+<span><span class="co">#&gt; Model 3 (R) — MAPE: 11.0495%  RMSPE: 18.7205%  R²: 0.819584  MSE: 14.127632</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_m3</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; LS-SVR with RMSPE loss  [psvr_rmspe]</span></span>
@@ -224,7 +224,7 @@ with
 <span><span class="co"># X_sv:  all N training inputs (LS-SVR — no sparsity, every point contributes)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"b = %.4f  |  alpha range: [%.4f, %.4f]\n"</span>,</span>
 <span>            <span class="va">cf_m3</span><span class="op">$</span><span class="va">b</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">cf_m3</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">cf_m3</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; b = 25.1360  |  alpha range: [-774.6276, 307.9745]</span></span></code></pre></div>
+<span><span class="co">#&gt; b = 25.1360  |  alpha range: [-774.4447, 307.9511]</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level2">
@@ -275,7 +275,7 @@ al. (2026):</strong></p>
 <span>  <span class="st">"Model 1 (R) — MAPE: %.4f%%  RMSPE: %.4f%%  R²: %.6f  MSE: %.6f\n"</span>,</span>
 <span>  <span class="va">m1_mape</span>, <span class="va">m1_rmspe</span>, <span class="va">m1_r2</span>, <span class="va">m1_mse</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Model 1 (R) — MAPE: 10.6900%  RMSPE: 18.5433%  R²: 0.810768  MSE: 14.817948</span></span>
+<span><span class="co">#&gt; Model 1 (R) — MAPE: 10.6899%  RMSPE: 18.5429%  R²: 0.810769  MSE: 14.817867</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Support vectors: %d / %d training points\n"</span>,</span>
 <span>            <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">fit_m1</span><span class="op">$</span><span class="va">beta</span> <span class="op">!=</span> <span class="fl">0</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">X_tr</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Support vectors: 214 / 354 training points</span></span>
@@ -297,7 +297,7 @@ al. (2026):</strong></p>
 <span><span class="co"># X_sv:  training rows for support vectors only</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"b = %.4f  |  alpha range: [%.4f, %.4f]\n"</span>,</span>
 <span>            <span class="va">cf_m1</span><span class="op">$</span><span class="va">b</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">cf_m1</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">cf_m1</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; b = 25.4618  |  alpha range: [-248.1156, 165.5386]</span></span></code></pre></div>
+<span><span class="co">#&gt; b = 25.4619  |  alpha range: [-248.1156, 165.5238]</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level2">
@@ -374,10 +374,10 @@ reported in the paper.</caption>
 <tbody>
 <tr class="odd">
 <td align="left">Model 3 — LS-SVR RMSPE (R)</td>
-<td align="right">11.0496</td>
+<td align="right">11.0495</td>
 <td align="right">18.7205</td>
-<td align="right">0.819582</td>
-<td align="right">14.12774</td>
+<td align="right">0.819584</td>
+<td align="right">14.12763</td>
 </tr>
 <tr class="even">
 <td align="left">Model 3 — LS-SVR RMSPE (Python, Table 1)</td>
@@ -388,10 +388,10 @@ reported in the paper.</caption>
 </tr>
 <tr class="odd">
 <td align="left">Model 1 — ε-SVR MAPE (R)</td>
-<td align="right">10.6900</td>
-<td align="right">18.5433</td>
-<td align="right">0.810768</td>
-<td align="right">14.81795</td>
+<td align="right">10.6899</td>
+<td align="right">18.5429</td>
+<td align="right">0.810769</td>
+<td align="right">14.81787</td>
 </tr>
 <tr class="even">
 <td align="left">Model 1 — ε-SVR MAPE (Python, Table 2)</td>

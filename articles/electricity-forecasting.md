@@ -156,7 +156,7 @@ r <- dials::range_get(rbf_sigma_custom, original = FALSE)
 cat(sprintf("rbf_sigma search range (log10): [%.3f, %.3f]\n", r$lower, r$upper))
 ```
 
-    rbf_sigma search range (log10): [-0.219, 1.781]
+    rbf_sigma search range (log10): [-0.221, 1.779]
 
 ------------------------------------------------------------------------
 
@@ -428,7 +428,7 @@ accuracy_tbl |>
 | m3_rmspe     | 0.044 |    4.595 |    99.543 | 0.056 | 0.824 |
 | m4_rmspe_sym | 0.048 |    4.698 |    99.570 | 0.062 | 0.828 |
 | lm           | 0.055 |    5.480 |    99.561 | 0.077 | 0.595 |
-| m1_mape      | 0.053 |    5.593 |    99.537 | 0.064 | 0.814 |
+| m1_mape      | 0.053 |    5.582 |    99.537 | 0.064 | 0.814 |
 | ksvm         | 0.070 |    7.215 |    99.549 | 0.098 | 0.448 |
 
 Table 1: Test-set accuracy for all 7 models, sorted by MAPE (ascending).

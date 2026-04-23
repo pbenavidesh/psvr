@@ -118,7 +118,7 @@ cat(sprintf(
   "Model 3 (R) — MAPE: %.4f%%  RMSPE: %.4f%%  R²: %.6f  MSE: %.6f\n",
   m3_mape, m3_rmspe, m3_r2, m3_mse
 ))
-#> Model 3 (R) — MAPE: 11.0496%  RMSPE: 18.7205%  R²: 0.819582  MSE: 14.127739
+#> Model 3 (R) — MAPE: 11.0495%  RMSPE: 18.7205%  R²: 0.819584  MSE: 14.127632
 print(fit_m3)
 #> 
 #> LS-SVR with RMSPE loss  [psvr_rmspe]
@@ -137,7 +137,7 @@ cf_m3 <- coef(fit_m3)
 # X_sv:  all N training inputs (LS-SVR — no sparsity, every point contributes)
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf_m3$b, min(cf_m3$alpha), max(cf_m3$alpha)))
-#> b = 25.1360  |  alpha range: [-774.6276, 307.9745]
+#> b = 25.1360  |  alpha range: [-774.4447, 307.9511]
 ```
 
 ------------------------------------------------------------------------
@@ -170,7 +170,7 @@ cat(sprintf(
   "Model 1 (R) — MAPE: %.4f%%  RMSPE: %.4f%%  R²: %.6f  MSE: %.6f\n",
   m1_mape, m1_rmspe, m1_r2, m1_mse
 ))
-#> Model 1 (R) — MAPE: 10.6900%  RMSPE: 18.5433%  R²: 0.810768  MSE: 14.817948
+#> Model 1 (R) — MAPE: 10.6899%  RMSPE: 18.5429%  R²: 0.810769  MSE: 14.817867
 cat(sprintf("Support vectors: %d / %d training points\n",
             sum(fit_m1$beta != 0), nrow(X_tr)))
 #> Support vectors: 214 / 354 training points
@@ -195,7 +195,7 @@ cf_m1 <- coef(fit_m1)
 # X_sv:  training rows for support vectors only
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf_m1$b, min(cf_m1$alpha), max(cf_m1$alpha)))
-#> b = 25.4618  |  alpha range: [-248.1156, 165.5386]
+#> b = 25.4619  |  alpha range: [-248.1156, 165.5238]
 ```
 
 ------------------------------------------------------------------------
@@ -254,9 +254,9 @@ knitr::kable(
 
 | Implementation                           | MAPE (%) | RMSPE (%) |       R² |      MSE |
 |:-----------------------------------------|---------:|----------:|---------:|---------:|
-| Model 3 — LS-SVR RMSPE (R)               |  11.0496 |   18.7205 | 0.819582 | 14.12774 |
+| Model 3 — LS-SVR RMSPE (R)               |  11.0495 |   18.7205 | 0.819584 | 14.12763 |
 | Model 3 — LS-SVR RMSPE (Python, Table 1) |  10.0600 |        NA | 0.895900 |       NA |
-| Model 1 — ε-SVR MAPE (R)                 |  10.6900 |   18.5433 | 0.810768 | 14.81795 |
+| Model 1 — ε-SVR MAPE (R)                 |  10.6899 |   18.5429 | 0.810769 | 14.81787 |
 | Model 1 — ε-SVR MAPE (Python, Table 2)   |  10.2900 |        NA | 0.860200 |       NA |
 
 Test-set metrics — Boston Housing, 70/30 split. R rows: set.seed(4) with
