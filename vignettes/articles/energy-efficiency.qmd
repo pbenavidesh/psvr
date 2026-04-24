@@ -185,6 +185,8 @@ summary_df <- summarise_results(results)
 #| label: summary-table-display
 #| echo: false
 
+options(knitr.kable.NA = "—")
+
 fmt_ci <- function(mn, lo, hi) {
   sprintf("%.2f [%.2f, %.2f]", mn, lo, hi)
 }
@@ -220,6 +222,7 @@ tbl <- summary_df |>
 
 knitr::kable(
   tbl,
+  format  = "html",
   escape  = FALSE,
   caption = paste(
     "Values in brackets are 95% percentile bootstrap confidence",
