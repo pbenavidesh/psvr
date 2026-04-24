@@ -126,9 +126,9 @@ articles:
       Results correspond to 30-seed benchmarks across three
       datasets.
     contents:
-      - articles/case-studies/boston-housing
-      - articles/case-studies/diabetes
-      - articles/case-studies/energy-efficiency
+      - articles/boston-housing
+      - articles/diabetes
+      - articles/energy-efficiency
 
   - title: "Technical Notes"
     navbar: "Technical Notes"

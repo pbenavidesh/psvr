@@ -64,7 +64,7 @@ library(kableExtra)
 library(xfun)
 library(patchwork)
 
-source("experiment_helpers.R")
+source("case-studies/experiment_helpers.R")
 
 theme_set(theme_bw(base_size = 12))
 ```
@@ -138,7 +138,7 @@ split and should be interpreted accordingly.
 ```{r}
 #| label: experiment
 
-results_file <- "results/boston-results.csv"
+results_file <- "case-studies/results/boston-results.csv"
 
 if (!file.exists(results_file)) {
   results <- run_experiment(X, y,
@@ -313,12 +313,12 @@ matters most.
 #| label: downloads
 
 xfun::embed_file(
-  "experiment_helpers.R",
+  "case-studies/experiment_helpers.R",
   text = "Download experiment helper script (.R)"
 )
 
 xfun::embed_file(
-  "results/boston-results.csv",
+  "case-studies/results/boston-results.csv",
   text = "Download full results (30 seeds x 13 models x 6 metrics)"
 )
 ```
