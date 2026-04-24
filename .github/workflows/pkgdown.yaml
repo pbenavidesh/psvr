@@ -45,8 +45,7 @@ jobs:
                      recursive = TRUE, showWarnings = FALSE)
           pkgdown::build_site_github_pages(
             new_process = FALSE,
-            install     = FALSE,
-            clean       = FALSE
+            install     = FALSE
           )
         shell: Rscript {0}
 
