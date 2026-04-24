@@ -40,7 +40,7 @@ jobs:
 
       - name: Build site
         run: |
-          pkgdown::clean_site()
+          pkgdown::clean_site(force = TRUE)
           dir.create("docs/articles/case-studies",
                      recursive = TRUE, showWarnings = FALSE)
           pkgdown::build_site_github_pages(
