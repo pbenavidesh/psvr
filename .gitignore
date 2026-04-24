@@ -6,4 +6,5 @@
 inst/doc
 .claude/
 docs
+*_files
 *.Rproj
