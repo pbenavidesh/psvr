@@ -42,4 +42,5 @@ URL: https://pbenavidesh.github.io/psvr/
 Config/Needs/website: rmarkdown, tsibbledata, tsibble, lubridate, ggplot2,
     kableExtra, kernlab, scales, tidyr, tidyverse, tidymodels, modeldata,
     future, ranger, xgboost, ggrepel, sessioninfo, modeltime,
-    timetk, randomForest
+    timetk, randomForest, readxl, xfun, e1071, quantreg, lars, mlbench,
+    patchwork, here

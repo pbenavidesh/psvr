@@ -120,6 +120,16 @@ articles:
       - articles/electricity-forecasting
       - articles/when-to-use-psvr
 
+  - title: "Case Studies"
+    desc: >
+      Reproducibility articles for the submitted manuscript.
+      Results correspond to 30-seed benchmarks across three
+      datasets.
+    contents:
+      - articles/case-studies/boston-housing
+      - articles/case-studies/diabetes
+      - articles/case-studies/energy-efficiency
+
   - title: "Technical Notes"
     navbar: "Technical Notes"
     contents:

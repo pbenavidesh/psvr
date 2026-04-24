@@ -407,6 +407,12 @@ run_experiment <- function(X, y, dataset_name, seeds = 1:30,
     X_te <- scale(X_te_raw,
                   center = attr(sc, "scaled:center"),
                   scale  = attr(sc, "scaled:scale"))
+    attr(X_tr, "scaled:center") <- NULL
+    attr(X_tr, "scaled:scale")  <- NULL
+    attr(X_te, "scaled:center") <- NULL
+    attr(X_te, "scaled:scale")  <- NULL
+    class(X_tr) <- c("matrix", "array")
+    class(X_te) <- c("matrix", "array")
 
     for (mid in names(models)) {
       if (verbose)
@@ -604,6 +610,12 @@ run_experiment_parallel <- function(X, y, dataset_name,
       X_te <- scale(X_te_raw,
                     center = attr(sc, "scaled:center"),
                     scale  = attr(sc, "scaled:scale"))
+      attr(X_tr, "scaled:center") <- NULL
+      attr(X_tr, "scaled:scale")  <- NULL
+      attr(X_te, "scaled:center") <- NULL
+      attr(X_te, "scaled:scale")  <- NULL
+      class(X_tr) <- c("matrix", "array")
+      class(X_te) <- c("matrix", "array")
 
       p      <- ncol(X)
       models <- make_models(p)
