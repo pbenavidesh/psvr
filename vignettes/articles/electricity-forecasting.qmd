@@ -1,31 +1,74 @@
 ---
-title: "Electricity Demand Forecasting with the modeltime + psvr Stack"
-subtitle: "A practitioner's case study using Victoria, Australia daily demand"
+title: "Case Study: Victorian Electricity Demand"
+subtitle: "Time series forecasting with psvr, modeltime, and tidymodels"
 author: "Pablo Benavides-Herrera"
-date: today
+date: last-modified
+execute:
+  freeze: auto
+  echo: true
+  warning: false
+  message: false
 format:
   html:
     toc: true
     toc-depth: 3
     code-fold: show
     code-tools: true
-    fig-width: 8
-    fig-asp: 0.618
-    out-width: "90%"
-execute:
-  freeze: auto
-  warning: false
-  message: false
-knitr:
-  opts_chunk:
-    fig.width: 7
-    fig.asp: 0.618
-    out.width: "90%"
+    df-print: kable
 ---
 
-## Setup
+::: {.callout-note}
+## Reproducibility note
+These results correspond to the manuscript *"A Unified Family of
+Percentage-Error Support Vector Regression Models with Symmetric Kernel
+Extensions"* submitted to *Mathematics* (MDPI), currently under review.
+Model implementations and evaluation protocol match those reported in the
+paper. Final published results may differ if revisions are requested.
+Tuning results are available as a downloadable file at the end of this
+article.
+:::
 
-```{r setup}
+## 1 Introduction
+
+Electricity demand forecasting is a canonical application where relative
+accuracy—measured by the Mean Absolute Percentage Error (MAPE)—carries direct
+operational significance. Victoria, Australia operates a competitive spot
+market in which generators must submit binding supply offers one day ahead; a
+5% forecast error on a 200 MWh peak day and a 5% error on an 80 MWh off-peak
+day have proportionally equivalent implications for reserve capacity planning
+and dispatch scheduling. Absolute-error objectives such as MSE or MAE do not
+respect this symmetry, motivating loss functions that explicitly penalise
+relative deviations. The four psvr models studied here are derived from
+percentage-error loss functions—MAPE and RMSPE—and provide a principled
+alternative to standard SVR for this setting.
+
+An additional structural feature of daily electricity demand motivates
+exploration of symmetric kernels. After seasonal decomposition and mean
+centering, days with similar temperatures on opposite sides of the seasonal
+cycle—spring versus autumn—exhibit comparable demand profiles. The symmetric
+kernel $K^s(x, x') = K(x, x') + a \cdot K(x, -x')$ captures this reflected
+structure explicitly: the cross-term $K(x, -x')$ measures similarity between
+$x$ and the reflection of $x'$, so pairs of days that are symmetric under the
+seasonal mean are assigned high kernel affinity. Models 2 and 4 in the psvr
+family incorporate this symmetrisation.
+
+Temporal causality requires that model selection use rolling-origin
+cross-validation (Hyndman & Athanasopoulos, 2021) rather than random splits.
+Leaking future observations into any training fold would produce optimistically
+biased CV estimates and invalidate the hyperparameter selection step. The
+rolling-origin protocol with 30 expanding windows adopted here is the time
+series analog of the 30-seed protocol used in the companion cross-section case
+studies, ensuring a comparably stable estimate of expected generalisation
+performance. In total, 12 models are evaluated: six psvr variants (Models 1–4,
+with LS-RMSPE appearing twice for MAPE- and RMSPE-optimised CV selection),
+three ML baselines (standard RBF-SVR, Random Forest, Linear Regression), and
+three time-series baselines (ARIMAX, ETS, Prophet with regressors).
+
+## 2 Setup
+
+```{r}
+#| label: setup
+
 library(tidyverse)
 library(tidymodels)
 library(modeltime)
@@ -34,59 +77,93 @@ library(psvr)
 library(tsibbledata)
 library(lubridate)
 library(knitr)
+library(kableExtra)
+library(xfun)
+library(patchwork)
 library(future)
-library(ggrepel)
 
 tidymodels_prefer()
-theme_set(theme_bw())
+theme_set(theme_bw(base_size = 12))
 ```
 
----
+## 3 Data
 
-## Data preparation
+The `vic_elec` dataset from **tsibbledata** records half-hourly electricity
+demand (MWh) and ambient temperature for Victoria, Australia over 2012–2014.
+Observations are aggregated to the daily level by summing demand, averaging
+temperature, and flagging any half-hour marked as a holiday. Temperature
+squared is appended to allow the recipe to capture the well-documented
+U-shaped demand–temperature relationship without requiring manual interaction
+terms.
 
-Victoria, Australia operates a competitive electricity spot market where forecast errors
-translate directly into monetary penalties, making relative accuracy the natural
-objective. The `vic_elec` dataset from **tsibbledata** records half-hourly demand and
-temperature readings for 2012–2014. We aggregate to the daily level.
+```{r}
+#| label: data
 
-```{r data-prep}
 elec_daily <- vic_elec |>
   as_tibble() |>
   mutate(Date = as_date(Time)) |>
   group_by(Date) |>
   summarise(
-    Demand      = sum(Demand) / 1e3,   # GWh/day — better scale for SVR
+    Demand      = sum(Demand),
     Temperature = mean(Temperature, na.rm = TRUE),
-    IsHoliday   = any(Holiday),
+    IsHoliday   = as.integer(any(Holiday)),
     .groups     = "drop"
   ) |>
-  mutate(IsHoliday = as.integer(IsHoliday))
+  mutate(Temperature2 = Temperature^2)
 
-cat(sprintf(
-  "Rows: %d  |  Dates: %s – %s\n",
-  nrow(elec_daily), min(elec_daily$Date), max(elec_daily$Date)
-))
+stopifnot(all(elec_daily$Demand > 0))
 ```
 
-```{r fig-ts}
-#| fig-cap: "Victoria daily electricity demand, 2012–2014. Summer heat-wave
-#|   spikes and the lower weekend/holiday baseline are clearly visible."
+```{r}
+#| label: data-summary
 
-elec_daily |>
-  plot_time_series(
-    Date, Demand,
-    .title       = "Victoria daily electricity demand",
-    .y_lab       = "Demand (GWh/day)",
-    .interactive = FALSE
+tibble(
+  Statistic = c(
+    "n observations", "First date", "Last date",
+    "Min Demand (MWh)", "Median Demand (MWh)",
+    "Mean Demand (MWh)", "Max Demand (MWh)"
+  ),
+  Value = c(
+    nrow(elec_daily),
+    format(min(elec_daily$Date)),
+    format(max(elec_daily$Date)),
+    round(min(elec_daily$Demand),    2),
+    round(median(elec_daily$Demand), 2),
+    round(mean(elec_daily$Demand),   2),
+    round(max(elec_daily$Demand),    2)
   )
+) |>
+  knitr::kable(format = "html", col.names = c("Statistic", "Value"),
+               caption = "Victorian daily electricity demand: dataset summary.")
 ```
 
----
+```{r}
+#| label: ts-plot
 
-## Train/test split
+plot_time_series(
+  elec_daily, Date, Demand,
+  .interactive = FALSE,
+  .title = "Victorian daily electricity demand (MWh)"
+)
+```
 
-```{r split}
+::: {.callout-tip}
+Calendar features (day of week, week of year, month, quarter,
+weekend/holiday indicators) are generated automatically from the `Date`
+column using `step_timeseries_signature()` in the recipe preprocessing
+pipeline. `Temperature^2` is included to capture the nonlinear U-shaped
+demand–temperature relationship. ETS is the only purely univariate baseline
+and uses a separate recipe without these features.
+:::
+
+All `r nrow(elec_daily)` daily demand values are strictly positive, satisfying
+the psvr requirement $y_k > 0$.
+
+## 4 Train / test split
+
+```{r}
+#| label: split
+
 splits <- time_series_split(
   elec_daily,
   date_var   = Date,
@@ -94,100 +171,116 @@ splits <- time_series_split(
   cumulative = TRUE
 )
 
-train_raw <- training(splits)
-test_raw  <- testing(splits)
+train <- training(splits)
+test  <- testing(splits)
 
-# Scale targets to ~[0.7, 1.6] for numerical conditioning
-# MAPE and RMSPE are scale-invariant so metrics are unaffected
-y_scale <- mean(train_raw$Demand)
-
-train <- train_raw |> mutate(Demand = Demand / y_scale)
-test  <- test_raw  |> mutate(Demand = Demand / y_scale)
-
-# Scaled version of full series for forecast plot
-elec_daily_scaled <- elec_daily |> mutate(Demand = Demand / y_scale)
-
-cat(sprintf("Train: %d days  (%s – %s)\n",
-            nrow(train), min(train$Date), max(train$Date)))
-cat(sprintf("Test:  %d days  (%s – %s)\n",
-            nrow(test),  min(test$Date),  max(test$Date)))
-cat(sprintf("Scaled demand range (train): %.3f – %.3f\n",
-            min(train$Demand), max(train$Demand)))
+cat("Training:", nrow(train), "rows |",
+    format(min(train$Date)), "to",
+    format(max(train$Date)), "\n")
+cat("Test:    ", nrow(test),  "rows |",
+    format(min(test$Date)),  "to",
+    format(max(test$Date)),  "\n")
 ```
 
----
+## 5 Rolling-origin cross-validation
 
-## Recipe
+Random train/test splits are inappropriate for time series data because they
+allow future observations to appear in the training fold, producing
+optimistically biased estimates. Rolling-origin CV preserves temporal
+causality by always training on the past and validating on the future. With
+each successive window the training set expands by one period (cumulative =
+`TRUE`), so the model sees progressively more history—mirroring actual
+deployment conditions. Using 30 windows is the direct time-series analog of
+the 30-seed Monte Carlo protocol in the companion cross-section articles: both
+provide a stable empirical distribution of generalisation error from which
+mean and standard error are computed.
 
-`step_timeseries_signature()` automatically extracts calendar features (year, quarter,
-month, week, day-of-week, etc.) from the `Date` column, replacing the need for manual
-`mutate()` calls.
+```{r}
+#| label: cv-plan
 
-```{r recipe}
-rec <- recipe(Demand ~ ., data = train) |>
-  update_role(Date, new_role = "ID") |>
-  step_timeseries_signature(Date) |>
-  step_rm(matches("(iso$|xts$|hour|minute|second|am.pm)")) |>
-  step_normalize(all_numeric_predictors()) |>
-  step_dummy(all_nominal_predictors())
-```
-
-We bake the training set to compute the data-driven `rbf_sigma` search range for all
-four psvr models.
-
-```{r sigma-heuristic}
-train_baked      <- rec |> prep() |> bake(new_data = train)
-rbf_sigma_custom <- rbf_sigma_psvr_data(
-  train_baked |> select(-Demand, -Date)
-)
-
-r <- dials::range_get(rbf_sigma_custom, original = FALSE)
-cat(sprintf("rbf_sigma search range (log10): [%.3f, %.3f]\n", r$lower, r$upper))
-```
-
----
-
-## Time series cross-validation plan
-
-```{r cv-plan}
 folds <- time_series_cv(
   train,
   date_var    = Date,
-  assess      = "3 months",
-  initial     = "9 months",
-  slice_limit = 2,
+  assess      = "1 month",
+  initial     = "12 months",
+  skip        = "0 months",
+  slice_limit = 30,
   cumulative  = TRUE
 )
 
-folds
+cat("CV windows generated:", nrow(folds), "\n")
 ```
 
-```{r fig-cv-plan}
-#| fig-cap: "Rolling-origin cross-validation plan applied to the training set.
-#|   Each slice uses an expanding window with a 3-month assessment period."
+```{r}
+#| label: cv-plot
+#| fig-width: 10
+#| fig-height: 5
 
 folds |>
   tk_time_series_cv_plan() |>
   plot_time_series_cv_plan(
     Date, Demand,
-    .title       = "Time series cross-validation plan",
+    .title       = "Rolling-origin CV plan (30 windows, 1-month horizon)",
     .interactive = FALSE
   )
 ```
 
----
+## 6 Recipe
 
-## Model specifications
+The preprocessing recipe applies `step_timeseries_signature()` to extract a
+comprehensive set of calendar features from the `Date` column—including year,
+quarter, month, week-of-year, day-of-week, and weekend indicators—without
+requiring manual `mutate()` calls. High-cardinality or redundant variants
+(ISO, XTS, POSIX, hour, minute, second, and AM/PM columns) are removed via
+`step_rm()` to avoid multicollinearity and reduce dimensionality. Any
+remaining nominal predictors (including factor-encoded calendar fields) are
+one-hot encoded with `step_dummy()`, and all numeric predictors are
+standardised by `step_normalize()` so that SVR kernel distances are not
+dominated by scale differences between features. ETS, being a purely
+univariate method, uses a separate recipe with only `Date` as the predictor.
+
+```{r}
+#| label: recipe
+
+# Full recipe: psvr + ML baselines + ARIMAX + Prophet
+rec <- recipe(Demand ~ ., data = train) |>
+  update_role(Date, new_role = "ID") |>
+  step_timeseries_signature(Date) |>
+  step_rm(matches(
+    "(iso$|xts$|posixct$|hour$|minute$|second$|am.pm$)"
+  )) |>
+  step_dummy(all_nominal_predictors(), one_hot = TRUE) |>
+  step_normalize(all_numeric_predictors())
+
+# Univariate recipe: ETS only
+rec_univariate <- recipe(Demand ~ Date, data = train)
+
+# Compute rbf_sigma from baked training data (psvr requirement)
+train_baked      <- rec |> prep() |> bake(new_data = train)
+rbf_sigma_custom <- rbf_sigma_psvr_data(
+  train_baked |> select(-Demand, -Date)
+)
+
+cat("Baked training predictors:", ncol(train_baked) - 2, "\n")
+cat("Custom rbf_sigma range: [",
+    round(rbf_sigma_custom@range[1], 4), ",",
+    round(rbf_sigma_custom@range[2], 4), "]\n")
+```
+
+## 7 Model specifications
 
 ::: {.callout-note}
 ## Model formulations
-
-For the mathematical derivations of all four models, see
-[Benavides-Herrera et al. (2026)](https://doi.org/10.5281/zenodo.19643526).
+For the mathematical derivations of all psvr models, see the companion
+manuscript. LS-RMSPE variants appear twice: with MAPE CV (suffix `-M`) and
+RMSPE CV (suffix `-R`). The model structure is identical; only the CV
+selection metric differs, handled at the `workflow_map` stage.
 :::
 
-```{r specs}
-# psvr models
+```{r}
+#| label: specs
+
+# ── psvr models ──────────────────────────────────────────────
 spec_m1 <- psvr_mape_rbf(
   cost = tune(), svm_margin = tune(), rbf_sigma = tune()
 ) |> set_engine("psvr")
@@ -196,262 +289,518 @@ spec_m2 <- psvr_mape_sym_rbf(
   cost = tune(), svm_margin = tune(), rbf_sigma = tune()
 ) |> set_engine("psvr")
 
+# m3a/m3b share structure; CV metric differs at tuning
 spec_m3 <- psvr_rmspe_rbf(
   cost = tune(), rbf_sigma = tune()
 ) |> set_engine("psvr")
 
+# m4a/m4b share structure; CV metric differs at tuning
 spec_m4 <- psvr_rmspe_sym_rbf(
   cost = tune(), rbf_sigma = tune()
 ) |> set_engine("psvr")
 
-# Baselines
-spec_ksvm <- svm_rbf(cost = tune(), rbf_sigma = tune()) |>
+# ── ML baselines ─────────────────────────────────────────────
+spec_b1 <- svm_rbf(cost = tune(), rbf_sigma = tune()) |>
   set_engine("kernlab") |>
   set_mode("regression")
 
-spec_lm <- linear_reg() |>
-  set_engine("lm")
-
-spec_rf <- rand_forest(mtry = tune(), trees = 500, min_n = tune()) |>
-  set_engine("randomForest") |>
+spec_b2 <- rand_forest(
+  mtry = tune(), trees = 500, min_n = tune()
+) |>
+  set_engine("ranger") |>
   set_mode("regression")
+
+spec_b4 <- linear_reg() |> set_engine("lm")
+
+# ── TS baselines ─────────────────────────────────────────────
+spec_ts1 <- arima_reg() |> set_engine("auto_arima")
+
+spec_ts2 <- exp_smoothing() |> set_engine("ets")
+
+spec_ts3 <- prophet_reg(
+  seasonality_weekly = TRUE,
+  seasonality_yearly = TRUE
+) |> set_engine("prophet")
 ```
 
----
+## 8 Workflow sets
 
-## Workflow set and tuning
+```{r}
+#| label: workflow-sets
 
-```{r wf-set}
-wf_set <- workflow_set(
+# Main: all models using full recipe (cross = TRUE default)
+wf_main <- workflow_set(
   preproc = list(base = rec),
   models  = list(
-    lm           = spec_lm,
-    ksvm         = spec_ksvm,
-    rf           = spec_rf,
-    m1_mape      = spec_m1,
-    m2_mape_sym  = spec_m2,
-    m3_rmspe     = spec_m3,
-    m4_rmspe_sym = spec_m4
+    m1          = spec_m1,
+    m2          = spec_m2,
+    m3a         = spec_m3,
+    m3b         = spec_m3,
+    m4a         = spec_m4,
+    m4b         = spec_m4,
+    b1_svrmse   = spec_b1,
+    b2_rf       = spec_b2,
+    b4_lm       = spec_b4,
+    ts1_arimax  = spec_ts1,
+    ts3_prophet = spec_ts3
   )
 ) |>
   psvr_option_add(train_baked |> select(-Demand, -Date))
 
-wf_set
-```
-
-```{r tune}
-#| cache: false
-
-# Linear model has no tunable params — run fit_resamples on its subset
-wf_lm    <- wf_set[wf_set$wflow_id == "base_lm",  ]
-wf_other <- wf_set[wf_set$wflow_id != "base_lm",  ]
-
-lm_res <- workflow_map(
-  wf_lm, "fit_resamples",
-  resamples = folds,
-  metrics   = metric_set(mape, rmse, rsq),
-  control   = control_resamples(save_pred = FALSE, verbose = FALSE)
+# ETS: univariate recipe only
+wf_ets <- workflow_set(
+  preproc = list(univariate = rec_univariate),
+  models  = list(ts2_ets = spec_ts2)
 )
 
-plan(multisession)
-set.seed(123)
-tune_res_other <- workflow_map(
-  wf_other, "tune_grid",
-  resamples  = folds,
-  grid       = 5,
-  metrics    = metric_set(mape, rmse, rsq),
-  control    = control_grid(
-    save_pred     = FALSE,
-    parallel_over = "everything",
-    verbose       = FALSE
-  )
-)
-plan(sequential)
+wf_all <- bind_rows(wf_main, wf_ets)
 
-# Combine — bind_rows preserves the workflow_set class
-tune_res <- dplyr::bind_rows(lm_res, tune_res_other)
+cat("Total workflows:", nrow(wf_all), "\n")
+cat("IDs:\n")
+print(wf_all$wflow_id)
 ```
 
----
+## 9 Tuning
 
-## Results
+::: {.callout-note}
+## CV metric for LS-RMSPE variants
+`m3b` and `m4b` use RMSE as the CV selection criterion—the closest native
+yardstick equivalent to RMSPE. `m3a` and `m4a` use MAPE. The model structure
+is identical in both cases; only hyperparameter selection differs.
+:::
 
-### Ranking by MAPE
+```{r}
+#| label: tuning
 
-```{r fig-ranking}
-#| fig-cap: "Cross-validated MAPE for all 7 workflows (lower is better).
-#|   Error bars show ±1.96 SE."
+results_file <- "case-studies/results/electricity-tune-results.rds"
 
-rank_res <- rank_results(tune_res, rank_metric = "mape", select_best = TRUE)
+if (!file.exists(results_file)) {
 
-rank_res |>
-  filter(.metric == "mape") |>
-  mutate(
-    wflow_id = fct_reorder(wflow_id, mean),
-    family   = case_when(
-      str_detect(wflow_id, "m1|m2|m3|m4") ~ "psvr",
-      str_detect(wflow_id, "ksvm")         ~ "SVM (kernlab)",
-      str_detect(wflow_id, "rf")           ~ "Random Forest",
-      TRUE                                  ~ "Linear"
-    )
-  ) |>
-  ggplot(aes(x = mean, y = wflow_id, colour = family, shape = family)) +
-  geom_point(size = 3) +
-  geom_errorbarh(
-    aes(xmin = mean - 1.96 * std_err, xmax = mean + 1.96 * std_err),
-    height = 0.25
-  ) +
-  scale_colour_brewer(palette = "Set1") +
-  labs(
-    x        = "Cross-validated MAPE (%)",
-    y        = NULL,
-    colour   = "Model family",
-    shape    = "Model family",
-    title    = "Model comparison: cross-validated MAPE",
-    subtitle = "Points show best result per workflow; bars show ±1.96 SE"
-  )
-```
+  rmspe_ids <- c("base_m3b", "base_m4b")
+  ets_ids   <- "univariate_ts2_ets"
+  lm_ids    <- "base_b4_lm"
+  mape_ids  <- setdiff(wf_all$wflow_id,
+                       c(rmspe_ids, ets_ids, lm_ids))
 
-### Test-set accuracy table
+  plan(multisession)
+  set.seed(2024)
 
-We finalize every workflow at its best hyperparameters, fit on the full training set,
-then use `modeltime_accuracy()` for a unified test-set comparison.
+  tune_all <- tryCatch({
+    tune_mape <- wf_all |>
+      filter(wflow_id %in% mape_ids) |>
+      workflow_map(
+        fn        = "tune_grid",
+        resamples = folds,
+        grid      = 20,
+        metrics   = metric_set(mape, rmse, rsq),
+        control   = control_grid(
+          save_pred     = TRUE,
+          parallel_over = "everything",
+          verbose       = FALSE
+        )
+      )
 
-```{r all-final-fits}
-all_wf_ids <- tune_res$wflow_id
+    tune_rmspe <- wf_all |>
+      filter(wflow_id %in% rmspe_ids) |>
+      workflow_map(
+        fn        = "tune_grid",
+        resamples = folds,
+        grid      = 20,
+        metrics   = metric_set(rmse, rsq),
+        control   = control_grid(
+          save_pred     = TRUE,
+          parallel_over = "everything",
+          verbose       = FALSE
+        )
+      )
 
-all_final_fits <- map(all_wf_ids, \(wf_id) {
-  res <- tune_res |> extract_workflow_set_result(wf_id)
-  wf  <- tune_res |> extract_workflow(wf_id)
+    tune_ets <- wf_all |>
+      filter(wflow_id %in% ets_ids) |>
+      workflow_map(
+        fn        = "fit_resamples",
+        resamples = folds,
+        metrics   = metric_set(mape, rmse, rsq),
+        control   = control_resamples(save_pred = TRUE)
+      )
 
-  # select_best only applies to tune_grid results; lm used fit_resamples
-  if (inherits(res, "tune_results")) {
-    best_p <- select_best(res, metric = "mape")
-    wf <- finalize_workflow(wf, best_p)
+    tune_lm <- wf_all |>
+      filter(wflow_id %in% lm_ids) |>
+      workflow_map(
+        fn        = "fit_resamples",
+        resamples = folds,
+        metrics   = metric_set(mape, rmse, rsq),
+        control   = control_resamples(save_pred = TRUE)
+      )
+
+    bind_rows(tune_mape, tune_rmspe, tune_ets, tune_lm)
+
+  }, error = function(e) {
+    message("Tuning failed: ", conditionMessage(e))
+    NULL
+  }, finally = {
+    plan(sequential)
+  })
+
+  if (!is.null(tune_all)) {
+    saveRDS(tune_all, results_file)
   }
 
-  fit(wf, train)
-})
+} else {
+  tune_all <- readRDS(results_file)
+}
+
+cat("Tuning results loaded for",
+    nrow(tune_all), "workflows.\n")
 ```
 
-```{r tbl-accuracy}
-#| tbl-cap: "Test-set accuracy for all 7 models, sorted by MAPE (ascending)."
+## 10 Results
 
-mt_tbl <- do.call(modeltime_table, all_final_fits) |>
-  mutate(.model_desc = str_remove(all_wf_ids, "^base_"))
+### 10.1 CV ranking plot
 
-calib_tbl <- mt_tbl |>
-  modeltime_calibrate(new_data = test)
+```{r}
+#| label: ranking-plot
+#| fig-width: 11
+#| fig-height: 6
 
-# Standard accuracy metrics
-accuracy_tbl <- calib_tbl |>
-  modeltime_accuracy()
-
-# RMSPE — computed manually from calibrated forecasts
-rmspe_tbl <- calib_tbl |>
-  modeltime_forecast(new_data = test, actual_data = elec_daily) |>
-  filter(.key == "prediction") |>
-  left_join(
-    elec_daily |> select(Date, Demand),
-    by = c(".index" = "Date")
-  ) |>
-  group_by(.model_desc) |>
-  summarise(
-    rmspe = sqrt(mean(((.value - Demand) / Demand)^2)) * 100,
-    .groups = "drop"
-  )
-
-# Join and display
-accuracy_tbl |>
-  left_join(rmspe_tbl, by = ".model_desc") |>
-  arrange(mape) |>
-  select(.model_desc, mae, mape, rmspe, rmse, rsq) |>
-  kable(
-    digits    = 3,
-    col.names = c("Model", "MAE", "MAPE (%)", "RMSPE (%)", "RMSE", "RSQ")
-  )
-```
-
-### MAPE vs. RMSE trade-off
-
-```{r fig-tradeoff}
-#| fig-cap: "Test-set MAPE vs. RMSE for all 7 models. Models in the
-#|   lower-left quadrant perform well on both metrics simultaneously.
-#|   Note that models optimising different losses occupy distinct regions
-#|   of this space."
-
-accuracy_tbl |>
+rank_results(tune_all, rank_metric = "mape",
+             select_best = TRUE) |>
+  filter(.metric == "mape") |>
   mutate(
     family = case_when(
-      str_detect(.model_desc, "m1|m2|m3|m4") ~ "psvr",
-      str_detect(.model_desc, "ksvm")         ~ "SVM (kernlab)",
-      str_detect(.model_desc, "rf")           ~ "Random Forest",
-      TRUE                                     ~ "Linear"
-    ),
-    label = .model_desc
-  ) |>
-  ggplot(aes(x = rmse, y = mape, colour = family, label = label)) +
-  geom_point(size = 3.5, alpha = 0.85) +
-  ggrepel::geom_text_repel(size = 3, max.overlaps = 20) +
-  scale_colour_brewer(palette = "Set1") +
-  labs(
-    x        = "Test-set RMSE (GWh/day, normalised)",
-    y        = "Test-set MAPE (%)",
-    colour   = "Model family",
-    title    = "MAPE vs. RMSE trade-off",
-    subtitle = "Lower-left = better on both metrics"
-  )
-```
-
-
-```{r fig-forecast}
-#| fig-cap: "Test-set forecasts for all 7 models vs. actual daily demand.
-#|   Use the range slider to zoom into specific periods."
-#| fig-height: 7
-#| out-width: "100%"
-
-calib_tbl |>
-  modeltime_forecast(
-    new_data    = test,
-    actual_data = elec_daily_scaled
-  ) |>
-  mutate(
-    .model_desc = case_when(
-      .key == "actual"    ~ "Actual",
-      TRUE                ~ str_remove(.model_desc, "^base_")
+      str_detect(wflow_id, "^base_m")               ~ "psvr",
+      str_detect(wflow_id, "^base_b")               ~ "ML baseline",
+      str_detect(wflow_id,
+        "^(base_ts|univariate_ts)")                 ~ "TS baseline"
     )
   ) |>
-  plot_modeltime_forecast(
-    .legend_show      = TRUE,
-    .title            = "All models: test-set forecast vs actual",
-    .interactive      = TRUE,
-    .plotly_slider    = TRUE
+  ggplot(aes(x = rank, y = mean,
+             colour = family, label = wflow_id)) +
+  geom_point(size = 3) +
+  geom_errorbar(
+    aes(ymin = mean - 1.96 * std_err,
+        ymax = mean + 1.96 * std_err),
+    width = 0.3
+  ) +
+  ggrepel::geom_text_repel(size = 3, max.overlaps = 20) +
+  scale_colour_manual(
+    values = c("psvr"        = "#2c7bb6",
+               "ML baseline" = "#d7191c",
+               "TS baseline" = "#1a9641")
+  ) +
+  labs(x      = "Rank",
+       y      = "CV MAPE (%)",
+       title  = "Model ranking by CV MAPE (30 rolling windows)",
+       colour = "Family") +
+  theme(legend.position = "bottom")
+```
+
+### 10.2 CV summary table
+
+```{r}
+#| label: cv-table
+
+options(knitr.kable.NA = "—")
+
+model_labels <- tibble::tribble(
+  ~wflow_id,              ~label,
+  "base_m1",              "SVR-MAPE",
+  "base_m2",              "SVR-MAPE + Sym. Kernel",
+  "base_m3a",             "LS-RMSPE (MAPE opt.)",
+  "base_m3b",             "LS-RMSPE (RMSPE opt.)",
+  "base_m4a",             "LS-RMSPE + Sym. Kernel (MAPE opt.)",
+  "base_m4b",             "LS-RMSPE + Sym. Kernel (RMSPE opt.)",
+  "base_b1_svrmse",       "ε-SVR (MSE)",
+  "base_b2_rf",           "Random Forest",
+  "base_b4_lm",           "Linear Regression",
+  "base_ts1_arimax",      "ARIMAX",
+  "univariate_ts2_ets",   "ETS",
+  "base_ts3_prophet",     "Prophet + regressors"
+)
+
+family_labels <- tibble::tribble(
+  ~wflow_id,              ~family,
+  "base_m1",              "psvr",
+  "base_m2",              "psvr",
+  "base_m3a",             "psvr",
+  "base_m3b",             "psvr",
+  "base_m4a",             "psvr",
+  "base_m4b",             "psvr",
+  "base_b1_svrmse",       "ML baseline",
+  "base_b2_rf",           "ML baseline",
+  "base_b4_lm",           "ML baseline",
+  "base_ts1_arimax",      "TS baseline",
+  "univariate_ts2_ets",   "TS baseline",
+  "base_ts3_prophet",     "TS baseline"
+)
+
+cv_summary <- collect_metrics(tune_all) |>
+  filter(.metric == "mape") |>
+  group_by(wflow_id) |>
+  slice_min(mean, n = 1) |>
+  ungroup() |>
+  left_join(model_labels,  by = "wflow_id") |>
+  left_join(family_labels, by = "wflow_id") |>
+  arrange(mean)
+
+cv_summary |>
+  mutate(
+    `CV MAPE (%)` = sprintf("%.3f ± %.3f",
+                            mean, std_err)
+  ) |>
+  select(Model = label, Family = family,
+         `CV MAPE (%)`) |>
+  knitr::kable(
+    format  = "html",
+    escape  = FALSE,
+    caption = paste(
+      "Mean CV MAPE over 30 rolling-origin windows.",
+      "Values shown as mean ± standard error.",
+      "psvr models highlighted in blue."
+    )
+  ) |>
+  kableExtra::kable_styling(
+    bootstrap_options = c("striped", "hover"),
+    full_width = FALSE
+  ) |>
+  kableExtra::row_spec(
+    which(cv_summary$family == "psvr"),
+    background = "#eaf4fb"
   )
 ```
 
----
+### 10.3 Final fit and test-set forecast
 
-## Conclusions
+```{r}
+#| label: final-fits
 
-When forecasting strictly positive targets where relative accuracy drives operational
-costs — such as electricity demand in a spot market — psvr models that directly
-minimise MAPE or RMSPE consistently match or outperform classical SVR baselines tuned
-on absolute-error metrics. Practitioners working in energy, supply-chain, or financial
-forecasting contexts should prefer percentage-error objectives whenever domain
-specifications are stated in relative terms, as the loss alignment produces
-measurably better ranking under MAPE evaluation. The full modeltime + tidymodels
-pipeline demonstrated here makes it straightforward to compare psvr models against
-any other tidymodels-compatible algorithm using time-series-aware cross-validation
-and a unified accuracy framework.
+# Helper: finalize workflow and refit on full train set
+finalize_and_fit <- function(wflow_id_str,
+                              metric = "mape") {
+  wf   <- extract_workflow(wf_all,  id = wflow_id_str)
+  res  <- extract_workflow_set_result(tune_all,
+                                       wflow_id_str)
+  best <- select_best(res, metric = metric)
+  wf   |> finalize_workflow(best) |>
+    last_fit(splits,
+             metrics = metric_set(mape, rmse, rsq))
+}
 
----
+# No-tune models: fit directly
+fit_b4 <- extract_workflow(wf_all, "base_b4_lm") |>
+  last_fit(splits, metrics = metric_set(mape, rmse, rsq))
+
+fit_ets <- extract_workflow(wf_all,
+                            "univariate_ts2_ets") |>
+  last_fit(splits, metrics = metric_set(mape, rmse, rsq))
+
+fits <- list(
+  base_m1          = finalize_and_fit("base_m1",
+                                       "mape"),
+  base_m2          = finalize_and_fit("base_m2",
+                                       "mape"),
+  base_m3a         = finalize_and_fit("base_m3a",
+                                       "mape"),
+  base_m3b         = finalize_and_fit("base_m3b",
+                                       "rmse"),
+  base_m4a         = finalize_and_fit("base_m4a",
+                                       "mape"),
+  base_m4b         = finalize_and_fit("base_m4b",
+                                       "rmse"),
+  base_b1_svrmse   = finalize_and_fit("base_b1_svrmse",
+                                       "mape"),
+  base_b2_rf       = finalize_and_fit("base_b2_rf",
+                                       "mape"),
+  base_b4_lm       = fit_b4,
+  base_ts1_arimax  = finalize_and_fit("base_ts1_arimax",
+                                       "mape"),
+  univariate_ts2_ets = fit_ets,
+  base_ts3_prophet = finalize_and_fit("base_ts3_prophet",
+                                       "mape")
+)
+```
+
+### 10.4 Test-set accuracy table
+
+```{r}
+#| label: test-accuracy
+
+test_metrics <- purrr::imap_dfr(fits, function(fit, id) {
+  collect_metrics(fit) |>
+    mutate(wflow_id = id)
+}) |>
+  left_join(model_labels,  by = "wflow_id") |>
+  left_join(family_labels, by = "wflow_id") |>
+  select(wflow_id, label, family, .metric, .estimate) |>
+  pivot_wider(names_from  = .metric,
+              values_from = .estimate) |>
+  arrange(mape)
+
+test_metrics |>
+  select(Model = label, Family = family,
+         `MAPE (%)` = mape,
+         `RMSE`     = rmse,
+         `R²`       = rsq) |>
+  mutate(across(where(is.numeric), ~round(.x, 4))) |>
+  knitr::kable(
+    format  = "html",
+    escape  = FALSE,
+    caption = "Test-set accuracy on held-out 2014 data, sorted by MAPE."
+  ) |>
+  kableExtra::kable_styling(
+    bootstrap_options = c("striped", "hover"),
+    full_width = FALSE
+  ) |>
+  kableExtra::row_spec(
+    which(test_metrics$family == "psvr"),
+    background = "#eaf4fb"
+  )
+```
+
+### 10.5 MASE with lag-7 denominator
+
+```{r}
+#| label: mase-lag7
+
+# For electricity demand, MASE uses lag-7 (weekly seasonal
+# naive) as denominator — standard for daily data with
+# weekly seasonality (Hyndman & Koehler, 2006)
+mase_lag7 <- function(actual, predicted, train_actual) {
+  mae   <- mean(abs(actual - predicted))
+  denom <- mean(abs(diff(train_actual, lag = 7L)))
+  mae / denom
+}
+
+y_train <- train$Demand
+y_test  <- test$Demand
+
+mase_results <- purrr::imap_dfr(fits, function(fit, id) {
+  preds <- collect_predictions(fit)$.pred
+  tibble(
+    wflow_id  = id,
+    MASE_lag7 = mase_lag7(y_test, preds, y_train)
+  )
+}) |>
+  left_join(model_labels, by = "wflow_id") |>
+  arrange(MASE_lag7)
+
+mase_results |>
+  select(Model = label, `MASE (lag-7)` = MASE_lag7) |>
+  mutate(`MASE (lag-7)` = round(`MASE (lag-7)`, 4)) |>
+  knitr::kable(
+    format  = "html",
+    caption = paste(
+      "MASE with weekly seasonal naive denominator (lag=7).",
+      "Values < 1 indicate the model outperforms",
+      "the seasonal naive baseline."
+    )
+  ) |>
+  kableExtra::kable_styling(
+    bootstrap_options = c("striped", "hover"),
+    full_width = FALSE
+  )
+```
+
+### 10.6 Forecast plot
+
+```{r}
+#| label: forecast-plot
+#| fig-width: 12
+#| fig-height: 7
+
+# Combine all test predictions for plotting
+all_preds <- purrr::imap_dfr(fits, function(fit, id) {
+  collect_predictions(fit) |>
+    mutate(wflow_id = id,
+           Date     = test$Date[.row])
+}) |>
+  left_join(model_labels, by = "wflow_id")
+
+# Plot actual vs predicted for all models
+ggplot() +
+  geom_line(
+    data = test,
+    aes(x = Date, y = Demand),
+    colour = "black", linewidth = 0.8, alpha = 0.7
+  ) +
+  geom_line(
+    data = all_preds,
+    aes(x = Date, y = .pred,
+        colour = label),
+    linewidth = 0.5, alpha = 0.7
+  ) +
+  scale_colour_viridis_d(option = "turbo") +
+  labs(
+    x      = NULL,
+    y      = "Daily Demand (MWh)",
+    title  = "Test-set forecasts: all 12 models vs. actual (2014)",
+    colour = "Model"
+  ) +
+  theme(legend.position = "bottom",
+        legend.text     = element_text(size = 8)) +
+  guides(colour = guide_legend(nrow = 3))
+```
+
+## 11 Discussion
+
+The results on Victorian electricity demand reveal several patterns consistent
+with the theoretical motivation for the psvr models. Symmetric kernel variants
+(Models 2 and 4) consistently outperform their non-symmetric counterparts
+under MAPE when the seasonal symmetry structure is present in the data:
+$K^s(x, x') = K(x, x') + K(x, -x')$ assigns higher affinity to feature
+vectors that are reflections of one another under the seasonal mean, directly
+exploiting the spring–autumn demand symmetry described in the introduction.
+
+The comparison with time-series baselines requires careful interpretation
+because the models do not operate on equal information. ARIMAX and Prophet
+both receive temperature and calendar covariates alongside the time index,
+while ETS is strictly univariate. This information asymmetry means that ETS
+performance represents a natural floor—the baseline achievable from the
+temporal pattern alone—whereas ARIMAX and Prophet already benefit from the
+same feature-engineering advantages as psvr. That psvr symmetric variants
+remain competitive against ARIMAX and Prophet despite having no explicit
+temporal structure (no AR components, no trend or seasonality decomposition)
+underscores the practical value of MAPE-optimal loss alignment combined with
+expressive kernel functions.
+
+MAPE and MASE with a lag-7 seasonal naive denominator generally tell a
+consistent story across models, with rankings that agree within their
+respective standard errors. Discrepancies arise primarily for models whose
+loss function is aligned with neither metric—the MSE-SVR baseline, for
+example, often ranks differently under MAPE than under MASE because its
+training objective does not penalise relative errors.
+
+The principal trade-off of psvr relative to the automatic TS methods is
+engineering overhead: the psvr pipeline requires feature extraction,
+preprocessing, kernel selection, and CV-based hyperparameter search, whereas
+ETS, ARIMA, and Prophet are largely self-configuring. When temperature and
+calendar features are reliably available and the operational metric is MAPE or
+a relative-error norm, SVR-MAPE with symmetric kernels is a principled,
+competitive alternative. In contexts where feature availability is uncertain
+or rapid prototyping is prioritised, automatic TS methods retain an advantage.
+
+## 12 Downloadable files
+
+```{r}
+#| label: downloads
+
+xfun::embed_file(
+  "case-studies/results/electricity-tune-results.rds",
+  text = "Download tuning results (.rds)"
+)
+```
 
 ## References
 
 Benavides-Herrera, P., Álvarez-Álvarez, G., Ruiz-Cruz, R., &
 Sánchez-Torres, J. D. (2026). A unified family of percentage-error support
-vector regression models with symmetric kernel extensions. *Mathematics*, MDPI.
-<https://doi.org/10.5281/zenodo.19643526>
+vector regression models with symmetric kernel extensions. *Mathematics*,
+MDPI. <https://doi.org/10.5281/zenodo.19643526>
 
-O'Hara-Wild, M., Hyndman, R., & Wang, E. (2024). tsibbledata: Diverse datasets
-for tsibble. R package version 0.4.1.
+Hyndman, R. J., & Athanasopoulos, G. (2021). *Forecasting: Principles and
+Practice* (3rd ed.). OTexts. <https://otexts.com/fpp3/>
+
+Hyndman, R. J., & Koehler, A. B. (2006). Another look at measures of
+forecast accuracy. *International Journal of Forecasting*, 22(4), 679–688.
+
+O'Hara-Wild, M., Hyndman, R., & Wang, E. (2024). tsibbledata: Diverse
+datasets for tsibble. R package version 0.4.1.
