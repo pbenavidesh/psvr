@@ -22,3 +22,15 @@
   baselines on a dataset where relative accuracy matters. Using
   tidymodels workflow sets to show when optimising for MAPE and RMSPE
   directly outperforms models that minimise absolute-error losses.
+
+### Case Studies
+
+Reproducibility articles for the submitted manuscript. Results
+correspond to 30-seed benchmarks across three datasets.
+
+- [Case Study: Boston
+  Housing](https://pbenavidesh.github.io/psvr/articles/boston-housing.md):
+- [Case Study: Diabetes
+  Progression](https://pbenavidesh.github.io/psvr/articles/diabetes.md):
+- [Case Study: Building Energy
+  Efficiency](https://pbenavidesh.github.io/psvr/articles/energy-efficiency.md):
