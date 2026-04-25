@@ -203,7 +203,6 @@ folds <- time_series_cv(
   date_var    = Date,
   assess      = "1 month",
   initial     = "12 months",
-  skip        = "0 months",
   slice_limit = 30,
   cumulative  = TRUE
 )
@@ -261,10 +260,11 @@ rbf_sigma_custom <- rbf_sigma_psvr_data(
   train_baked |> select(-Demand, -Date)
 )
 
-cat("Baked training predictors:", ncol(train_baked) - 2, "\n")
-cat("Custom rbf_sigma range: [",
-    round(rbf_sigma_custom@range[1], 4), ",",
-    round(rbf_sigma_custom@range[2], 4), "]\n")
+ r <- dials::range_get(rbf_sigma_custom, original = FALSE)
+  cat("Baked training predictors:", ncol(train_baked) - 2, "\n")
+  cat("Custom rbf_sigma range (log10): [",
+      round(r$lower, 4), ",",
+      round(r$upper, 4), "]\n")
 ```
 
 ## 7 Model specifications
@@ -289,13 +289,13 @@ spec_m2 <- psvr_mape_sym_rbf(
   cost = tune(), svm_margin = tune(), rbf_sigma = tune()
 ) |> set_engine("psvr")
 
-# m3a/m3b share structure; CV metric differs at tuning
-spec_m3 <- psvr_rmspe_rbf(
+# m3a: LS-RMSPE tuned by MAPE
+spec_m3a <- psvr_rmspe_rbf(
   cost = tune(), rbf_sigma = tune()
 ) |> set_engine("psvr")
 
-# m4a/m4b share structure; CV metric differs at tuning
-spec_m4 <- psvr_rmspe_sym_rbf(
+# m4a: LS-RMSPE + Sym. Kernel tuned by MAPE
+spec_m4a <- psvr_rmspe_sym_rbf(
   cost = tune(), rbf_sigma = tune()
 ) |> set_engine("psvr")
 
@@ -334,10 +334,8 @@ wf_main <- workflow_set(
   models  = list(
     m1          = spec_m1,
     m2          = spec_m2,
-    m3a         = spec_m3,
-    m3b         = spec_m3,
-    m4a         = spec_m4,
-    m4b         = spec_m4,
+    m3a         = spec_m3a,
+    m4a         = spec_m4a,
     b1_svrmse   = spec_b1,
     b2_rf       = spec_b2,
     b4_lm       = spec_b4,
@@ -376,11 +374,11 @@ results_file <- "case-studies/results/electricity-tune-results.rds"
 
 if (!file.exists(results_file)) {
 
-  rmspe_ids <- c("base_m3b", "base_m4b")
-  ets_ids   <- "univariate_ts2_ets"
-  lm_ids    <- "base_b4_lm"
-  mape_ids  <- setdiff(wf_all$wflow_id,
-                       c(rmspe_ids, ets_ids, lm_ids))
+  ets_ids    <- "univariate_ts2_ets"
+  lm_ids     <- "base_b4_lm"
+  resamp_ids <- c("base_ts1_arimax", "base_ts3_prophet")
+  mape_ids   <- setdiff(wf_all$wflow_id,
+                        c(ets_ids, lm_ids, resamp_ids))
 
   plan(multisession)
   set.seed(2024)
@@ -393,20 +391,6 @@ if (!file.exists(results_file)) {
         resamples = folds,
         grid      = 20,
         metrics   = metric_set(mape, rmse, rsq),
-        control   = control_grid(
-          save_pred     = TRUE,
-          parallel_over = "everything",
-          verbose       = FALSE
-        )
-      )
-
-    tune_rmspe <- wf_all |>
-      filter(wflow_id %in% rmspe_ids) |>
-      workflow_map(
-        fn        = "tune_grid",
-        resamples = folds,
-        grid      = 20,
-        metrics   = metric_set(rmse, rsq),
         control   = control_grid(
           save_pred     = TRUE,
           parallel_over = "everything",
@@ -432,7 +416,16 @@ if (!file.exists(results_file)) {
         control   = control_resamples(save_pred = TRUE)
       )
 
-    bind_rows(tune_mape, tune_rmspe, tune_ets, tune_lm)
+    tune_ts <- wf_all |>
+      filter(wflow_id %in% resamp_ids) |>
+      workflow_map(
+        fn        = "fit_resamples",
+        resamples = folds,
+        metrics   = metric_set(mape, rmse, rsq),
+        control   = control_resamples(save_pred = TRUE)
+      )
+
+    bind_rows(tune_mape, tune_ets, tune_lm, tune_ts)
 
   }, error = function(e) {
     message("Tuning failed: ", conditionMessage(e))
@@ -451,6 +444,23 @@ if (!file.exists(results_file)) {
 
 cat("Tuning results loaded for",
     nrow(tune_all), "workflows.\n")
+
+  # Show which workflows have errors
+  tune_status <- tune_all |>
+    mutate(
+      n_results = purrr::map_int(result, function(r) {
+        tryCatch(nrow(collect_metrics(r)), error = function(e) 0L)
+      }),
+      has_error = n_results == 0L
+    ) |>
+    select(wflow_id, n_results, has_error)
+
+  print(tune_status)
+  if (any(tune_status$has_error)) {
+    warning("Some workflows have no results: ",
+            paste(tune_status$wflow_id[tune_status$has_error],
+                  collapse = ", "))
+  }
 ```
 
 ## 10 Results
@@ -462,8 +472,16 @@ cat("Tuning results loaded for",
 #| fig-width: 11
 #| fig-height: 6
 
-rank_results(tune_all, rank_metric = "mape",
-             select_best = TRUE) |>
+  # Remove workflows with no valid results before ranking
+  tune_valid <- tune_all |>
+    filter(purrr::map_lgl(result, function(r) {
+      tryCatch({
+        nrow(collect_metrics(r)) > 0
+      }, error = function(e) FALSE)
+    }))
+
+  rank_results(tune_valid, rank_metric = "mape",
+               select_best = TRUE) |>
   filter(.metric == "mape") |>
   mutate(
     family = case_when(
@@ -533,13 +551,20 @@ family_labels <- tibble::tribble(
   "base_ts3_prophet",     "TS baseline"
 )
 
-cv_summary <- collect_metrics(tune_all) |>
+# tune_all only has 10 workflows (m3b/m4b share with m3a/m4a)
+# Use tune_valid for CV table (excludes failed workflows)
+cv_labels <- model_labels |>
+  filter(!wflow_id %in% c("base_m3b", "base_m4b"))
+cv_families <- family_labels |>
+  filter(!wflow_id %in% c("base_m3b", "base_m4b"))
+
+cv_summary <- collect_metrics(tune_valid) |>
   filter(.metric == "mape") |>
   group_by(wflow_id) |>
   slice_min(mean, n = 1) |>
   ungroup() |>
-  left_join(model_labels,  by = "wflow_id") |>
-  left_join(family_labels, by = "wflow_id") |>
+  left_join(cv_labels,    by = "wflow_id") |>
+  left_join(cv_families,  by = "wflow_id") |>
   arrange(mean)
 
 cv_summary |>
@@ -576,13 +601,30 @@ cv_summary |>
 # Helper: finalize workflow and refit on full train set
 finalize_and_fit <- function(wflow_id_str,
                               metric = "mape") {
-  wf   <- extract_workflow(wf_all,  id = wflow_id_str)
-  res  <- extract_workflow_set_result(tune_all,
-                                       wflow_id_str)
-  best <- select_best(res, metric = metric)
-  wf   |> finalize_workflow(best) |>
-    last_fit(splits,
-             metrics = metric_set(mape, rmse, rsq))
+  wf  <- extract_workflow(wf_all, id = wflow_id_str)
+  res <- extract_workflow_set_result(tune_all,
+                                      wflow_id_str)
+  # fit_resamples results have no tunable params —
+  # use workflow directly without select_best
+  has_params <- tryCatch({
+    best <- select_best(res, metric = metric)
+    TRUE
+  }, error = function(e) FALSE)
+
+  if (has_params) {
+    best <- select_best(res, metric = metric)
+    wf   <- finalize_workflow(wf, best)
+  }
+  tryCatch(
+    last_fit(wf, splits,
+             metrics = metric_set(mape, rmse, rsq)),
+    error = function(e) {
+      warning(sprintf(
+        "last_fit failed for %s: %s",
+        wflow_id_str, conditionMessage(e)))
+      NULL
+    }
+  )
 }
 
 # No-tune models: fit directly
@@ -600,11 +642,11 @@ fits <- list(
                                        "mape"),
   base_m3a         = finalize_and_fit("base_m3a",
                                        "mape"),
-  base_m3b         = finalize_and_fit("base_m3b",
+  base_m3b         = finalize_and_fit("base_m3a",
                                        "rmse"),
   base_m4a         = finalize_and_fit("base_m4a",
                                        "mape"),
-  base_m4b         = finalize_and_fit("base_m4b",
+  base_m4b         = finalize_and_fit("base_m4a",
                                        "rmse"),
   base_b1_svrmse   = finalize_and_fit("base_b1_svrmse",
                                        "mape"),
@@ -624,10 +666,16 @@ fits <- list(
 ```{r}
 #| label: test-accuracy
 
-test_metrics <- purrr::imap_dfr(fits, function(fit, id) {
-  collect_metrics(fit) |>
-    mutate(wflow_id = id)
+test_metrics <- purrr::imap(fits, function(fit, id) {
+  if (is.null(fit)) return(NULL)
+  metrics <- tryCatch(collect_metrics(fit),
+                      error = function(e) NULL)
+  if (is.null(metrics) || nrow(metrics) == 0L)
+    return(NULL)
+  metrics |> mutate(wflow_id = id)
 }) |>
+  purrr::compact() |>
+  dplyr::bind_rows() |>
   left_join(model_labels,  by = "wflow_id") |>
   left_join(family_labels, by = "wflow_id") |>
   select(wflow_id, label, family, .metric, .estimate) |>
@@ -673,13 +721,20 @@ mase_lag7 <- function(actual, predicted, train_actual) {
 y_train <- train$Demand
 y_test  <- test$Demand
 
-mase_results <- purrr::imap_dfr(fits, function(fit, id) {
-  preds <- collect_predictions(fit)$.pred
+mase_results <- purrr::imap(fits, function(fit, id) {
+  if (is.null(fit)) return(NULL)
+  preds <- tryCatch(
+    collect_predictions(fit)$.pred,
+    error = function(e) NULL
+  )
+  if (is.null(preds)) return(NULL)
   tibble(
     wflow_id  = id,
     MASE_lag7 = mase_lag7(y_test, preds, y_train)
   )
 }) |>
+  purrr::compact() |>
+  dplyr::bind_rows() |>
   left_join(model_labels, by = "wflow_id") |>
   arrange(MASE_lag7)
 
@@ -708,11 +763,17 @@ mase_results |>
 #| fig-height: 7
 
 # Combine all test predictions for plotting
-all_preds <- purrr::imap_dfr(fits, function(fit, id) {
-  collect_predictions(fit) |>
-    mutate(wflow_id = id,
-           Date     = test$Date[.row])
+all_preds <- purrr::imap(fits, function(fit, id) {
+  if (is.null(fit)) return(NULL)
+  tryCatch(
+    collect_predictions(fit) |>
+      mutate(wflow_id = id,
+             Date     = test$Date[.row]),
+    error = function(e) NULL
+  )
 }) |>
+  purrr::compact() |>
+  dplyr::bind_rows() |>
   left_join(model_labels, by = "wflow_id")
 
 # Plot actual vs predicted for all models
