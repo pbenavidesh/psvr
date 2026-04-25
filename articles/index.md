@@ -12,8 +12,8 @@
 
 ### Case Studies
 
-- [Electricity Demand Forecasting with the modeltime + psvr
-  Stack](https://pbenavidesh.github.io/psvr/articles/electricity-forecasting.md):
+- [Case Study: Victorian Electricity
+  Demand](https://pbenavidesh.github.io/psvr/articles/electricity-forecasting.md):
 
 - [When to Use Percentage-Error
   SVR](https://pbenavidesh.github.io/psvr/articles/when-to-use-psvr.md):
