@@ -324,7 +324,7 @@ spec_b1 <- svm_rbf(cost = tune(), rbf_sigma = tune()) |>
   set_mode("regression")
 
 spec_b2 <- rand_forest(
-  mtry = tune(), trees = 500, min_n = tune()
+  mtry = tune(), trees = 500
 ) |>
   set_engine("ranger") |>
   set_mode("regression")
@@ -386,6 +386,48 @@ cat("IDs:\n")
 print(wf_all$wflow_id)
 ```
 
+```{r}
+#| label: grids
+
+# Explicit hyperparameter grids matching cross-section protocol.
+# sigma values correspond to e1071 gamma = c(0.01, 0.1, 1, 10)
+# via equivalence gamma = 1/(2*sigma^2)
+sigma_vals <- c(0.224, 0.707, 2.236, 7.071)
+C_vals     <- c(0.1, 1, 10, 100)
+eps_vals   <- c(0.01, 0.1, 1)
+
+# m1, m2: cost + svm_margin + rbf_sigma (48 combinations)
+grid_mape_svr <- expand.grid(
+  cost       = C_vals,
+  svm_margin = eps_vals,
+  rbf_sigma  = sigma_vals,
+  stringsAsFactors = FALSE
+)
+
+# m3a, m4a: cost + rbf_sigma (16 combinations)
+grid_rmspe <- expand.grid(
+  cost      = C_vals,
+  rbf_sigma = sigma_vals,
+  stringsAsFactors = FALSE
+)
+
+# b1_svrmse: cost + rbf_sigma (16 combinations)
+grid_svm <- expand.grid(
+  cost      = C_vals,
+  rbf_sigma = sigma_vals,
+  stringsAsFactors = FALSE
+)
+
+# b2_rf: mtry only
+grid_rf <- data.frame(mtry = c(2L, 3L, 4L))
+
+cat("Grid sizes:\n")
+cat("  SVR-MAPE (m1/m2):", nrow(grid_mape_svr), "\n")
+cat("  LS-RMSPE (m3/m4):", nrow(grid_rmspe),    "\n")
+cat("  SVR-MSE  (b1):   ", nrow(grid_svm),       "\n")
+cat("  RF       (b2):   ", nrow(grid_rf),         "\n")
+```
+
 ## 9 Tuning
 
 ::: {.callout-note}
@@ -397,36 +439,69 @@ is identical in both cases; only hyperparameter selection differs.
 
 ```{r}
 #| label: tuning
-#| eval: !expr identical(file.exists("case-studies/results/electricity-tune-results.rds"), FALSE)
 
 results_file <- "case-studies/results/electricity-tune-results.rds"
 
 if (!file.exists(results_file)) {
 
-  # TS baselines and LR use fit_resamples
-  ts_ids   <- c("univariate_ts1_arimax",
-                "univariate_ts2_ets",
-                "univariate_ts3_prophet")
-  lm_ids   <- "full_b4_lm"
-  mape_ids <- setdiff(wf_all$wflow_id,
-                      c(ts_ids, lm_ids))
+  svr_mape_ids <- c("kernel_m1", "kernel_m2")
+  ls_rmspe_ids <- c("kernel_m3a", "kernel_m4a")
+  svm_mse_ids  <- "kernel_b1_svrmse"
+  rf_ids       <- "full_b2_rf"
+  ts_ids       <- c("univariate_ts1_arimax",
+                    "univariate_ts2_ets",
+                    "univariate_ts3_prophet")
+  lm_ids       <- "full_b4_lm"
 
+  ctrl <- control_grid(
+    save_pred     = TRUE,
+    parallel_over = "everything",
+    verbose       = FALSE
+  )
+
+  t0 <- proc.time()
   plan(multisession)
   set.seed(2024)
 
   tune_all <- tryCatch({
-    tune_mape <- wf_all |>
-      filter(wflow_id %in% mape_ids) |>
+    tune_svr_mape <- wf_all |>
+      filter(wflow_id %in% svr_mape_ids) |>
       workflow_map(
         fn        = "tune_grid",
         resamples = folds,
-        grid      = 20,
+        grid      = grid_mape_svr,
         metrics   = metric_set(mape, rmse, rsq),
-        control   = control_grid(
-          save_pred     = TRUE,
-          parallel_over = "everything",
-          verbose       = FALSE
-        )
+        control   = ctrl
+      )
+
+    tune_ls_rmspe <- wf_all |>
+      filter(wflow_id %in% ls_rmspe_ids) |>
+      workflow_map(
+        fn        = "tune_grid",
+        resamples = folds,
+        grid      = grid_rmspe,
+        metrics   = metric_set(mape, rmse, rsq),
+        control   = ctrl
+      )
+
+    tune_svm_mse <- wf_all |>
+      filter(wflow_id %in% svm_mse_ids) |>
+      workflow_map(
+        fn        = "tune_grid",
+        resamples = folds,
+        grid      = grid_svm,
+        metrics   = metric_set(mape, rmse, rsq),
+        control   = ctrl
+      )
+
+    tune_rf <- wf_all |>
+      filter(wflow_id %in% rf_ids) |>
+      workflow_map(
+        fn        = "tune_grid",
+        resamples = folds,
+        grid      = grid_rf,
+        metrics   = metric_set(mape, rmse, rsq),
+        control   = ctrl
       )
 
     tune_ts <- wf_all |>
@@ -447,7 +522,11 @@ if (!file.exists(results_file)) {
         control   = control_resamples(save_pred = TRUE)
       )
 
-    bind_rows(tune_mape, tune_ts, tune_lm)
+    elapsed <- round((proc.time() - t0)[["elapsed"]] / 60, 1)
+    message(sprintf("[tuning] completed in %.1f min", elapsed))
+    bind_rows(tune_svr_mape, tune_ls_rmspe,
+              tune_svm_mse, tune_rf,
+              tune_ts, tune_lm)
 
   }, error = function(e) {
     message("Tuning failed: ", conditionMessage(e))
