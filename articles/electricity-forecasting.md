@@ -328,7 +328,7 @@ cat("Custom rbf_sigma range (log10): [",
     round(r$lower, 4), ",", round(r$upper, 4), "]\n")
 ```
 
-    Custom rbf_sigma range (log10): [ -0.5182 , 1.4818 ]
+    Custom rbf_sigma range (log10): [ -0.5249 , 1.4751 ]
 
 ## 7 Model specifications
 
@@ -795,7 +795,7 @@ cv_summary |>
     format  = "html",
     escape  = FALSE,
     caption = paste(
-      "Mean CV MAPE over 30 rolling-origin windows.",
+      "Mean CV MAPE over 10 rolling-origin windows.",
       "Values shown as mean ± standard error.",
       "psvr models highlighted in blue."
     )
@@ -823,7 +823,7 @@ cv_summary |>
 | ETS                                | TS baseline | 6.095 ± 0.626 |
 | Prophet + regressors               | TS baseline | 6.871 ± 0.173 |
 
-Mean CV MAPE over 30 rolling-origin windows. Values shown as mean ±
+Mean CV MAPE over 10 rolling-origin windows. Values shown as mean ±
 standard error. psvr models highlighted in blue.
 
 ### 10.3 Final fit and test-set forecast
@@ -927,7 +927,13 @@ test_metrics |>
   knitr::kable(
     format  = "html",
     escape  = FALSE,
-    caption = "Test-set accuracy on held-out 2014 data, sorted by MAPE."
+    caption = paste(
+      "Test-set accuracy on held-out 2014 data, sorted by MAPE.",
+      "LS-RMSPE (MAPE opt.) and LS-RMSPE (RMSPE opt.) share the",
+      "same model structure — identical values reflect that both",
+      "CV criteria selected the same hyperparameters on this dataset.",
+      "Same applies to LS-RMSPE + Sym. Kernel variants."
+    )
   ) |>
   kableExtra::kable_styling(
     bootstrap_options = c("striped", "hover"),
@@ -949,12 +955,16 @@ test_metrics |>
 | LS-RMSPE + Sym. Kernel (MAPE opt.)  | psvr        |   3.2792 | 0.0439 | 0.8728 |
 | LS-RMSPE + Sym. Kernel (RMSPE opt.) | psvr        |   3.2792 | 0.0439 | 0.8728 |
 | Linear Regression                   | ML baseline |   3.2822 | 0.0422 | 0.8858 |
-| Random Forest                       | ML baseline |   4.0175 | 0.0598 | 0.7976 |
+| Random Forest                       | ML baseline |   4.0320 | 0.0593 | 0.8004 |
 | Prophet + regressors                | TS baseline |   5.6621 | 0.0873 | 0.5025 |
 | ARIMAX                              | TS baseline |  10.3658 | 0.1377 | 0.3267 |
 | ETS                                 | TS baseline |  18.3294 | 0.2108 | 0.3138 |
 
-Test-set accuracy on held-out 2014 data, sorted by MAPE.
+Test-set accuracy on held-out 2014 data, sorted by MAPE. LS-RMSPE (MAPE
+opt.) and LS-RMSPE (RMSPE opt.) share the same model structure —
+identical values reflect that both CV criteria selected the same
+hyperparameters on this dataset. Same applies to LS-RMSPE + Sym. Kernel
+variants.
 
 ### 10.5 MASE with lag-7 denominator
 
@@ -1017,7 +1027,7 @@ mase_results |>
 | LS-RMSPE + Sym. Kernel (MAPE opt.)  |       0.5109 |
 | LS-RMSPE + Sym. Kernel (RMSPE opt.) |       0.5109 |
 | Linear Regression                   |       0.5130 |
-| Random Forest                       |       0.6375 |
+| Random Forest                       |       0.6389 |
 | Prophet + regressors                |       0.9190 |
 | ARIMAX                              |       1.7158 |
 | ETS                                 |       2.9869 |
