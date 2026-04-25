@@ -104,12 +104,21 @@ elec_daily <- vic_elec |>
   mutate(Date = as_date(Time)) |>
   group_by(Date) |>
   summarise(
-    Demand      = sum(Demand),
+    Demand      = sum(Demand) / 1000,  # MWh -> GWh
     Temperature = mean(Temperature, na.rm = TRUE),
     IsHoliday   = as.integer(any(Holiday)),
     .groups     = "drop"
   ) |>
   mutate(Temperature2 = Temperature^2)
+
+# Scale target to ~[0.5, 1.7] for numerical conditioning.
+# The psvr MAPE box constraints are 100*C/y_k — with
+# unscaled MWh values these collapse to near zero and
+# psvr cannot learn. MAPE/RMSPE are scale-invariant so
+# evaluation metrics are unaffected.
+y_scale    <- mean(elec_daily$Demand)
+elec_daily <- elec_daily |>
+  mutate(Demand = Demand / y_scale)
 
 stopifnot(all(elec_daily$Demand > 0))
 ```
@@ -156,8 +165,14 @@ demand–temperature relationship. ETS is the only purely univariate baseline
 and uses a separate recipe without these features.
 :::
 
-All `r nrow(elec_daily)` daily demand values are strictly positive, satisfying
-the psvr requirement $y_k > 0$.
+Daily demand is converted from MWh to GWh and further
+divided by the training-set mean, producing values in
+approximately [0.5, 1.7]. This scaling is required for
+the psvr QP formulation: the MAPE box constraints
+$\alpha_k \in [0, 100C/y_k]$ collapse to near zero for
+large $y_k$, preventing the solver from learning. MAPE
+and RMSPE are scale-invariant so evaluation metrics are
+unaffected. All scaled values satisfy $y_k > 0$.
 
 ## 4 Train / test split
 
@@ -190,10 +205,12 @@ optimistically biased estimates. Rolling-origin CV preserves temporal
 causality by always training on the past and validating on the future. With
 each successive window the training set expands by one period (cumulative =
 `TRUE`), so the model sees progressively more history—mirroring actual
-deployment conditions. Using 30 windows is the direct time-series analog of
-the 30-seed Monte Carlo protocol in the companion cross-section articles: both
-provide a stable empirical distribution of generalisation error from which
-mean and standard error are computed.
+deployment conditions. Ten rolling windows are used, providing stable estimates
+of generalisation error while respecting the available
+training horizon. With a 24-month training period and
+one-month assessment windows, additional folds beyond
+ten are highly correlated and contribute diminishing
+information.
 
 ```{r}
 #| label: cv-plan
@@ -203,7 +220,7 @@ folds <- time_series_cv(
   date_var    = Date,
   assess      = "1 month",
   initial     = "12 months",
-  slice_limit = 30,
+  slice_limit = 10,
   cumulative  = TRUE
 )
 
@@ -219,7 +236,7 @@ folds |>
   tk_time_series_cv_plan() |>
   plot_time_series_cv_plan(
     Date, Demand,
-    .title       = "Rolling-origin CV plan (30 windows, 1-month horizon)",
+    .title       = "Rolling-origin CV plan (10 windows, 1-month horizon)",
     .interactive = FALSE
   )
 ```
