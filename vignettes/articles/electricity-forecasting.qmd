@@ -695,7 +695,7 @@ cv_summary |>
     format  = "html",
     escape  = FALSE,
     caption = paste(
-      "Mean CV MAPE over 30 rolling-origin windows.",
+      "Mean CV MAPE over 10 rolling-origin windows.",
       "Values shown as mean ± standard error.",
       "psvr models highlighted in blue."
     )
@@ -811,7 +811,13 @@ test_metrics |>
   knitr::kable(
     format  = "html",
     escape  = FALSE,
-    caption = "Test-set accuracy on held-out 2014 data, sorted by MAPE."
+    caption = paste(
+      "Test-set accuracy on held-out 2014 data, sorted by MAPE.",
+      "LS-RMSPE (MAPE opt.) and LS-RMSPE (RMSPE opt.) share the",
+      "same model structure — identical values reflect that both",
+      "CV criteria selected the same hyperparameters on this dataset.",
+      "Same applies to LS-RMSPE + Sym. Kernel variants."
+    )
   ) |>
   kableExtra::kable_styling(
     bootstrap_options = c("striped", "hover"),
