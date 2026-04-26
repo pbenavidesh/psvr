@@ -581,6 +581,168 @@ cat("Tuning results loaded for",
   }
 ```
 
+## 9.1 Export per-fold results
+
+```{r}
+#| label: export-results
+
+# ── Step 1: Model registry ────────────────────────────────────────────
+model_registry <- tribble(
+  ~wflow_id,                ~tune_id,                 ~select_metric,  ~model_id, ~label,                                  ~abbrev,         ~family,
+  "kernel_m1",              "kernel_m1",              "mape",          "m1",      "SVR-MAPE",                              "SVR-MAPE",      "psvr",
+  "kernel_m2",              "kernel_m2",              "mape",          "m2",      "SVR-MAPE + Sym. Kernel",                "SVR-MAPE+SK",   "psvr",
+  "kernel_m3a",             "kernel_m3a",             "mape",          "m3a",     "LS-RMSPE (MAPE opt.)",                  "LS-RMSPE-M",    "psvr",
+  "kernel_m3a",             "kernel_m3a",             "rmse",          "m3b",     "LS-RMSPE (RMSPE opt.)",                 "LS-RMSPE-R",    "psvr",
+  "kernel_m4a",             "kernel_m4a",             "mape",          "m4a",     "LS-RMSPE + Sym. Kernel (MAPE opt.)",    "LS-RMSPE+SK-M", "psvr",
+  "kernel_m4a",             "kernel_m4a",             "rmse",          "m4b",     "LS-RMSPE + Sym. Kernel (RMSPE opt.)",   "LS-RMSPE+SK-R", "psvr",
+  "kernel_b1_svrmse",       "kernel_b1_svrmse",       "mape",          "b1",      "ε-SVR (MSE)",                           "SVR-MSE",       "baseline",
+  "full_b2_rf",             "full_b2_rf",             "mape",          "b2",      "Random Forest",                         "RF",            "baseline",
+  "full_b4_lm",             "full_b4_lm",             NA_character_,   "b4",      "Linear Regression",                     "LR",            "baseline",
+  "univariate_ts1_arimax",  "univariate_ts1_arimax",  NA_character_,   "ts1",     "ARIMAX",                                "ARIMAX",        "baseline",
+  "univariate_ts2_ets",     "univariate_ts2_ets",     NA_character_,   "ts2",     "ETS",                                   "ETS",           "baseline",
+  "univariate_ts3_prophet", "univariate_ts3_prophet", NA_character_,   "ts3",     "Prophet + regressors",                  "Prophet",       "baseline"
+)
+
+# ── Step 2: Metric helpers (exact formulas from experiment_helpers.R) ─
+mape_fn  <- function(y, yhat) mean(abs((y - yhat) / y)) * 100
+rmspe_fn <- function(y, yhat) sqrt(mean(((y - yhat) / y)^2)) * 100
+maape_fn <- function(y, yhat) mean(atan(abs((y - yhat) / y))) * (200 / pi)
+mse_fn   <- function(y, yhat) mean((y - yhat)^2)
+r2_fn    <- function(y, yhat) 1 - sum((y - yhat)^2) / sum((y - mean(y))^2)
+
+mase_lag7 <- function(actual, predicted, train_actual) {
+  mae   <- mean(abs(actual - predicted))
+  denom <- mean(abs(diff(train_actual, lag = 7L)))
+  mae / denom
+}
+
+# ── Step 3: Fold actuals lookup ────────────────────────────────────────
+# Diagnostic confirmed: collect_predictions() uses zero-padded ids
+# (Slice01..Slice10) and absolute .row indices in train (not 1-indexed
+# within each fold). Both must match here for the join to work.
+fold_actuals <- purrr::imap(folds$splits, function(spl, i) {
+  asmnt         <- assessment(spl)
+  asmnt_indices <- rsample::complement(spl)
+  stopifnot(length(asmnt_indices) == nrow(asmnt))
+  tibble(
+    id           = sprintf("Slice%02d", i),
+    fold_index   = i,
+    actual       = asmnt$Demand,
+    .row         = asmnt_indices,
+    train_demand = list(analysis(spl)$Demand)
+  )
+}) |> bind_rows()
+
+# Verify join keys match before proceeding
+res_check   <- extract_workflow_set_result(tune_all, "kernel_m1")
+preds_check <- collect_predictions(res_check)
+id_mismatch <- !any(unique(preds_check$id) %in% unique(fold_actuals$id))
+if (id_mismatch) stop(
+  "ID format mismatch between predictions and fold_actuals. ",
+  "Prediction ids: ", paste(unique(preds_check$id)[1:3], collapse = ", "),
+  " — Fold actuals ids: ", paste(unique(fold_actuals$id)[1:3], collapse = ", ")
+)
+
+# ── Step 4: Fold-prediction extractor ─────────────────────────────────
+get_fold_preds <- function(wflow_id, tune_id, select_metric, ...) {
+  res <- extract_workflow_set_result(tune_all, tune_id)
+  if (is.na(select_metric)) {
+    collect_predictions(res)
+  } else {
+    best <- select_best(res, metric = select_metric)
+    collect_predictions(res) |>
+      filter(.config == best$.config)
+  }
+}
+
+# ── Steps 5–6: Per-model per-fold metrics, assemble, save ─────────────
+results_file <- "case-studies/results/electricity-results.csv"
+
+if (!file.exists(results_file)) {
+
+  n_folds   <- nrow(folds)
+  slice_ids <- sprintf("Slice%02d", seq_len(n_folds))
+
+  results <- purrr::pmap_dfr(model_registry,
+    function(wflow_id, tune_id, select_metric,
+             model_id, label, abbrev, family) {
+
+      fold_preds <- tryCatch(
+        get_fold_preds(wflow_id, tune_id, select_metric),
+        error = function(e) {
+          message(sprintf("[export-results] %s failed: %s",
+                          model_id, conditionMessage(e)))
+          NULL
+        }
+      )
+
+      if (is.null(fold_preds)) {
+        return(tibble(
+          dataset  = "electricity",
+          seed     = seq_len(n_folds),
+          model_id = model_id, label = label,
+          abbrev   = abbrev,   family = family,
+          MAPE = NA_real_, RMSPE = NA_real_,
+          MAAPE = NA_real_, MASE = NA_real_,
+          MSE  = NA_real_, R2   = NA_real_
+        ))
+      }
+
+      fold_data <- fold_preds |>
+        inner_join(fold_actuals, by = c("id", ".row"))
+
+      if (nrow(fold_data) == 0L) {
+        warning(sprintf(
+          "[export-results] zero rows after join for %s", model_id))
+        return(tibble(
+          dataset  = "electricity",
+          seed     = seq_len(n_folds),
+          model_id = model_id, label = label,
+          abbrev   = abbrev,   family = family,
+          MAPE = NA_real_, RMSPE = NA_real_,
+          MAAPE = NA_real_, MASE = NA_real_,
+          MSE  = NA_real_, R2   = NA_real_
+        ))
+      }
+
+      fold_data |>
+        group_by(id, fold_index) |>
+        summarise(
+          MAPE  = mape_fn(actual,  .pred),
+          RMSPE = rmspe_fn(actual, .pred),
+          MAAPE = maape_fn(actual, .pred),
+          MASE  = mase_lag7(actual, .pred, train_demand[[1]]),
+          MSE   = mse_fn(actual,   .pred),
+          R2    = r2_fn(actual,    .pred),
+          .groups = "drop"
+        ) |>
+        mutate(
+          dataset  = "electricity",
+          seed     = fold_index,
+          model_id = model_id, label = label,
+          abbrev   = abbrev,   family = family
+        ) |>
+        select(dataset, seed, model_id, label, abbrev, family,
+               MAPE, RMSPE, MAAPE, MASE, MSE, R2)
+    }
+  )
+
+  write_csv(results, results_file)
+
+} else {
+  results <- read_csv(results_file, show_col_types = FALSE)
+}
+
+# Verification
+cat("Rows:", nrow(results), "| Expected: 120\n")
+cat("NA count:", sum(is.na(results$MAPE)), "\n")
+print(results |>
+  group_by(model_id, abbrev) |>
+  summarise(mean_MAPE = round(mean(MAPE, na.rm = TRUE), 3),
+            .groups = "drop") |>
+  arrange(mean_MAPE))
+```
+
 ## 10 Results
 
 ### 10.1 CV ranking plot
@@ -624,7 +786,7 @@ cat("Tuning results loaded for",
   ) +
   labs(x      = "Rank",
        y      = "CV MAPE (%)",
-       title  = "Model ranking by CV MAPE (30 rolling windows)",
+       title  = "Model ranking by CV MAPE (10 rolling windows)",
        colour = "Family") +
   theme(legend.position = "bottom")
 ```
