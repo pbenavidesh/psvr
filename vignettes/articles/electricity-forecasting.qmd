@@ -311,6 +311,12 @@ For the mathematical derivations of all psvr models, see the companion
 manuscript. LS-RMSPE variants appear twice: with MAPE CV (suffix `-M`) and
 RMSPE CV (suffix `-R`). The model structure is identical; only the CV
 selection metric differs, handled at the `workflow_map` stage.
+
+For the symmetric variants (`m2`, `m4a`), the symmetry type
+`sym_type ∈ {"even" (a = 1), "odd" (a = -1)}` is treated as a tunable
+hyperparameter and selected jointly with `cost`, `svm_margin`, and
+`rbf_sigma` during CV. This brings the electricity grid sizes in line
+with the cross-section case studies (m2: 96, m4: 32 combinations).
 :::
 
 ```{r}
@@ -322,7 +328,8 @@ spec_m1 <- psvr_mape_rbf(
 ) |> set_engine("psvr")
 
 spec_m2 <- psvr_mape_sym_rbf(
-  cost = tune(), svm_margin = tune(), rbf_sigma = tune()
+  cost = tune(), svm_margin = tune(), rbf_sigma = tune(),
+  sym_type = tune()
 ) |> set_engine("psvr")
 
 # m3a: LS-RMSPE tuned by MAPE
@@ -332,7 +339,8 @@ spec_m3a <- psvr_rmspe_rbf(
 
 # m4a: LS-RMSPE + Sym. Kernel tuned by MAPE
 spec_m4a <- psvr_rmspe_sym_rbf(
-  cost = tune(), rbf_sigma = tune()
+  cost = tune(), rbf_sigma = tune(),
+  sym_type = tune()
 ) |> set_engine("psvr")
 
 # ── ML baselines ─────────────────────────────────────────────
@@ -412,8 +420,9 @@ print(wf_all$wflow_id)
 sigma_vals <- c(0.224, 0.707, 2.236, 7.071)
 C_vals     <- c(0.1, 1, 10, 100)
 eps_vals   <- c(0.01, 0.1, 1)
+sym_vals   <- c("even", "odd")
 
-# m1, m2: cost + svm_margin + rbf_sigma (48 combinations)
+# m1: cost + svm_margin + rbf_sigma (48 combinations)
 grid_mape_svr <- expand.grid(
   cost       = C_vals,
   svm_margin = eps_vals,
@@ -421,10 +430,27 @@ grid_mape_svr <- expand.grid(
   stringsAsFactors = FALSE
 )
 
-# m3a, m4a: cost + rbf_sigma (16 combinations)
+# m2: m1 grid × sym_type (96 combinations; sym_type tuned jointly)
+grid_mape_sym_svr <- expand.grid(
+  cost       = C_vals,
+  svm_margin = eps_vals,
+  rbf_sigma  = sigma_vals,
+  sym_type   = sym_vals,
+  stringsAsFactors = FALSE
+)
+
+# m3a: cost + rbf_sigma (16 combinations)
 grid_rmspe <- expand.grid(
   cost      = C_vals,
   rbf_sigma = sigma_vals,
+  stringsAsFactors = FALSE
+)
+
+# m4a: m3a grid × sym_type (32 combinations; sym_type tuned jointly)
+grid_rmspe_sym <- expand.grid(
+  cost      = C_vals,
+  rbf_sigma = sigma_vals,
+  sym_type  = sym_vals,
   stringsAsFactors = FALSE
 )
 
@@ -439,10 +465,12 @@ grid_svm <- expand.grid(
 grid_rf <- data.frame(mtry = c(2L, 3L, 4L))
 
 cat("Grid sizes:\n")
-cat("  SVR-MAPE (m1/m2):", nrow(grid_mape_svr), "\n")
-cat("  LS-RMSPE (m3/m4):", nrow(grid_rmspe),    "\n")
-cat("  SVR-MSE  (b1):   ", nrow(grid_svm),       "\n")
-cat("  RF       (b2):   ", nrow(grid_rf),         "\n")
+cat("  SVR-MAPE       (m1):", nrow(grid_mape_svr),     "\n")
+cat("  SVR-MAPE+SK    (m2):", nrow(grid_mape_sym_svr), "\n")
+cat("  LS-RMSPE       (m3):", nrow(grid_rmspe),        "\n")
+cat("  LS-RMSPE+SK    (m4):", nrow(grid_rmspe_sym),    "\n")
+cat("  SVR-MSE        (b1):", nrow(grid_svm),          "\n")
+cat("  RF             (b2):", nrow(grid_rf),           "\n")
 ```
 
 ## 9 Tuning
@@ -461,8 +489,6 @@ results_file <- "case-studies/results/electricity-tune-results.rds"
 
 if (!file.exists(results_file)) {
 
-  svr_mape_ids <- c("kernel_m1", "kernel_m2")
-  ls_rmspe_ids <- c("kernel_m3a", "kernel_m4a")
   svm_mse_ids  <- "kernel_b1_svrmse"
   rf_ids       <- "full_b2_rf"
   ts_ids       <- c("univariate_ts1_arimax",
@@ -482,7 +508,7 @@ if (!file.exists(results_file)) {
 
   tune_all <- tryCatch({
     tune_svr_mape <- wf_all |>
-      filter(wflow_id %in% svr_mape_ids) |>
+      filter(wflow_id == "kernel_m1") |>
       workflow_map(
         fn        = "tune_grid",
         resamples = folds,
@@ -491,12 +517,32 @@ if (!file.exists(results_file)) {
         control   = ctrl
       )
 
+    tune_svr_mape_sym <- wf_all |>
+      filter(wflow_id == "kernel_m2") |>
+      workflow_map(
+        fn        = "tune_grid",
+        resamples = folds,
+        grid      = grid_mape_sym_svr,
+        metrics   = metric_set(mape, rmse, rsq),
+        control   = ctrl
+      )
+
     tune_ls_rmspe <- wf_all |>
-      filter(wflow_id %in% ls_rmspe_ids) |>
+      filter(wflow_id == "kernel_m3a") |>
       workflow_map(
         fn        = "tune_grid",
         resamples = folds,
         grid      = grid_rmspe,
+        metrics   = metric_set(mape, rmse, rsq),
+        control   = ctrl
+      )
+
+    tune_ls_rmspe_sym <- wf_all |>
+      filter(wflow_id == "kernel_m4a") |>
+      workflow_map(
+        fn        = "tune_grid",
+        resamples = folds,
+        grid      = grid_rmspe_sym,
         metrics   = metric_set(mape, rmse, rsq),
         control   = ctrl
       )
@@ -541,7 +587,8 @@ if (!file.exists(results_file)) {
 
     elapsed <- round((proc.time() - t0)[["elapsed"]] / 60, 1)
     message(sprintf("[tuning] completed in %.1f min", elapsed))
-    bind_rows(tune_svr_mape, tune_ls_rmspe,
+    bind_rows(tune_svr_mape, tune_svr_mape_sym,
+              tune_ls_rmspe, tune_ls_rmspe_sym,
               tune_svm_mse, tune_rf,
               tune_ts, tune_lm)
 
