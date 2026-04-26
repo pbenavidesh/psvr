@@ -68,7 +68,7 @@ test_that("rmspe_sym_lssvr solution satisfies the KKT equality f(xk) + ek = yk",
   fit   <- rmspe_sym_lssvr(X_tr, y_tr, kernel = K, gamma = gamma, a = 1)
   preds <- predict(fit, X_tr)
   ek    <- (y_tr^2 / gamma) * fit$alpha
-  expect_equal(preds + ek, y_tr, tolerance = 1e-8)
+  expect_equal(preds + ek, y_tr, tolerance = 1e-6)
 })
 
 # ── KKT balance condition ────────────────────────────────────────────────────

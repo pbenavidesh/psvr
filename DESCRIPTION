@@ -1,6 +1,6 @@
 Package: psvr
 Title: Percentage-Error Support Vector Regression
-Version: 0.0.0.9003
+Version: 0.0.0.9004
 Authors@R:
     person("Pablo", "Benavides-Herrera", email = "pbenavides@iteso.mx",
            role = c("aut", "cre"),

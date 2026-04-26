@@ -11,7 +11,8 @@ psvr_rmspe_sym_rbf(
   mode = "regression",
   engine = "psvr",
   cost = NULL,
-  rbf_sigma = NULL
+  rbf_sigma = NULL,
+  sym_type = NULL
 )
 
 psvr_rmspe_sym_poly(
@@ -38,6 +39,9 @@ Mapped to \code{\link[=rbf_sigma_psvr]{rbf_sigma_psvr()}}; the search range auto
 median-distance heuristic when training data are available.
 (RBF specs only.)}
 
+\item{sym_type}{Symmetry type: \code{"even"} (default, a = 1) or \code{"odd"}
+(a = -1).  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimise over both values during CV.}
+
 \item{degree}{Polynomial degree ≥ 1.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
 (Polynomial specs only.)}
 
@@ -49,9 +53,9 @@ A parsnip \code{model_spec} object of the corresponding class.
 }
 \description{
 Create parsnip model specifications for \code{\link[=rmspe_sym_lssvr]{rmspe_sym_lssvr()}} with a fixed
-kernel type.  Even symmetry (\code{a = 1L}) is the default and does not need to
-be specified in \code{set_engine()}.  Pass \code{set_engine("psvr", a = -1L)} to
-request odd symmetry instead.
+kernel type.  The symmetry type is exposed as the tunable \code{sym_type}
+argument (\code{"even"} for a = 1, \code{"odd"} for a = -1); pass
+\code{sym_type = tune()} to let CV select it automatically.
 }
 \examples{
 \dontrun{

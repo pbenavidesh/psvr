@@ -42,8 +42,8 @@ test_that("psvr_mape_linear smoke", {
 # ---- Model 2: symmetric epsilon-SVR with MAPE ----
 
 test_that("psvr_mape_sym_rbf smoke", {
-  smoke(psvr_mape_sym_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1) |>
-          set_engine("psvr", a = 1L))
+  smoke(psvr_mape_sym_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1, sym_type = "even") |>
+          set_engine("psvr"))
 })
 
 test_that("psvr_mape_sym_poly smoke", {
@@ -77,8 +77,8 @@ test_that("psvr_rmspe_linear smoke", {
 # ---- Model 4: symmetric LS-SVR with RMSPE ----
 
 test_that("psvr_rmspe_sym_rbf smoke", {
-  smoke(psvr_rmspe_sym_rbf(cost = 1000, rbf_sigma = 1) |>
-          set_engine("psvr", a = 1L))
+  smoke(psvr_rmspe_sym_rbf(cost = 1000, rbf_sigma = 1, sym_type = "even") |>
+          set_engine("psvr"))
 })
 
 test_that("psvr_rmspe_sym_poly smoke", {

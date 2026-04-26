@@ -9,9 +9,9 @@
 #   Poly: degree    → dials::degree(),  scale_factor → dials::scale_factor()
 #   Linear: (none)
 #
-# The symmetry parameter `a` for symmetric models is an engine arg passed via
-# set_engine("psvr", a = ...).  The kernel closure is built inside each fit
-# wrapper; it must never appear in the parsnip layer.
+# The symmetry parameter for symmetric models is exposed as the tunable
+# model argument `sym_type` ("even" → a = 1L, "odd" → a = -1L).  Fit
+# wrappers translate it to integer a before calling the underlying solver.
 
 utils::globalVariables(c("object", "new_data"))
 
@@ -34,7 +34,8 @@ utils::globalVariables(c("object", "new_data"))
 #' @param rbf_sigma RBF bandwidth σ > 0.
 #' @param degree Polynomial degree ≥ 1.
 #' @param scale_factor Polynomial constant term (coef₀).
-#' @param a Symmetry parameter (`1L` or `-1L`) for symmetric models.
+#' @param sym_type Symmetry type (`"even"` or `"odd"`) for symmetric models;
+#'   translated to `a = 1L` or `a = -1L` before calling the solver.
 #' @param tol Solver zero-threshold (see [mape_svr()]).
 #' @name psvr-fit-wrappers
 #' @keywords internal
@@ -68,8 +69,9 @@ psvr_mape_linear_fit <- function(x, y, C, eps, tol = 1e-5) {
 
 #' @rdname psvr-fit-wrappers
 #' @export
-psvr_mape_sym_rbf_fit <- function(x, y, C, eps, rbf_sigma = 1, a = 1L,
-                                  tol = 1e-5) {
+psvr_mape_sym_rbf_fit <- function(x, y, C, eps, rbf_sigma = 1,
+                                  sym_type = "even", tol = 1e-5) {
+  a <- if (sym_type == "even") 1L else -1L
   mape_sym_svr(X = x, y = y,
                kernel = make_kernel("rbf", sigma = rbf_sigma),
                C = C, eps = eps, a = a, tol = tol)
@@ -118,7 +120,9 @@ psvr_rmspe_linear_fit <- function(x, y, gamma) {
 
 #' @rdname psvr-fit-wrappers
 #' @export
-psvr_rmspe_sym_rbf_fit <- function(x, y, gamma, rbf_sigma = 1, a = 1L) {
+psvr_rmspe_sym_rbf_fit <- function(x, y, gamma, rbf_sigma = 1,
+                                   sym_type = "even") {
+  a <- if (sym_type == "even") 1L else -1L
   rmspe_sym_lssvr(X = x, y = y,
                   kernel = make_kernel("rbf", sigma = rbf_sigma),
                   gamma = gamma, a = a)
@@ -251,11 +255,13 @@ psvr_mape_linear <- function(mode = "regression", engine = "psvr",
 #' Parsnip model specs: symmetric epsilon-SVR with MAPE loss (Model 2)
 #'
 #' Create parsnip model specifications for [mape_sym_svr()] with a fixed
-#' kernel type.  Even symmetry (`a = 1L`) is the default and does not need to
-#' be specified in `set_engine()`.  Pass `set_engine("psvr", a = -1L)` to
-#' request odd symmetry instead.
+#' kernel type.  The symmetry type is exposed as the tunable `sym_type`
+#' argument (`"even"` for a = 1, `"odd"` for a = -1); pass
+#' `sym_type = tune()` to let CV select it automatically.
 #'
 #' @inheritParams psvr_mape_specs
+#' @param sym_type Symmetry type: `"even"` (default, a = 1) or `"odd"`
+#'   (a = -1).  Use [tune()] to optimise over both values during CV.
 #'
 #' @return A parsnip `model_spec` object of the corresponding class.
 #'
@@ -277,11 +283,12 @@ psvr_mape_linear <- function(mode = "regression", engine = "psvr",
 #' @export
 psvr_mape_sym_rbf <- function(mode = "regression", engine = "psvr",
                               cost = NULL, svm_margin = NULL,
-                              rbf_sigma = NULL) {
+                              rbf_sigma = NULL, sym_type = NULL) {
   args <- list(
     cost       = rlang::enquo(cost),
     svm_margin = rlang::enquo(svm_margin),
-    rbf_sigma  = rlang::enquo(rbf_sigma)
+    rbf_sigma  = rlang::enquo(rbf_sigma),
+    sym_type   = rlang::enquo(sym_type)
   )
   parsnip::new_model_spec(
     "psvr_mape_sym_rbf_model",
@@ -433,11 +440,13 @@ psvr_rmspe_linear <- function(mode = "regression", engine = "psvr",
 #' Parsnip model specs: symmetric LS-SVR with RMSPE loss (Model 4)
 #'
 #' Create parsnip model specifications for [rmspe_sym_lssvr()] with a fixed
-#' kernel type.  Even symmetry (`a = 1L`) is the default and does not need to
-#' be specified in `set_engine()`.  Pass `set_engine("psvr", a = -1L)` to
-#' request odd symmetry instead.
+#' kernel type.  The symmetry type is exposed as the tunable `sym_type`
+#' argument (`"even"` for a = 1, `"odd"` for a = -1); pass
+#' `sym_type = tune()` to let CV select it automatically.
 #'
 #' @inheritParams psvr_rmspe_specs
+#' @param sym_type Symmetry type: `"even"` (default, a = 1) or `"odd"`
+#'   (a = -1).  Use [tune()] to optimise over both values during CV.
 #'
 #' @return A parsnip `model_spec` object of the corresponding class.
 #'
@@ -458,10 +467,12 @@ psvr_rmspe_linear <- function(mode = "regression", engine = "psvr",
 #' @name psvr_rmspe_sym_specs
 #' @export
 psvr_rmspe_sym_rbf <- function(mode = "regression", engine = "psvr",
-                               cost = NULL, rbf_sigma = NULL) {
+                               cost = NULL, rbf_sigma = NULL,
+                               sym_type = NULL) {
   args <- list(
     cost      = rlang::enquo(cost),
-    rbf_sigma = rlang::enquo(rbf_sigma)
+    rbf_sigma = rlang::enquo(rbf_sigma),
+    sym_type  = rlang::enquo(sym_type)
   )
   parsnip::new_model_spec(
     "psvr_rmspe_sym_rbf_model",
@@ -586,11 +597,13 @@ update.psvr_mape_linear_model <- function(object, parameters = NULL,
 update.psvr_mape_sym_rbf_model <- function(object, parameters = NULL,
                                            cost = NULL, svm_margin = NULL,
                                            rbf_sigma = NULL,
+                                           sym_type = NULL,
                                            fresh = FALSE, ...) {
   psvr_update_spec(object, "psvr_mape_sym_rbf_model",
                    list(cost       = rlang::enquo(cost),
                         svm_margin = rlang::enquo(svm_margin),
-                        rbf_sigma  = rlang::enquo(rbf_sigma)),
+                        rbf_sigma  = rlang::enquo(rbf_sigma),
+                        sym_type   = rlang::enquo(sym_type)),
                    fresh, ...)
 }
 
@@ -652,10 +665,12 @@ update.psvr_rmspe_linear_model <- function(object, parameters = NULL,
 #' @export
 update.psvr_rmspe_sym_rbf_model <- function(object, parameters = NULL,
                                             cost = NULL, rbf_sigma = NULL,
+                                            sym_type = NULL,
                                             fresh = FALSE, ...) {
   psvr_update_spec(object, "psvr_rmspe_sym_rbf_model",
                    list(cost      = rlang::enquo(cost),
-                        rbf_sigma = rlang::enquo(rbf_sigma)),
+                        rbf_sigma = rlang::enquo(rbf_sigma),
+                        sym_type  = rlang::enquo(sym_type)),
                    fresh, ...)
 }
 
@@ -735,13 +750,32 @@ update.psvr_rmspe_sym_linear_model <- function(object, parameters = NULL,
   )
 }
 
+#' Dials parameter for symmetry type
+#'
+#' Returns a qualitative [dials::new_qual_param()] describing the `sym_type`
+#' argument of symmetric psvr model specs.  `"even"` maps to `a = 1L`
+#' (standard symmetric kernel); `"odd"` maps to `a = -1L`
+#' (anti-symmetric kernel).
+#'
+#' @return A `qual_param` object.
+#' @export
+sym_type_param <- function() {
+  dials::new_qual_param(
+    type   = "character",
+    values = c("even", "odd"),
+    label  = c(sym_type = "Symmetry type"),
+    tags   = "model"
+  )
+}
+
 # Reusable arg-definition lists (list(parsnip_name, original_name, dials_func))
-.A_COST_C     <- list("cost",         "C",            list(pkg = "psvr", fun = "cost_psvr"))
-.A_COST_GAMMA <- list("cost",         "gamma",        list(pkg = "psvr", fun = "cost_psvr"))
-.A_MARGIN     <- list("svm_margin",   "eps",          list(pkg = "psvr", fun = "margin_percentage"))
-.A_SIGMA      <- list("rbf_sigma",    "rbf_sigma",    list(pkg = "psvr", fun = "rbf_sigma_psvr"))
+.A_COST_C     <- list("cost",         "C",            list(pkg = "psvr",  fun = "cost_psvr"))
+.A_COST_GAMMA <- list("cost",         "gamma",        list(pkg = "psvr",  fun = "cost_psvr"))
+.A_MARGIN     <- list("svm_margin",   "eps",          list(pkg = "psvr",  fun = "margin_percentage"))
+.A_SIGMA      <- list("rbf_sigma",    "rbf_sigma",    list(pkg = "psvr",  fun = "rbf_sigma_psvr"))
 .A_DEGREE     <- list("degree",       "degree",       list(pkg = "dials", fun = "degree"))
 .A_SCALE      <- list("scale_factor", "scale_factor", list(pkg = "dials", fun = "scale_factor"))
+.A_SYM_TYPE   <- list("sym_type",     "sym_type",     list(pkg = "psvr",  fun = "sym_type_param"))
 
 make_psvr_engines <- function() {
   # Skip if already registered — parsnip's env persists across devtools reloads.
@@ -759,7 +793,7 @@ make_psvr_engines <- function() {
 
   # ---- Model 2: symmetric epsilon-SVR with MAPE ----
   .reg_psvr("psvr_mape_sym_rbf_model",    "psvr_mape_sym_rbf_fit",
-            list(.A_COST_C, .A_MARGIN, .A_SIGMA), defaults = list(a = 1L))
+            list(.A_COST_C, .A_MARGIN, .A_SIGMA, .A_SYM_TYPE))
   .reg_psvr("psvr_mape_sym_poly_model",   "psvr_mape_sym_poly_fit",
             list(.A_COST_C, .A_MARGIN, .A_DEGREE, .A_SCALE), defaults = list(a = 1L))
   .reg_psvr("psvr_mape_sym_linear_model", "psvr_mape_sym_linear_fit",
@@ -775,7 +809,7 @@ make_psvr_engines <- function() {
 
   # ---- Model 4: symmetric LS-SVR with RMSPE ----
   .reg_psvr("psvr_rmspe_sym_rbf_model",    "psvr_rmspe_sym_rbf_fit",
-            list(.A_COST_GAMMA, .A_SIGMA), defaults = list(a = 1L))
+            list(.A_COST_GAMMA, .A_SIGMA, .A_SYM_TYPE))
   .reg_psvr("psvr_rmspe_sym_poly_model",   "psvr_rmspe_sym_poly_fit",
             list(.A_COST_GAMMA, .A_DEGREE, .A_SCALE), defaults = list(a = 1L))
   .reg_psvr("psvr_rmspe_sym_linear_model", "psvr_rmspe_sym_linear_fit",

@@ -22,7 +22,15 @@ psvr_mape_poly_fit(x, y, C, eps, degree = 3L, scale_factor = 1, tol = 1e-05)
 
 psvr_mape_linear_fit(x, y, C, eps, tol = 1e-05)
 
-psvr_mape_sym_rbf_fit(x, y, C, eps, rbf_sigma = 1, a = 1L, tol = 1e-05)
+psvr_mape_sym_rbf_fit(
+  x,
+  y,
+  C,
+  eps,
+  rbf_sigma = 1,
+  sym_type = "even",
+  tol = 1e-05
+)
 
 psvr_mape_sym_poly_fit(
   x,
@@ -43,7 +51,7 @@ psvr_rmspe_poly_fit(x, y, gamma, degree = 3L, scale_factor = 1)
 
 psvr_rmspe_linear_fit(x, y, gamma)
 
-psvr_rmspe_sym_rbf_fit(x, y, gamma, rbf_sigma = 1, a = 1L)
+psvr_rmspe_sym_rbf_fit(x, y, gamma, rbf_sigma = 1, sym_type = "even")
 
 psvr_rmspe_sym_poly_fit(x, y, gamma, degree = 3L, scale_factor = 1, a = 1L)
 
@@ -66,7 +74,8 @@ psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L)
 
 \item{scale_factor}{Polynomial constant term (coef₀).}
 
-\item{a}{Symmetry parameter (\code{1L} or \code{-1L}) for symmetric models.}
+\item{sym_type}{Symmetry type (\code{"even"} or \code{"odd"}) for symmetric models;
+translated to \code{a = 1L} or \code{a = -1L} before calling the solver.}
 
 \item{gamma}{Regularization parameter for RMSPE models (see \code{\link[=rmspe_lssvr]{rmspe_lssvr()}}).}
 }
