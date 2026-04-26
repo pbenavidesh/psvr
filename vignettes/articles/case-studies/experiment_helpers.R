@@ -1,8 +1,15 @@
-# _experiment_helpers.R
-# 2026-04-23
-# Single source of truth for model definitions, metric functions, and
-# experiment protocol across all psvr cross-section case-study articles.
-# Do NOT call library() here — callers are responsible for loading packages.
+# experiment_helpers.R
+# 2026-04-25
+# Tidymodels-based runner for psvr cross-section case studies (Phase 2).
+# Replaces the v1 manual cv_grid() loop with a per-seed nested-resampling
+# pipeline: outer 80/20 split via rsample::make_splits, inner 5-fold CV via
+# vfold_cv, tuning via workflow_set + tune_grid, final eval via last_fit.
+#
+# Output CSV schema is unchanged from v1 so downstream sections of the QMDs
+# (summary table, box plots, Wilcoxon) read the same columns.
+#
+# Callers must library() these packages: tidyverse, tidymodels, psvr,
+# kernlab, ranger, xgboost, quantreg, e1071, hardhat, furrr, future.
 
 # ── SECTION 1: Model label lookup table ──────────────────────────────────────
 
@@ -39,41 +46,31 @@ MODEL_LABELS <- tibble::tibble(
 
 # ── SECTION 2: Metric functions ───────────────────────────────────────────────
 
-# Mean Absolute Percentage Error
 mape_fn <- function(y, yhat) {
   mean(abs((y - yhat) / y)) * 100
 }
 
-# Root Mean Square Percentage Error
 rmspe_fn <- function(y, yhat) {
   sqrt(mean(((y - yhat) / y)^2)) * 100
 }
 
-# Mean Arctangent Absolute Percentage Error (Kim & Kim 2016)
-# Scaled to [0, 100] via division by pi/2 * 100
 maape_fn <- function(y, yhat) {
   mean(atan(abs((y - yhat) / y))) * (200 / pi)
 }
 
-# Mean Absolute Scaled Error
-# For cross-sectional data, m = 1 (lag-1 naive denominator).
-# The denominator depends on row order; this is documented in each article.
 mase_fn <- function(y, yhat, y_train, m = 1L) {
   denom <- mean(abs(diff(y_train, lag = m)))
   mean(abs(y - yhat)) / denom
 }
 
-# Mean Squared Error
 mse_fn <- function(y, yhat) {
   mean((y - yhat)^2)
 }
 
-# Coefficient of determination
 r2_fn <- function(y, yhat) {
   1 - sum((y - yhat)^2) / sum((y - mean(y))^2)
 }
 
-# Compute all metrics at once; returns a one-row tibble
 compute_metrics <- function(y, yhat, y_train) {
   tibble::tibble(
     MAPE  = mape_fn(y, yhat),
@@ -85,395 +82,570 @@ compute_metrics <- function(y, yhat, y_train) {
   )
 }
 
-# ── SECTION 3: 5-fold CV grid search ─────────────────────────────────────────
+# Defensive: collect_predictions on a quantreg-engine workflow returns a
+# .pred_quantile column (a hardhat::quantile_pred object) instead of .pred.
+# For tau = 0.5 this is a single value per row; convert to numeric.
+.extract_pred <- function(preds) {
+  if (".pred" %in% names(preds)) {
+    as.numeric(preds$.pred)
+  } else if (".pred_quantile" %in% names(preds)) {
+    pq <- preds$.pred_quantile
+    tryCatch(
+      as.numeric(pq),
+      error = function(e) unlist(pq, use.names = FALSE)
+    )
+  } else {
+    stop("No prediction column found. Names: ",
+         paste(names(preds), collapse = ", "))
+  }
+}
 
-# Returns the row of `grid` that minimises mean CV metric_fn across k folds.
-cv_grid <- function(X_tr, y_tr, fit_fn, pred_fn, grid, metric_fn,
-                    k = 5L, seed = NULL) {
-  if (!is.null(seed)) set.seed(seed)
-  n    <- nrow(X_tr)
+# ── SECTION 3: Specs and grids ────────────────────────────────────────────────
+# Returns a named list keyed by tune_id (m1, m2, m3, m4, b1, b2, b3) with
+#   $spec         parsnip model_spec
+#   $grid         data.frame of hyperparameter combinations
+#   $select_metric character vector of CV metrics to call select_best() with
+# `p` is the number of predictors (used for RF mtry grid).
+
+make_specs_and_grids <- function(p) {
+
+  # Shared psvr grids (matching v1 conventions)
+  rbf_sigmas <- c(0.224, 0.707, 2.236, 7.071)   # psvr σ scale
+  Cs         <- c(0.1, 1, 10, 100)
+  epsilons   <- c(0.01, 0.1, 1)
+  Gammas     <- c(0.1, 1, 10, 100)
+
+  # b1 uses kernlab's σ parameterisation (K = exp(-σ‖x-y‖²)).
+  # The user-specified set for the cross-section refactor.
+  rbf_sigmas_kernlab <- c(1.494, 0.841, 0.473, 0.266)
+
+  # ── m1: SVR-MAPE (48) ─────────────────────────────────────────
+  spec_m1 <- psvr::psvr_mape_rbf(
+    cost = tune::tune(), svm_margin = tune::tune(),
+    rbf_sigma = tune::tune()
+  ) |>
+    parsnip::set_engine("psvr")
+  grid_m1 <- expand.grid(
+    cost       = Cs,
+    svm_margin = epsilons,
+    rbf_sigma  = rbf_sigmas,
+    stringsAsFactors = FALSE
+  )
+
+  # ── m2: SVR-MAPE + Sym. Kernel (96 = 4·3·4·2) ─────────────────
+  spec_m2 <- psvr::psvr_mape_sym_rbf(
+    cost = tune::tune(), svm_margin = tune::tune(),
+    rbf_sigma = tune::tune(), sym_type = tune::tune()
+  ) |>
+    parsnip::set_engine("psvr")
+  grid_m2 <- expand.grid(
+    cost       = Cs,
+    svm_margin = epsilons,
+    rbf_sigma  = rbf_sigmas,
+    sym_type   = c("even", "odd"),
+    stringsAsFactors = FALSE
+  )
+
+  # ── m3: LS-RMSPE (16) — selected twice for m3a/m3b ────────────
+  spec_m3 <- psvr::psvr_rmspe_rbf(
+    cost = tune::tune(), rbf_sigma = tune::tune()
+  ) |>
+    parsnip::set_engine("psvr")
+  grid_m3 <- expand.grid(
+    cost      = Gammas,
+    rbf_sigma = rbf_sigmas,
+    stringsAsFactors = FALSE
+  )
+
+  # ── m4: LS-RMSPE + Sym. Kernel (32 = 4·4·2) ───────────────────
+  spec_m4 <- psvr::psvr_rmspe_sym_rbf(
+    cost = tune::tune(), rbf_sigma = tune::tune(),
+    sym_type = tune::tune()
+  ) |>
+    parsnip::set_engine("psvr")
+  grid_m4 <- expand.grid(
+    cost      = Gammas,
+    rbf_sigma = rbf_sigmas,
+    sym_type  = c("even", "odd"),
+    stringsAsFactors = FALSE
+  )
+
+  # ── b1: ε-SVR (kernlab) (16) ──────────────────────────────────
+  spec_b1 <- parsnip::svm_rbf(
+    cost = tune::tune(), rbf_sigma = tune::tune()
+  ) |>
+    parsnip::set_engine("kernlab") |>
+    parsnip::set_mode("regression")
+  grid_b1 <- expand.grid(
+    cost      = Cs,
+    rbf_sigma = rbf_sigmas_kernlab,
+    stringsAsFactors = FALSE
+  )
+
+  # ── b2: Random Forest (≤ 6) ───────────────────────────────────
+  mtry_vals <- unique(c(2L, floor(sqrt(p)), floor(p / 2L)))
+  spec_b2 <- parsnip::rand_forest(
+    mtry = tune::tune(), trees = 500
+  ) |>
+    parsnip::set_engine("ranger", seed = 1L) |>
+    parsnip::set_mode("regression")
+  grid_b2 <- data.frame(mtry = mtry_vals)
+
+  # ── b3: XGBoost (8) ───────────────────────────────────────────
+  spec_b3 <- parsnip::boost_tree(
+    trees = tune::tune(), learn_rate = tune::tune(),
+    tree_depth = tune::tune()
+  ) |>
+    parsnip::set_engine("xgboost") |>
+    parsnip::set_mode("regression")
+  grid_b3 <- expand.grid(
+    trees      = c(100L, 300L),
+    learn_rate = c(0.05, 0.1),
+    tree_depth = c(3L, 6L),
+    stringsAsFactors = FALSE
+  )
+
+  list(
+    m1 = list(spec = spec_m1, grid = grid_m1, select_metric = "mape"),
+    m2 = list(spec = spec_m2, grid = grid_m2, select_metric = "mape"),
+    m3 = list(spec = spec_m3, grid = grid_m3,
+              select_metric = c("mape", "rmse")),  # m3a, m3b
+    m4 = list(spec = spec_m4, grid = grid_m4,
+              select_metric = c("mape", "rmse")),  # m4a, m4b
+    b1 = list(spec = spec_b1, grid = grid_b1, select_metric = "rmse"),
+    b2 = list(spec = spec_b2, grid = grid_b2, select_metric = "rmse"),
+    b3 = list(spec = spec_b3, grid = grid_b3, select_metric = "rmse")
+  )
+}
+
+# ── SECTION 4: Bespoke Log-SVR seed-loop (b6) ────────────────────────────────
+# Log-SVR (e1071::svm on log(y), exponentiated for prediction, tuned on
+# original-scale MAPE) is not expressible as a single parsnip workflow
+# because tune_grid has no native concept of "transform y, evaluate metric on
+# back-transformed prediction." So we run the inner CV manually.
+#
+# Predictors are scaled with training-fold statistics inside this function,
+# matching the recipe's step_normalize behaviour for the other models.
+
+fit_log_svr_seed <- function(X_tr, y_tr, X_te, seed,
+                             cost_vals  = c(0.1, 1, 10, 100),
+                             eps_vals   = c(0.01, 0.1, 1),
+                             gamma_vals = c(0.224, 0.707, 2.236, 7.071),
+                             k = 5L) {
+  sc <- scale(X_tr)
+  X_tr_s <- as.matrix(unclass(sc))
+  attr(X_tr_s, "scaled:center") <- NULL
+  attr(X_tr_s, "scaled:scale")  <- NULL
+  X_te_s <- scale(
+    X_te,
+    center = attr(sc, "scaled:center"),
+    scale  = attr(sc, "scaled:scale")
+  )
+  attr(X_te_s, "scaled:center") <- NULL
+  attr(X_te_s, "scaled:scale")  <- NULL
+
+  grid <- expand.grid(
+    cost  = cost_vals,
+    eps   = eps_vals,
+    gamma = gamma_vals,
+    stringsAsFactors = FALSE
+  )
+
+  set.seed(seed)
+  n    <- nrow(X_tr_s)
   fold <- sample(rep(seq_len(k), length.out = n))
 
   scores <- numeric(nrow(grid))
   for (i in seq_len(nrow(grid))) {
     fold_scores <- numeric(k)
     for (j in seq_len(k)) {
-      val_idx  <- which(fold == j)
-      Xf_tr    <- X_tr[-val_idx, , drop = FALSE]
-      yf_tr    <- y_tr[-val_idx]
-      Xf_val   <- X_tr[ val_idx, , drop = FALSE]
-      yf_val   <- y_tr[ val_idx]
-      fit      <- tryCatch(
-        fit_fn(Xf_tr, yf_tr, grid[i, , drop = FALSE]),
+      val_idx <- which(fold == j)
+      Xf_tr <- X_tr_s[-val_idx, , drop = FALSE]
+      yf_tr <- y_tr[-val_idx]
+      Xf_va <- X_tr_s[ val_idx, , drop = FALSE]
+      yf_va <- y_tr[ val_idx]
+
+      fit <- tryCatch(
+        e1071::svm(
+          Xf_tr, log(yf_tr),
+          type = "eps-regression", kernel = "radial",
+          cost = grid$cost[i], epsilon = grid$eps[i],
+          gamma = grid$gamma[i], scale = FALSE
+        ),
         error = function(e) NULL
       )
       if (is.null(fit)) {
         fold_scores[j] <- Inf
       } else {
-        pred           <- tryCatch(pred_fn(fit, Xf_val), error = function(e) NULL)
-        fold_scores[j] <- if (is.null(pred)) Inf else metric_fn(yf_val, pred)
+        yhat <- exp(as.numeric(predict(fit, Xf_va)))
+        fold_scores[j] <- mape_fn(yf_va, yhat)
       }
     }
     scores[i] <- mean(fold_scores, na.rm = TRUE)
   }
-  grid[which.min(scores), , drop = FALSE]
+
+  best <- grid[which.min(scores), , drop = FALSE]
+  fit_final <- e1071::svm(
+    X_tr_s, log(y_tr),
+    type = "eps-regression", kernel = "radial",
+    cost = best$cost, epsilon = best$eps,
+    gamma = best$gamma, scale = FALSE
+  )
+  exp(as.numeric(predict(fit_final, X_te_s)))
 }
 
-# ── SECTION 4: Model definitions ─────────────────────────────────────────────
+# ── SECTION 5: Per-seed driver ────────────────────────────────────────────────
+# Returns one tibble of 13 rows (one per model_id) for the given seed.
 
-# Returns a named list of 13 model objects.
-# Each model is a list with:
-#   $label     : character — display name (matches MODEL_LABELS$label)
-#   $abbrev    : character — short name (matches MODEL_LABELS$abbrev)
-#   $family    : character — "psvr" or "baseline"
-#   $fit_fn    : function(X_tr, y_tr, params) -> fit object
-#   $pred_fn   : function(fit, X_new) -> numeric vector
-#   $grid      : data.frame of hyperparameter combinations
-#   $cv_metric : function(y, yhat) -> scalar (CV minimisation target)
-#
-# p = number of predictors (integer); used to set mtry grid for RF.
-
-make_models <- function(p) {
-
-  # Shared hyperparameter grids
-  # Sigmas chosen to match e1071's gamma grid c(0.01, 0.1, 1, 10)
-  # via the equivalence gamma = 1/(2*sigma^2)
-  rbf_sigmas <- c(0.224, 0.707, 2.236, 7.071)
-  Cs         <- c(0.1, 1, 10, 100)
-  epsilons   <- c(0.01, 0.1, 1)
-  Gammas     <- c(0.1, 1, 10, 100)
-
-  models <- list()
-
-  # ── m1: SVR-MAPE ────────────────────────────────────────────────────────────
-  models$m1 <- list(
-    label     = "SVR-MAPE",
-    abbrev    = "SVR-MAPE",
-    family    = "psvr",
-    fit_fn    = function(X, y, params) {
-      K <- psvr::make_kernel("rbf", sigma = params$sigma)
-      psvr::mape_svr(X, y, kernel = K, C = params$C, eps = params$eps)
-    },
-    pred_fn   = function(fit, Xn) predict(fit, Xn),
-    grid      = expand.grid(C = Cs, eps = epsilons, sigma = rbf_sigmas,
-                            stringsAsFactors = FALSE),
-    cv_metric = mape_fn
-  )
-
-  # ── m2: SVR-MAPE + Sym. Kernel ──────────────────────────────────────────────
-  models$m2 <- list(
-    label     = "SVR-MAPE + Sym. Kernel",
-    abbrev    = "SVR-MAPE+SK",
-    family    = "psvr",
-    fit_fn    = function(X, y, params) {
-      K <- psvr::make_kernel("rbf", sigma = params$sigma)
-      psvr::mape_sym_svr(X, y, kernel = K, C = params$C, eps = params$eps,
-                         a = 1L)
-    },
-    pred_fn   = function(fit, Xn) predict(fit, Xn),
-    grid      = expand.grid(C = Cs, eps = epsilons, sigma = rbf_sigmas,
-                            stringsAsFactors = FALSE),
-    cv_metric = mape_fn
-  )
-
-  # ── m3a: LS-RMSPE (MAPE opt.) ───────────────────────────────────────────────
-  models$m3a <- list(
-    label     = "LS-RMSPE (MAPE opt.)",
-    abbrev    = "LS-RMSPE-M",
-    family    = "psvr",
-    fit_fn    = function(X, y, params) {
-      K <- psvr::make_kernel("rbf", sigma = params$sigma)
-      psvr::rmspe_lssvr(X, y, kernel = K, gamma = params$Gamma)
-    },
-    pred_fn   = function(fit, Xn) predict(fit, Xn),
-    grid      = expand.grid(Gamma = Gammas, sigma = rbf_sigmas,
-                            stringsAsFactors = FALSE),
-    cv_metric = mape_fn
-  )
-
-  # ── m3b: LS-RMSPE (RMSPE opt.) ──────────────────────────────────────────────
-  models$m3b <- list(
-    label     = "LS-RMSPE (RMSPE opt.)",
-    abbrev    = "LS-RMSPE-R",
-    family    = "psvr",
-    fit_fn    = function(X, y, params) {
-      K <- psvr::make_kernel("rbf", sigma = params$sigma)
-      psvr::rmspe_lssvr(X, y, kernel = K, gamma = params$Gamma)
-    },
-    pred_fn   = function(fit, Xn) predict(fit, Xn),
-    grid      = expand.grid(Gamma = Gammas, sigma = rbf_sigmas,
-                            stringsAsFactors = FALSE),
-    cv_metric = rmspe_fn
-  )
-
-  # ── m4a: LS-RMSPE + Sym. Kernel (MAPE opt.) ─────────────────────────────────
-  models$m4a <- list(
-    label     = "LS-RMSPE + Sym. Kernel (MAPE opt.)",
-    abbrev    = "LS-RMSPE+SK-M",
-    family    = "psvr",
-    fit_fn    = function(X, y, params) {
-      K <- psvr::make_kernel("rbf", sigma = params$sigma)
-      psvr::rmspe_sym_lssvr(X, y, kernel = K, gamma = params$Gamma, a = 1L)
-    },
-    pred_fn   = function(fit, Xn) predict(fit, Xn),
-    grid      = expand.grid(Gamma = Gammas, sigma = rbf_sigmas,
-                            stringsAsFactors = FALSE),
-    cv_metric = mape_fn
-  )
-
-  # ── m4b: LS-RMSPE + Sym. Kernel (RMSPE opt.) ────────────────────────────────
-  models$m4b <- list(
-    label     = "LS-RMSPE + Sym. Kernel (RMSPE opt.)",
-    abbrev    = "LS-RMSPE+SK-R",
-    family    = "psvr",
-    fit_fn    = function(X, y, params) {
-      K <- psvr::make_kernel("rbf", sigma = params$sigma)
-      psvr::rmspe_sym_lssvr(X, y, kernel = K, gamma = params$Gamma, a = 1L)
-    },
-    pred_fn   = function(fit, Xn) predict(fit, Xn),
-    grid      = expand.grid(Gamma = Gammas, sigma = rbf_sigmas,
-                            stringsAsFactors = FALSE),
-    cv_metric = rmspe_fn
-  )
-
-  # ── b1: ε-SVR (MSE) ─────────────────────────────────────────────────────────
-  models$b1 <- list(
-    label     = "ε-SVR (MSE)",
-    abbrev    = "SVR-MSE",
-    family    = "baseline",
-    fit_fn    = function(X, y, params) {
-      e1071::svm(X, y, type = "eps-regression", kernel = "radial",
-                 cost = params$cost, epsilon = params$eps,
-                 gamma = params$gamma, scale = FALSE)
-    },
-    pred_fn   = function(fit, Xn) as.numeric(predict(fit, Xn)),
-    grid      = expand.grid(cost = Cs, eps = epsilons, gamma = rbf_sigmas,
-                            stringsAsFactors = FALSE),
-    cv_metric = function(y, yhat) sqrt(mean((y - yhat)^2))
-  )
-
-  # ── b2: Random Forest ───────────────────────────────────────────────────────
-  mtry_vals <- unique(c(2L, floor(sqrt(p)), floor(p / 2L)))
-  models$b2 <- list(
-    label     = "Random Forest",
-    abbrev    = "RF",
-    family    = "baseline",
-    fit_fn    = function(X, y, params) {
-      ranger::ranger(y = y, x = as.data.frame(X),
-                     num.trees = 500L, mtry = params$mtry, seed = 1L)
-    },
-    pred_fn   = function(fit, Xn) {
-      predict(fit, data = as.data.frame(Xn))$predictions
-    },
-    grid      = data.frame(mtry = mtry_vals),
-    cv_metric = function(y, yhat) sqrt(mean((y - yhat)^2))
-  )
-
-  # ── b3: XGBoost ─────────────────────────────────────────────────────────────
-  models$b3 <- list(
-    label     = "XGBoost",
-    abbrev    = "XGB",
-    family    = "baseline",
-    fit_fn    = function(X, y, params) {
-      dtrain <- xgboost::xgb.DMatrix(data = X, label = y)
-      xgboost::xgb.train(
-        params = list(
-          objective     = "reg:squarederror",
-          learning_rate = params$eta,
-          max_depth     = params$max_depth
-        ),
-        data    = dtrain,
-        nrounds = params$nrounds,
-        verbose = 0
-      )
-    },
-    pred_fn   = function(fit, Xn) {
-      predict(fit, xgboost::xgb.DMatrix(data = Xn))
-    },
-    grid      = expand.grid(
-      nrounds   = c(100L, 300L),
-      eta       = c(0.05, 0.1),
-      max_depth = c(3L, 6L),
-      stringsAsFactors = FALSE
-    ),
-    cv_metric = function(y, yhat) sqrt(mean((y - yhat)^2))
-  )
-
-  # ── b4: Linear Regression ───────────────────────────────────────────────────
-  models$b4 <- list(
-    label     = "Linear Regression",
-    abbrev    = "LR",
-    family    = "baseline",
-    fit_fn    = function(X, y, params) {
-      lm(y ~ ., data = as.data.frame(X))
-    },
-    pred_fn   = function(fit, Xn) {
-      as.numeric(predict(fit, newdata = as.data.frame(Xn)))
-    },
-    grid      = data.frame(dummy = 1L),
-    cv_metric = function(y, yhat) sqrt(mean((y - yhat)^2))
-  )
-
-  # ── b5: WLS (1/y²) ──────────────────────────────────────────────────────────
-  models$b5 <- list(
-    label     = "WLS (1/y²)",
-    abbrev    = "WLS",
-    family    = "baseline",
-    fit_fn    = function(X, y, params) {
-      lm(y ~ ., data = as.data.frame(X), weights = 1 / y^2)
-    },
-    pred_fn   = function(fit, Xn) {
-      as.numeric(predict(fit, newdata = as.data.frame(Xn)))
-    },
-    grid      = data.frame(dummy = 1L),
-    cv_metric = function(y, yhat) sqrt(mean((y - yhat)^2))
-  )
-
-  # ── b6: Log-SVR ─────────────────────────────────────────────────────────────
-  # Classical epsilon-SVR fitted on log(y); predictions exponentiated.
-  # CV metric evaluated on the original scale to avoid circularity.
-  models$b6 <- list(
-    label     = "Log-SVR",
-    abbrev    = "Log-SVR",
-    family    = "baseline",
-    fit_fn    = function(X, y, params) {
-      e1071::svm(X, log(y), type = "eps-regression", kernel = "radial",
-                 cost = params$cost, epsilon = params$eps,
-                 gamma = params$gamma, scale = FALSE)
-    },
-    pred_fn   = function(fit, Xn) {
-      as.numeric(exp(predict(fit, Xn)))
-    },
-    grid      = expand.grid(cost = Cs, eps = epsilons, gamma = rbf_sigmas,
-                            stringsAsFactors = FALSE),
-    # CV metric on original scale (MAPE of exp(pred) vs y)
-    cv_metric = mape_fn
-  )
-
-  # ── b7a: QR (τ = 0.5) ───────────────────────────────────────────────────────
-  models$b7a <- list(
-    label     = "QR (τ = 0.5)",
-    abbrev    = "QR",
-    family    = "baseline",
-    fit_fn    = function(X, y, params) {
-      quantreg::rq(y ~ ., data = as.data.frame(X), tau = 0.5)
-    },
-    pred_fn   = function(fit, Xn) {
-      as.numeric(predict(fit, newdata = as.data.frame(Xn)))
-    },
-    grid      = data.frame(dummy = 1L),
-    cv_metric = function(y, yhat) sqrt(mean((y - yhat)^2))
-  )
-
-  models
-}
-
-# ── SECTION 5: Experiment runner ─────────────────────────────────────────────
-
-# Runs the full 30-seed protocol on a single dataset.
-# Returns a tidy data frame with columns:
-#   dataset | seed | model_id | label | abbrev | family |
-#   MAPE | RMSPE | MAAPE | MASE | MSE | R2
-#
-# Arguments:
-#   X            : numeric matrix of predictors (already scaled if needed)
-#   y            : numeric vector of strictly positive targets
-#   dataset_name : character label for the dataset column
-#   seeds        : integer vector of random seeds (default 1:30)
-#   verbose      : print progress to console
-
-run_experiment <- function(X, y, dataset_name, seeds = 1:30,
-                           verbose = TRUE) {
+run_seed <- function(X, y, seed, dataset_name) {
   stopifnot(is.matrix(X), is.numeric(y), all(y > 0))
-  p      <- ncol(X)
-  models <- make_models(p)
 
-  results <- vector("list", length(seeds) * length(models))
-  idx     <- 1L
+  pred_names <- colnames(X)
+  if (is.null(pred_names)) pred_names <- paste0("V", seq_len(ncol(X)))
 
-  for (s in seeds) {
-    set.seed(s)
-    n      <- nrow(X)
-    tr_idx <- sample(n, floor(0.8 * n))
-    X_tr_raw <- X[ tr_idx, , drop = FALSE]
-    y_tr     <- y[ tr_idx]
-    X_te_raw <- X[-tr_idx, , drop = FALSE]
-    y_te     <- y[-tr_idx]
+  all_df <- as.data.frame(X)
+  names(all_df) <- pred_names
+  all_df$y    <- y
+  all_df$.wts <- hardhat::importance_weights(1 / y^2)
 
-    # Scale features using training statistics only
-    # (prevents data leakage from test set into scaling parameters)
-    sc   <- scale(X_tr_raw)
-    X_tr <- sc
-    X_te <- scale(X_te_raw,
-                  center = attr(sc, "scaled:center"),
-                  scale  = attr(sc, "scaled:scale"))
-    attr(X_tr, "scaled:center") <- NULL
-    attr(X_tr, "scaled:scale")  <- NULL
-    attr(X_te, "scaled:center") <- NULL
-    attr(X_te, "scaled:scale")  <- NULL
-    class(X_tr) <- c("matrix", "array")
-    class(X_te) <- c("matrix", "array")
+  # Outer split: preserve v1 protocol (set.seed(s); sample(n, floor(0.8n)))
+  set.seed(seed)
+  n_total <- nrow(all_df)
+  tr_idx  <- sample(n_total, floor(0.8 * n_total))
+  va_idx  <- setdiff(seq_len(n_total), tr_idx)
+  split   <- rsample::make_splits(
+    list(analysis = tr_idx, assessment = va_idx),
+    data = all_df
+  )
+  train_df <- rsample::training(split)
+  test_df  <- rsample::testing(split)
 
-    for (mid in names(models)) {
-      if (verbose)
-        message(sprintf("[%s] seed %02d/%d  %s",
-                        dataset_name, s, max(seeds), mid))
+  # Inner 5-fold CV
+  set.seed(seed + 1000L)
+  folds <- rsample::vfold_cv(train_df, v = 5L)
 
-      m <- models[[mid]]
+  # Recipe: normalize numeric predictors using training stats only.
+  # train_df$.wts is an importance_weights object (hardhat); recipes
+  # auto-detects the class and assigns role "case_weights", so
+  # all_numeric_predictors() does not select it. Non-b5 workflows
+  # leave the column unused; b5 picks it up via add_case_weights(.wts)
+  # on the workflow.
+  rec_default <- recipes::recipe(y ~ ., data = train_df) |>
+    recipes::step_normalize(recipes::all_numeric_predictors())
 
-      yhat <- tryCatch({
-        best_params <- cv_grid(
-          X_tr      = X_tr,
-          y_tr      = y_tr,
-          fit_fn    = m$fit_fn,
-          pred_fn   = m$pred_fn,
-          grid      = m$grid,
-          metric_fn = m$cv_metric,
-          k         = 5L,
-          seed      = s
-        )
-        fit <- m$fit_fn(X_tr, y_tr, best_params)
-        m$pred_fn(fit, X_te)
-      }, error = function(e) {
-        warning(sprintf("[%s] seed %d model %s failed: %s",
-                        dataset_name, s, mid, conditionMessage(e)))
-        rep(NA_real_, length(y_te))
-      })
+  sg <- make_specs_and_grids(p = ncol(X))
 
-      met <- if (anyNA(yhat)) {
-        tibble::tibble(MAPE = NA_real_, RMSPE = NA_real_, MAAPE = NA_real_,
-                       MASE = NA_real_, MSE   = NA_real_, R2    = NA_real_)
-      } else {
-        compute_metrics(y_te, yhat, y_tr)
-      }
+  metric_set_all <- yardstick::metric_set(
+    yardstick::mape, yardstick::rmse, yardstick::rsq
+  )
 
-      results[[idx]] <- dplyr::bind_cols(
-        tibble::tibble(
-          dataset  = dataset_name,
-          seed     = s,
-          model_id = mid,
-          label    = m$label,
-          abbrev   = m$abbrev,
-          family   = m$family
-        ),
-        met
+  ctrl <- tune::control_grid(
+    save_pred = FALSE,
+    verbose   = FALSE,
+    allow_par = FALSE
+  )
+
+  # ── Build tunable workflow_set; apply data-driven rbf_sigma range ──
+  # psvr_option_add() sets a per-workflow param_info with a data-driven
+  # rbf_sigma range derived from the median pairwise distance of the baked
+  # training predictors. Mirrors the pattern in electricity-forecasting.qmd.
+  wf_set <- workflowsets::workflow_set(
+    preproc = list(default = rec_default),
+    models  = list(
+      m1 = sg$m1$spec, m2 = sg$m2$spec,
+      m3 = sg$m3$spec, m4 = sg$m4$spec,
+      b1 = sg$b1$spec, b2 = sg$b2$spec, b3 = sg$b3$spec
+    )
+  )
+
+  train_baked    <- rec_default |>
+    recipes::prep() |>
+    recipes::bake(new_data = train_df)
+  predictor_only <- train_baked |> dplyr::select(-y, -.wts)
+  wf_set         <- psvr::psvr_option_add(wf_set, predictor_only)
+
+  # ── Tune each model (each id has its own explicit grid) ──
+  tune_results <- list()
+  for (mid in c("m1", "m2", "m3", "m4", "b1", "b2", "b3")) {
+    wf_id <- paste0("default_", mid)
+    tune_results[[mid]] <- wf_set |>
+      dplyr::filter(wflow_id == wf_id) |>
+      workflowsets::workflow_map(
+        fn        = "tune_grid",
+        resamples = folds,
+        grid      = sg[[mid]]$grid,
+        metrics   = metric_set_all,
+        control   = ctrl,
+        seed      = seed,
+        verbose   = FALSE
       )
-      idx <- idx + 1L
-    }
   }
+
+  # ── Score helper: finalize tuned workflow, last_fit, compute metrics ──
+  score_tuned <- function(mid, model_id, label, abbrev, family,
+                          select_metric) {
+    wf_id <- paste0("default_", mid)
+    res <- workflowsets::extract_workflow_set_result(
+      tune_results[[mid]], id = wf_id
+    )
+    wf  <- workflowsets::extract_workflow(wf_set, id = wf_id)
+    best <- tune::select_best(res, metric = select_metric)
+    wf_final <- tune::finalize_workflow(wf, best)
+    fit_lf <- tune::last_fit(wf_final, split, metrics = metric_set_all)
+    preds  <- tune::collect_predictions(fit_lf)
+    yhat   <- .extract_pred(preds)
+    yact   <- preds$y
+    met    <- compute_metrics(yact, yhat, y_train = train_df$y)
+    tibble::tibble(
+      dataset  = dataset_name, seed = seed,
+      model_id = model_id, label = label,
+      abbrev   = abbrev, family = family
+    ) |>
+      dplyr::bind_cols(met)
+  }
+
+  score_untuned <- function(wf, model_id, label, abbrev, family) {
+    fit_lf <- tune::last_fit(wf, split, metrics = metric_set_all)
+    preds  <- tune::collect_predictions(fit_lf)
+    yhat   <- .extract_pred(preds)
+    yact   <- preds$y
+    met    <- compute_metrics(yact, yhat, y_train = train_df$y)
+    tibble::tibble(
+      dataset  = dataset_name, seed = seed,
+      model_id = model_id, label = label,
+      abbrev   = abbrev, family = family
+    ) |>
+      dplyr::bind_cols(met)
+  }
+
+  results <- list()
+
+  results$m1  <- score_tuned("m1",  "m1",  "SVR-MAPE",
+                             "SVR-MAPE",      "psvr", "mape")
+  results$m2  <- score_tuned("m2",  "m2",  "SVR-MAPE + Sym. Kernel",
+                             "SVR-MAPE+SK",   "psvr", "mape")
+  results$m3a <- score_tuned("m3",  "m3a", "LS-RMSPE (MAPE opt.)",
+                             "LS-RMSPE-M",    "psvr", "mape")
+  results$m3b <- score_tuned("m3",  "m3b", "LS-RMSPE (RMSPE opt.)",
+                             "LS-RMSPE-R",    "psvr", "rmse")
+  results$m4a <- score_tuned("m4",  "m4a", "LS-RMSPE + Sym. Kernel (MAPE opt.)",
+                             "LS-RMSPE+SK-M", "psvr", "mape")
+  results$m4b <- score_tuned("m4",  "m4b", "LS-RMSPE + Sym. Kernel (RMSPE opt.)",
+                             "LS-RMSPE+SK-R", "psvr", "rmse")
+  results$b1  <- score_tuned("b1",  "b1",  "ε-SVR (MSE)",
+                             "SVR-MSE",       "baseline", "rmse")
+  results$b2  <- score_tuned("b2",  "b2",  "Random Forest",
+                             "RF",            "baseline", "rmse")
+  results$b3  <- score_tuned("b3",  "b3",  "XGBoost",
+                             "XGB",           "baseline", "rmse")
+
+  # ── Untuned: b4 (lm) ───────────────────────────────────────────
+  spec_b4 <- parsnip::linear_reg() |> parsnip::set_engine("lm")
+  wf_b4 <- workflows::workflow() |>
+    workflows::add_recipe(rec_default) |>
+    workflows::add_model(spec_b4)
+  results$b4 <- score_untuned(wf_b4, "b4", "Linear Regression",
+                              "LR", "baseline")
+
+  # ── Untuned: b5 (WLS via case_weights) ─────────────────────────
+  spec_b5 <- parsnip::linear_reg() |> parsnip::set_engine("lm")
+  wf_b5 <- workflows::workflow() |>
+    workflows::add_case_weights(.wts) |>
+    workflows::add_recipe(rec_default) |>
+    workflows::add_model(spec_b5)
+  results$b5 <- score_untuned(wf_b5, "b5", "WLS (1/y²)",
+                              "WLS", "baseline")
+
+  # ── b6: bespoke Log-SVR ────────────────────────────────────────
+  yhat_b6 <- tryCatch(
+    fit_log_svr_seed(
+      X_tr = X[tr_idx, , drop = FALSE], y_tr = y[tr_idx],
+      X_te = X[va_idx, , drop = FALSE], seed = seed
+    ),
+    error = function(e) {
+      warning(sprintf("[%s] seed %d b6 failed: %s",
+                      dataset_name, seed, conditionMessage(e)))
+      rep(NA_real_, length(va_idx))
+    }
+  )
+  met_b6 <- if (anyNA(yhat_b6)) {
+    tibble::tibble(MAPE = NA_real_, RMSPE = NA_real_, MAAPE = NA_real_,
+                   MASE = NA_real_, MSE = NA_real_, R2 = NA_real_)
+  } else {
+    compute_metrics(y[va_idx], yhat_b6, y_train = y[tr_idx])
+  }
+  results$b6 <- tibble::tibble(
+    dataset  = dataset_name, seed = seed,
+    model_id = "b6", label = "Log-SVR",
+    abbrev   = "Log-SVR", family = "baseline"
+  ) |>
+    dplyr::bind_cols(met_b6)
+
+  # ── b7a: bespoke quantreg::rq with τ = 0.5 ─────────────────────
+  # parsnip's "quantile regression" mode returns quantile_pred objects
+  # that are not compatible with the regression yardstick metrics
+  # (mape/rmse/rsq) used in metric_set_all, so last_fit() would fail.
+  # Bypass parsnip and call quantreg::rq() directly. The .wts column
+  # is dropped from the baked data so it is not pulled in as a
+  # predictor by the y ~ . formula.
+  yhat_b7a <- tryCatch({
+    rec_prepped <- rec_default |> recipes::prep(training = train_df)
+    train_baked_b7a <- rec_prepped |>
+      recipes::bake(new_data = train_df) |>
+      dplyr::select(-dplyr::any_of(".wts"))
+    test_baked_b7a  <- rec_prepped |>
+      recipes::bake(new_data = test_df) |>
+      dplyr::select(-dplyr::any_of(".wts"))
+    fit_b7a <- quantreg::rq(y ~ ., data = train_baked_b7a, tau = 0.5)
+    as.numeric(predict(fit_b7a, newdata = test_baked_b7a))
+  }, error = function(e) {
+    warning(sprintf("[%s] seed %d b7a failed: %s",
+                    dataset_name, seed, conditionMessage(e)))
+    rep(NA_real_, nrow(test_df))
+  })
+  met_b7a <- if (anyNA(yhat_b7a)) {
+    tibble::tibble(MAPE = NA_real_, RMSPE = NA_real_, MAAPE = NA_real_,
+                   MASE = NA_real_, MSE = NA_real_, R2 = NA_real_)
+  } else {
+    compute_metrics(test_df$y, yhat_b7a, y_train = train_df$y)
+  }
+  results$b7a <- tibble::tibble(
+    dataset  = dataset_name, seed = seed,
+    model_id = "b7a", label = "QR (τ = 0.5)",
+    abbrev   = "QR", family = "baseline"
+  ) |>
+    dplyr::bind_cols(met_b7a)
 
   dplyr::bind_rows(results)
 }
 
-# ── SECTION 6: Summary and statistical helpers ────────────────────────────────
+# ── SECTION 6: Sequential experiment runner ───────────────────────────────────
+# In-process driver for QMD render-time fallback (when CSV is missing).
+# Wraps run_seed() over `seeds` and returns a single tidy tibble.
 
-# Percentile bootstrap CI for a numeric vector.
-# Returns named vector: lower, mean, upper.
+run_experiment <- function(X, y, dataset_name, seeds = 1:30, verbose = TRUE) {
+  stopifnot(is.matrix(X), is.numeric(y), all(y > 0))
+
+  results <- vector("list", length(seeds))
+  for (i in seq_along(seeds)) {
+    s <- seeds[i]
+    if (verbose) {
+      message(sprintf("[%s] seed %02d/%d", dataset_name, s, max(seeds)))
+    }
+    results[[i]] <- tryCatch(
+      run_seed(X, y, seed = s, dataset_name = dataset_name),
+      error = function(e) {
+        warning(sprintf("[%s] seed %d failed: %s",
+                        dataset_name, s, conditionMessage(e)))
+        NULL
+      }
+    )
+  }
+  dplyr::bind_rows(purrr::compact(results))
+}
+
+# ── SECTION 7: Parallel runner with per-seed RDS partials ─────────────────────
+# Per-seed partials saved under results/partial/<dataset>_seed_NN.rds; the run
+# is resumable. Parallelisation is over seeds — each worker runs run_seed()
+# sequentially (no nested inner parallelism).
+
+run_experiment_parallel <- function(X, y, dataset_name,
+                                    seeds   = 1:30,
+                                    workers = NULL) {
+  if (is.null(workers)) {
+    workers <- max(1L, parallel::detectCores() - 1L)
+  }
+
+  partial_dir <- file.path("results", "partial")
+  dir.create(partial_dir, showWarnings = FALSE, recursive = TRUE)
+
+  done <- seeds[file.exists(
+    file.path(partial_dir,
+              sprintf("%s_seed_%02d.rds", dataset_name, seeds))
+  )]
+  todo <- setdiff(seeds, done)
+
+  if (length(done) > 0L) {
+    message(sprintf(
+      "[%s] Skipping %d completed seeds: %s",
+      dataset_name, length(done), paste(done, collapse = " ")))
+  }
+
+  if (length(todo) > 0L) {
+    message(sprintf(
+      "[%s] Running %d seeds on %d workers...",
+      dataset_name, length(todo),
+      min(workers, length(todo))))
+
+    future::plan(future::multisession, workers = min(workers, length(todo)))
+    t0 <- proc.time()
+
+    furrr::future_walk(todo, function(s) {
+      # Worker-side dependencies — recipes/workflows/tune are loaded via
+      # tidymodels; engine packages must be available for set_engine().
+      require(tidymodels, quietly = TRUE)
+      require(psvr,       quietly = TRUE)
+      require(kernlab,    quietly = TRUE)
+      require(ranger,     quietly = TRUE)
+      require(xgboost,    quietly = TRUE)
+      require(quantreg,   quietly = TRUE)
+      require(e1071,      quietly = TRUE)
+
+      seed_results <- tryCatch(
+        run_seed(X, y, seed = s, dataset_name = dataset_name),
+        error = function(e) {
+          warning(sprintf("[%s] seed %d failed: %s",
+                          dataset_name, s, conditionMessage(e)))
+          NULL
+        }
+      )
+
+      if (!is.null(seed_results)) {
+        saveRDS(
+          seed_results,
+          file.path("results", "partial",
+                    sprintf("%s_seed_%02d.rds", dataset_name, s))
+        )
+      }
+    }, .options = furrr::furrr_options(seed = TRUE))
+
+    future::plan(future::sequential)
+    elapsed <- round((proc.time() - t0)[["elapsed"]] / 60, 1)
+    message(sprintf("[%s] Seeds done in %.1f min.",
+                    dataset_name, elapsed))
+  }
+
+  rds_files <- file.path(
+    partial_dir,
+    sprintf("%s_seed_%02d.rds", dataset_name, seeds))
+  missing <- rds_files[!file.exists(rds_files)]
+  if (length(missing) > 0L) {
+    stop(sprintf("[%s] Missing partials: %s",
+                 dataset_name,
+                 paste(basename(missing), collapse = ", ")))
+  }
+
+  results <- purrr::map_dfr(rds_files, readRDS)
+  out_csv <- file.path(
+    "results",
+    sprintf("%s-results.csv", gsub("_", "-", dataset_name)))
+  readr::write_csv(results, out_csv)
+  message(sprintf(
+    "[%s] Saved: %s  (%d rows, %d NA-MAPE)\n",
+    dataset_name, out_csv,
+    nrow(results), sum(is.na(results$MAPE))))
+  invisible(results)
+}
+
+# ── SECTION 8: Summary and statistical helpers ────────────────────────────────
+# Unchanged from v1 — they operate on the CSV schema.
+
 bootstrap_ci <- function(x, B = 1000L, alpha = 0.05, seed = 42L) {
   set.seed(seed)
-  x    <- x[!is.na(x)]
-  if (length(x) == 0L)
+  x <- x[!is.na(x)]
+  if (length(x) == 0L) {
     return(c(lower = NA_real_, mean = NA_real_, upper = NA_real_))
+  }
   boot <- replicate(B, mean(sample(x, replace = TRUE)))
   c(
     lower = unname(quantile(boot, alpha / 2)),
@@ -482,11 +654,9 @@ bootstrap_ci <- function(x, B = 1000L, alpha = 0.05, seed = 42L) {
   )
 }
 
-# Tidy summary: mean + 95% bootstrap CI per model per metric.
-# Returns one row per model, sorted ascending by MAPE_mean.
 summarise_results <- function(results,
-                              metrics = c("MAPE","RMSPE","MAAPE",
-                                          "MASE","MSE","R2")) {
+                              metrics = c("MAPE", "RMSPE", "MAAPE",
+                                          "MASE", "MSE", "R2")) {
   results |>
     dplyr::group_by(model_id, label, abbrev, family) |>
     dplyr::summarise(
@@ -504,12 +674,8 @@ summarise_results <- function(results,
     dplyr::arrange(MAPE_mean)
 }
 
-# Paired Wilcoxon signed-rank test of each model vs. the best baseline.
-# "Best baseline" = baseline model with lowest mean MAPE across seeds.
-# Returns a data frame with columns:
-#   model_id | label | reference | p_value | signif
 wilcoxon_vs_best <- function(results, metric = "MAPE") {
-  baseline_ids <- c("b1","b2","b3","b4","b5","b6","b7a")
+  baseline_ids <- c("b1", "b2", "b3", "b4", "b5", "b6", "b7a")
 
   best_base <- results |>
     dplyr::filter(model_id %in% baseline_ids) |>
@@ -524,7 +690,6 @@ wilcoxon_vs_best <- function(results, metric = "MAPE") {
     dplyr::arrange(seed) |>
     dplyr::pull(dplyr::all_of(metric))
 
-  # Pull per-model vectors via a join, avoiding cur_data()
   model_vecs <- results |>
     dplyr::filter(model_id != best_base) |>
     dplyr::arrange(model_id, seed) |>
@@ -554,142 +719,4 @@ wilcoxon_vs_best <- function(results, metric = "MAPE") {
       )
     ) |>
     dplyr::arrange(p_value)
-}
-
-# ── SECTION 7: Parallel experiment runner ────────────────────────────────────
-
-run_experiment_parallel <- function(X, y, dataset_name,
-                                    seeds   = 1:30,
-                                    workers = N_WORKERS) {
-
-  partial_dir <- file.path("results", "partial")
-  dir.create(partial_dir, showWarnings = FALSE, recursive = TRUE)
-
-  done <- seeds[file.exists(
-    file.path(partial_dir,
-              sprintf("%s_seed_%02d.rds", dataset_name, seeds))
-  )]
-  todo <- setdiff(seeds, done)
-
-  if (length(done) > 0L)
-    message(sprintf(
-      "[%s] Skipping %d completed seeds: %s",
-      dataset_name, length(done), paste(done, collapse = " ")))
-
-  if (length(todo) > 0L) {
-    message(sprintf(
-      "[%s] Running %d seeds on %d workers...",
-      dataset_name, length(todo),
-      min(workers, length(todo))))
-
-    plan(multisession, workers = min(workers, length(todo)))
-    t0 <- proc.time()
-
-    future_walk(todo, function(s) {
-      require(psvr,     quietly = TRUE)
-      require(e1071,    quietly = TRUE)
-      require(ranger,   quietly = TRUE)
-      require(xgboost,  quietly = TRUE)
-      require(quantreg, quietly = TRUE)
-      require(tibble,   quietly = TRUE)
-      require(dplyr,    quietly = TRUE)
-      require(purrr,    quietly = TRUE)
-
-      set.seed(s)
-      n      <- nrow(X)
-      tr_idx <- sample(n, floor(0.8 * n))
-      X_tr_raw <- X[ tr_idx, , drop = FALSE]
-      y_tr     <- y[ tr_idx]
-      X_te_raw <- X[-tr_idx, , drop = FALSE]
-      y_te     <- y[-tr_idx]
-
-      # Scale features using training statistics only
-      # (prevents data leakage from test set into scaling parameters)
-      sc   <- scale(X_tr_raw)
-      X_tr <- sc
-      X_te <- scale(X_te_raw,
-                    center = attr(sc, "scaled:center"),
-                    scale  = attr(sc, "scaled:scale"))
-      attr(X_tr, "scaled:center") <- NULL
-      attr(X_tr, "scaled:scale")  <- NULL
-      attr(X_te, "scaled:center") <- NULL
-      attr(X_te, "scaled:scale")  <- NULL
-      class(X_tr) <- c("matrix", "array")
-      class(X_te) <- c("matrix", "array")
-
-      p      <- ncol(X)
-      models <- make_models(p)
-
-      seed_results <- purrr::map_dfr(names(models), function(mid) {
-        m    <- models[[mid]]
-        yhat <- tryCatch({
-          best <- cv_grid(X_tr, y_tr,
-                          fit_fn    = m$fit_fn,
-                          pred_fn   = m$pred_fn,
-                          grid      = m$grid,
-                          metric_fn = m$cv_metric,
-                          k         = 5L,
-                          seed      = s)
-          fit  <- m$fit_fn(X_tr, y_tr, best)
-          m$pred_fn(fit, X_te)
-        }, error = function(e) {
-          warning(sprintf("[%s] seed %d model %s: %s",
-                          dataset_name, s, mid,
-                          conditionMessage(e)))
-          rep(NA_real_, length(y_te))
-        })
-
-        met <- if (anyNA(yhat)) {
-          tibble::tibble(
-            MAPE=NA_real_, RMSPE=NA_real_, MAAPE=NA_real_,
-            MASE=NA_real_, MSE=NA_real_,  R2=NA_real_)
-        } else {
-          compute_metrics(y_te, yhat, y_tr)
-        }
-
-        dplyr::bind_cols(
-          tibble::tibble(
-            dataset  = dataset_name,
-            seed     = s,
-            model_id = mid,
-            label    = m$label,
-            abbrev   = m$abbrev,
-            family   = m$family),
-          met
-        )
-      })
-
-      saveRDS(seed_results,
-              file.path("results", "partial",
-                        sprintf("%s_seed_%02d.rds",
-                                dataset_name, s)))
-    }, .options = furrr_options(seed = TRUE,
-                                packages = character(0)))
-
-    plan(sequential)
-    elapsed <- round((proc.time() - t0)[["elapsed"]] / 60, 1)
-    message(sprintf("[%s] Seeds done in %.1f min.",
-                    dataset_name, elapsed))
-  }
-
-  # Combine partials into final CSV
-  rds_files <- file.path(
-    partial_dir,
-    sprintf("%s_seed_%02d.rds", dataset_name, seeds))
-  missing <- rds_files[!file.exists(rds_files)]
-  if (length(missing) > 0L)
-    stop(sprintf("[%s] Missing partials: %s",
-                 dataset_name,
-                 paste(basename(missing), collapse = ", ")))
-
-  results <- purrr::map_dfr(rds_files, readRDS)
-  out_csv  <- file.path("results",
-                        sprintf("%s-results.csv",
-                                gsub("_", "-", dataset_name)))
-  readr::write_csv(results, out_csv)
-  message(sprintf(
-    "[%s] Saved: %s  (%d rows, %d NA-MAPE)\n",
-    dataset_name, out_csv,
-    nrow(results), sum(is.na(results$MAPE))))
-  invisible(results)
 }

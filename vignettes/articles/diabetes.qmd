@@ -53,12 +53,14 @@ regression problem. Data loaded from `lars::diabetes`.
 #| label: setup
 
 library(tidyverse)
+library(tidymodels)
 library(psvr)
 library(lars)
-library(e1071)
+library(kernlab)
 library(ranger)
 library(xgboost)
 library(quantreg)
+library(e1071)
 library(knitr)
 library(kableExtra)
 library(xfun)
@@ -66,6 +68,7 @@ library(patchwork)
 
 source("case-studies/experiment_helpers.R")
 
+tidymodels_prefer()
 theme_set(theme_bw(base_size = 12))
 ```
 
@@ -123,10 +126,12 @@ The benchmark follows a 30-seed protocol: for each seed in 1–30, the
 442 observations are randomly split into 80% training (≈ 353 rows) and
 20% test (≈ 89 rows). Hyperparameters are selected via 5-fold
 cross-validation on the training set, minimizing each model's native CV
-metric. Grid sizes are 48 combinations for SVR-MAPE, SVR-MAPE+SK,
-ε-SVR (MSE), and Log-SVR; 16 for the four LS-RMSPE variants; up to 6
-for Random Forest; 8 for XGBoost; and no tuning for Linear Regression,
-WLS, and Quantile Regression. Six metrics are recorded on the held-out
+metric. Grid sizes are 48 combinations for SVR-MAPE and Log-SVR; 96
+for SVR-MAPE+SK (the symmetry type `a ∈ {-1, 1}` is jointly tuned with
+the cost, margin, and bandwidth); 16 for the LS-RMSPE variants and
+ε-SVR (MSE); 32 for LS-RMSPE+SK (`a` jointly tuned with cost and
+bandwidth); up to 6 for Random Forest; 8 for XGBoost; and no tuning for
+Linear Regression, WLS, and Quantile Regression. Six metrics are recorded on the held-out
 test set: MAPE, RMSPE, MAAPE, MASE, MSE, and R². Prior to fitting,
 predictor features are standardized to zero mean and unit variance
 using statistics computed on the training fold only; test-set features
