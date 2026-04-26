@@ -18,6 +18,11 @@
 #' @param C Regularization parameter `C > 0`.
 #' @param eps Insensitivity tube half-width `ε ≥ 0` (in percentage units,
 #'   i.e., the tube is `ε%` of each target).
+#' @param solver Backend that solves the dual QP.  `"smo"` (default) uses an
+#'   internal libsvm-style SMO solver with no third-party dependency; `"osqp"`
+#'   delegates to the `osqp` package (which then becomes a soft requirement).
+#'   Both backends solve the same QP and return the same support vectors and
+#'   bias up to numerical tolerance.
 #' @param tol Threshold below which `|βk|` is treated as zero when selecting
 #'   support vectors and free support vectors (default `1e-5`).
 #'
@@ -43,7 +48,9 @@
 #' predict(fit, X)
 #'
 #' @export
-mape_svr <- function(X, y, kernel, C, eps, tol = 1e-5) {
+mape_svr <- function(X, y, kernel, C, eps,
+                     solver = c("smo", "osqp"), tol = 1e-5) {
+  solver <- match.arg(solver)
   X <- as.matrix(X)
   y <- as.numeric(y)
   if (!all(y > 0)) {
@@ -71,66 +78,78 @@ mape_svr <- function(X, y, kernel, C, eps, tol = 1e-5) {
   Omega <- kernel_matrix(kernel, X)
   diag(Omega) <- diag(Omega) + 1e-6
 
-  # ---- QP matrices ----
-  # P = [Ω, -Ω; -Ω, Ω], upper triangular for osqp
-  P_dense <- rbind(cbind(Omega, -Omega), cbind(-Omega, Omega))
-  P       <- Matrix::triu(Matrix::Matrix(P_dense, sparse = TRUE))
-
-  # q = [y(ε/100 - 1); y(1 + ε/100)]
-  q <- c(y * (scale - 1.0), y * (1.0 + scale))
-
-  # ---- Constraint matrix ----
-  # Row 1:        [1ᵀ, -1ᵀ] u = 0   (equality: Σαk = Σαk*)
-  # Rows 2..2N+1: I_{2N} u ∈ [0, ub] (per-variable box)
-  A_eq  <- Matrix::Matrix(matrix(c(rep(1.0, N), rep(-1.0, N)), nrow = 1L),
-                           sparse = TRUE)
-  A_box <- Matrix::Diagonal(2L * N)
-  A     <- rbind(A_eq, A_box)
-
-  l <- c(0.0, rep(0.0, 2L * N))
-  u <- c(0.0, rep(ub,  2L))        # ub recycled: [ub for α; ub for α*]
-
-  # ---- Solve ----
-  settings <- osqp::osqpSettings(
-    verbose  = FALSE,
-    eps_abs  = 1e-8,
-    eps_rel  = 1e-8,
-    max_iter = 10000L
-  )
-  res <- osqp::solve_osqp(P, q, A, l, u, pars = settings)
-
-  if (!startsWith(res$info$status, "solved")) {
-    warning("osqp status: ", res$info$status)
-  }
-
-  alpha      <- res$x[seq_len(N)]
-  alpha_star <- res$x[seq_len(N) + N]
-  beta       <- alpha - alpha_star
-
-  # ---- Recover bias b ----
-  # Ω·β = N-vector of f(xk) - b values
-  Kbeta <- as.numeric(Omega %*% beta)
-
-  free_up <- which(alpha      > tol & alpha      < ub - tol)
-  free_lo <- which(alpha_star > tol & alpha_star < ub - tol)
-
-  b_up <- y[free_up] * (1.0 - scale) - Kbeta[free_up]  # from yk - f(xk) = ε*yk/100
-  b_lo <- y[free_lo] * (1.0 + scale) - Kbeta[free_lo]  # from f(xk) - yk = ε*yk/100
-
-  b_vals <- c(b_up, b_lo)
-
-  if (length(b_vals) == 0L) {
-    # No free SVs: sandwich b between KKT bounds from saturated SVs
-    sat_up <- which(alpha      > tol)   # αk = ub  → b ≤ yk*(1-ε/100) - Kbeta[k]
-    sat_lo <- which(alpha_star > tol)   # αk*= ub  → b ≥ yk*(1+ε/100) - Kbeta[k]
-    bub_bound <- if (length(sat_up) > 0L) min(y[sat_up] * (1.0 - scale) - Kbeta[sat_up]) else  Inf
-    blb_bound <- if (length(sat_lo) > 0L) max(y[sat_lo] * (1.0 + scale) - Kbeta[sat_lo]) else -Inf
-    b <- if (is.finite(bub_bound) && is.finite(blb_bound)) (bub_bound + blb_bound) / 2
-         else if (is.finite(bub_bound)) bub_bound
-         else if (is.finite(blb_bound)) blb_bound
-         else 0.0
+  if (solver == "smo") {
+    sol        <- .smo_solve(Omega, y, C, eps)
+    alpha      <- sol$alpha
+    alpha_star <- sol$alpha_star
+    beta       <- alpha - alpha_star
+    b          <- sol$b
   } else {
-    b <- mean(b_vals)
+    if (!requireNamespace("osqp", quietly = TRUE)) {
+      stop('solver = "osqp" requires the osqp package. Install it with:\n',
+           '  install.packages("osqp")')
+    }
+    # ---- QP matrices ----
+    # P = [Ω, -Ω; -Ω, Ω], upper triangular for osqp
+    P_dense <- rbind(cbind(Omega, -Omega), cbind(-Omega, Omega))
+    P       <- Matrix::triu(Matrix::Matrix(P_dense, sparse = TRUE))
+
+    # q = [y(ε/100 - 1); y(1 + ε/100)]
+    q <- c(y * (scale - 1.0), y * (1.0 + scale))
+
+    # ---- Constraint matrix ----
+    # Row 1:        [1ᵀ, -1ᵀ] u = 0   (equality: Σαk = Σαk*)
+    # Rows 2..2N+1: I_{2N} u ∈ [0, ub] (per-variable box)
+    A_eq  <- Matrix::Matrix(matrix(c(rep(1.0, N), rep(-1.0, N)), nrow = 1L),
+                             sparse = TRUE)
+    A_box <- Matrix::Diagonal(2L * N)
+    A     <- rbind(A_eq, A_box)
+
+    l <- c(0.0, rep(0.0, 2L * N))
+    u <- c(0.0, rep(ub,  2L))        # ub recycled: [ub for α; ub for α*]
+
+    # ---- Solve ----
+    settings <- osqp::osqpSettings(
+      verbose  = FALSE,
+      eps_abs  = 1e-8,
+      eps_rel  = 1e-8,
+      max_iter = 10000L
+    )
+    res <- osqp::solve_osqp(P, q, A, l, u, pars = settings)
+
+    if (!startsWith(res$info$status, "solved")) {
+      warning("osqp status: ", res$info$status)
+    }
+
+    alpha      <- res$x[seq_len(N)]
+    alpha_star <- res$x[seq_len(N) + N]
+    beta       <- alpha - alpha_star
+
+    # ---- Recover bias b ----
+    # Ω·β = N-vector of f(xk) - b values
+    Kbeta <- as.numeric(Omega %*% beta)
+
+    free_up <- which(alpha      > tol & alpha      < ub - tol)
+    free_lo <- which(alpha_star > tol & alpha_star < ub - tol)
+
+    b_up <- y[free_up] * (1.0 - scale) - Kbeta[free_up]  # from yk - f(xk) = ε*yk/100
+    b_lo <- y[free_lo] * (1.0 + scale) - Kbeta[free_lo]  # from f(xk) - yk = ε*yk/100
+
+    b_vals <- c(b_up, b_lo)
+
+    if (length(b_vals) == 0L) {
+      # No free SVs: sandwich b between KKT bounds from saturated SVs
+      sat_up <- which(alpha      > tol)   # αk = ub  → b ≤ yk*(1-ε/100) - Kbeta[k]
+      sat_lo <- which(alpha_star > tol)   # αk*= ub  → b ≥ yk*(1+ε/100) - Kbeta[k]
+      bub_bound <- if (length(sat_up) > 0L) min(y[sat_up] * (1.0 - scale) - Kbeta[sat_up]) else  Inf
+      blb_bound <- if (length(sat_lo) > 0L) max(y[sat_lo] * (1.0 + scale) - Kbeta[sat_lo]) else -Inf
+      b <- if (is.finite(bub_bound) && is.finite(blb_bound)) (bub_bound + blb_bound) / 2
+           else if (is.finite(bub_bound)) bub_bound
+           else if (is.finite(blb_bound)) blb_bound
+           else 0.0
+    } else {
+      b <- mean(b_vals)
+    }
   }
 
   # ---- Retain support vectors only ----

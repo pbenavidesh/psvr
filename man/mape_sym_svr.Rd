@@ -4,7 +4,16 @@
 \alias{mape_sym_svr}
 \title{Fit symmetric epsilon-SVR with MAPE loss (Model 2)}
 \usage{
-mape_sym_svr(X, y, kernel, C, eps, a = 1, tol = 1e-05)
+mape_sym_svr(
+  X,
+  y,
+  kernel,
+  C,
+  eps,
+  a = 1,
+  solver = c("smo", "osqp"),
+  tol = 1e-05
+)
 }
 \arguments{
 \item{X}{Numeric matrix of training inputs, one observation per row (N × p).}
@@ -19,6 +28,14 @@ mape_sym_svr(X, y, kernel, C, eps, a = 1, tol = 1e-05)
 
 \item{a}{Symmetry parameter: \code{1} for even symmetry \code{f(x) = f(-x)},
 \code{-1} for odd symmetry \code{f(x) = -f(-x)}.}
+
+\item{solver}{Backend that solves the dual QP.  \code{"smo"} (default) uses an
+internal libsvm-style SMO solver with no third-party dependency; \code{"osqp"}
+delegates to the \code{osqp} package.  Both backends solve the same QP and
+return the same support vectors and bias up to numerical tolerance.
+When \code{solver = "smo"}, the \verb{½} factor on the symmetric kernel \code{Ks} lives
+in the effective \verb{Omega = ½·Ks} passed to the solver, so the
+prediction-time \verb{½} in the symmetric representer theorem is unchanged.}
 
 \item{tol}{Threshold below which \verb{|βk|} is treated as zero (default \code{1e-5}).}
 }
