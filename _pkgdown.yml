@@ -97,6 +97,7 @@ reference:
       - rbf_sigma_psvr_data
       - psvr_option_add
       - cost_psvr
+      - sym_type_param
 
   - title: "Internal fit wrappers"
     desc: "Low-level bridge functions called by parsnip; not for direct use."
