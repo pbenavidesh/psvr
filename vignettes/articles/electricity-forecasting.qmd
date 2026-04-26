@@ -55,14 +55,16 @@ family incorporate this symmetrisation.
 Temporal causality requires that model selection use rolling-origin
 cross-validation (Hyndman & Athanasopoulos, 2021) rather than random splits.
 Leaking future observations into any training fold would produce optimistically
-biased CV estimates and invalidate the hyperparameter selection step. The
-rolling-origin protocol with 30 expanding windows adopted here is the time
-series analog of the 30-seed protocol used in the companion cross-section case
-studies, ensuring a comparably stable estimate of expected generalisation
-performance. In total, 12 models are evaluated: six psvr variants (Models 1–4,
-with LS-RMSPE appearing twice for MAPE- and RMSPE-optimised CV selection),
-three ML baselines (standard RBF-SVR, Random Forest, Linear Regression), and
-three time-series baselines (ARIMAX, ETS, Prophet with regressors).
+biased CV estimates and invalidate the hyperparameter selection step.
+A rolling-origin protocol with 10 expanding windows is adopted here, the time
+series analog of the multi-seed protocol used in the companion cross-section
+case studies. The number of windows is bounded by the available training
+horizon: with a 12-month initial training period and 1-month assessment windows
+over a 24-month training set, additional folds beyond ten are highly correlated
+and contribute diminishing information. In total, 12 models are evaluated: six 
+psvr variants (Models 1–4, with LS-RMSPE appearing twice for MAPE- and RMSPE-optimised
+ CV selection), three ML baselines (standard RBF-SVR, Random Forest, Linear Regression), 
+and three time-series baselines (ARIMAX, ETS, Prophet with regressors).
 
 ## 2 Setup
 
@@ -84,6 +86,8 @@ library(future)
 
 tidymodels_prefer()
 theme_set(theme_bw(base_size = 12))
+
+here::i_am("vignettes/articles/electricity-forecasting.qmd")
 ```
 
 ## 3 Data
@@ -482,10 +486,15 @@ yardstick equivalent to RMSPE. `m3a` and `m4a` use MAPE. The model structure
 is identical in both cases; only hyperparameter selection differs.
 :::
 
+
 ```{r}
 #| label: tuning
 
-results_file <- "case-studies/results/electricity-tune-results.rds"
+
+results_file <- here::here(
+  "vignettes/articles/case-studies/results/electricity-tune-results.rds"
+)
+
 
 if (!file.exists(results_file)) {
 
@@ -703,7 +712,10 @@ get_fold_preds <- function(wflow_id, tune_id, select_metric, ...) {
 }
 
 # ── Steps 5–6: Per-model per-fold metrics, assemble, save ─────────────
-results_file <- "case-studies/results/electricity-results.csv"
+results_file <- here::here(
+  "vignettes/articles/case-studies/results/electricity-results.csv"
+)
+
 
 if (!file.exists(results_file)) {
 
@@ -788,6 +800,86 @@ print(results |>
   summarise(mean_MAPE = round(mean(MAPE, na.rm = TRUE), 3),
             .groups = "drop") |>
   arrange(mean_MAPE))
+```
+
+## 9.2 Selected hyperparameters
+
+A summary of hyperparameters selected by CV is reported below. The non-symmetric and symmetric LS-RMSPE variants converge to identical $(C, \sigma)$, isolating the contribution of the symmetric kernel from the tuning process.
+
+```{r}
+#| label: hyperparameters-table
+
+hp_registry <- tibble::tribble(
+  ~wflow_id,           ~select_metric, ~label,                              ~has_tuning,
+  "kernel_m1",         "mape",         "SVR-MAPE",                          TRUE,
+  "kernel_m2",         "mape",         "SVR-MAPE + Sym. Kernel",            TRUE,
+  "kernel_m3a",        "mape",         "LS-RMSPE",                          TRUE,
+  "kernel_m4a",        "mape",         "LS-RMSPE + Sym. Kernel",            TRUE,
+  "kernel_b1_svrmse",  "mape",         "ε-SVR (MSE)",                       TRUE,
+  "full_b2_rf",        "mape",         "Random Forest",                     TRUE
+)
+
+best_hp <- purrr::pmap_dfr(
+  hp_registry |> dplyr::filter(has_tuning),
+  function(wflow_id, select_metric, label, has_tuning) {
+    res  <- extract_workflow_set_result(tune_all, wflow_id)
+    best <- select_best(res, metric = select_metric)
+    cv   <- collect_metrics(res) |>
+      dplyr::filter(.config == best$.config, .metric == "mape") |>
+      dplyr::slice(1)
+    tibble::tibble(
+      Model       = label,
+      C           = if ("cost"       %in% names(best)) best$cost       else NA_real_,
+      epsilon     = if ("svm_margin" %in% names(best)) best$svm_margin else NA_real_,
+      sigma       = if ("rbf_sigma"  %in% names(best)) best$rbf_sigma  else NA_real_,
+      gamma       = if ("rbf_sigma"  %in% names(best)) 1 / (2 * best$rbf_sigma^2) else NA_real_,
+      sym_type    = if ("sym_type"   %in% names(best)) as.character(best$sym_type) else NA_character_,
+      mtry        = if ("mtry"       %in% names(best)) best$mtry       else NA_integer_,
+      cv_MAPE_pct = cv$mean,
+      cv_SE       = cv$std_err
+    )
+  }
+)
+
+best_hp |>
+  dplyr::mutate(
+    `C`           = ifelse(is.na(C),        "—", format(C)),
+    `ε`           = ifelse(is.na(epsilon),  "—", format(epsilon)),
+    `σ`           = ifelse(is.na(sigma),    "—", sprintf("%.3f", sigma)),
+    `γ`           = ifelse(is.na(gamma),    "—", sprintf("%.3f", gamma)),
+    `Symmetry`    = ifelse(is.na(sym_type), "—", sym_type),
+    `mtry`        = ifelse(is.na(mtry),     "—", as.character(mtry)),
+    `CV MAPE (%)` = sprintf("%.3f ± %.3f", cv_MAPE_pct, cv_SE)
+  ) |>
+  dplyr::select(Model, C, `ε`, `σ`, `γ`, Symmetry, mtry, `CV MAPE (%)`) |>
+  knitr::kable(
+    format  = "html",
+    align   = c("l", rep("r", 7)),
+    caption = paste(
+      "Hyperparameters selected by 10-fold rolling-origin CV.",
+      "γ = 1/(2σ²) gives the equivalent RBF gamma in the e1071/sklearn parameterisation.",
+      "LS-RMSPE and LS-RMSPE + Sym. Kernel select identical (C, σ),",
+      "isolating the contribution of the symmetric kernel structure."
+    )
+  ) |>
+  kableExtra::kable_styling(
+    bootstrap_options = c("striped", "hover"),
+    full_width = FALSE
+  ) |>
+  kableExtra::footnote(
+    general = paste(
+      "Linear Regression and TS baselines have no tunable hyperparameters",
+      "in this experiment and are omitted from this table."
+    ),
+    general_title = "Note:"
+  )
+
+hp_results_file <- here::here(
+  "vignettes/articles/case-studies/results/electricity-best-hp.csv"
+)
+if (!file.exists(hp_results_file)) {
+  readr::write_csv(best_hp, hp_results_file)
+}
 ```
 
 ## 10 Results
@@ -1179,7 +1271,7 @@ or rapid prototyping is prioritised, automatic TS methods retain an advantage.
 #| label: downloads
 
 xfun::embed_file(
-  "case-studies/results/electricity-tune-results.rds",
+  here::here("vignettes/articles/case-studies/results/electricity-tune-results.rds"),
   text = "Download tuning results (.rds)"
 )
 ```
