@@ -7,3 +7,7 @@ inst/doc
 .claude/
 docs
 *_files
+
+# Consolidated tune objects (large, regenerable from run_all_experiments.R)
+vignettes/articles/case-studies/results/*-tune-results.rds
+vignettes/articles/case-studies/results/partial/*_tune.rds

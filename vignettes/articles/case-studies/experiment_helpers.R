@@ -5,8 +5,26 @@
 # pipeline: outer 80/20 split via rsample::make_splits, inner 5-fold CV via
 # vfold_cv, tuning via workflow_set + tune_grid, final eval via last_fit.
 #
-# Output CSV schema is unchanged from v1 so downstream sections of the QMDs
-# (summary table, box plots, Wilcoxon) read the same columns.
+# Output CSV schema: downstream sections of the QMDs (summary table, box plots,
+# Wilcoxon) operate on metric columns only and ignore new HP columns.
+#
+# SCHEMA CHANGE NOTE:
+# As of 2026-04-26, run_seed() also exports selected hyperparameters
+# (cost_selected, epsilon_selected, sigma_selected, gamma_selected,
+# sym_type_selected, mtry_selected, xgb_*_selected). Existing partial RDS
+# files (results/partial/*.rds) and result CSVs were saved under the old
+# schema and must be deleted to regenerate with the new columns:
+#
+#   rm vignettes/articles/case-studies/results/partial/*.rds
+#   rm vignettes/articles/case-studies/results/{boston,diabetes,energy-efficiency}-results.csv
+#
+# Then re-run run_all_experiments.R for each dataset.
+#
+# Tune objects (workflow_set tune_results, one per seed) are also persisted as
+# results/<dataset>-tune-results.rds, mirroring electricity-forecasting.qmd's
+# electricity-tune-results.rds. This enables post-hoc extraction of selected
+# hyperparameters and tuning artifacts without re-running 30 seeds.
+# These RDS files are ~15-20 MB per dataset; they are .gitignored.
 #
 # Callers must library() these packages: tidyverse, tidymodels, psvr,
 # kernlab, ranger, xgboost, quantreg, e1071, hardhat, furrr, future.
@@ -291,7 +309,10 @@ fit_log_svr_seed <- function(X_tr, y_tr, X_te, seed,
     cost = best$cost, epsilon = best$eps,
     gamma = best$gamma, scale = FALSE
   )
-  exp(as.numeric(predict(fit_final, X_te_s)))
+  list(
+    pred = exp(as.numeric(predict(fit_final, X_te_s))),
+    hp   = list(cost = best$cost, epsilon = best$eps, gamma = best$gamma)
+  )
 }
 
 # ── SECTION 5: Per-seed driver ────────────────────────────────────────────────
@@ -401,7 +422,18 @@ run_seed <- function(X, y, seed, dataset_name) {
       model_id = model_id, label = label,
       abbrev   = abbrev, family = family
     ) |>
-      dplyr::bind_cols(met)
+      dplyr::bind_cols(met) |>
+      dplyr::mutate(
+        cost_selected      = if ("cost"       %in% names(best)) best$cost       else NA_real_,
+        epsilon_selected   = if ("svm_margin" %in% names(best)) best$svm_margin else NA_real_,
+        sigma_selected     = if ("rbf_sigma"  %in% names(best)) best$rbf_sigma  else NA_real_,
+        gamma_selected     = if ("rbf_sigma"  %in% names(best)) 1 / (2 * best$rbf_sigma^2) else NA_real_,
+        sym_type_selected  = if ("sym_type"   %in% names(best)) as.character(best$sym_type) else NA_character_,
+        mtry_selected      = if ("mtry"       %in% names(best)) best$mtry       else NA_integer_,
+        xgb_trees_selected = if ("trees"      %in% names(best)) best$trees      else NA_integer_,
+        xgb_lr_selected    = if ("learn_rate" %in% names(best)) best$learn_rate else NA_real_,
+        xgb_depth_selected = if ("tree_depth" %in% names(best)) best$tree_depth else NA_integer_
+      )
   }
 
   score_untuned <- function(wf, model_id, label, abbrev, family) {
@@ -415,7 +447,18 @@ run_seed <- function(X, y, seed, dataset_name) {
       model_id = model_id, label = label,
       abbrev   = abbrev, family = family
     ) |>
-      dplyr::bind_cols(met)
+      dplyr::bind_cols(met) |>
+      dplyr::mutate(
+        cost_selected      = NA_real_,
+        epsilon_selected   = NA_real_,
+        sigma_selected     = NA_real_,
+        gamma_selected     = NA_real_,
+        sym_type_selected  = NA_character_,
+        mtry_selected      = NA_integer_,
+        xgb_trees_selected = NA_integer_,
+        xgb_lr_selected    = NA_real_,
+        xgb_depth_selected = NA_integer_
+      )
   }
 
   results <- list()
@@ -457,7 +500,7 @@ run_seed <- function(X, y, seed, dataset_name) {
                               "WLS", "baseline")
 
   # ── b6: bespoke Log-SVR ────────────────────────────────────────
-  yhat_b6 <- tryCatch(
+  b6_out <- tryCatch(
     fit_log_svr_seed(
       X_tr = X[tr_idx, , drop = FALSE], y_tr = y[tr_idx],
       X_te = X[va_idx, , drop = FALSE], seed = seed
@@ -465,9 +508,11 @@ run_seed <- function(X, y, seed, dataset_name) {
     error = function(e) {
       warning(sprintf("[%s] seed %d b6 failed: %s",
                       dataset_name, seed, conditionMessage(e)))
-      rep(NA_real_, length(va_idx))
+      list(pred = rep(NA_real_, length(va_idx)), hp = NULL)
     }
   )
+  yhat_b6 <- b6_out$pred
+  b6_hp   <- b6_out$hp
   met_b6 <- if (anyNA(yhat_b6)) {
     tibble::tibble(MAPE = NA_real_, RMSPE = NA_real_, MAAPE = NA_real_,
                    MASE = NA_real_, MSE = NA_real_, R2 = NA_real_)
@@ -479,7 +524,18 @@ run_seed <- function(X, y, seed, dataset_name) {
     model_id = "b6", label = "Log-SVR",
     abbrev   = "Log-SVR", family = "baseline"
   ) |>
-    dplyr::bind_cols(met_b6)
+    dplyr::bind_cols(met_b6) |>
+    dplyr::mutate(
+      cost_selected      = if (!is.null(b6_hp)) b6_hp$cost    else NA_real_,
+      epsilon_selected   = if (!is.null(b6_hp)) b6_hp$epsilon else NA_real_,
+      sigma_selected     = NA_real_,
+      gamma_selected     = if (!is.null(b6_hp)) b6_hp$gamma   else NA_real_,
+      sym_type_selected  = NA_character_,
+      mtry_selected      = NA_integer_,
+      xgb_trees_selected = NA_integer_,
+      xgb_lr_selected    = NA_real_,
+      xgb_depth_selected = NA_integer_
+    )
 
   # ── b7a: bespoke quantreg::rq with τ = 0.5 ─────────────────────
   # parsnip's "quantile regression" mode returns quantile_pred objects
@@ -514,14 +570,29 @@ run_seed <- function(X, y, seed, dataset_name) {
     model_id = "b7a", label = "QR (τ = 0.5)",
     abbrev   = "QR", family = "baseline"
   ) |>
-    dplyr::bind_cols(met_b7a)
+    dplyr::bind_cols(met_b7a) |>
+    dplyr::mutate(
+      cost_selected      = NA_real_,
+      epsilon_selected   = NA_real_,
+      sigma_selected     = NA_real_,
+      gamma_selected     = NA_real_,
+      sym_type_selected  = NA_character_,
+      mtry_selected      = NA_integer_,
+      xgb_trees_selected = NA_integer_,
+      xgb_lr_selected    = NA_real_,
+      xgb_depth_selected = NA_integer_
+    )
 
-  dplyr::bind_rows(results)
+  list(
+    metrics = dplyr::bind_rows(results),
+    tune    = tune_results
+  )
 }
 
 # ── SECTION 6: Sequential experiment runner ───────────────────────────────────
 # In-process driver for QMD render-time fallback (when CSV is missing).
-# Wraps run_seed() over `seeds` and returns a single tidy tibble.
+# Wraps run_seed() over `seeds` and returns a single tidy tibble (metrics only;
+# tune objects are not persisted in sequential mode).
 
 run_experiment <- function(X, y, dataset_name, seeds = 1:30, verbose = TRUE) {
   stopifnot(is.matrix(X), is.numeric(y), all(y > 0))
@@ -533,7 +604,7 @@ run_experiment <- function(X, y, dataset_name, seeds = 1:30, verbose = TRUE) {
       message(sprintf("[%s] seed %02d/%d", dataset_name, s, max(seeds)))
     }
     results[[i]] <- tryCatch(
-      run_seed(X, y, seed = s, dataset_name = dataset_name),
+      run_seed(X, y, seed = s, dataset_name = dataset_name)$metrics,
       error = function(e) {
         warning(sprintf("[%s] seed %d failed: %s",
                         dataset_name, s, conditionMessage(e)))
@@ -602,9 +673,14 @@ run_experiment_parallel <- function(X, y, dataset_name,
 
       if (!is.null(seed_results)) {
         saveRDS(
-          seed_results,
+          seed_results$metrics,
           file.path("results", "partial",
                     sprintf("%s_seed_%02d.rds", dataset_name, s))
+        )
+        saveRDS(
+          seed_results$tune,
+          file.path("results", "partial",
+                    sprintf("%s_seed_%02d_tune.rds", dataset_name, s))
         )
       }
     }, .options = furrr::furrr_options(seed = TRUE))
@@ -634,6 +710,32 @@ run_experiment_parallel <- function(X, y, dataset_name,
     "[%s] Saved: %s  (%d rows, %d NA-MAPE)\n",
     dataset_name, out_csv,
     nrow(results), sum(is.na(results$MAPE))))
+
+  tune_rds_files <- file.path(
+    partial_dir,
+    sprintf("%s_seed_%02d_tune.rds", dataset_name, seeds))
+  tune_present <- tune_rds_files[file.exists(tune_rds_files)]
+  if (length(tune_present) == length(seeds)) {
+    tune_consolidated <- purrr::map(
+      seeds,
+      function(s) {
+        readRDS(file.path(partial_dir,
+                          sprintf("%s_seed_%02d_tune.rds", dataset_name, s)))
+      }
+    )
+    names(tune_consolidated) <- sprintf("seed_%02d", seeds)
+    out_tune_rds <- file.path(
+      "results",
+      sprintf("%s-tune-results.rds", gsub("_", "-", dataset_name)))
+    saveRDS(tune_consolidated, out_tune_rds)
+    message(sprintf("[%s] Saved consolidated tune objects: %s",
+                    dataset_name, out_tune_rds))
+  } else {
+    message(sprintf(
+      "[%s] Skipping tune consolidation: %d/%d tune partials present.",
+      dataset_name, length(tune_present), length(seeds)))
+  }
+
   invisible(results)
 }
 
