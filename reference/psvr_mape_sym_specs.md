@@ -2,10 +2,9 @@
 
 Create parsnip model specifications for
 [`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md)
-with a fixed kernel type. Even symmetry (`a = 1L`) is the default and
-does not need to be specified in
-[`set_engine()`](https://parsnip.tidymodels.org/reference/set_engine.html).
-Pass `set_engine("psvr", a = -1L)` to request odd symmetry instead.
+with a fixed kernel type. The symmetry type is exposed as the tunable
+`sym_type` argument (`"even"` for a = 1, `"odd"` for a = -1); pass
+`sym_type = tune()` to let CV select it automatically.
 
 ## Usage
 
@@ -15,7 +14,8 @@ psvr_mape_sym_rbf(
   engine = "psvr",
   cost = NULL,
   svm_margin = NULL,
-  rbf_sigma = NULL
+  rbf_sigma = NULL,
+  sym_type = NULL
 )
 
 psvr_mape_sym_poly(
@@ -72,6 +72,12 @@ psvr_mape_sym_linear(
   [`rbf_sigma_psvr()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.md);
   the search range auto-finalizes using the median-distance heuristic
   when training data are available. (RBF specs only.)
+
+- sym_type:
+
+  Symmetry type: `"even"` (default, a = 1) or `"odd"` (a = -1). Use
+  [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
+  to optimise over both values during CV.
 
 - degree:
 

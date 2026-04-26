@@ -11,7 +11,7 @@ rmspe_lssvr(), or rmspe_sym_lssvr() directly instead."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9003</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -66,7 +66,15 @@ Not intended for direct use; call <code><a href="mape_svr.html">mape_svr()</a></
 <span></span>
 <span><span class="fu">psvr_mape_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">psvr_mape_sym_rbf_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, rbf_sigma <span class="op">=</span> <span class="fl">1</span>, a <span class="op">=</span> <span class="fl">1L</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span>
+<span><span class="fu">psvr_mape_sym_rbf_fit</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  <span class="va">y</span>,</span>
+<span>  <span class="va">C</span>,</span>
+<span>  <span class="va">eps</span>,</span>
+<span>  rbf_sigma <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  sym_type <span class="op">=</span> <span class="st">"even"</span>,</span>
+<span>  tol <span class="op">=</span> <span class="fl">1e-05</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">psvr_mape_sym_poly_fit</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
@@ -87,7 +95,7 @@ Not intended for direct use; call <code><a href="mape_svr.html">mape_svr()</a></
 <span></span>
 <span><span class="fu">psvr_rmspe_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">psvr_rmspe_sym_rbf_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, rbf_sigma <span class="op">=</span> <span class="fl">1</span>, a <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span><span class="fu">psvr_rmspe_sym_rbf_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, rbf_sigma <span class="op">=</span> <span class="fl">1</span>, sym_type <span class="op">=</span> <span class="st">"even"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">psvr_rmspe_sym_poly_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, degree <span class="op">=</span> <span class="fl">3L</span>, scale_factor <span class="op">=</span> <span class="fl">1</span>, a <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
 <span></span>
@@ -130,8 +138,9 @@ Not intended for direct use; call <code><a href="mape_svr.html">mape_svr()</a></
 <dd><p>Polynomial constant term (coef₀).</p></dd>
 
 
-<dt id="arg-a">a<a class="anchor" aria-label="anchor" href="#arg-a"></a></dt>
-<dd><p>Symmetry parameter (<code>1L</code> or <code>-1L</code>) for symmetric models.</p></dd>
+<dt id="arg-sym-type">sym_type<a class="anchor" aria-label="anchor" href="#arg-sym-type"></a></dt>
+<dd><p>Symmetry type (<code>"even"</code> or <code>"odd"</code>) for symmetric models;
+translated to <code>a = 1L</code> or <code>a = -1L</code> before calling the solver.</p></dd>
 
 
 <dt id="arg-gamma">gamma<a class="anchor" aria-label="anchor" href="#arg-gamma"></a></dt>

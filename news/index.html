@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9003</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9004</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,6 +47,15 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.0.9004" id="psvr-0009004">psvr 0.0.0.9004<a class="anchor" aria-label="anchor" href="#psvr-0009004"></a></h2>
+<div class="section level4">
+<h4 id="new-features-0-0-0-9004">New features<a class="anchor" aria-label="anchor" href="#new-features-0-0-0-9004"></a></h4>
+<ul><li>
+<code>sym_type</code> is now a tunable parsnip argument in <code><a href="../reference/psvr_mape_sym_specs.html">psvr_mape_sym_rbf()</a></code> and <code><a href="../reference/psvr_rmspe_sym_specs.html">psvr_rmspe_sym_rbf()</a></code>. Pass <code>sym_type = tune()</code> to let CV select between even (a = 1) and odd (a = -1) symmetry automatically.</li>
+<li>Engine default <code>a = 1L</code> removed from symmetric RBF specs; symmetry type is now controlled exclusively through the <code>sym_type</code> model argument.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.0.9003" id="psvr-0009003">psvr 0.0.0.9003<a class="anchor" aria-label="anchor" href="#psvr-0009003"></a></h2>
 <div class="section level3">

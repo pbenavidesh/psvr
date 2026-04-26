@@ -1,5 +1,19 @@
 # Changelog
 
+## psvr 0.0.0.9004
+
+#### New features
+
+- `sym_type` is now a tunable parsnip argument in
+  [`psvr_mape_sym_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.md)
+  and
+  [`psvr_rmspe_sym_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.md).
+  Pass `sym_type = tune()` to let CV select between even (a = 1) and odd
+  (a = -1) symmetry automatically.
+- Engine default `a = 1L` removed from symmetric RBF specs; symmetry
+  type is now controlled exclusively through the `sym_type` model
+  argument.
+
 ## psvr 0.0.0.9003
 
 ### UX improvements
