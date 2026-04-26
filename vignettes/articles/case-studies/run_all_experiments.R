@@ -76,8 +76,14 @@ if ("boston" %in% DATASETS_TO_RUN) {
 
 if ("diabetes" %in% DATASETS_TO_RUN) {
   data("diabetes", package = "lars")
+  X_diab_clean <- matrix(
+    as.numeric(diabetes$x),
+    nrow = nrow(diabetes$x),
+    ncol = ncol(diabetes$x),
+    dimnames = list(NULL, colnames(diabetes$x))
+  )
   datasets$diabetes <- list(
-    X    = as.matrix(diabetes$x),
+    X    = X_diab_clean,
     y    = as.numeric(diabetes$y),
     name = "diabetes"
   )
