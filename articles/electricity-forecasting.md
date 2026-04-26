@@ -328,7 +328,7 @@ cat("Custom rbf_sigma range (log10): [",
     round(r$lower, 4), ",", round(r$upper, 4), "]\n")
 ```
 
-    Custom rbf_sigma range (log10): [ -0.5278 , 1.4722 ]
+    Custom rbf_sigma range (log10): [ -0.5204 , 1.4796 ]
 
 ## 7 Model specifications
 
@@ -1208,7 +1208,7 @@ test_metrics |>
 | SVR-MAPE + Sym. Kernel              | psvr        |   3.4169 | 0.0466 | 0.8571 |
 | LS-RMSPE + Sym. Kernel (MAPE opt.)  | psvr        |   3.4961 | 0.0484 | 0.8442 |
 | LS-RMSPE + Sym. Kernel (RMSPE opt.) | psvr        |   3.4961 | 0.0484 | 0.8442 |
-| Random Forest                       | ML baseline |   4.0113 | 0.0600 | 0.7993 |
+| Random Forest                       | ML baseline |   3.9937 | 0.0592 | 0.8010 |
 | Prophet + regressors                | TS baseline |   5.6621 | 0.0873 | 0.5025 |
 | ARIMAX                              | TS baseline |  10.3658 | 0.1377 | 0.3267 |
 | ETS                                 | TS baseline |  18.3294 | 0.2108 | 0.3138 |
@@ -1280,7 +1280,7 @@ mase_results |>
 | SVR-MAPE + Sym. Kernel              |       0.5288 |
 | LS-RMSPE + Sym. Kernel (MAPE opt.)  |       0.5444 |
 | LS-RMSPE + Sym. Kernel (RMSPE opt.) |       0.5444 |
-| Random Forest                       |       0.6379 |
+| Random Forest                       |       0.6331 |
 | Prophet + regressors                |       0.9190 |
 | ARIMAX                              |       1.7158 |
 | ETS                                 |       2.9869 |
