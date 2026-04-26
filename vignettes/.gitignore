@@ -1,4 +1,6 @@
 *.html
+*.R
+!articles/case-studies/*.R
 
 /.quarto/
 **/*.quarto_ipynb
