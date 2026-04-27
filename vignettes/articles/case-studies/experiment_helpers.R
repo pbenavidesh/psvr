@@ -1,26 +1,44 @@
 # experiment_helpers.R
-# 2026-04-25
-# Tidymodels-based runner for psvr cross-section case studies (Phase 2).
-# Replaces the v1 manual cv_grid() loop with a per-seed nested-resampling
-# pipeline: outer 80/20 split via rsample::make_splits, inner 5-fold CV via
-# vfold_cv, tuning via workflow_set + tune_grid, final eval via last_fit.
+# 2026-04-26
+# Tidymodels-based runner for psvr cross-section case studies (Phase 3).
+# Replaces tune_grid with tune_bayes (GP surrogate + EI) and uses the
+# native SMO solver (psvr >= 0.3.0) as default backend.
+# Phase 2 grid-search results preserved as *-results-grid-osqp.csv.
+#
+# Per-seed nested-resampling pipeline: outer 80/20 split via
+# rsample::make_splits, inner 5-fold CV via vfold_cv, tuning via
+# workflow_set + tune_bayes, final eval via last_fit.
+#
+# BO budget per model follows the 5×p rule (p = number of tunable HPs),
+# targeting up to 50 evaluations per model with no_improve = 15 early stop:
+#   m1 (3 HPs):  initial=15, iter=35
+#   m2 (4 HPs):  initial=20, iter=30
+#   m3 (2 HPs):  initial=10, iter=40
+#   m4 (3 HPs):  initial=15, iter=35
+#   b1 (2 HPs):  initial=10, iter=40
+#   b2 (1 HP) :  initial= 5, iter=45
+#   b3 (3 HPs):  initial=15, iter=35
+#
+# Parameter ranges match the Phase 2 grid bounds (cost ∈ [0.1, 100],
+# svm_margin ∈ [0.01, 1], rbf_sigma data-driven via sigma_heuristic, etc.)
+# so the BO comparison against grid-osqp is a fair search-strategy test
+# (same search space, different sampler).
 #
 # Output CSV schema: downstream sections of the QMDs (summary table, box plots,
-# Wilcoxon) operate on metric columns only and ignore new HP columns.
+# Wilcoxon) operate on metric columns only and ignore HP columns.
 #
 # SCHEMA CHANGE NOTE:
-# As of 2026-04-26, run_seed() also exports selected hyperparameters
-# (cost_selected, epsilon_selected, sigma_selected, gamma_selected,
-# sym_type_selected, mtry_selected, xgb_*_selected). Existing partial RDS
-# files (results/partial/*.rds) and result CSVs were saved under the old
-# schema and must be deleted to regenerate with the new columns:
+# Phase 3 tune_results objects from tune_bayes have a different internal
+# structure than the Phase 2 tune_grid results. Existing partial RDS files
+# from Phase 2 (results/partial/*.rds) MUST be deleted before re-running,
+# otherwise the resume logic will load Phase 2 results and skip BO seeds:
 #
 #   rm vignettes/articles/case-studies/results/partial/*.rds
-#   rm vignettes/articles/case-studies/results/{boston,diabetes,energy-efficiency}-results.csv
 #
-# Then re-run run_all_experiments.R for each dataset.
+# The Phase 2 final CSVs are preserved as *-results-grid-osqp.csv and
+# committed to the repo as the grid-search baseline.
 #
-# Tune objects (workflow_set tune_results, one per seed) are also persisted as
+# Tune objects (workflow_set tune_results, one per seed) are persisted as
 # results/<dataset>-tune-results.rds, mirroring electricity-forecasting.qmd's
 # electricity-tune-results.rds. This enables post-hoc extraction of selected
 # hyperparameters and tuning artifacts without re-running 30 seeds.
@@ -118,121 +136,67 @@ compute_metrics <- function(y, yhat, y_train) {
   }
 }
 
-# ── SECTION 3: Specs and grids ────────────────────────────────────────────────
+# ── SECTION 3: Specs ──────────────────────────────────────────────────────────
 # Returns a named list keyed by tune_id (m1, m2, m3, m4, b1, b2, b3) with
-#   $spec         parsnip model_spec
-#   $grid         data.frame of hyperparameter combinations
+#   $spec          parsnip model_spec
 #   $select_metric character vector of CV metrics to call select_best() with
-# `p` is the number of predictors (used for RF mtry grid).
+#
+# Phase 3: grids removed — parameter ranges are set per-workflow inside
+# run_seed() via param_info / option_add(), and tune_bayes samples from
+# those ranges using a GP surrogate. The function name is kept for callsite
+# stability.
 
-make_specs_and_grids <- function(p) {
-
-  # Shared psvr grids (matching v1 conventions)
-  rbf_sigmas <- c(0.224, 0.707, 2.236, 7.071)   # psvr σ scale
-  Cs         <- c(0.1, 1, 10, 100)
-  epsilons   <- c(0.01, 0.1, 1)
-  Gammas     <- c(0.1, 1, 10, 100)
-
-  # b1 uses kernlab's σ parameterisation (K = exp(-σ‖x-y‖²)).
-  # The user-specified set for the cross-section refactor.
-  rbf_sigmas_kernlab <- c(1.494, 0.841, 0.473, 0.266)
-
-  # ── m1: SVR-MAPE (48) ─────────────────────────────────────────
+make_specs_and_grids <- function() {
   spec_m1 <- psvr::psvr_mape_rbf(
     cost = tune::tune(), svm_margin = tune::tune(),
     rbf_sigma = tune::tune()
   ) |>
     parsnip::set_engine("psvr")
-  grid_m1 <- expand.grid(
-    cost       = Cs,
-    svm_margin = epsilons,
-    rbf_sigma  = rbf_sigmas,
-    stringsAsFactors = FALSE
-  )
 
-  # ── m2: SVR-MAPE + Sym. Kernel (96 = 4·3·4·2) ─────────────────
   spec_m2 <- psvr::psvr_mape_sym_rbf(
     cost = tune::tune(), svm_margin = tune::tune(),
     rbf_sigma = tune::tune(), sym_type = tune::tune()
   ) |>
     parsnip::set_engine("psvr")
-  grid_m2 <- expand.grid(
-    cost       = Cs,
-    svm_margin = epsilons,
-    rbf_sigma  = rbf_sigmas,
-    sym_type   = c("even", "odd"),
-    stringsAsFactors = FALSE
-  )
 
-  # ── m3: LS-RMSPE (16) — selected twice for m3a/m3b ────────────
   spec_m3 <- psvr::psvr_rmspe_rbf(
     cost = tune::tune(), rbf_sigma = tune::tune()
   ) |>
     parsnip::set_engine("psvr")
-  grid_m3 <- expand.grid(
-    cost      = Gammas,
-    rbf_sigma = rbf_sigmas,
-    stringsAsFactors = FALSE
-  )
 
-  # ── m4: LS-RMSPE + Sym. Kernel (32 = 4·4·2) ───────────────────
   spec_m4 <- psvr::psvr_rmspe_sym_rbf(
     cost = tune::tune(), rbf_sigma = tune::tune(),
     sym_type = tune::tune()
   ) |>
     parsnip::set_engine("psvr")
-  grid_m4 <- expand.grid(
-    cost      = Gammas,
-    rbf_sigma = rbf_sigmas,
-    sym_type  = c("even", "odd"),
-    stringsAsFactors = FALSE
-  )
 
-  # ── b1: ε-SVR (kernlab) (16) ──────────────────────────────────
   spec_b1 <- parsnip::svm_rbf(
     cost = tune::tune(), rbf_sigma = tune::tune()
   ) |>
     parsnip::set_engine("kernlab") |>
     parsnip::set_mode("regression")
-  grid_b1 <- expand.grid(
-    cost      = Cs,
-    rbf_sigma = rbf_sigmas_kernlab,
-    stringsAsFactors = FALSE
-  )
 
-  # ── b2: Random Forest (≤ 6) ───────────────────────────────────
-  mtry_vals <- unique(c(2L, floor(sqrt(p)), floor(p / 2L)))
   spec_b2 <- parsnip::rand_forest(
     mtry = tune::tune(), trees = 500
   ) |>
     parsnip::set_engine("ranger", seed = 1L) |>
     parsnip::set_mode("regression")
-  grid_b2 <- data.frame(mtry = mtry_vals)
 
-  # ── b3: XGBoost (8) ───────────────────────────────────────────
   spec_b3 <- parsnip::boost_tree(
     trees = tune::tune(), learn_rate = tune::tune(),
     tree_depth = tune::tune()
   ) |>
     parsnip::set_engine("xgboost") |>
     parsnip::set_mode("regression")
-  grid_b3 <- expand.grid(
-    trees      = c(100L, 300L),
-    learn_rate = c(0.05, 0.1),
-    tree_depth = c(3L, 6L),
-    stringsAsFactors = FALSE
-  )
 
   list(
-    m1 = list(spec = spec_m1, grid = grid_m1, select_metric = "mape"),
-    m2 = list(spec = spec_m2, grid = grid_m2, select_metric = "mape"),
-    m3 = list(spec = spec_m3, grid = grid_m3,
-              select_metric = c("mape", "rmse")),  # m3a, m3b
-    m4 = list(spec = spec_m4, grid = grid_m4,
-              select_metric = c("mape", "rmse")),  # m4a, m4b
-    b1 = list(spec = spec_b1, grid = grid_b1, select_metric = "rmse"),
-    b2 = list(spec = spec_b2, grid = grid_b2, select_metric = "rmse"),
-    b3 = list(spec = spec_b3, grid = grid_b3, select_metric = "rmse")
+    m1 = list(spec = spec_m1, select_metric = "mape"),
+    m2 = list(spec = spec_m2, select_metric = "mape"),
+    m3 = list(spec = spec_m3, select_metric = c("mape", "rmse")),  # m3a, m3b
+    m4 = list(spec = spec_m4, select_metric = c("mape", "rmse")),  # m4a, m4b
+    b1 = list(spec = spec_b1, select_metric = "rmse"),
+    b2 = list(spec = spec_b2, select_metric = "rmse"),
+    b3 = list(spec = spec_b3, select_metric = "rmse")
   )
 }
 
@@ -354,22 +318,13 @@ run_seed <- function(X, y, seed, dataset_name) {
   rec_default <- recipes::recipe(y ~ ., data = train_df) |>
     recipes::step_normalize(recipes::all_numeric_predictors())
 
-  sg <- make_specs_and_grids(p = ncol(X))
+  sg <- make_specs_and_grids()
 
   metric_set_all <- yardstick::metric_set(
     yardstick::mape, yardstick::rmse, yardstick::rsq
   )
 
-  ctrl <- tune::control_grid(
-    save_pred = FALSE,
-    verbose   = FALSE,
-    allow_par = FALSE
-  )
-
-  # ── Build tunable workflow_set; apply data-driven rbf_sigma range ──
-  # psvr_option_add() sets a per-workflow param_info with a data-driven
-  # rbf_sigma range derived from the median pairwise distance of the baked
-  # training predictors. Mirrors the pattern in electricity-forecasting.qmd.
+  # ── Build tunable workflow_set ──
   wf_set <- workflowsets::workflow_set(
     preproc = list(default = rec_default),
     models  = list(
@@ -383,20 +338,82 @@ run_seed <- function(X, y, seed, dataset_name) {
     recipes::prep() |>
     recipes::bake(new_data = train_df)
   predictor_only <- train_baked |> dplyr::select(-y, -.wts)
-  wf_set         <- psvr::psvr_option_add(wf_set, predictor_only)
 
-  # ── Tune each model (each id has its own explicit grid) ──
+  # ── Per-workflow param_info (matching Phase 2 grid bounds for fair
+  #    BO-vs-grid comparison; rbf_sigma data-driven for psvr models) ──
+  rbf_sigma_param   <- psvr::rbf_sigma_psvr_data(predictor_only)
+  cost_param        <- dials::cost(
+    range = c(-1, 2), trans = scales::log10_trans()
+  )
+  svm_margin_param  <- dials::svm_margin(
+    range = c(-2, 0), trans = scales::log10_trans()
+  )
+  rbf_sigma_kernlab <- dials::rbf_sigma(
+    range = c(log10(0.266), log10(1.494)),
+    trans = scales::log10_trans()
+  )
+  mtry_param_b2     <- dials::mtry(
+    range = c(2L, max(2L, floor(ncol(X) / 2L)))
+  )
+  trees_param       <- dials::trees(range = c(100L, 300L))
+  learn_rate_param  <- dials::learn_rate(range = c(0.05, 0.1), trans = NULL)
+  tree_depth_param  <- dials::tree_depth(range = c(3L, 6L))
+
+  set_pi <- function(wf_set, wf_id, ...) {
+    pi <- workflowsets::extract_workflow(wf_set, id = wf_id) |>
+      tune::extract_parameter_set_dials() |>
+      stats::update(...)
+    workflowsets::option_add(wf_set, param_info = pi, id = wf_id)
+  }
+  wf_set <- set_pi(wf_set, "default_m1",
+                   cost = cost_param, svm_margin = svm_margin_param,
+                   rbf_sigma = rbf_sigma_param)
+  wf_set <- set_pi(wf_set, "default_m2",
+                   cost = cost_param, svm_margin = svm_margin_param,
+                   rbf_sigma = rbf_sigma_param)
+  wf_set <- set_pi(wf_set, "default_m3",
+                   cost = cost_param, rbf_sigma = rbf_sigma_param)
+  wf_set <- set_pi(wf_set, "default_m4",
+                   cost = cost_param, rbf_sigma = rbf_sigma_param)
+  wf_set <- set_pi(wf_set, "default_b1",
+                   cost = cost_param, rbf_sigma = rbf_sigma_kernlab)
+  wf_set <- set_pi(wf_set, "default_b2",
+                   mtry = mtry_param_b2)
+  wf_set <- set_pi(wf_set, "default_b3",
+                   trees = trees_param, learn_rate = learn_rate_param,
+                   tree_depth = tree_depth_param)
+
+  # ── Tune each model via Bayesian optimisation (GP + EI) ──
+  bayes_iters <- list(
+    m1 = list(initial = 15L, iter = 35L),
+    m2 = list(initial = 20L, iter = 30L),
+    m3 = list(initial = 10L, iter = 40L),
+    m4 = list(initial = 15L, iter = 35L),
+    b1 = list(initial = 10L, iter = 40L),
+    b2 = list(initial =  5L, iter = 45L),
+    b3 = list(initial = 15L, iter = 35L)
+  )
+
+  ctrl_bayes <- tune::control_bayes(
+    verbose    = FALSE,
+    no_improve = 15L,
+    save_pred  = FALSE,
+    allow_par  = FALSE,
+    seed       = seed
+  )
+
   tune_results <- list()
   for (mid in c("m1", "m2", "m3", "m4", "b1", "b2", "b3")) {
     wf_id <- paste0("default_", mid)
     tune_results[[mid]] <- wf_set |>
       dplyr::filter(wflow_id == wf_id) |>
       workflowsets::workflow_map(
-        fn        = "tune_grid",
+        fn        = "tune_bayes",
         resamples = folds,
-        grid      = sg[[mid]]$grid,
+        initial   = bayes_iters[[mid]]$initial,
+        iter      = bayes_iters[[mid]]$iter,
         metrics   = metric_set_all,
-        control   = ctrl,
+        control   = ctrl_bayes,
         seed      = seed,
         verbose   = FALSE
       )
