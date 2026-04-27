@@ -47,6 +47,8 @@
 # Callers must library() these packages: tidyverse, tidymodels, psvr,
 # kernlab, ranger, xgboost, quantreg, e1071, hardhat, furrr, future.
 
+here::i_am("vignettes/articles/case-studies/experiment_helpers.R")
+
 # ── SECTION 1: Model label lookup table ──────────────────────────────────────
 
 MODEL_LABELS <- tibble::tibble(
@@ -644,7 +646,7 @@ run_experiment_parallel <- function(X, y, dataset_name,
     workers <- max(1L, parallel::detectCores() - 1L)
   }
 
-  partial_dir <- file.path("results", "partial")
+  partial_dir <- here::here("vignettes/articles/case-studies/results", "partial")
   dir.create(partial_dir, showWarnings = FALSE, recursive = TRUE)
 
   done <- seeds[file.exists(
@@ -691,13 +693,13 @@ run_experiment_parallel <- function(X, y, dataset_name,
       if (!is.null(seed_results)) {
         saveRDS(
           seed_results$metrics,
-          file.path("results", "partial",
-                    sprintf("%s_seed_%02d.rds", dataset_name, s))
+          here::here("vignettes/articles/case-studies/results", "partial",
+                     sprintf("%s_seed_%02d.rds", dataset_name, s))
         )
         saveRDS(
           seed_results$tune,
-          file.path("results", "partial",
-                    sprintf("%s_seed_%02d_tune.rds", dataset_name, s))
+          here::here("vignettes/articles/case-studies/results", "partial",
+                     sprintf("%s_seed_%02d_tune.rds", dataset_name, s))
         )
       }
     }, .options = furrr::furrr_options(seed = TRUE))
@@ -719,8 +721,8 @@ run_experiment_parallel <- function(X, y, dataset_name,
   }
 
   results <- purrr::map_dfr(rds_files, readRDS)
-  out_csv <- file.path(
-    "results",
+  out_csv <- here::here(
+    "vignettes/articles/case-studies/results",
     sprintf("%s-results.csv", gsub("_", "-", dataset_name)))
   readr::write_csv(results, out_csv)
   message(sprintf(
@@ -741,8 +743,8 @@ run_experiment_parallel <- function(X, y, dataset_name,
       }
     )
     names(tune_consolidated) <- sprintf("seed_%02d", seeds)
-    out_tune_rds <- file.path(
-      "results",
+    out_tune_rds <- here::here(
+      "vignettes/articles/case-studies/results",
       sprintf("%s-tune-results.rds", gsub("_", "-", dataset_name)))
     saveRDS(tune_consolidated, out_tune_rds)
     message(sprintf("[%s] Saved consolidated tune objects: %s",

@@ -1,6 +1,6 @@
 # run_all_experiments.R
 # ─────────────────────────────────────────────────────────────
-# 30-seed benchmark for psvr cross-section case studies (Phase 2).
+# 30-seed benchmark for psvr cross-section case studies (Phase 3).
 # Tidymodels-based pipeline. Run from RStudio with working
 # directory set to:
 #   vignettes/articles/case-studies/
@@ -37,7 +37,9 @@ library(hardhat)
 
 tidymodels_prefer()
 
-source("vignettes/articles/case-studies/experiment_helpers.R")
+library(here)
+here::i_am("vignettes/articles/case-studies/run_all_experiments.R")
+source(here::here("vignettes/articles/case-studies/experiment_helpers.R"))
 
 # ── CONFIGURATION ─────────────────────────────────────────────
 # Edit this vector to control which datasets this machine runs.
@@ -96,7 +98,7 @@ if ("energy_efficiency" %in% DATASETS_TO_RUN) {
   ee_url   <- paste0(
     "https://archive.ics.uci.edu/ml/machine-learning-databases/",
     "00242/ENB2012_data.xlsx")
-  ee_local <- file.path("vignettes/articles/case-studies/results", "ENB2012_data.xlsx")
+  ee_local <- here::here("vignettes/articles/case-studies/results", "ENB2012_data.xlsx")
   if (!file.exists(ee_local)) {
     message("Downloading Energy Efficiency dataset...")
     download.file(ee_url, ee_local, mode = "wb", quiet = TRUE)
@@ -115,9 +117,9 @@ if ("energy_efficiency" %in% DATASETS_TO_RUN) {
 # ── RUN ───────────────────────────────────────────────────────
 
 for (ds in datasets) {
-  out_csv <- file.path("vignettes/articles/case-studies/results",
-                       sprintf("%s-results.csv",
-                               gsub("_", "-", ds$name)))
+  out_csv <- here::here("vignettes/articles/case-studies/results",
+                        sprintf("%s-results.csv",
+                                gsub("_", "-", ds$name)))
   if (file.exists(out_csv)) {
     message(sprintf(
       "\n[%s] Final CSV exists — skipping. Delete to re-run.\n",
@@ -133,9 +135,9 @@ for (ds in datasets) {
 
 message("\n── Verification ──────────────────────────────────────")
 for (ds_name in DATASETS_TO_RUN) {
-  f <- file.path("vignettes/articles/case-studies/results",
-                 sprintf("%s-results.csv",
-                         gsub("_", "-", ds_name)))
+  f <- here::here("vignettes/articles/case-studies/results",
+                  sprintf("%s-results.csv",
+                          gsub("_", "-", ds_name)))
   if (file.exists(f)) {
     df  <- readr::read_csv(f, show_col_types = FALSE)
     nas <- sum(is.na(df$MAPE))
