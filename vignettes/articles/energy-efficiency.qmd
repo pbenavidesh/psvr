@@ -348,13 +348,13 @@ linear quantile regression when ordinal features are present.
 ```{r}
 #| label: downloads
 
-xfun::embed_file(
-  "case-studies/experiment_helpers.R",
-  text = "Download experiment helper script (.R)"
-)
-
-xfun::embed_file(
-  "case-studies/results/energy-efficiency-results.csv",
-  text = "Download full results (30 seeds x 13 models x 6 metrics)"
-)
+# xfun::embed_file(
+#   "case-studies/experiment_helpers.R",
+#   text = "Download experiment helper script (.R)"
+# )
+# 
+# xfun::embed_file(
+#   "case-studies/results/energy-efficiency-results.csv",
+#   text = "Download full results (30 seeds x 13 models x 6 metrics)"
+# )
 ```

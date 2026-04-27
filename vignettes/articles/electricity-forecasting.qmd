@@ -1270,10 +1270,10 @@ or rapid prototyping is prioritised, automatic TS methods retain an advantage.
 ```{r}
 #| label: downloads
 
-xfun::embed_file(
-  here::here("vignettes/articles/case-studies/results/electricity-tune-results.rds"),
-  text = "Download tuning results (.rds)"
-)
+# xfun::embed_file(
+#   here::here("vignettes/articles/case-studies/results/electricity-tune-results.rds"),
+#   text = "Download tuning results (.rds)"
+# )
 ```
 
 ## References

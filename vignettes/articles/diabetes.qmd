@@ -323,13 +323,13 @@ remains competitive on this dataset.
 ```{r}
 #| label: downloads
 
-xfun::embed_file(
-  "case-studies/experiment_helpers.R",
-  text = "Download experiment helper script (.R)"
-)
-
-xfun::embed_file(
-  "case-studies/results/diabetes-results.csv",
-  text = "Download full results (30 seeds x 13 models x 6 metrics)"
-)
+# xfun::embed_file(
+#   "case-studies/experiment_helpers.R",
+#   text = "Download experiment helper script (.R)"
+# )
+# 
+# xfun::embed_file(
+#   "case-studies/results/diabetes-results.csv",
+#   text = "Download full results (30 seeds x 13 models x 6 metrics)"
+# )
 ```
