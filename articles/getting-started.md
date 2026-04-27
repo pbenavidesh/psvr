@@ -161,9 +161,9 @@ pred_ep <- predict(fit_ep, X_te)
 
 cat(sprintf("ε-SVR MAPE    — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
             mape(y_te, pred_ep), rmspe(y_te, pred_ep), r2(y_te, pred_ep)))
-#> ε-SVR MAPE    — MAPE: 15.77%  RMSPE: 27.54%  R²: 0.7617
+#> ε-SVR MAPE    — MAPE: 15.76%  RMSPE: 27.54%  R²: 0.7617
 cat(sprintf("Support vectors: %d / %d\n", length(fit_ep$beta), nrow(X_tr)))
-#> Support vectors: 328 / 354
+#> Support vectors: 327 / 354
 print(fit_ep)
 #> 
 #> Epsilon-SVR with MAPE loss  [psvr_mape]
@@ -172,7 +172,7 @@ print(fit_ep)
 #>   C:               10
 #>   eps:             1
 #>   Training obs.:   354
-#>   Support vectors: 328 (92.7%)
+#>   Support vectors: 327 (92.4%)
 ```
 
 ![](getting-started_files/figure-html/mape-plot-1.png)
@@ -185,7 +185,7 @@ cf_ep <- coef(fit_ep)
 # X_sv:  training rows corresponding to support vectors only
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf_ep$b, min(cf_ep$alpha), max(cf_ep$alpha)))
-#> b = 23.1097  |  alpha range: [-111.5496, 82.6446]
+#> b = 23.1087  |  alpha range: [-110.6876, 82.6446]
 ```
 
 ## Comparing objectives
@@ -215,7 +215,7 @@ knitr::kable(results, col.names = c("Model", "MAPE (%)", "RMSPE (%)", "R²"),
 |:-----------------------|---------:|----------:|-----:|
 | Linear regression      |    16.29 |     22.48 | 0.77 |
 | LS-SVR RMSPE (Model 3) |    15.46 |     27.21 | 0.73 |
-| ε-SVR MAPE (Model 1)   |    15.77 |     27.54 | 0.76 |
+| ε-SVR MAPE (Model 1)   |    15.76 |     27.54 | 0.76 |
 
 Test-set performance on Boston Housing (70/30 split, RBF kernel, single
 run).

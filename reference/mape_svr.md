@@ -7,7 +7,7 @@ et al. (2026) via `osqp`. The dual is expressed in variables
 ## Usage
 
 ``` r
-mape_svr(X, y, kernel, C, eps, tol = 1e-05)
+mape_svr(X, y, kernel, C, eps, solver = c("smo", "osqp"), tol = 1e-05)
 ```
 
 ## Arguments
@@ -33,6 +33,14 @@ mape_svr(X, y, kernel, C, eps, tol = 1e-05)
 
   Insensitivity tube half-width `ε ≥ 0` (in percentage units, i.e., the
   tube is `ε%` of each target).
+
+- solver:
+
+  Backend that solves the dual QP. `"smo"` (default) uses an internal
+  libsvm-style SMO solver with no third-party dependency; `"osqp"`
+  delegates to the `osqp` package (which then becomes a soft
+  requirement). Both backends solve the same QP and return the same
+  support vectors and bias up to numerical tolerance.
 
 - tol:
 
@@ -101,5 +109,5 @@ y <- c(2.1, 3.8, 6.2)
 K <- make_kernel("rbf", sigma = 1)
 fit <- mape_svr(X, y, kernel = K, C = 10, eps = 5)
 predict(fit, X)
-#> [1] 2.205002 3.990000 5.889998
+#> [1] 2.207585 3.988709 5.888707
 ```

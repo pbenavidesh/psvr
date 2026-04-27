@@ -68,7 +68,7 @@
       <h1>Case Study: Victorian Electricity Demand</h1>
       <p class="subtitle">Time series forecasting with psvr, modeltime, and tidymodels</p>
       <p class="author">Pablo Benavides-Herrera</p>
-      <p class="date">2026-04-26</p>
+      <p class="date">2026-04-27</p>
 
 
       <div class="d-none name"><code></code></div>
@@ -89,7 +89,7 @@
 </h2>
 <p>Electricity demand forecasting is a canonical application where relative accuracy—measured by the Mean Absolute Percentage Error (MAPE)—carries direct operational significance. Victoria, Australia operates a competitive spot market in which generators must submit binding supply offers one day ahead; a 5% forecast error on a 200 MWh peak day and a 5% error on an 80 MWh off-peak day have proportionally equivalent implications for reserve capacity planning and dispatch scheduling. Absolute-error objectives such as MSE or MAE do not respect this symmetry, motivating loss functions that explicitly penalise relative deviations. The four psvr models studied here are derived from percentage-error loss functions—MAPE and RMSPE—and provide a principled alternative to standard SVR for this setting.</p>
 <p>An additional structural feature of daily electricity demand motivates exploration of symmetric kernels. After seasonal decomposition and mean centering, days with similar temperatures on opposite sides of the seasonal cycle—spring versus autumn—exhibit comparable demand profiles. The symmetric kernel <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>K</mi><mi>s</mi></msup><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo>,</mo><msup><mi>x</mi><mo>′</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mi>K</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo>,</mo><msup><mi>x</mi><mo>′</mo></msup><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mi>a</mi><mo>⋅</mo><mi>K</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo>,</mo><mi>−</mi><msup><mi>x</mi><mo>′</mo></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">K^s(x, x') = K(x, x') + a \cdot K(x, -x')</annotation></semantics></math> captures this reflected structure explicitly: the cross-term <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>K</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo>,</mo><mi>−</mi><msup><mi>x</mi><mo>′</mo></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">K(x, -x')</annotation></semantics></math> measures similarity between <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math> and the reflection of <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>x</mi><mo>′</mo></msup><annotation encoding="application/x-tex">x'</annotation></semantics></math>, so pairs of days that are symmetric under the seasonal mean are assigned high kernel affinity. Models 2 and 4 in the psvr family incorporate this symmetrisation.</p>
-<p>Temporal causality requires that model selection use rolling-origin cross-validation (Hyndman &amp; Athanasopoulos, 2021) rather than random splits. Leaking future observations into any training fold would produce optimistically biased CV estimates and invalidate the hyperparameter selection step. The rolling-origin protocol with 30 expanding windows adopted here is the time series analog of the 30-seed protocol used in the companion cross-section case studies, ensuring a comparably stable estimate of expected generalisation performance. In total, 12 models are evaluated: six psvr variants (Models 1–4, with LS-RMSPE appearing twice for MAPE- and RMSPE-optimised CV selection), three ML baselines (standard RBF-SVR, Random Forest, Linear Regression), and three time-series baselines (ARIMAX, ETS, Prophet with regressors).</p>
+<p>Temporal causality requires that model selection use rolling-origin cross-validation (Hyndman &amp; Athanasopoulos, 2021) rather than random splits. Leaking future observations into any training fold would produce optimistically biased CV estimates and invalidate the hyperparameter selection step. A rolling-origin protocol with 10 expanding windows is adopted here, the time series analog of the multi-seed protocol used in the companion cross-section case studies. The number of windows is bounded by the available training horizon: with a 12-month initial training period and 1-month assessment windows over a 24-month training set, additional folds beyond ten are highly correlated and contribute diminishing information. In total, 12 models are evaluated: six psvr variants (Models 1–4, with LS-RMSPE appearing twice for MAPE- and RMSPE-optimised CV selection), three ML baselines (standard RBF-SVR, Random Forest, Linear Regression), and three time-series baselines (ARIMAX, ETS, Prophet with regressors).</p>
 </section><section class="level2"><h2 id="setup">2 Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
 </h2>
 <div class="cell">
@@ -108,7 +108,9 @@
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://future.futureverse.org" class="external-link">future</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://tidymodels.tidymodels.org/reference/tidymodels_prefer.html" class="external-link">tidymodels_prefer</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/get_theme.html" class="external-link">theme_set</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">12</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/get_theme.html" class="external-link">theme_set</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span>base_size <span class="op">=</span> <span class="fl">12</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">here</span><span class="fu">::</span><span class="fu"><a href="https://here.r-lib.org/reference/i_am.html" class="external-link">i_am</a></span><span class="op">(</span><span class="st">"vignettes/articles/electricity-forecasting.qmd"</span><span class="op">)</span></span></code></pre></div>
 </details>
 </div>
 </section><section class="level2"><h2 id="data">3 Data<a class="anchor" aria-label="anchor" href="#data"></a>
@@ -337,7 +339,7 @@
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Custom rbf_sigma range (log10): ["</span>,</span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">r</span><span class="op">$</span><span class="va">lower</span>, <span class="fl">4</span><span class="op">)</span>, <span class="st">","</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">r</span><span class="op">$</span><span class="va">upper</span>, <span class="fl">4</span><span class="op">)</span>, <span class="st">"]\n"</span><span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output cell-output-stdout">
-<pre><code>Custom rbf_sigma range (log10): [ -0.5204 , 1.4796 ]</code></pre>
+<pre><code>Custom rbf_sigma range (log10): [ -0.5176 , 1.4824 ]</code></pre>
 </div>
 </div>
 </section><section class="level2"><h2 id="model-specifications">7 Model specifications<a class="anchor" aria-label="anchor" href="#model-specifications"></a>
@@ -549,7 +551,10 @@
 </div>
 <div class="cell">
 <details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb37"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">results_file</span> <span class="op">&lt;-</span> <span class="st">"case-studies/results/electricity-tune-results.rds"</span></span>
+<code class="sourceCode R"><span><span class="va">results_file</span> <span class="op">&lt;-</span> <span class="fu">here</span><span class="fu">::</span><span class="fu"><a href="https://here.r-lib.org/reference/here.html" class="external-link">here</a></span><span class="op">(</span></span>
+<span>  <span class="st">"vignettes/articles/case-studies/results/electricity-tune-results.rds"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
 <span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">results_file</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span></span>
@@ -785,7 +790,10 @@
 <span><span class="op">}</span></span>
 <span></span>
 <span><span class="co"># ── Steps 5–6: Per-model per-fold metrics, assemble, save ─────────────</span></span>
-<span><span class="va">results_file</span> <span class="op">&lt;-</span> <span class="st">"case-studies/results/electricity-results.csv"</span></span>
+<span><span class="va">results_file</span> <span class="op">&lt;-</span> <span class="fu">here</span><span class="fu">::</span><span class="fu"><a href="https://here.r-lib.org/reference/here.html" class="external-link">here</a></span><span class="op">(</span></span>
+<span>  <span class="st">"vignettes/articles/case-studies/results/electricity-results.csv"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
 <span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">results_file</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span></span>
@@ -896,12 +904,190 @@
 12 ts3      Prophet            6.87</code></pre>
 </div>
 </div>
+</section><section class="level2"><h2 id="selected-hyperparameters">9.2 Selected hyperparameters<a class="anchor" aria-label="anchor" href="#selected-hyperparameters"></a>
+</h2>
+<p>A summary of hyperparameters selected by CV is reported below. The non-symmetric and symmetric LS-RMSPE variants converge to identical <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mi>C</mi><mo>,</mo><mi>σ</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(C, \sigma)</annotation></semantics></math>, isolating the contribution of the symmetric kernel from the tuning process.</p>
+<div class="cell">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb48"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hp_registry</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tribble.html" class="external-link">tribble</a></span><span class="op">(</span></span>
+<span>  <span class="op">~</span><span class="va">wflow_id</span>,           <span class="op">~</span><span class="va">select_metric</span>, <span class="op">~</span><span class="va">label</span>,                              <span class="op">~</span><span class="va">has_tuning</span>,</span>
+<span>  <span class="st">"kernel_m1"</span>,         <span class="st">"mape"</span>,         <span class="st">"SVR-MAPE"</span>,                          <span class="cn">TRUE</span>,</span>
+<span>  <span class="st">"kernel_m2"</span>,         <span class="st">"mape"</span>,         <span class="st">"SVR-MAPE + Sym. Kernel"</span>,            <span class="cn">TRUE</span>,</span>
+<span>  <span class="st">"kernel_m3a"</span>,        <span class="st">"mape"</span>,         <span class="st">"LS-RMSPE"</span>,                          <span class="cn">TRUE</span>,</span>
+<span>  <span class="st">"kernel_m4a"</span>,        <span class="st">"mape"</span>,         <span class="st">"LS-RMSPE + Sym. Kernel"</span>,            <span class="cn">TRUE</span>,</span>
+<span>  <span class="st">"kernel_b1_svrmse"</span>,  <span class="st">"mape"</span>,         <span class="st">"ε-SVR (MSE)"</span>,                       <span class="cn">TRUE</span>,</span>
+<span>  <span class="st">"full_b2_rf"</span>,        <span class="st">"mape"</span>,         <span class="st">"Random Forest"</span>,                     <span class="cn">TRUE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">best_hp</span> <span class="op">&lt;-</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map_dfr.html" class="external-link">pmap_dfr</a></span><span class="op">(</span></span>
+<span>  <span class="va">hp_registry</span> <span class="op">|&gt;</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">has_tuning</span><span class="op">)</span>,</span>
+<span>  <span class="kw">function</span><span class="op">(</span><span class="va">wflow_id</span>, <span class="va">select_metric</span>, <span class="va">label</span>, <span class="va">has_tuning</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">res</span>  <span class="op">&lt;-</span> <span class="fu">extract_workflow_set_result</span><span class="op">(</span><span class="va">tune_all</span>, <span class="va">wflow_id</span><span class="op">)</span></span>
+<span>    <span class="va">best</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tune.tidymodels.org/reference/show_best.html" class="external-link">select_best</a></span><span class="op">(</span><span class="va">res</span>, metric <span class="op">=</span> <span class="va">select_metric</span><span class="op">)</span></span>
+<span>    <span class="va">cv</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_metrics</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">.config</span> <span class="op">==</span> <span class="va">best</span><span class="op">$</span><span class="va">.config</span>, <span class="va">.metric</span> <span class="op">==</span> <span class="st">"mape"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>      <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html" class="external-link">slice</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
+<span>    <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
+<span>      Model       <span class="op">=</span> <span class="va">label</span>,</span>
+<span>      C           <span class="op">=</span> <span class="kw">if</span> <span class="op">(</span><span class="st">"cost"</span>       <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">best</span><span class="op">)</span><span class="op">)</span> <span class="va">best</span><span class="op">$</span><span class="va">cost</span>       <span class="kw">else</span> <span class="cn">NA_real_</span>,</span>
+<span>      epsilon     <span class="op">=</span> <span class="kw">if</span> <span class="op">(</span><span class="st">"svm_margin"</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">best</span><span class="op">)</span><span class="op">)</span> <span class="va">best</span><span class="op">$</span><span class="va">svm_margin</span> <span class="kw">else</span> <span class="cn">NA_real_</span>,</span>
+<span>      sigma       <span class="op">=</span> <span class="kw">if</span> <span class="op">(</span><span class="st">"rbf_sigma"</span>  <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">best</span><span class="op">)</span><span class="op">)</span> <span class="va">best</span><span class="op">$</span><span class="va">rbf_sigma</span>  <span class="kw">else</span> <span class="cn">NA_real_</span>,</span>
+<span>      gamma       <span class="op">=</span> <span class="kw">if</span> <span class="op">(</span><span class="st">"rbf_sigma"</span>  <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">best</span><span class="op">)</span><span class="op">)</span> <span class="fl">1</span> <span class="op">/</span> <span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="va">best</span><span class="op">$</span><span class="va">rbf_sigma</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span> <span class="kw">else</span> <span class="cn">NA_real_</span>,</span>
+<span>      sym_type    <span class="op">=</span> <span class="kw">if</span> <span class="op">(</span><span class="st">"sym_type"</span>   <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">best</span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">best</span><span class="op">$</span><span class="va">sym_type</span><span class="op">)</span> <span class="kw">else</span> <span class="cn">NA_character_</span>,</span>
+<span>      mtry        <span class="op">=</span> <span class="kw">if</span> <span class="op">(</span><span class="st">"mtry"</span>       <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">best</span><span class="op">)</span><span class="op">)</span> <span class="va">best</span><span class="op">$</span><span class="va">mtry</span>       <span class="kw">else</span> <span class="cn">NA_integer_</span>,</span>
+<span>      cv_MAPE_pct <span class="op">=</span> <span class="va">cv</span><span class="op">$</span><span class="va">mean</span>,</span>
+<span>      cv_SE       <span class="op">=</span> <span class="va">cv</span><span class="op">$</span><span class="va">std_err</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">best_hp</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
+<span>    `C`           <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">C</span><span class="op">)</span>,        <span class="st">"—"</span>, <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">C</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    `ε`           <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">epsilon</span><span class="op">)</span>,  <span class="st">"—"</span>, <span class="fu"><a href="https://rdrr.io/r/base/format.html" class="external-link">format</a></span><span class="op">(</span><span class="va">epsilon</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    `σ`           <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">sigma</span><span class="op">)</span>,    <span class="st">"—"</span>, <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"%.3f"</span>, <span class="va">sigma</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    `γ`           <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">gamma</span><span class="op">)</span>,    <span class="st">"—"</span>, <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"%.3f"</span>, <span class="va">gamma</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    `Symmetry`    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">sym_type</span><span class="op">)</span>, <span class="st">"—"</span>, <span class="va">sym_type</span><span class="op">)</span>,</span>
+<span>    `mtry`        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">mtry</span><span class="op">)</span>,     <span class="st">"—"</span>, <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">mtry</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    `CV MAPE (%)` <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"%.3f ± %.3f"</span>, <span class="va">cv_MAPE_pct</span>, <span class="va">cv_SE</span><span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">Model</span>, <span class="va">C</span>, <span class="va">`ε`</span>, <span class="va">`σ`</span>, <span class="va">`γ`</span>, <span class="va">Symmetry</span>, <span class="va">mtry</span>, <span class="va">`CV MAPE (%)`</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span></span>
+<span>    format  <span class="op">=</span> <span class="st">"html"</span>,</span>
+<span>    align   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"l"</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"r"</span>, <span class="fl">7</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>    caption <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span>
+<span>      <span class="st">"Hyperparameters selected by 10-fold rolling-origin CV."</span>,</span>
+<span>      <span class="st">"γ = 1/(2σ²) gives the equivalent RBF gamma in the e1071/sklearn parameterisation."</span>,</span>
+<span>      <span class="st">"LS-RMSPE and LS-RMSPE + Sym. Kernel select identical (C, σ),"</span>,</span>
+<span>      <span class="st">"isolating the contribution of the symmetric kernel structure."</span></span>
+<span>    <span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">kableExtra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kableExtra/man/kable_styling.html" class="external-link">kable_styling</a></span><span class="op">(</span></span>
+<span>    bootstrap_options <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"striped"</span>, <span class="st">"hover"</span><span class="op">)</span>,</span>
+<span>    full_width <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">kableExtra</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/kableExtra/man/footnote.html" class="external-link">footnote</a></span><span class="op">(</span></span>
+<span>    general <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span></span>
+<span>      <span class="st">"Linear Regression and TS baselines have no tunable hyperparameters"</span>,</span>
+<span>      <span class="st">"in this experiment and are omitted from this table."</span></span>
+<span>    <span class="op">)</span>,</span>
+<span>    general_title <span class="op">=</span> <span class="st">"Note:"</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+</details><div class="cell-output-display">
+<table class="table table table-striped table-hover caption-top" style="width: auto !important; margin-left: auto; margin-right: auto;border-bottom: 0;">
+<caption>Hyperparameters selected by 10-fold rolling-origin CV. γ = 1/(2σ²) gives the equivalent RBF gamma in the e1071/sklearn parameterisation. LS-RMSPE and LS-RMSPE + Sym. Kernel select identical (C, σ), isolating the contribution of the symmetric kernel structure.</caption>
+<thead><tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Model</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">C</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">ε</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">σ</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">γ</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Symmetry</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">mtry</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">CV MAPE (%)</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">SVR-MAPE</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.01</td>
+<td style="text-align: right;">7.071</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">3.373 ± 0.168</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">SVR-MAPE + Sym. Kernel</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">1.00</td>
+<td style="text-align: right;">7.071</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: right;">odd</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">3.238 ± 0.217</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LS-RMSPE</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">2.236</td>
+<td style="text-align: right;">0.100</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">3.672 ± 0.147</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LS-RMSPE + Sym. Kernel</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">2.236</td>
+<td style="text-align: right;">0.100</td>
+<td style="text-align: right;">odd</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">3.371 ± 0.193</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">ε-SVR (MSE)</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">0.224</td>
+<td style="text-align: right;">9.965</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">3.383 ± 0.181</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Random Forest</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">4.529 ± 0.092</td>
+</tr>
+</tbody>
+<tfoot>
+<tr class="odd">
+<td style="text-align: left; padding: 0;"><span style="font-style: italic;">Note:</span></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+<tr class="even">
+<td style="text-align: left; padding: 0;">
+<sup></sup> Linear Regression and TS baselines have no tunable hyperparameters in this experiment and are omitted from this table.</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+</tr>
+</tfoot>
+</table>
+</div>
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb49"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">hp_results_file</span> <span class="op">&lt;-</span> <span class="fu">here</span><span class="fu">::</span><span class="fu"><a href="https://here.r-lib.org/reference/here.html" class="external-link">here</a></span><span class="op">(</span></span>
+<span>  <span class="st">"vignettes/articles/case-studies/results/electricity-best-hp.csv"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/files.html" class="external-link">file.exists</a></span><span class="op">(</span><span class="va">hp_results_file</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu">readr</span><span class="fu">::</span><span class="fu"><a href="https://readr.tidyverse.org/reference/write_delim.html" class="external-link">write_csv</a></span><span class="op">(</span><span class="va">best_hp</span>, <span class="va">hp_results_file</span><span class="op">)</span></span>
+<span><span class="op">}</span></span></code></pre></div>
+</details>
+</div>
 </section><section class="level2"><h2 id="results">10 Results<a class="anchor" aria-label="anchor" href="#results"></a>
 </h2>
 <section class="level3"><h3 id="cv-ranking-plot">10.1 CV ranking plot<a class="anchor" aria-label="anchor" href="#cv-ranking-plot"></a>
 </h3>
 <div class="cell">
-<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb48"><pre class="downlit sourceCode r">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb50"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span>  <span class="co"># Remove workflows with no valid results before ranking</span></span>
 <span>  <span class="va">tune_valid</span> <span class="op">&lt;-</span> <span class="va">tune_all</span> <span class="op">|&gt;</span></span>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map_lgl</a></span><span class="op">(</span><span class="va">result</span>, <span class="kw">function</span><span class="op">(</span><span class="va">r</span><span class="op">)</span> <span class="op">{</span></span>
@@ -949,7 +1135,7 @@
 </section><section class="level3"><h3 id="cv-summary-table">10.2 CV summary table<a class="anchor" aria-label="anchor" href="#cv-summary-table"></a>
 </h3>
 <div class="cell">
-<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb49"><pre class="downlit sourceCode r">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb51"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">options</a></span><span class="op">(</span>knitr.kable.NA <span class="op">=</span> <span class="st">"—"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">model_labels</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tribble.html" class="external-link">tribble</a></span><span class="op">(</span></span>
@@ -1090,7 +1276,7 @@
 </section><section class="level3"><h3 id="final-fit-and-test-set-forecast">10.3 Final fit and test-set forecast<a class="anchor" aria-label="anchor" href="#final-fit-and-test-set-forecast"></a>
 </h3>
 <div class="cell">
-<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb50"><pre class="downlit sourceCode r">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb52"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Helper: finalize workflow and refit on full train set</span></span>
 <span><span class="va">finalize_and_fit</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">wflow_id_str</span>,</span>
 <span>                              <span class="va">metric</span> <span class="op">=</span> <span class="st">"mape"</span><span class="op">)</span> <span class="op">{</span></span>
@@ -1159,7 +1345,7 @@
 </section><section class="level3"><h3 id="test-set-accuracy-table">10.4 Test-set accuracy table<a class="anchor" aria-label="anchor" href="#test-set-accuracy-table"></a>
 </h3>
 <div class="cell">
-<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb51"><pre class="downlit sourceCode r">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb53"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">test_metrics</span> <span class="op">&lt;-</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/imap.html" class="external-link">imap</a></span><span class="op">(</span><span class="va">fits</span>, <span class="kw">function</span><span class="op">(</span><span class="va">fit</span>, <span class="va">id</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span><span class="op">)</span> <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="cn">NULL</span><span class="op">)</span></span>
 <span>  <span class="va">metrics</span> <span class="op">&lt;-</span> <span class="kw"><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch</a></span><span class="op">(</span><span class="fu"><a href="https://tune.tidymodels.org/reference/collect_predictions.html" class="external-link">collect_metrics</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span>,</span>
@@ -1237,7 +1423,7 @@
 <tr class="even">
 <td style="text-align: left; background-color: rgba(234, 244, 251, 255) !important;">SVR-MAPE</td>
 <td style="text-align: left; background-color: rgba(234, 244, 251, 255) !important;">psvr</td>
-<td style="text-align: right; background-color: rgba(234, 244, 251, 255) !important;">3.2241</td>
+<td style="text-align: right; background-color: rgba(234, 244, 251, 255) !important;">3.2232</td>
 <td style="text-align: right; background-color: rgba(234, 244, 251, 255) !important;">0.0439</td>
 <td style="text-align: right; background-color: rgba(234, 244, 251, 255) !important;">0.8749</td>
 </tr>
@@ -1251,9 +1437,9 @@
 <tr class="even">
 <td style="text-align: left; background-color: rgba(234, 244, 251, 255) !important;">SVR-MAPE + Sym. Kernel</td>
 <td style="text-align: left; background-color: rgba(234, 244, 251, 255) !important;">psvr</td>
-<td style="text-align: right; background-color: rgba(234, 244, 251, 255) !important;">3.4169</td>
-<td style="text-align: right; background-color: rgba(234, 244, 251, 255) !important;">0.0466</td>
-<td style="text-align: right; background-color: rgba(234, 244, 251, 255) !important;">0.8571</td>
+<td style="text-align: right; background-color: rgba(234, 244, 251, 255) !important;">3.3667</td>
+<td style="text-align: right; background-color: rgba(234, 244, 251, 255) !important;">0.0464</td>
+<td style="text-align: right; background-color: rgba(234, 244, 251, 255) !important;">0.8526</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left; background-color: rgba(234, 244, 251, 255) !important;">LS-RMSPE + Sym. Kernel (MAPE opt.)</td>
@@ -1272,9 +1458,9 @@
 <tr class="odd">
 <td style="text-align: left;">Random Forest</td>
 <td style="text-align: left;">ML baseline</td>
-<td style="text-align: right;">3.9937</td>
-<td style="text-align: right;">0.0592</td>
-<td style="text-align: right;">0.8010</td>
+<td style="text-align: right;">3.9866</td>
+<td style="text-align: right;">0.0589</td>
+<td style="text-align: right;">0.8044</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Prophet + regressors</td>
@@ -1304,7 +1490,7 @@
 </section><section class="level3"><h3 id="mase-with-lag-7-denominator">10.5 MASE with lag-7 denominator<a class="anchor" aria-label="anchor" href="#mase-with-lag-7-denominator"></a>
 </h3>
 <div class="cell">
-<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb52"><pre class="downlit sourceCode r">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb54"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># For electricity demand, MASE uses lag-7 (weekly seasonal</span></span>
 <span><span class="co"># naive) as denominator — standard for daily data with</span></span>
 <span><span class="co"># weekly seasonality (Hyndman &amp; Koehler, 2006)</span></span>
@@ -1371,7 +1557,7 @@
 </tr>
 <tr class="even">
 <td style="text-align: left;">SVR-MAPE</td>
-<td style="text-align: right;">0.5025</td>
+<td style="text-align: right;">0.5024</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Linear Regression</td>
@@ -1379,7 +1565,7 @@
 </tr>
 <tr class="even">
 <td style="text-align: left;">SVR-MAPE + Sym. Kernel</td>
-<td style="text-align: right;">0.5288</td>
+<td style="text-align: right;">0.5236</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">LS-RMSPE + Sym. Kernel (MAPE opt.)</td>
@@ -1391,7 +1577,7 @@
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Random Forest</td>
-<td style="text-align: right;">0.6331</td>
+<td style="text-align: right;">0.6327</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Prophet + regressors</td>
@@ -1412,7 +1598,7 @@
 </section><section class="level3"><h3 id="forecast-plot">10.6 Forecast plot<a class="anchor" aria-label="anchor" href="#forecast-plot"></a>
 </h3>
 <div class="cell">
-<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb53"><pre class="downlit sourceCode r">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb55"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Combine all test predictions for plotting</span></span>
 <span><span class="va">all_preds</span> <span class="op">&lt;-</span> <span class="fu">purrr</span><span class="fu">::</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/imap.html" class="external-link">imap</a></span><span class="op">(</span><span class="va">fits</span>, <span class="kw">function</span><span class="op">(</span><span class="va">fit</span>, <span class="va">id</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span><span class="op">)</span> <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="cn">NULL</span><span class="op">)</span></span>
@@ -1466,9 +1652,9 @@
 </section><section class="level2"><h2 id="downloadable-files">12 Downloadable files<a class="anchor" aria-label="anchor" href="#downloadable-files"></a>
 </h2>
 <div class="cell">
-<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb54"><pre class="downlit sourceCode r">
+<details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb56"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">xfun</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/xfun/man/embed_file.html" class="external-link">embed_file</a></span><span class="op">(</span></span>
-<span>  <span class="st">"case-studies/results/electricity-tune-results.rds"</span>,</span>
+<span>  <span class="fu">here</span><span class="fu">::</span><span class="fu"><a href="https://here.r-lib.org/reference/here.html" class="external-link">here</a></span><span class="op">(</span><span class="st">"vignettes/articles/case-studies/results/electricity-tune-results.rds"</span><span class="op">)</span>,</span>
 <span>  text <span class="op">=</span> <span class="st">"Download tuning results (.rds)"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </details><div class="cell-output-display">

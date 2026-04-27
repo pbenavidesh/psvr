@@ -60,7 +60,7 @@ u = [α; α*] ∈ R^{2N} with:"></head><body>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">mape_svr</span><span class="op">(</span><span class="va">X</span>, <span class="va">y</span>, <span class="va">kernel</span>, <span class="va">C</span>, <span class="va">eps</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">mape_svr</span><span class="op">(</span><span class="va">X</span>, <span class="va">y</span>, <span class="va">kernel</span>, <span class="va">C</span>, <span class="va">eps</span>, solver <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"smo"</span>, <span class="st">"osqp"</span><span class="op">)</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -86,6 +86,14 @@ u = [α; α*] ∈ R^{2N} with:"></head><body>
 <dt id="arg-eps">eps<a class="anchor" aria-label="anchor" href="#arg-eps"></a></dt>
 <dd><p>Insensitivity tube half-width <code>ε ≥ 0</code> (in percentage units,
 i.e., the tube is <code>ε%</code> of each target).</p></dd>
+
+
+<dt id="arg-solver">solver<a class="anchor" aria-label="anchor" href="#arg-solver"></a></dt>
+<dd><p>Backend that solves the dual QP.  <code>"smo"</code> (default) uses an
+internal libsvm-style SMO solver with no third-party dependency; <code>"osqp"</code>
+delegates to the <code>osqp</code> package (which then becomes a soft requirement).
+Both backends solve the same QP and return the same support vectors and
+bias up to numerical tolerance.</p></dd>
 
 
 <dt id="arg-tol">tol<a class="anchor" aria-label="anchor" href="#arg-tol"></a></dt>
@@ -143,7 +151,7 @@ are retained.</p>
 <span class="r-in"><span><span class="va">K</span> <span class="op">&lt;-</span> <span class="fu"><a href="make_kernel.html">make_kernel</a></span><span class="op">(</span><span class="st">"rbf"</span>, sigma <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu">mape_svr</span><span class="op">(</span><span class="va">X</span>, <span class="va">y</span>, kernel <span class="op">=</span> <span class="va">K</span>, C <span class="op">=</span> <span class="fl">10</span>, eps <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit</span>, <span class="va">X</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2.205002 3.990000 5.889998</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 2.207585 3.988709 5.888707</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

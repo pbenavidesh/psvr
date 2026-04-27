@@ -8,7 +8,16 @@ enforced by replacing the kernel with
 ## Usage
 
 ``` r
-mape_sym_svr(X, y, kernel, C, eps, a = 1, tol = 1e-05)
+mape_sym_svr(
+  X,
+  y,
+  kernel,
+  C,
+  eps,
+  a = 1,
+  solver = c("smo", "osqp"),
+  tol = 1e-05
+)
 ```
 
 ## Arguments
@@ -38,6 +47,16 @@ mape_sym_svr(X, y, kernel, C, eps, a = 1, tol = 1e-05)
 
   Symmetry parameter: `1` for even symmetry `f(x) = f(-x)`, `-1` for odd
   symmetry `f(x) = -f(-x)`.
+
+- solver:
+
+  Backend that solves the dual QP. `"smo"` (default) uses an internal
+  libsvm-style SMO solver with no third-party dependency; `"osqp"`
+  delegates to the `osqp` package. Both backends solve the same QP and
+  return the same support vectors and bias up to numerical tolerance.
+  When `solver = "smo"`, the `½` factor on the symmetric kernel `Ks`
+  lives in the effective `Omega = ½·Ks` passed to the solver, so the
+  prediction-time `½` in the symmetric representer theorem is unchanged.
 
 - tol:
 
@@ -120,5 +139,5 @@ y <- c(2.1, 3.8, 6.2)
 K <- make_kernel("rbf", sigma = 1)
 fit <- mape_sym_svr(X, y, kernel = K, C = 10, eps = 5, a = 1)
 predict(fit, X)
-#> [1] 2.205002 3.990000 5.889998
+#> [1] 2.207585 3.988709 5.888707
 ```

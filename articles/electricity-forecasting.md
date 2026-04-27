@@ -41,14 +41,17 @@ Temporal causality requires that model selection use rolling-origin
 cross-validation (Hyndman & Athanasopoulos, 2021) rather than random
 splits. Leaking future observations into any training fold would produce
 optimistically biased CV estimates and invalidate the hyperparameter
-selection step. The rolling-origin protocol with 30 expanding windows
-adopted here is the time series analog of the 30-seed protocol used in
-the companion cross-section case studies, ensuring a comparably stable
-estimate of expected generalisation performance. In total, 12 models are
-evaluated: six psvr variants (Models 1–4, with LS-RMSPE appearing twice
-for MAPE- and RMSPE-optimised CV selection), three ML baselines
-(standard RBF-SVR, Random Forest, Linear Regression), and three
-time-series baselines (ARIMAX, ETS, Prophet with regressors).
+selection step. A rolling-origin protocol with 10 expanding windows is
+adopted here, the time series analog of the multi-seed protocol used in
+the companion cross-section case studies. The number of windows is
+bounded by the available training horizon: with a 12-month initial
+training period and 1-month assessment windows over a 24-month training
+set, additional folds beyond ten are highly correlated and contribute
+diminishing information. In total, 12 models are evaluated: six psvr
+variants (Models 1–4, with LS-RMSPE appearing twice for MAPE- and
+RMSPE-optimised CV selection), three ML baselines (standard RBF-SVR,
+Random Forest, Linear Regression), and three time-series baselines
+(ARIMAX, ETS, Prophet with regressors).
 
 ## 2 Setup
 
@@ -70,6 +73,8 @@ library(future)
 
 tidymodels_prefer()
 theme_set(theme_bw(base_size = 12))
+
+here::i_am("vignettes/articles/electricity-forecasting.qmd")
 ```
 
 ## 3 Data
@@ -328,7 +333,7 @@ cat("Custom rbf_sigma range (log10): [",
     round(r$lower, 4), ",", round(r$upper, 4), "]\n")
 ```
 
-    Custom rbf_sigma range (log10): [ -0.5204 , 1.4796 ]
+    Custom rbf_sigma range (log10): [ -0.5176 , 1.4824 ]
 
 ## 7 Model specifications
 
@@ -574,7 +579,10 @@ cat("  RF             (b2):", nrow(grid_rf),           "\n")
 Code
 
 ``` r
-results_file <- "case-studies/results/electricity-tune-results.rds"
+results_file <- here::here(
+  "vignettes/articles/case-studies/results/electricity-tune-results.rds"
+)
+
 
 if (!file.exists(results_file)) {
 
@@ -817,7 +825,10 @@ get_fold_preds <- function(wflow_id, tune_id, select_metric, ...) {
 }
 
 # ── Steps 5–6: Per-model per-fold metrics, assemble, save ─────────────
-results_file <- "case-studies/results/electricity-results.csv"
+results_file <- here::here(
+  "vignettes/articles/case-studies/results/electricity-results.csv"
+)
+
 
 if (!file.exists(results_file)) {
 
@@ -933,6 +944,109 @@ print(results |>
     10 ts1      ARIMAX             5.43
     11 ts2      ETS                6.10
     12 ts3      Prophet            6.87
+
+## 9.2 Selected hyperparameters
+
+A summary of hyperparameters selected by CV is reported below. The
+non-symmetric and symmetric LS-RMSPE variants converge to identical
+$(C,\sigma)$, isolating the contribution of the symmetric kernel from
+the tuning process.
+
+Code
+
+``` r
+hp_registry <- tibble::tribble(
+  ~wflow_id,           ~select_metric, ~label,                              ~has_tuning,
+  "kernel_m1",         "mape",         "SVR-MAPE",                          TRUE,
+  "kernel_m2",         "mape",         "SVR-MAPE + Sym. Kernel",            TRUE,
+  "kernel_m3a",        "mape",         "LS-RMSPE",                          TRUE,
+  "kernel_m4a",        "mape",         "LS-RMSPE + Sym. Kernel",            TRUE,
+  "kernel_b1_svrmse",  "mape",         "ε-SVR (MSE)",                       TRUE,
+  "full_b2_rf",        "mape",         "Random Forest",                     TRUE
+)
+
+best_hp <- purrr::pmap_dfr(
+  hp_registry |> dplyr::filter(has_tuning),
+  function(wflow_id, select_metric, label, has_tuning) {
+    res  <- extract_workflow_set_result(tune_all, wflow_id)
+    best <- select_best(res, metric = select_metric)
+    cv   <- collect_metrics(res) |>
+      dplyr::filter(.config == best$.config, .metric == "mape") |>
+      dplyr::slice(1)
+    tibble::tibble(
+      Model       = label,
+      C           = if ("cost"       %in% names(best)) best$cost       else NA_real_,
+      epsilon     = if ("svm_margin" %in% names(best)) best$svm_margin else NA_real_,
+      sigma       = if ("rbf_sigma"  %in% names(best)) best$rbf_sigma  else NA_real_,
+      gamma       = if ("rbf_sigma"  %in% names(best)) 1 / (2 * best$rbf_sigma^2) else NA_real_,
+      sym_type    = if ("sym_type"   %in% names(best)) as.character(best$sym_type) else NA_character_,
+      mtry        = if ("mtry"       %in% names(best)) best$mtry       else NA_integer_,
+      cv_MAPE_pct = cv$mean,
+      cv_SE       = cv$std_err
+    )
+  }
+)
+
+best_hp |>
+  dplyr::mutate(
+    `C`           = ifelse(is.na(C),        "—", format(C)),
+    `ε`           = ifelse(is.na(epsilon),  "—", format(epsilon)),
+    `σ`           = ifelse(is.na(sigma),    "—", sprintf("%.3f", sigma)),
+    `γ`           = ifelse(is.na(gamma),    "—", sprintf("%.3f", gamma)),
+    `Symmetry`    = ifelse(is.na(sym_type), "—", sym_type),
+    `mtry`        = ifelse(is.na(mtry),     "—", as.character(mtry)),
+    `CV MAPE (%)` = sprintf("%.3f ± %.3f", cv_MAPE_pct, cv_SE)
+  ) |>
+  dplyr::select(Model, C, `ε`, `σ`, `γ`, Symmetry, mtry, `CV MAPE (%)`) |>
+  knitr::kable(
+    format  = "html",
+    align   = c("l", rep("r", 7)),
+    caption = paste(
+      "Hyperparameters selected by 10-fold rolling-origin CV.",
+      "γ = 1/(2σ²) gives the equivalent RBF gamma in the e1071/sklearn parameterisation.",
+      "LS-RMSPE and LS-RMSPE + Sym. Kernel select identical (C, σ),",
+      "isolating the contribution of the symmetric kernel structure."
+    )
+  ) |>
+  kableExtra::kable_styling(
+    bootstrap_options = c("striped", "hover"),
+    full_width = FALSE
+  ) |>
+  kableExtra::footnote(
+    general = paste(
+      "Linear Regression and TS baselines have no tunable hyperparameters",
+      "in this experiment and are omitted from this table."
+    ),
+    general_title = "Note:"
+  )
+```
+
+| Model                                                                                                                   |   C |    ε |     σ |     γ | Symmetry | mtry |   CV MAPE (%) |
+|:------------------------------------------------------------------------------------------------------------------------|----:|-----:|------:|------:|---------:|-----:|--------------:|
+| SVR-MAPE                                                                                                                |   1 | 0.01 | 7.071 | 0.010 |        — |    — | 3.373 ± 0.168 |
+| SVR-MAPE + Sym. Kernel                                                                                                  |  10 | 1.00 | 7.071 | 0.010 |      odd |    — | 3.238 ± 0.217 |
+| LS-RMSPE                                                                                                                |  10 |    — | 2.236 | 0.100 |        — |    — | 3.672 ± 0.147 |
+| LS-RMSPE + Sym. Kernel                                                                                                  |  10 |    — | 2.236 | 0.100 |      odd |    — | 3.371 ± 0.193 |
+| ε-SVR (MSE)                                                                                                             |  10 |    — | 0.224 | 9.965 |        — |    — | 3.383 ± 0.181 |
+| Random Forest                                                                                                           |   — |    — |     — |     — |        — |    4 | 4.529 ± 0.092 |
+| Note:                                                                                                                   |     |      |       |       |          |      |               |
+|  Linear Regression and TS baselines have no tunable hyperparameters in this experiment and are omitted from this table. |     |      |       |       |          |      |               |
+
+Hyperparameters selected by 10-fold rolling-origin CV. γ = 1/(2σ²) gives
+the equivalent RBF gamma in the e1071/sklearn parameterisation. LS-RMSPE
+and LS-RMSPE + Sym. Kernel select identical (C, σ), isolating the
+contribution of the symmetric kernel structure.
+
+Code
+
+``` r
+hp_results_file <- here::here(
+  "vignettes/articles/case-studies/results/electricity-best-hp.csv"
+)
+if (!file.exists(hp_results_file)) {
+  readr::write_csv(best_hp, hp_results_file)
+}
+```
 
 ## 10 Results
 
@@ -1203,12 +1317,12 @@ test_metrics |>
 | ε-SVR (MSE)                         | ML baseline |   3.2059 | 0.0458 | 0.8682 |
 | LS-RMSPE (MAPE opt.)                | psvr        |   3.2083 | 0.0442 | 0.8720 |
 | LS-RMSPE (RMSPE opt.)               | psvr        |   3.2083 | 0.0442 | 0.8720 |
-| SVR-MAPE                            | psvr        |   3.2241 | 0.0439 | 0.8749 |
+| SVR-MAPE                            | psvr        |   3.2232 | 0.0439 | 0.8749 |
 | Linear Regression                   | ML baseline |   3.2822 | 0.0422 | 0.8858 |
-| SVR-MAPE + Sym. Kernel              | psvr        |   3.4169 | 0.0466 | 0.8571 |
+| SVR-MAPE + Sym. Kernel              | psvr        |   3.3667 | 0.0464 | 0.8526 |
 | LS-RMSPE + Sym. Kernel (MAPE opt.)  | psvr        |   3.4961 | 0.0484 | 0.8442 |
 | LS-RMSPE + Sym. Kernel (RMSPE opt.) | psvr        |   3.4961 | 0.0484 | 0.8442 |
-| Random Forest                       | ML baseline |   3.9937 | 0.0592 | 0.8010 |
+| Random Forest                       | ML baseline |   3.9866 | 0.0589 | 0.8044 |
 | Prophet + regressors                | TS baseline |   5.6621 | 0.0873 | 0.5025 |
 | ARIMAX                              | TS baseline |  10.3658 | 0.1377 | 0.3267 |
 | ETS                                 | TS baseline |  18.3294 | 0.2108 | 0.3138 |
@@ -1275,12 +1389,12 @@ mase_results |>
 | ε-SVR (MSE)                         |       0.4982 |
 | LS-RMSPE (MAPE opt.)                |       0.5024 |
 | LS-RMSPE (RMSPE opt.)               |       0.5024 |
-| SVR-MAPE                            |       0.5025 |
+| SVR-MAPE                            |       0.5024 |
 | Linear Regression                   |       0.5130 |
-| SVR-MAPE + Sym. Kernel              |       0.5288 |
+| SVR-MAPE + Sym. Kernel              |       0.5236 |
 | LS-RMSPE + Sym. Kernel (MAPE opt.)  |       0.5444 |
 | LS-RMSPE + Sym. Kernel (RMSPE opt.) |       0.5444 |
-| Random Forest                       |       0.6331 |
+| Random Forest                       |       0.6327 |
 | Prophet + regressors                |       0.9190 |
 | ARIMAX                              |       1.7158 |
 | ETS                                 |       2.9869 |
@@ -1382,7 +1496,7 @@ Code
 
 ``` r
 xfun::embed_file(
-  "case-studies/results/electricity-tune-results.rds",
+  here::here("vignettes/articles/case-studies/results/electricity-tune-results.rds"),
   text = "Download tuning results (.rds)"
 )
 ```

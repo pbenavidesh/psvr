@@ -36,5 +36,5 @@ y <- c(2.1, 3.8, 6.2)
 K <- make_kernel("rbf", sigma = 1)
 fit <- mape_svr(X, y, kernel = K, C = 10, eps = 5)
 predict(fit, X)
-#> [1] 2.205002 3.990000 5.889998
+#> [1] 2.207585 3.988709 5.888707
 ```
