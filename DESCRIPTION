@@ -9,8 +9,9 @@ Description: Implements four support vector regression models derived from a
     unified mathematical framework for percentage-error loss functions:
     epsilon-SVR with MAPE, its symmetric kernel extension, LS-SVR with RMSPE,
     and its symmetric counterpart. All models require strictly positive targets.
-    The epsilon-SVR models are solved via quadratic programming (osqp) and the
-    LS-SVR models via a linear system (base R). See Benavides-Herrera et al.
+    The epsilon-SVR models are solved via a built-in SMO algorithm (with osqp
+    available as an optional alternative backend) and the LS-SVR models via a
+    linear system (base R). See Benavides-Herrera et al.
     (2026, under review at MDPI Mathematics) for the mathematical derivations.
 License: MIT + file LICENSE
 Encoding: UTF-8
@@ -18,7 +19,6 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Imports:
     dials,
-    osqp,
     Matrix,
     parsnip,
     rlang,
@@ -29,6 +29,7 @@ Suggests:
     dplyr,
     knitr,
     MASS,
+    osqp,
     recipes,
     rmarkdown,
     rsample,

@@ -4,7 +4,7 @@
 \alias{mape_svr}
 \title{Fit epsilon-SVR with MAPE loss (Model 1)}
 \usage{
-mape_svr(X, y, kernel, C, eps, tol = 1e-05)
+mape_svr(X, y, kernel, C, eps, solver = c("smo", "osqp"), tol = 1e-05)
 }
 \arguments{
 \item{X}{Numeric matrix of training inputs, one observation per row (N × p).}
@@ -17,6 +17,12 @@ mape_svr(X, y, kernel, C, eps, tol = 1e-05)
 
 \item{eps}{Insensitivity tube half-width \verb{ε ≥ 0} (in percentage units,
 i.e., the tube is \verb{ε\%} of each target).}
+
+\item{solver}{Backend that solves the dual QP.  \code{"smo"} (default) uses an
+internal libsvm-style SMO solver with no third-party dependency; \code{"osqp"}
+delegates to the \code{osqp} package (which then becomes a soft requirement).
+Both backends solve the same QP and return the same support vectors and
+bias up to numerical tolerance.}
 
 \item{tol}{Threshold below which \verb{|βk|} is treated as zero when selecting
 support vectors and free support vectors (default \code{1e-5}).}
