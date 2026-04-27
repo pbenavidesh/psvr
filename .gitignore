@@ -13,11 +13,11 @@ docs
 # to the repo as the reference baseline for the BO comparison.)
 
 # Phase 3 BO output CSVs (regenerable from run_all_experiments.R, large)
-vignettes/articles/case-studies/results/boston-results.csv
-vignettes/articles/case-studies/results/diabetes-results.csv
-vignettes/articles/case-studies/results/energy-efficiency-results.csv
-vignettes/articles/case-studies/results/electricity-results.csv
-vignettes/articles/case-studies/results/electricity-best-hp.csv
+# vignettes/articles/case-studies/results/boston-results.csv
+# vignettes/articles/case-studies/results/diabetes-results.csv
+# vignettes/articles/case-studies/results/energy-efficiency-results.csv
+# vignettes/articles/case-studies/results/electricity-results.csv
+# vignettes/articles/case-studies/results/electricity-best-hp.csv
 vignettes/articles/case-studies/results/ENB2012_data.xlsx
 
 # Consolidated tune objects (large, regenerable from run_all_experiments.R)

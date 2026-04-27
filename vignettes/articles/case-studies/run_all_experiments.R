@@ -43,16 +43,19 @@ source(here::here("vignettes/articles/case-studies/experiment_helpers.R"))
 
 # ── CONFIGURATION ─────────────────────────────────────────────
 # Edit this vector to control which datasets this machine runs.
-DATASETS_TO_RUN <- c("boston", "diabetes", "energy_efficiency")
+# DATASETS_TO_RUN <- c("boston", "diabetes", "energy_efficiency")
 
-# DATASETS_TO_RUN <- c("diabetes")
+DATASETS_TO_RUN <- c("diabetes", "energy_efficiency")
 
-N_WORKERS <- max(1L, parallel::detectCores() - 1L)
-SEEDS     <- 1:30
+# N_WORKERS <- max(1L, parallel::detectCores() - 1L)
+N_WORKERS <- 12
+SEEDS <- 1:30
 
 message(sprintf("Workers available: %d", N_WORKERS))
-message(sprintf("Datasets to run:   %s\n",
-                paste(DATASETS_TO_RUN, collapse = ", ")))
+message(sprintf(
+  "Datasets to run:   %s\n",
+  paste(DATASETS_TO_RUN, collapse = ", ")
+))
 
 # ── PARALLEL EXPERIMENT RUNNER ────────────────────────────────
 # Parallelises over seeds. Each completed seed is saved as a
@@ -67,13 +70,12 @@ if ("boston" %in% DATASETS_TO_RUN) {
   df_b <- BostonHousing |>
     dplyr::mutate(chas = as.integer(chas))
   datasets$boston <- list(
-    X    = df_b |> dplyr::select(-medv) |> as.matrix(),
-    y    = df_b$medv,
+    X = df_b |> dplyr::select(-medv) |> as.matrix(),
+    y = df_b$medv,
     name = "boston"
   )
   stopifnot(all(datasets$boston$y > 0))
-  message("Boston Housing loaded: n =",
-          nrow(datasets$boston$X))
+  message("Boston Housing loaded: n =", nrow(datasets$boston$X))
 }
 
 if ("diabetes" %in% DATASETS_TO_RUN) {
@@ -85,64 +87,77 @@ if ("diabetes" %in% DATASETS_TO_RUN) {
     dimnames = list(NULL, colnames(diabetes$x))
   )
   datasets$diabetes <- list(
-    X    = X_diab_clean,
-    y    = as.numeric(diabetes$y),
+    X = X_diab_clean,
+    y = as.numeric(diabetes$y),
     name = "diabetes"
   )
   stopifnot(all(datasets$diabetes$y > 0))
-  message("Diabetes loaded: n =",
-          nrow(datasets$diabetes$X))
+  message("Diabetes loaded: n =", nrow(datasets$diabetes$X))
 }
 
 if ("energy_efficiency" %in% DATASETS_TO_RUN) {
-  ee_url   <- paste0(
+  ee_url <- paste0(
     "https://archive.ics.uci.edu/ml/machine-learning-databases/",
-    "00242/ENB2012_data.xlsx")
-  ee_local <- here::here("vignettes/articles/case-studies/results", "ENB2012_data.xlsx")
+    "00242/ENB2012_data.xlsx"
+  )
+  ee_local <- here::here(
+    "vignettes/articles/case-studies/results",
+    "ENB2012_data.xlsx"
+  )
   if (!file.exists(ee_local)) {
     message("Downloading Energy Efficiency dataset...")
     download.file(ee_url, ee_local, mode = "wb", quiet = TRUE)
   }
   df_ee <- readxl::read_excel(ee_local)
   datasets$energy_efficiency <- list(
-    X    = df_ee |> dplyr::select(X1:X8) |> as.matrix(),
-    y    = df_ee$Y1,
+    X = df_ee |> dplyr::select(X1:X8) |> as.matrix(),
+    y = df_ee$Y1,
     name = "energy_efficiency"
   )
   stopifnot(all(datasets$energy_efficiency$y > 0))
-  message("Energy Efficiency loaded: n =",
-          nrow(datasets$energy_efficiency$X))
+  message("Energy Efficiency loaded: n =", nrow(datasets$energy_efficiency$X))
 }
 
 # ── RUN ───────────────────────────────────────────────────────
 
 for (ds in datasets) {
-  out_csv <- here::here("vignettes/articles/case-studies/results",
-                        sprintf("%s-results.csv",
-                                gsub("_", "-", ds$name)))
+  out_csv <- here::here(
+    "vignettes/articles/case-studies/results",
+    sprintf("%s-results.csv", gsub("_", "-", ds$name))
+  )
   if (file.exists(out_csv)) {
     message(sprintf(
       "\n[%s] Final CSV exists — skipping. Delete to re-run.\n",
-      ds$name))
+      ds$name
+    ))
     next
   }
-  run_experiment_parallel(ds$X, ds$y, ds$name,
-                          seeds   = SEEDS,
-                          workers = N_WORKERS)
+  run_experiment_parallel(
+    ds$X,
+    ds$y,
+    ds$name,
+    seeds = SEEDS,
+    workers = N_WORKERS
+  )
 }
 
 # ── FINAL VERIFICATION ────────────────────────────────────────
 
 message("\n── Verification ──────────────────────────────────────")
 for (ds_name in DATASETS_TO_RUN) {
-  f <- here::here("vignettes/articles/case-studies/results",
-                  sprintf("%s-results.csv",
-                          gsub("_", "-", ds_name)))
+  f <- here::here(
+    "vignettes/articles/case-studies/results",
+    sprintf("%s-results.csv", gsub("_", "-", ds_name))
+  )
   if (file.exists(f)) {
-    df  <- readr::read_csv(f, show_col_types = FALSE)
+    df <- readr::read_csv(f, show_col_types = FALSE)
     nas <- sum(is.na(df$MAPE))
-    message(sprintf("  %-42s rows: %4d  NA(MAPE): %d",
-                    basename(f), nrow(df), nas))
+    message(sprintf(
+      "  %-42s rows: %4d  NA(MAPE): %d",
+      basename(f),
+      nrow(df),
+      nas
+    ))
   } else {
     message(sprintf("  %-42s NOT YET RUN", basename(f)))
   }
