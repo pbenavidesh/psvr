@@ -43,9 +43,9 @@ source(here::here("vignettes/articles/case-studies/experiment_helpers.R"))
 
 # ── CONFIGURATION ─────────────────────────────────────────────
 # Edit this vector to control which datasets this machine runs.
-# DATASETS_TO_RUN <- c("boston", "diabetes", "energy_efficiency")
+DATASETS_TO_RUN <- c("boston", "diabetes", "energy_efficiency")
 
-DATASETS_TO_RUN <- c("diabetes", "energy_efficiency")
+# DATASETS_TO_RUN <- c("energy_efficiency")
 
 # N_WORKERS <- max(1L, parallel::detectCores() - 1L)
 N_WORKERS <- 12
