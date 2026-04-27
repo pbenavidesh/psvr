@@ -159,7 +159,7 @@ as NA across all seeds.
 ```{r}
 #| label: experiment
 
-results_file <- "case-studies/results/energy-efficiency-results.csv"
+results_file <- "case-studies/results/energy-efficiency-results-grid-osqp.csv"
 
 if (!file.exists(results_file)) {
   results <- run_experiment(X, y,

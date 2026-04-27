@@ -145,7 +145,7 @@ should be interpreted accordingly.
 ```{r}
 #| label: experiment
 
-results_file <- "case-studies/results/diabetes-results.csv"
+results_file <- "case-studies/results/diabetes-results-grid-osqp.csv"
 
 if (!file.exists(results_file)) {
   results <- run_experiment(X, y,
