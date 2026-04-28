@@ -25,7 +25,7 @@ This article asks a concrete question: **on a dataset where relative
 accuracy matters, do models that optimise percentage error directly
 outperform models that optimise absolute error?**
 
-> **What this article does *not* claim**
+> **Note**
 >
 > `psvr` is not a universal replacement for standard SVR. The models
 > require strictly positive targets and are best suited for settings
@@ -544,26 +544,26 @@ sessioninfo::session_info()
 
     ─ Session info ───────────────────────────────────────────────────────────────
      setting  value
-     version  R version 4.5.3 (2026-03-11 ucrt)
-     os       Windows 11 x64 (build 26200)
-     system   x86_64, mingw32
-     ui       RTerm
+     version  R version 4.6.0 (2026-04-24)
+     os       Ubuntu 24.04.4 LTS
+     system   x86_64, linux-gnu
+     ui       X11
      language en
-     collate  Spanish_Mexico.utf8
-     ctype    Spanish_Mexico.utf8
-     tz       America/Mexico_City
-     date     2026-04-24
-     pandoc   3.6.3 @ C:/PROGRA~1/RStudio/RESOUR~1/app/bin/quarto/bin/tools/ (via rmarkdown)
-     quarto   NA @ C:\\Users\\behep\\AppData\\Local\\Programs\\Quarto\\bin\\quarto.exe
+     collate  C.UTF-8
+     ctype    C.UTF-8
+     tz       UTC
+     date     2026-04-28
+     pandoc   3.1.11 @ /opt/hostedtoolcache/pandoc/3.1.11/x64/ (via rmarkdown)
+     quarto   1.9.37 @ /usr/local/bin/quarto
 
     ─ Packages ───────────────────────────────────────────────────────────────────
      package      * version    date (UTC) lib source
      backports      1.5.1      2026-04-03 [1] RSPM
      broom        * 1.0.12     2026-01-27 [1] RSPM
      cachem         1.1.0      2024-05-16 [1] RSPM
-     class          7.3-23     2025-01-01 [1] RSPM
+     class          7.3-23     2025-01-01 [3] CRAN (R 4.6.0)
      cli            3.6.6      2026-04-09 [1] RSPM
-     codetools      0.2-20     2024-03-31 [1] RSPM
+     codetools      0.2-20     2024-03-31 [3] CRAN (R 4.6.0)
      conflicted     1.2.0      2023-02-01 [1] RSPM
      data.table     1.18.2.1   2026-01-27 [1] RSPM
      dials        * 1.4.3      2026-04-11 [1] RSPM
@@ -578,7 +578,7 @@ sessioninfo::session_info()
      future       * 1.70.0     2026-03-14 [1] RSPM
      future.apply   1.20.2     2026-02-20 [1] RSPM
      generics       0.1.4      2025-05-09 [1] RSPM
-     ggplot2      * 4.0.2      2026-02-03 [1] RSPM
+     ggplot2      * 4.0.3      2026-04-22 [1] RSPM
      ggrepel        0.9.8      2026-03-17 [1] RSPM
      globals        0.19.1     2026-03-13 [1] RSPM
      glue           1.8.1      2026-04-17 [1] RSPM
@@ -592,45 +592,45 @@ sessioninfo::session_info()
      jsonlite       2.0.0      2025-03-27 [1] RSPM
      knitr          1.51       2025-12-20 [1] RSPM
      labeling       0.4.3      2023-08-29 [1] RSPM
-     lattice        0.22-9     2026-02-09 [1] RSPM
+     lattice        0.22-9     2026-02-09 [3] CRAN (R 4.6.0)
      lava           1.9.0      2026-04-05 [1] RSPM
      lifecycle      1.0.5      2026-01-08 [1] RSPM
      listenv        0.10.1     2026-03-10 [1] RSPM
      lubridate    * 1.9.5      2026-02-04 [1] RSPM
      magrittr       2.0.5      2026-04-04 [1] RSPM
-     MASS           7.3-65     2025-02-28 [1] RSPM
-     Matrix         1.7-5      2026-03-21 [1] RSPM
+     MASS           7.3-65     2025-02-28 [3] CRAN (R 4.6.0)
+     Matrix         1.7-5      2026-03-21 [3] CRAN (R 4.6.0)
      memoise        2.0.1      2021-11-26 [1] RSPM
      modeldata    * 1.5.1      2025-08-22 [1] RSPM
-     nnet           7.3-20     2025-01-01 [1] RSPM
+     nnet           7.3-20     2025-01-01 [3] CRAN (R 4.6.0)
      otel           0.2.0      2025-08-29 [1] RSPM
      parallelly     1.47.0     2026-04-17 [1] RSPM
      parsnip      * 1.5.0      2026-04-09 [1] RSPM
      pillar         1.11.1     2025-09-17 [1] RSPM
      pkgconfig      2.0.3      2019-09-22 [1] RSPM
      prodlim        2026.03.11 2026-03-11 [1] RSPM
-     psvr         * 0.0.0.9003 2026-04-21 [1] local
+     psvr         * 0.0.0.9004 2026-04-28 [1] local
      purrr        * 1.2.2      2026-04-10 [1] RSPM
      R6             2.6.1      2025-02-15 [1] RSPM
      RColorBrewer   1.1-3      2022-04-03 [1] RSPM
-     Rcpp           1.1.1-1    2026-04-16 [1] RSPM
+     Rcpp           1.1.1-1.1  2026-04-24 [1] RSPM
      readr        * 2.2.0      2026-02-19 [1] RSPM
      recipes      * 1.3.2      2026-04-02 [1] RSPM
      rlang          1.2.0      2026-04-06 [1] RSPM
      rmarkdown      2.31       2026-03-26 [1] RSPM
-     rpart          4.1.27     2026-03-27 [1] RSPM
+     rpart          4.1.27     2026-03-27 [3] CRAN (R 4.6.0)
      rsample      * 1.3.2      2026-01-30 [1] RSPM
      rstudioapi     0.18.0     2026-01-16 [1] RSPM
-     S7             0.2.1-1    2025-11-14 [1] RSPM
+     S7             0.2.2      2026-04-22 [1] RSPM
      scales       * 1.4.0      2025-04-24 [1] RSPM
      sessioninfo    1.2.3      2025-02-05 [1] RSPM
      sparsevctrs    0.3.6      2026-01-27 [1] RSPM
      stringi        1.8.7      2025-03-27 [1] RSPM
      stringr      * 1.6.0      2025-11-04 [1] RSPM
-     survival       3.8-6      2026-01-16 [1] RSPM
+     survival       3.8-6      2026-01-16 [3] CRAN (R 4.6.0)
      tailor       * 0.1.0      2025-08-25 [1] RSPM
      tibble       * 3.3.1      2026-01-11 [1] RSPM
-     tidymodels   * 1.4.1      2025-09-08 [1] RSPM
+     tidymodels   * 1.5.0      2026-04-23 [1] RSPM
      tidyr        * 1.3.2      2025-12-19 [1] RSPM
      tidyselect     1.2.1      2024-03-11 [1] RSPM
      tidyverse    * 2.0.0      2023-02-22 [1] RSPM
@@ -648,8 +648,9 @@ sessioninfo::session_info()
      yaml           2.3.12     2025-12-10 [1] RSPM
      yardstick    * 1.4.0      2026-04-07 [1] RSPM
 
-     [1] C:/Users/behep/AppData/Local/R/win-library/4.5
-     [2] C:/Program Files/R/R-4.5.3/library
+     [1] /home/runner/work/_temp/Library
+     [2] /opt/R/4.6.0/lib/R/site-library
+     [3] /opt/R/4.6.0/lib/R/library
      * ── Packages attached to the search path.
 
     ──────────────────────────────────────────────────────────────────────────────
