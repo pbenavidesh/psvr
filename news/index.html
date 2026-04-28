@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9004</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9005</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -47,6 +47,16 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.0.9005" id="psvr-0009005">psvr 0.0.0.9005<a class="anchor" aria-label="anchor" href="#psvr-0009005"></a></h2>
+<div class="section level4">
+<h4 id="new-features-0-0-0-9005">New features<a class="anchor" aria-label="anchor" href="#new-features-0-0-0-9005"></a></h4>
+<ul><li>
+<code>cost_psvr_ls_data(y, n, width_log2)</code> — a data-driven cost range for LS-SVR psvr models (<code>m3</code>, <code>m4</code>). Default upper bound scales as <code>log2(var(y) * N) + width_log2</code> (default <code>width_log2 = 4</code>), the standard heuristic for the LS-SVR regularisation parameter <code>Γ</code> (Suykens et al. 2002, <em>Least Squares Support Vector Machines</em>, §3.1.3). Use this instead of <code><a href="../reference/cost_psvr.html">cost_psvr()</a></code> for <code>m3</code>/<code>m4</code> workflows; the static <code>[-2, 10]</code> log2 range underestimates <code>Γ</code> on benchmark datasets (Boston Housing optimum <code>Γ ≈ 1.7 × 10⁴</code>, vs. <code><a href="../reference/cost_psvr.html">cost_psvr()</a></code> upper bound <code>2^10 = 1024</code>).</li>
+<li>
+<code>psvr_option_add_cost_ls(wf_set, y, ...)</code> — a convenience wrapper that applies <code><a href="../reference/cost_psvr_ls_data.html">cost_psvr_ls_data()</a></code> to every LS-SVR psvr workflow in a workflow set (those whose <code>wflow_id</code> matches <code>m3|m4</code>), analogous to <code><a href="../reference/psvr_option_add.html">psvr_option_add()</a></code> for <code>rbf_sigma</code>.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.0.9004" id="psvr-0009004">psvr 0.0.0.9004<a class="anchor" aria-label="anchor" href="#psvr-0009004"></a></h2>
 <div class="section level4">

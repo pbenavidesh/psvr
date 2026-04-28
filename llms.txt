@@ -205,8 +205,13 @@ Custom dials parameters and tuning helpers for psvr models.
   : RBF sigma parameter with data-driven range for psvr models
 - [`psvr_option_add()`](https://pbenavidesh.github.io/psvr/reference/psvr_option_add.md)
   : Apply data-driven rbf_sigma to all psvr workflows in a workflow set
+- [`psvr_option_add_cost_ls()`](https://pbenavidesh.github.io/psvr/reference/psvr_option_add_cost_ls.md)
+  : Apply data-driven LS-SVR cost range to all m3/m4 workflows in a
+  workflow set
 - [`cost_psvr()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr.md)
   : Cost parameter with extended range for psvr models
+- [`cost_psvr_ls_data()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr_ls_data.md)
+  : Data-driven cost range for LS-SVR psvr models
 - [`sym_type_param()`](https://pbenavidesh.github.io/psvr/reference/sym_type_param.md)
   : Dials parameter for symmetry type
 

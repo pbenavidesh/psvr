@@ -20,6 +20,7 @@
 <url><loc>https://pbenavidesh.github.io/psvr/reference/coef.psvr_rmspe.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/coef.psvr_rmspe_sym.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/cost_psvr.html</loc></url>
+<url><loc>https://pbenavidesh.github.io/psvr/reference/cost_psvr_ls_data.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/index.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/kernel_matrix.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/make_kernel.html</loc></url>
@@ -38,6 +39,7 @@
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_option_add.html</loc></url>
+<url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_option_add_cost_ls.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.html</loc></url>
