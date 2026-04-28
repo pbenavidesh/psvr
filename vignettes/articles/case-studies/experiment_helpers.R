@@ -19,10 +19,18 @@
 #   b2 (1 HP) :  initial= 5, iter=45
 #   b3 (3 HPs):  initial=15, iter=35
 #
-# Parameter ranges match the Phase 2 grid bounds (cost ∈ [0.1, 100],
-# svm_margin ∈ [0.01, 1], rbf_sigma data-driven via sigma_heuristic, etc.)
-# so the BO comparison against grid-osqp is a fair search-strategy test
-# (same search space, different sampler).
+# Parameter ranges (revised 2026-04-27 after diagnosing a cost-range bug
+# that boundary-trapped LS-SVR variants — see comment block at top of
+# run_seed()):
+#   * cost  for ε-SVR (m1, m2, b1):  psvr::cost_psvr() static log2 [-2, 10]
+#   * cost  for LS-SVR (m3, m4):     psvr::cost_psvr_ls_data(train_df$y),
+#                                    data-driven via var(y)·N heuristic
+#   * svm_margin for m1/m2:          psvr::margin_percentage() [1%, 20%]
+#   * rbf_sigma for psvr models:     psvr::rbf_sigma_psvr_data() data-driven
+# These ranges no longer match the Phase 2 grid bounds — the grid-osqp
+# baseline CSVs (*-results-grid-osqp.csv) remain as historical reference.
+# The BO-vs-grid comparison is no longer a "same search space" test;
+# re-running grid-osqp on the new bounds is left as future work.
 #
 # Output CSV schema: downstream sections of the QMDs (summary table, box plots,
 # Wilcoxon) operate on metric columns only and ignore HP columns.
@@ -285,6 +293,22 @@ fit_log_svr_seed <- function(X_tr, y_tr, X_te, seed,
 # Returns one tibble of 13 rows (one per model_id) for the given seed.
 
 run_seed <- function(X, y, seed, dataset_name) {
+  # ── Hyperparameter range design (bug fix 2026-04-27) ─────────────────────
+  # The `cost` parsnip arg has different semantics across model families:
+  #   * ε-SVR (m1, m2, b1): cost → C (regularisation in primal). Typical
+  #     optima ~10–100; psvr::cost_psvr() static range [-2, 10] log2 covers.
+  #   * LS-SVR (m3, m4):    cost → Γ. Optima scale with var(y)·N and can
+  #     exceed 10⁴ on benchmark datasets (Boston Housing: Γ_opt ≈ 1.7×10⁴,
+  #     two decades above the static upper bound 2^10 = 1024). Use
+  #     psvr::cost_psvr_ls_data(train_df$y) for a data-driven range.
+  # Prior code (pre-2026-04-27) applied dials::cost(range=c(-1,2), log10) ≈
+  # [0.1, 100] to every kernel model, boundary-trapping LS-SVR variants at
+  # MAPE ~14 / R² ~0.55. Splitting into cost_param_eps and cost_param_ls
+  # restores expected LS-SVR performance on Boston (MAPE ~11, R² ~0.85).
+  # Likewise, svm_margin for m1/m2 is in percentage units (psvr eps); using
+  # psvr::margin_percentage() instead of dials::svm_margin keeps the search
+  # in a meaningful range [1%, 20%] of target.
+  # ─────────────────────────────────────────────────────────────────────────
   stopifnot(is.matrix(X), is.numeric(y), all(y > 0))
 
   pred_names <- colnames(X)
@@ -341,15 +365,16 @@ run_seed <- function(X, y, seed, dataset_name) {
     recipes::bake(new_data = train_df)
   predictor_only <- train_baked |> dplyr::select(-y, -.wts)
 
-  # ── Per-workflow param_info (matching Phase 2 grid bounds for fair
-  #    BO-vs-grid comparison; rbf_sigma data-driven for psvr models) ──
+  # ── Per-workflow param_info ──
+  #   rbf_sigma:   data-driven via psvr (m1/m2/m3/m4); fixed for kernlab b1.
+  #   cost_eps:    psvr::cost_psvr() — static log2 [-2, 10] for ε-SVR.
+  #   cost_ls:     psvr::cost_psvr_ls_data(train_df$y) — data-driven for LS-SVR.
+  #   svm_margin:  psvr::margin_percentage() (% units) for m1/m2.
+  #                b1 doesn't tune svm_margin (kernlab default kept).
   rbf_sigma_param   <- psvr::rbf_sigma_psvr_data(predictor_only)
-  cost_param        <- dials::cost(
-    range = c(-1, 2), trans = scales::log10_trans()
-  )
-  svm_margin_param  <- dials::svm_margin(
-    range = c(-2, 0), trans = scales::log10_trans()
-  )
+  cost_param_eps    <- psvr::cost_psvr()
+  cost_param_ls     <- psvr::cost_psvr_ls_data(train_df$y)
+  svm_margin_param  <- psvr::margin_percentage()
   rbf_sigma_kernlab <- dials::rbf_sigma(
     range = c(log10(0.266), log10(1.494)),
     trans = scales::log10_trans()
@@ -368,17 +393,17 @@ run_seed <- function(X, y, seed, dataset_name) {
     workflowsets::option_add(wf_set, param_info = pi, id = wf_id)
   }
   wf_set <- set_pi(wf_set, "default_m1",
-                   cost = cost_param, svm_margin = svm_margin_param,
+                   cost = cost_param_eps, svm_margin = svm_margin_param,
                    rbf_sigma = rbf_sigma_param)
   wf_set <- set_pi(wf_set, "default_m2",
-                   cost = cost_param, svm_margin = svm_margin_param,
+                   cost = cost_param_eps, svm_margin = svm_margin_param,
                    rbf_sigma = rbf_sigma_param)
   wf_set <- set_pi(wf_set, "default_m3",
-                   cost = cost_param, rbf_sigma = rbf_sigma_param)
+                   cost = cost_param_ls, rbf_sigma = rbf_sigma_param)
   wf_set <- set_pi(wf_set, "default_m4",
-                   cost = cost_param, rbf_sigma = rbf_sigma_param)
+                   cost = cost_param_ls, rbf_sigma = rbf_sigma_param)
   wf_set <- set_pi(wf_set, "default_b1",
-                   cost = cost_param, rbf_sigma = rbf_sigma_kernlab)
+                   cost = cost_param_eps, rbf_sigma = rbf_sigma_kernlab)
   wf_set <- set_pi(wf_set, "default_b2",
                    mtry = mtry_param_b2)
   wf_set <- set_pi(wf_set, "default_b3",
