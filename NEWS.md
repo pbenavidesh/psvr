@@ -1,3 +1,21 @@
+# psvr 0.0.0.9005
+
+### New features
+
+- `cost_psvr_ls_data(y, n, width_log2)` — a data-driven cost range
+  for LS-SVR psvr models (`m3`, `m4`). Default upper bound scales
+  as `log2(var(y) * N) + width_log2` (default `width_log2 = 4`),
+  the standard heuristic for the LS-SVR regularisation parameter
+  `Γ` (Suykens et al. 2002, *Least Squares Support Vector
+  Machines*, §3.1.3). Use this instead of `cost_psvr()` for
+  `m3`/`m4` workflows; the static `[-2, 10]` log2 range
+  underestimates `Γ` on benchmark datasets (Boston Housing optimum
+  `Γ ≈ 1.7 × 10⁴`, vs. `cost_psvr()` upper bound `2^10 = 1024`).
+- `psvr_option_add_cost_ls(wf_set, y, ...)` — a convenience wrapper
+  that applies `cost_psvr_ls_data()` to every LS-SVR psvr workflow
+  in a workflow set (those whose `wflow_id` matches `m3|m4`),
+  analogous to `psvr_option_add()` for `rbf_sigma`.
+
 # psvr 0.0.0.9004
 
 ### New features

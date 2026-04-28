@@ -23,7 +23,15 @@ approximately 0.25 to 1024) is wider than \code{dials::cost()} to
 accommodate the larger regularisation values typically needed by
 LS-SVR models.
 }
+\details{
+For LS-SVR (\code{m3}, \code{m4}) models, the static range may still be too
+narrow on benchmark datasets where the optimum exceeds 10⁴.
+Prefer \code{\link[=cost_psvr_ls_data]{cost_psvr_ls_data()}} in that case.
+}
 \examples{
 cost_psvr()
 
+}
+\seealso{
+\code{\link[=cost_psvr_ls_data]{cost_psvr_ls_data()}} for a data-driven LS-SVR variant.
 }

@@ -7,6 +7,9 @@ inst/doc
 .claude/
 docs
 *_files
+# Diagnostic and cross-language validation artifacts (not part of package)
+vignettes/articles/case-studies/diagnostics/
+vignettes/articles/boston_py/
 
 # Phase 2 grid-search baseline CSVs — keep tracked.
 # (do NOT add *-grid-osqp.csv to gitignore — these files are committed

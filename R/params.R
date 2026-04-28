@@ -196,12 +196,18 @@ psvr_option_add <- function(wf_set, X, width = 10, sample_size = 500L,
 #' accommodate the larger regularisation values typically needed by
 #' LS-SVR models.
 #'
+#' For LS-SVR (`m3`, `m4`) models, the static range may still be too
+#' narrow on benchmark datasets where the optimum exceeds 10⁴.
+#' Prefer [cost_psvr_ls_data()] in that case.
+#'
 #' @param range Numeric vector of length 2 on the log2 scale.
 #'   Default `c(-2, 10)`.
 #' @param trans A `scales` transformation object.
 #'   Default `scales::log2_trans()`.
 #'
 #' @return A `quant_param` dials object.
+#'
+#' @seealso [cost_psvr_ls_data()] for a data-driven LS-SVR variant.
 #'
 #' @examples
 #' cost_psvr()
@@ -217,4 +223,105 @@ cost_psvr <- function(range = c(-2, 10),
     label     = c(cost = "Cost"),
     finalize  = NULL
   )
+}
+
+#' Data-driven cost range for LS-SVR psvr models
+#'
+#' Returns a `quant_param` whose search range scales with
+#' `var(y) * N`, the standard heuristic for the LS-SVR regularisation
+#' parameter `Γ` (Suykens et al. 2002, *Least Squares Support Vector
+#' Machines*, §3.1.3).  On the log2 scale, the lower bound is `-2`
+#' (i.e. `Γ ≥ 0.25`) and the upper bound is
+#' `log2(var(y) * N) + width_log2`.
+#'
+#' With the default `width_log2 = 4`, the upper bound covers the
+#' typical optimum within ~2 orders of magnitude on benchmark
+#' datasets.  For Boston Housing (`var(medv) ≈ 84.6`, `N_train = 404`
+#' under an 80/20 split), this gives an upper bound of `2^19.06 ≈
+#' 5.4 × 10⁵`, two decades above the published optimum
+#' `Γ ≈ 1.7 × 10⁴` — comfortable headroom for Bayesian optimisation
+#' without boundary trapping.  The static [cost_psvr()] range
+#' \[-2, 10\] (i.e. `Γ ≤ 1024`) underestimates this by more than a
+#' decade.
+#'
+#' Use this function for `m3` (LS-SVR) and `m4` (symmetric LS-SVR)
+#' workflows.  Stick to [cost_psvr()] for `m1`/`m2` (`ε`-SVR), where
+#' `cost` maps to `C` and typical optima lie in \[10, 100\].
+#'
+#' @param y Numeric vector of strictly positive training targets.
+#' @param n Sample size.  Default `length(y)`.
+#' @param width_log2 Scalar giving the half-width (in log2 units)
+#'   added above `log2(var(y) * n)` to set the upper bound.
+#'   Default `4` (≈16× headroom).  Negative values are accepted with
+#'   a warning, since the resulting upper bound falls below the
+#'   `var(y) * n` heuristic and is unlikely to be useful.
+#'
+#' @return A `quant_param` dials object.
+#'
+#' @seealso [cost_psvr()], [psvr_option_add_cost_ls()]
+#'
+#' @examples
+#' cost_psvr_ls_data(c(10, 20, 30, 40, 50))
+#'
+#' @importFrom stats var
+#' @export
+cost_psvr_ls_data <- function(y, n = length(y), width_log2 = 4) {
+  stopifnot(is.numeric(y), all(y > 0), n > 0)
+  if (width_log2 < 0) {
+    warning(
+      "width_log2 < 0 produces an upper bound below the ",
+      "log2(var(y) * n) heuristic; this is unlikely to be a useful ",
+      "search range for LS-SVR cost."
+    )
+  }
+  upper <- log2(var(y) * n) + width_log2
+  cost_psvr(range = c(-2, upper))
+}
+
+#' Apply data-driven LS-SVR cost range to all m3/m4 workflows in a workflow set
+#'
+#' A convenience wrapper that calls [workflowsets::option_add()] for
+#' every LS-SVR psvr workflow in `wf_set` (those whose `wflow_id`
+#' matches `"m3"` or `"m4"`), replacing the `cost` dials parameter
+#' with one built from `y` via [cost_psvr_ls_data()].
+#'
+#' Workflows for `m1`/`m2` (`ε`-SVR) are intentionally skipped — for
+#' those, `cost` maps to `C` and the static [cost_psvr()] range is
+#' usually adequate.
+#'
+#' Note: [workflowsets::option_add()] replaces the whole `param_info`
+#' option for each matched workflow.  If you also need a data-driven
+#' `rbf_sigma` (via [psvr_option_add()]), build the full `param_info`
+#' manually with [tune::extract_parameter_set_dials()] and call
+#' [workflowsets::option_add()] in one shot, or call this helper
+#' first and then [psvr_option_add()] (which only touches
+#' `rbf_sigma`) — the latter currently overwrites the former, so
+#' prefer the manual one-shot approach when both are needed.
+#'
+#' @param wf_set A `workflow_set` object.
+#' @param y Numeric vector of strictly positive training targets.
+#' @param width_log2 Passed to [cost_psvr_ls_data()]. Default `4`.
+#'
+#' @return The updated `workflow_set`.
+#'
+#' @seealso [cost_psvr_ls_data()], [psvr_option_add()]
+#'
+#' @examples
+#' \dontrun{
+#' # After building wf_set with at least one m3 or m4 workflow:
+#' wf_set <- psvr_option_add_cost_ls(wf_set, y = train_df$y)
+#' }
+#'
+#' @importFrom stats update
+#' @export
+psvr_option_add_cost_ls <- function(wf_set, y, width_log2 = 4) {
+  cost_param <- cost_psvr_ls_data(y, width_log2 = width_log2)
+  ls_ids <- wf_set$wflow_id[grepl("m3|m4", wf_set$wflow_id)]
+  for (id in ls_ids) {
+    param_info <- workflowsets::extract_workflow(wf_set, id = id) |>
+      tune::extract_parameter_set_dials() |>
+      update(cost = cost_param)
+    wf_set <- workflowsets::option_add(wf_set, param_info = param_info, id = id)
+  }
+  wf_set
 }
