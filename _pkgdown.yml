@@ -96,7 +96,9 @@ reference:
       - rbf_sigma_psvr
       - rbf_sigma_psvr_data
       - psvr_option_add
+      - psvr_option_add_cost_ls
       - cost_psvr
+      - cost_psvr_ls_data
       - sym_type_param
 
   - title: "Internal fit wrappers"
