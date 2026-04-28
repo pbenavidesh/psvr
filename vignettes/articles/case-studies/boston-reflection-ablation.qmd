@@ -1,0 +1,376 @@
+---
+title: "Boston Housing — reflection-augmented 2x2 ablation"
+subtitle: "Validating Theorems 2 & 4 (kernel-symmetry vs. data-augmentation)"
+author: "Pablo Benavides-Herrera"
+date: last-modified
+execute:
+  freeze: auto
+  echo: true
+  warning: false
+  message: false
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
+    code-tools: true
+    df-print: kable
+---
+
+::: {.callout-note}
+## Reproducibility note
+This article reproduces the 2x2 ablation experiment of Section 4.4 of the
+manuscript *"A Unified Family of Percentage-Error Support Vector Regression
+Models with Symmetric Kernel Extensions"* (under review at MDPI Mathematics).
+It validates Theorems 2 and 4 by isolating two contributions to test-set
+accuracy: the kernel-level symmetry constraint vs. the data-level reflection
+augmentation. See the `boston_ablation_helpers.R` source for implementation
+details.
+:::
+
+## 1 Introduction
+
+The symmetric-kernel extensions of Theorems 2 (epsilon-SVR-MAPE) and 4
+(LS-SVR-RMSPE) impose `f(x) = f(-x)` (the `a = +1` case) by replacing the
+RBF kernel with the symmetrized kernel `K_s(x_i, x_j) = K(x_i, x_j) +
+K(x_i, -x_j)`. A natural alternative is to enforce the same symmetry by
+*augmenting the training set* with reflected points `(-x_k, y_k)` and
+fitting a non-symmetric model on the doubled data. The two approaches
+agree at the dual level (Theorem 5), but they differ in computational and
+statistical behavior. This experiment empirically separates the two.
+
+For each of two model families — A: epsilon-SVR-MAPE; B: LS-SVR-RMSPE — we
+evaluate four cells in a 2x2 design over symmetry (kernel-level) and
+augmentation (data-level):
+
+|              | non-augmented (size N) | augmented (size 2N)             |
+|--------------|------------------------|----------------------------------|
+| non-symmetric| **cell 1** (baseline)  | **cell 2** (data-aug only)       |
+| symmetric    | **cell 3** (kernel only) | **cell 4** (joint)             |
+
+Eight cells total (A1...A4, B1...B4). All cells use the same RBF kernel
+family, the same outer 80/20 split per seed, the same `cost` and
+`rbf_sigma` search ranges within a family, and Bayesian-optimization-style
+tuning with a budget of 50 inner-CV evaluations per cell.
+
+The key empirical question: does the kernel symmetry constraint contribute
+more (Δ_sym), the data augmentation contribute more (Δ_aug), or are they
+roughly equivalent (Δ_aug ≈ Δ_sym)? Theorem 5 predicts the former.
+
+## 2 Setup
+
+```{r}
+#| label: setup
+
+library(tidyverse)
+library(tidymodels)
+library(psvr)
+library(mlbench)
+library(furrr)
+library(future)
+library(here)
+library(knitr)
+library(kableExtra)
+
+here::i_am("vignettes/articles/case-studies/boston-reflection-ablation.qmd")
+source(here::here("vignettes/articles/case-studies/experiment_helpers.R"))
+source(here::here("vignettes/articles/case-studies/boston_ablation_helpers.R"))
+
+tidymodels_prefer()
+theme_set(theme_bw(base_size = 12))
+```
+
+## 3 Configuration
+
+```{r}
+#| label: config
+
+N_SEEDS   <- 30L          # set to 1L for sanity check (sequential)
+N_WORKERS <- 12L          # match run_all_experiments.R
+EXCLUDE_B <- FALSE        # match boston-housing.qmd
+LHS_BUDGET <- 50L         # per-cell HP evaluations for augmented cells
+```
+
+## 4 Data
+
+```{r}
+#| label: data
+
+data("BostonHousing", package = "mlbench")
+df <- BostonHousing |> mutate(chas = as.integer(chas))
+if (EXCLUDE_B) {
+  message("Dropping column B (EXCLUDE_B = TRUE).")
+  df <- df |> select(-b)
+}
+y <- df$medv
+X <- df |> select(-medv) |> as.matrix()
+stopifnot(all(y > 0))
+```
+
+```{r}
+#| label: data-summary
+#| echo: false
+
+tibble::tibble(
+  Statistic = c("n", "p", "min(y)", "median(y)", "mean(y)", "max(y)"),
+  Value     = c(nrow(X), ncol(X), min(y), median(y), mean(y), max(y))
+) |>
+  mutate(Value = round(Value, 2)) |>
+  knitr::kable(caption = "Boston Housing: dataset summary (post-EXCLUDE_B).")
+```
+
+## 5 Methodology
+
+### 5.1 The 2x2 ablation cells
+
+Each of the eight cells fits a single psvr model under one combination of
+(symmetric kernel) and (reflection augmentation):
+
+|cell | family            | model fn                  | sym (a) | augmented training data         |
+|-----|-------------------|---------------------------|---------|----------------------------------|
+| A1  | epsilon-SVR-MAPE  | `psvr::mape_svr`          | none    | `(X_tr, y_tr)`                  |
+| A2  | epsilon-SVR-MAPE  | `psvr::mape_svr`          | none    | `(rbind(X_tr, -X_tr), c(y_tr, y_tr))` |
+| A3  | epsilon-SVR-MAPE  | `psvr::mape_sym_svr`      | +1      | `(X_tr, y_tr)`                  |
+| A4  | epsilon-SVR-MAPE  | `psvr::mape_sym_svr`      | +1      | `(rbind(X_tr, -X_tr), c(y_tr, y_tr))` |
+| B1  | LS-SVR-RMSPE      | `psvr::rmspe_lssvr`       | none    | `(X_tr, y_tr)`                  |
+| B2  | LS-SVR-RMSPE      | `psvr::rmspe_lssvr`       | none    | `(rbind(X_tr, -X_tr), c(y_tr, y_tr))` |
+| B3  | LS-SVR-RMSPE      | `psvr::rmspe_sym_lssvr`   | +1      | `(X_tr, y_tr)`                  |
+| B4  | LS-SVR-RMSPE      | `psvr::rmspe_sym_lssvr`   | +1      | `(rbind(X_tr, -X_tr), c(y_tr, y_tr))` |
+
+Symmetry type `a = +1` ("even") is fixed in cells 3 & 4 (not tuned).
+
+### 5.2 Standardization
+
+`recipes::step_normalize` convention (denominator N-1) on the
+**non-augmented** training fold, then augmentation in standardized space:
+
+  1. compute `(μ, σ)` from the non-augmented inner-training rows
+  2. transform inner-validation rows with the same `(μ, σ)`
+  3. for augmented cells: `Z = (X_tr - μ) / σ`, then fit on `rbind(Z, -Z)`
+
+This guarantees that all 8 cells share the same `(μ, σ)` source per seed —
+only the {Z, -Z} duplication differs.
+
+### 5.3 Hyperparameter tuning
+
+| family | search range (transformed)                          | tuner          | budget       |
+|--------|-----------------------------------------------------|----------------|--------------|
+| A      | `cost`: log2 [-2, 10] (psvr::cost_psvr)             | tune_bayes (cells A1, A3) / 50-pt LHS (cells A2, A4) | 15+35 BO / 50 LHS |
+|        | `rbf_sigma`: log10 from `psvr::rbf_sigma_psvr_data` |                |              |
+|        | `svm_margin`: linear [1, 20]% (margin_percentage)   |                |              |
+| B      | `cost`: log2 [-2, log2(var(y_tr) * N) + 4]          | tune_bayes (cells B1, B3) / 50-pt LHS (cells B2, B4) | 10+40 BO / 50 LHS |
+|        | `rbf_sigma`: same as A                              |                |              |
+
+Selection metric for all 8 cells: MAPE.
+
+### 5.4 Why two different tuners?
+
+Augmented cells (A2, A4, B2, B4) require **paired 5-fold CV** to avoid
+inner-CV leakage: with naive 5-fold over the 2N augmented rows, mirrored
+pairs `(x_i, -x_i)` can split across folds, putting `x_i` in inner-train
+and `-x_i` in inner-val — the symmetric-kernel model has effectively
+seen `y_i`. Paired CV constructs the 5 folds on the original N rows and
+augments only the inner-training portion within each fold. `tune_bayes`
+does not support row-multiplying training-only recipe steps, so paired CV
+is hand-rolled with a 50-point Latin hypercube over the same
+parameter ranges as the non-augmented cells.
+
+::: {.callout-warning}
+## Methodological caveat
+LHS-50 ≠ tune_bayes(initial=15, iter=35). At this budget, `tune_bayes`'
+GP+EI surrogate typically reaches lower validation MAPE than uniform
+LHS sampling. This biases the comparison **against** augmented cells
+(better tuning → lower MAPE in the non-augmented arm). If Δ_sym
+nonetheless dominates Δ_aug despite this anti-symmetric bias, the
+conclusion is robust.
+:::
+
+### 5.5 Test-leak assertion
+
+After standardization and augmentation, an explicit `stopifnot` checks
+that no row of the (possibly reflected) training fold appears in the
+test fold. With continuous Boston features this assertion's purpose is
+to catch indexing bugs.
+
+## 6 Run experiment
+
+```{r}
+#| label: run-experiment
+
+results_file <- here::here(
+  "vignettes/articles/case-studies/results",
+  "boston-reflection-ablation-results.csv"
+)
+
+if (!file.exists(results_file)) {
+  results <- run_experiment_ablation_parallel(
+    X, y,
+    seeds        = seq_len(N_SEEDS),
+    workers      = N_WORKERS,
+    dataset_name = "boston_ablation"
+  )
+} else {
+  results <- read_csv(results_file, show_col_types = FALSE)
+}
+
+cat("Rows loaded:", nrow(results), "  (expected:", 8L * N_SEEDS, ")\n")
+cat("NA-MAPE rows:", sum(is.na(results$MAPE)), "\n")
+```
+
+## 7 Per-cell summary table
+
+```{r}
+#| label: cell-summary
+
+cell_summary <- results |>
+  group_by(family, cell_id, sym, augmented) |>
+  summarise(
+    MAPE_mean  = mean(MAPE, na.rm = TRUE),
+    MAPE_lower = bootstrap_ci(MAPE)[["lower"]],
+    MAPE_upper = bootstrap_ci(MAPE)[["upper"]],
+    R2_mean    = mean(R2,   na.rm = TRUE),
+    .groups    = "drop"
+  ) |>
+  arrange(family, cell_id)
+
+cell_summary |>
+  mutate(
+    MAPE = sprintf("%.2f [%.2f, %.2f]", MAPE_mean, MAPE_lower, MAPE_upper),
+    R2   = sprintf("%.4f", R2_mean)
+  ) |>
+  select(family, cell_id, sym, augmented, MAPE, R2) |>
+  knitr::kable(
+    caption = sprintf(
+      "Per-cell mean MAPE with 95%% percentile bootstrap CI over %d seeds.",
+      N_SEEDS
+    )
+  )
+```
+
+## 8 Δ-decomposition (Δ_aug, Δ_sym, Δ_joint) per family
+
+For each family, compute the per-seed differences relative to cell 1
+(non-augmented, non-symmetric) and report mean ± bootstrap CI.
+
+```{r}
+#| label: deltas
+
+delta_decomposition <- function(results, family_letter) {
+  fam <- results |>
+    filter(family == family_letter) |>
+    select(seed, cell_id, MAPE) |>
+    pivot_wider(names_from = cell_id, values_from = MAPE)
+
+  cells <- if (family_letter == "A") c("A1", "A2", "A3", "A4")
+           else                       c("B1", "B2", "B3", "B4")
+  d_aug   <- fam[[cells[1]]] - fam[[cells[2]]]
+  d_sym   <- fam[[cells[1]]] - fam[[cells[3]]]
+  d_joint <- fam[[cells[1]]] - fam[[cells[4]]]
+
+  fmt <- function(x) {
+    bs <- bootstrap_ci(x)
+    sprintf("%+.3f [%+.3f, %+.3f]", bs[["mean"]], bs[["lower"]], bs[["upper"]])
+  }
+
+  tibble::tibble(
+    family   = family_letter,
+    delta    = c("Δ_aug (cell1 − cell2)",
+                 "Δ_sym (cell1 − cell3)",
+                 "Δ_joint (cell1 − cell4)"),
+    estimate = c(fmt(d_aug), fmt(d_sym), fmt(d_joint))
+  )
+}
+
+bind_rows(
+  delta_decomposition(results, "A"),
+  delta_decomposition(results, "B")
+) |>
+  knitr::kable(
+    caption = "Δ-decomposition (positive = improvement over cell 1 baseline)."
+  )
+```
+
+## 9 Paired Wilcoxon vs. cell-1 baseline
+
+```{r}
+#| label: wilcoxon
+
+wilcoxon_per_family <- function(results, family_letter) {
+  fam <- results |>
+    filter(family == family_letter) |>
+    select(seed, cell_id, MAPE) |>
+    pivot_wider(names_from = cell_id, values_from = MAPE)
+
+  baseline <- if (family_letter == "A") "A1" else "B1"
+  comparisons <- if (family_letter == "A") c("A2", "A3", "A4")
+                 else                       c("B2", "B3", "B4")
+
+  do.call(rbind, lapply(comparisons, function(c2) {
+    test <- stats::wilcox.test(fam[[baseline]], fam[[c2]],
+                               paired = TRUE, exact = FALSE)
+    tibble::tibble(
+      family    = family_letter,
+      cell      = c2,
+      reference = baseline,
+      mean_diff = mean(fam[[baseline]] - fam[[c2]], na.rm = TRUE),
+      p_value   = test$p.value,
+      signif    = case_when(
+        test$p.value < 0.001 ~ "***",
+        test$p.value < 0.01  ~ "**",
+        test$p.value < 0.05  ~ "*",
+        TRUE                 ~ "ns"
+      )
+    )
+  }))
+}
+
+bind_rows(
+  wilcoxon_per_family(results, "A"),
+  wilcoxon_per_family(results, "B")
+) |>
+  mutate(
+    mean_diff = sprintf("%+.3f", mean_diff),
+    p_value   = sprintf("%.4f",  p_value)
+  ) |>
+  knitr::kable(
+    caption = "Paired Wilcoxon signed-rank test, each non-baseline cell vs cell 1."
+  )
+```
+
+## 10 Discussion
+
+The Δ-decomposition table is the empirical answer to the question
+"does the symmetry come from the kernel or the data?":
+
+- **Δ_sym dominates Δ_aug** → kernel constraint is the load-bearing
+  contribution. This is what Theorem 5 predicts.
+- **Δ_aug dominates Δ_sym** → data augmentation alone is sufficient;
+  the kernel-level constraint adds little. Theorem 5 would still hold
+  formally (the dual problems are equivalent at the optimum), but the
+  finite-sample / finite-budget statistical behavior would favor
+  augmentation as the practical lever.
+- **Δ_aug ≈ Δ_sym ≈ Δ_joint / 2** → the two effects are additive and
+  roughly equal. Both are useful; neither dominates.
+
+Δ_joint should be approximately Δ_sym + Δ_aug minus an interaction term.
+Negative interaction (Δ_joint < Δ_sym + Δ_aug) is expected: applying the
+symmetric kernel to already-augmented data is partially redundant, since
+the symmetric kernel already encodes the same `f(x) = f(-x)` constraint
+that the augmentation enforces statistically.
+
+## 11 Downloadable files
+
+```{r}
+#| label: downloads
+#| eval: !expr file.exists(results_file)
+
+xfun::embed_file(
+  here::here("vignettes/articles/case-studies/boston_ablation_helpers.R"),
+  text = "Download cell-runner helpers (.R)"
+)
+
+xfun::embed_file(
+  results_file,
+  text = sprintf("Download full results (%d seeds × 8 cells)", N_SEEDS)
+)
+```
