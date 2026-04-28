@@ -47,8 +47,8 @@ DATASETS_TO_RUN <- c("boston", "diabetes", "energy_efficiency")
 
 # DATASETS_TO_RUN <- c("energy_efficiency")
 
-# N_WORKERS <- max(1L, parallel::detectCores() - 1L)
-N_WORKERS <- 12
+N_WORKERS <- max(1L, parallel::detectCores() - 1L)
+# N_WORKERS <- 12
 SEEDS <- 1:30
 
 message(sprintf("Workers available: %d", N_WORKERS))
