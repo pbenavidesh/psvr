@@ -47,13 +47,10 @@ matters, do models that optimise percentage error directly outperform models
 that optimise absolute error?**
 
 ::: {.callout-note}
-## What this article does *not* claim
-
-`psvr` is not a universal replacement for standard SVR. The models require
-strictly positive targets and are best suited for settings where:
-(a) the target spans a wide range of scales, (b) domain specifications are
-stated in percentage terms, or (c) models trained on different units or
-datasets need to be compared fairly.
+`psvr` is not a universal replacement for standard SVR. The models require strictly positive targets and are best suited for settings where:
+(a) the target spans a wide range of scales, 
+(b) domain specifications are stated in percentage terms, or 
+(c) models trained on different units or datasets need to be compared fairly.
 :::
 
 ---
