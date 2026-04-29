@@ -117,12 +117,7 @@ articles:
     contents:
       - tidymodels-workflow
 
-  - title: "Case Studies"
-    navbar: "Case Studies"
-    contents:
-      - articles/electricity-forecasting
-      - articles/when-to-use-psvr
-
+  
   - title: "Case Studies"
     desc: >
       Reproducibility articles for the submitted manuscript.
@@ -132,11 +127,14 @@ articles:
       - articles/boston-housing
       - articles/diabetes
       - articles/energy-efficiency
+      - articles/electricity-forecasting
+      - articles/case-studies/boston-reflection-ablation
 
   - title: "Technical Notes"
     navbar: "Technical Notes"
     contents:
       - python-replication
+      - articles/when-to-use-psvr
 
 news:
   one_page_per_version: true
