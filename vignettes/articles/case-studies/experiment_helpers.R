@@ -417,12 +417,26 @@ run_seed <- function(X, y, seed, dataset_name) {
   # ── Per-workflow param_info ──
   #   rbf_sigma:   data-driven via psvr (m1/m2/m3/m4); fixed for kernlab b1.
   #   cost_eps:    psvr::cost_psvr() — static log2 [-2, 10] for ε-SVR.
-  #   cost_ls:     psvr::cost_psvr_ls_data(train_df$y) — data-driven for LS-SVR.
+  #   cost_ls:     psvr::cost_psvr_ls_data(train_df$y, width_log2) — data-driven
+  #                for LS-SVR. Energy Efficiency uses width_log2 = 8 (Γ upper
+  #                bound ~16M) because the default 4 boundary-trapped 120/120
+  #                seeds at ~988K and triggered SMO non-convergence cascades.
+  #                Add new datasets to ls_width_log2 if their LS-SVR
+  #                optimum falls outside the default range.
   #   svm_margin:  psvr::margin_percentage() (% units) for m1/m2.
   #                b1 doesn't tune svm_margin (kernlab default kept).
   rbf_sigma_param <- psvr::rbf_sigma_psvr_data(predictor_only)
   cost_param_eps <- psvr::cost_psvr()
-  cost_param_ls <- psvr::cost_psvr_ls_data(train_df$y)
+  ls_width_log2 <- list(
+    boston            = 4L,
+    diabetes          = 4L,
+    energy_efficiency = 8L
+  )[[dataset_name]]
+  if (is.null(ls_width_log2)) ls_width_log2 <- 4L
+  cost_param_ls <- psvr::cost_psvr_ls_data(
+    train_df$y,
+    width_log2 = ls_width_log2
+  )
   svm_margin_param <- psvr::margin_percentage()
   rbf_sigma_kernlab <- dials::rbf_sigma(
     range = c(log10(0.266), log10(1.494)),
@@ -753,60 +767,73 @@ run_seed <- function(X, y, seed, dataset_name) {
   # Bypass parsnip and call quantreg::rq() directly. The .wts column
   # is dropped from the baked data so it is not pulled in as a
   # predictor by the y ~ . formula.
-  yhat_b7a <- tryCatch(
-    {
-      rec_prepped <- rec_default |> recipes::prep(training = train_df)
-      train_baked_b7a <- rec_prepped |>
-        recipes::bake(new_data = train_df) |>
-        dplyr::select(-dplyr::any_of(".wts"))
-      test_baked_b7a <- rec_prepped |>
-        recipes::bake(new_data = test_df) |>
-        dplyr::select(-dplyr::any_of(".wts"))
-      fit_b7a <- quantreg::rq(y ~ ., data = train_baked_b7a, tau = 0.5)
-      as.numeric(predict(fit_b7a, newdata = test_baked_b7a))
-    },
-    error = function(e) {
-      warning(sprintf(
-        "[%s] seed %d b7a failed: %s",
-        dataset_name,
-        seed,
-        conditionMessage(e)
-      ))
-      rep(NA_real_, nrow(test_df))
-    }
-  )
-  met_b7a <- if (anyNA(yhat_b7a)) {
-    tibble::tibble(
-      MAPE = NA_real_,
-      RMSPE = NA_real_,
-      MAAPE = NA_real_,
-      MASE = NA_real_,
-      MSE = NA_real_,
-      R2 = NA_real_
+  #
+  # Per-dataset exclusion: ENB2012 has perfect linear dependencies among
+  # its 8 features, so quantreg::rq() always errors with "Singular design
+  # matrix". Skip and emit a message instead of producing 30 NA rows;
+  # downstream QMD joins on model_id handle missing rows gracefully.
+  excluded_models <- list(energy_efficiency = c("b7a"))[[dataset_name]]
+  if ("b7a" %in% excluded_models) {
+    message(
+      "[run] Skipping b7a (QR) for ", dataset_name, ": ",
+      "rank-deficient design matrix is intrinsic to ENB2012."
     )
   } else {
-    compute_metrics(test_df$y, yhat_b7a, y_train = train_df$y)
-  }
-  results$b7a <- tibble::tibble(
-    dataset = dataset_name,
-    seed = seed,
-    model_id = "b7a",
-    label = "QR (τ = 0.5)",
-    abbrev = "QR",
-    family = "baseline"
-  ) |>
-    dplyr::bind_cols(met_b7a) |>
-    dplyr::mutate(
-      cost_selected = NA_real_,
-      epsilon_selected = NA_real_,
-      sigma_selected = NA_real_,
-      gamma_selected = NA_real_,
-      sym_type_selected = NA_character_,
-      mtry_selected = NA_integer_,
-      xgb_trees_selected = NA_integer_,
-      xgb_lr_selected = NA_real_,
-      xgb_depth_selected = NA_integer_
+    yhat_b7a <- tryCatch(
+      {
+        rec_prepped <- rec_default |> recipes::prep(training = train_df)
+        train_baked_b7a <- rec_prepped |>
+          recipes::bake(new_data = train_df) |>
+          dplyr::select(-dplyr::any_of(".wts"))
+        test_baked_b7a <- rec_prepped |>
+          recipes::bake(new_data = test_df) |>
+          dplyr::select(-dplyr::any_of(".wts"))
+        fit_b7a <- quantreg::rq(y ~ ., data = train_baked_b7a, tau = 0.5)
+        as.numeric(predict(fit_b7a, newdata = test_baked_b7a))
+      },
+      error = function(e) {
+        warning(sprintf(
+          "[%s] seed %d b7a failed: %s",
+          dataset_name,
+          seed,
+          conditionMessage(e)
+        ))
+        rep(NA_real_, nrow(test_df))
+      }
     )
+    met_b7a <- if (anyNA(yhat_b7a)) {
+      tibble::tibble(
+        MAPE = NA_real_,
+        RMSPE = NA_real_,
+        MAAPE = NA_real_,
+        MASE = NA_real_,
+        MSE = NA_real_,
+        R2 = NA_real_
+      )
+    } else {
+      compute_metrics(test_df$y, yhat_b7a, y_train = train_df$y)
+    }
+    results$b7a <- tibble::tibble(
+      dataset = dataset_name,
+      seed = seed,
+      model_id = "b7a",
+      label = "QR (τ = 0.5)",
+      abbrev = "QR",
+      family = "baseline"
+    ) |>
+      dplyr::bind_cols(met_b7a) |>
+      dplyr::mutate(
+        cost_selected = NA_real_,
+        epsilon_selected = NA_real_,
+        sigma_selected = NA_real_,
+        gamma_selected = NA_real_,
+        sym_type_selected = NA_character_,
+        mtry_selected = NA_integer_,
+        xgb_trees_selected = NA_integer_,
+        xgb_lr_selected = NA_real_,
+        xgb_depth_selected = NA_integer_
+      )
+  }
 
   list(
     metrics = dplyr::bind_rows(results),
