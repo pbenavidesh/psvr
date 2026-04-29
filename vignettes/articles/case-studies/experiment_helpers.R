@@ -428,11 +428,13 @@ run_seed <- function(X, y, seed, dataset_name) {
   rbf_sigma_param <- psvr::rbf_sigma_psvr_data(predictor_only)
   cost_param_eps <- psvr::cost_psvr()
   ls_width_log2 <- list(
-    boston            = 4L,
-    diabetes          = 4L,
-    energy_efficiency = 8L
+    boston = 4L,
+    diabetes = 4L,
+    energy_efficiency = 12L
   )[[dataset_name]]
-  if (is.null(ls_width_log2)) ls_width_log2 <- 4L
+  if (is.null(ls_width_log2)) {
+    ls_width_log2 <- 4L
+  }
   cost_param_ls <- psvr::cost_psvr_ls_data(
     train_df$y,
     width_log2 = ls_width_log2
@@ -775,7 +777,9 @@ run_seed <- function(X, y, seed, dataset_name) {
   excluded_models <- list(energy_efficiency = c("b7a"))[[dataset_name]]
   if ("b7a" %in% excluded_models) {
     message(
-      "[run] Skipping b7a (QR) for ", dataset_name, ": ",
+      "[run] Skipping b7a (QR) for ",
+      dataset_name,
+      ": ",
       "rank-deficient design matrix is intrinsic to ENB2012."
     )
   } else {
@@ -915,14 +919,14 @@ run_experiment_parallel <- function(
       min(workers, length(todo))
     ))
 
-    future::plan(
-      if (.Platform$OS.type == "unix") {
-        future::multicore
-      } else {
-        future::multisession
-      },
-      workers = min(workers, length(todo))
-    )
+    strategy <- if (
+      .Platform$OS.type == "unix" && parallelly::supportsMulticore()
+    ) {
+      "multicore"
+    } else {
+      "multisession"
+    }
+    future::plan(strategy, workers = min(workers, length(todo)))
 
     t0 <- proc.time()
 
