@@ -1,9 +1,0 @@
-wflow_id,select_metric,cost,svm_margin,rbf_sigma,.config,sym_type,mtry
-kernel_m1,mape,1,0.01,7.071,pre0_mod16_post0,NA,NA
-kernel_m2,mape,10,1,7.071,pre0_mod72_post0,odd,NA
-kernel_m3a,mape,10,NA,2.236,pre0_mod11_post0,NA,NA
-kernel_m3a,rmse,10,NA,2.236,pre0_mod11_post0,NA,NA
-kernel_m4a,mape,10,NA,2.236,pre0_mod22_post0,odd,NA
-kernel_m4a,rmse,10,NA,2.236,pre0_mod22_post0,odd,NA
-kernel_b1_svrmse,mape,10,NA,0.224,pre0_mod09_post0,NA,NA
-full_b2_rf,mape,NA,NA,NA,pre0_mod3_post0,NA,4
