@@ -108,7 +108,7 @@ tune_res <- tune_grid(
   resamples  = folds,
   grid       = 15,
   param_info = wf_params,
-  metrics    = metric_set(mape)
+  metrics    = metric_set(yardstick::mape)
 )
 ```
 
@@ -132,7 +132,7 @@ evaluates once on the held-out test data.
 
 ```{r final}
 final_wf  <- finalize_workflow(wf, best_params)
-final_fit <- last_fit(final_wf, split, metrics = metric_set(mape))
+final_fit <- last_fit(final_wf, split, metrics = metric_set(yardstick::mape))
 
 collect_metrics(final_fit)
 ```
