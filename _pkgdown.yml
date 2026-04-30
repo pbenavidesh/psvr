@@ -128,7 +128,7 @@ articles:
       - articles/diabetes
       - articles/energy-efficiency
       - articles/electricity-forecasting
-      - articles/case-studies/boston-reflection-ablation
+      - articles/boston-reflection-ablation
 
   - title: "Technical Notes"
     navbar: "Technical Notes"
