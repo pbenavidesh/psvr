@@ -11,7 +11,7 @@ rmspe_lssvr(), or rmspe_sym_lssvr() directly instead."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9005</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,12 +28,9 @@ rmspe_lssvr(), or rmspe_sym_lssvr() directly instead."></head><body>
     <li><h6 class="dropdown-header" data-toc-skip>Workflows</h6></li>
     <li><a class="dropdown-item" href="../articles/tidymodels-workflow.html">tidymodels workflow with psvr</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Case Studies</h6></li>
-    <li><a class="dropdown-item" href="../articles/electricity-forecasting.html">Case Study: Victorian Electricity Demand</a></li>
-    <li><a class="dropdown-item" href="../articles/when-to-use-psvr.html">When to Use Percentage-Error SVR</a></li>
-    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Technical Notes</h6></li>
     <li><a class="dropdown-item" href="../articles/python-replication.html">Python Replication: Numerical Equivalence Check</a></li>
+    <li><a class="dropdown-item" href="../articles/when-to-use-psvr.html">When to Use Percentage-Error SVR</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
   </ul></li>
@@ -89,17 +86,39 @@ Not intended for direct use; call <code><a href="mape_svr.html">mape_svr()</a></
 <span></span>
 <span><span class="fu">psvr_mape_sym_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, a <span class="op">=</span> <span class="fl">1L</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">psvr_rmspe_rbf_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, rbf_sigma <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="fu">psvr_rmspe_rbf_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, rbf_sigma <span class="op">=</span> <span class="fl">1</span>, precondition <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">psvr_rmspe_poly_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, degree <span class="op">=</span> <span class="fl">3L</span>, scale_factor <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="fu">psvr_rmspe_poly_fit</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  <span class="va">y</span>,</span>
+<span>  <span class="va">gamma</span>,</span>
+<span>  degree <span class="op">=</span> <span class="fl">3L</span>,</span>
+<span>  scale_factor <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  precondition <span class="op">=</span> <span class="st">"auto"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">psvr_rmspe_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span><span class="op">)</span></span>
+<span><span class="fu">psvr_rmspe_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, precondition <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">psvr_rmspe_sym_rbf_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, rbf_sigma <span class="op">=</span> <span class="fl">1</span>, sym_type <span class="op">=</span> <span class="st">"even"</span><span class="op">)</span></span>
+<span><span class="fu">psvr_rmspe_sym_rbf_fit</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  <span class="va">y</span>,</span>
+<span>  <span class="va">gamma</span>,</span>
+<span>  rbf_sigma <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  sym_type <span class="op">=</span> <span class="st">"even"</span>,</span>
+<span>  precondition <span class="op">=</span> <span class="st">"auto"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">psvr_rmspe_sym_poly_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, degree <span class="op">=</span> <span class="fl">3L</span>, scale_factor <span class="op">=</span> <span class="fl">1</span>, a <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span><span class="fu">psvr_rmspe_sym_poly_fit</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  <span class="va">y</span>,</span>
+<span>  <span class="va">gamma</span>,</span>
+<span>  degree <span class="op">=</span> <span class="fl">3L</span>,</span>
+<span>  scale_factor <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  a <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>  precondition <span class="op">=</span> <span class="st">"auto"</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">psvr_rmspe_sym_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, a <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">psvr_rmspe_sym_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, a <span class="op">=</span> <span class="fl">1L</span>, precondition <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -145,6 +164,12 @@ translated to <code>a = 1L</code> or <code>a = -1L</code> before calling the sol
 
 <dt id="arg-gamma">gamma<a class="anchor" aria-label="anchor" href="#arg-gamma"></a></dt>
 <dd><p>Regularization parameter for RMSPE models (see <code><a href="rmspe_lssvr.html">rmspe_lssvr()</a></code>).</p></dd>
+
+
+<dt id="arg-precondition">precondition<a class="anchor" aria-label="anchor" href="#arg-precondition"></a></dt>
+<dd><p>Optional symmetric rescaling preconditioner for the
+RMSPE LS-SVR fitters. Forwarded to <code><a href="rmspe_lssvr.html">rmspe_lssvr()</a></code> / <code><a href="rmspe_sym_lssvr.html">rmspe_sym_lssvr()</a></code>;
+see those functions for accepted values and semantics.</p></dd>
 
 </dl></div>
 

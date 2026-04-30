@@ -12,19 +12,6 @@
 
 ### Case Studies
 
-- [Case Study: Victorian Electricity
-  Demand](https://pbenavidesh.github.io/psvr/articles/electricity-forecasting.md):
-
-- [When to Use Percentage-Error
-  SVR](https://pbenavidesh.github.io/psvr/articles/when-to-use-psvr.md):
-
-  A practical comparison of psvr models against standard regression
-  baselines on a dataset where relative accuracy matters. Using
-  tidymodels workflow sets to show when optimising for MAPE and RMSPE
-  directly outperforms models that minimise absolute-error losses.
-
-### Case Studies
-
 Reproducibility articles for the submitted manuscript. Results
 correspond to 30-seed benchmarks across three datasets.
 
@@ -34,3 +21,7 @@ correspond to 30-seed benchmarks across three datasets.
   Progression](https://pbenavidesh.github.io/psvr/articles/diabetes.md):
 - [Case Study: Building Energy
   Efficiency](https://pbenavidesh.github.io/psvr/articles/energy-efficiency.md):
+- [Case Study: Victorian Electricity
+  Demand](https://pbenavidesh.github.io/psvr/articles/electricity-forecasting.md):
+- [Boston Housing — reflection-augmented 2x2
+  ablation](https://pbenavidesh.github.io/psvr/articles/boston-reflection-ablation.md):

@@ -13,7 +13,7 @@ sym_type = tune() to let CV select it automatically.'></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9005</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -30,12 +30,9 @@ sym_type = tune() to let CV select it automatically.'></head><body>
     <li><h6 class="dropdown-header" data-toc-skip>Workflows</h6></li>
     <li><a class="dropdown-item" href="../articles/tidymodels-workflow.html">tidymodels workflow with psvr</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Case Studies</h6></li>
-    <li><a class="dropdown-item" href="../articles/electricity-forecasting.html">Case Study: Victorian Electricity Demand</a></li>
-    <li><a class="dropdown-item" href="../articles/when-to-use-psvr.html">When to Use Percentage-Error SVR</a></li>
-    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Technical Notes</h6></li>
     <li><a class="dropdown-item" href="../articles/python-replication.html">Python Replication: Numerical Equivalence Check</a></li>
+    <li><a class="dropdown-item" href="../articles/when-to-use-psvr.html">When to Use Percentage-Error SVR</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
   </ul></li>
@@ -125,6 +122,15 @@ optimize.  (Polynomial specs only.)</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A parsnip <code>model_spec</code> object of the corresponding class.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="engine-arguments">Engine arguments<a class="anchor" aria-label="anchor" href="#engine-arguments"></a></h2>
+
+
+<p>The <code>precondition</code> argument of <code><a href="rmspe_sym_lssvr.html">rmspe_sym_lssvr()</a></code> is exposed as a
+non-tunable engine argument. Pass it via <code><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">parsnip::set_engine()</a></code>, e.g.
+<code>set_engine("psvr", precondition = "always")</code>. Default is <code>"auto"</code>. See
+<code><a href="rmspe_sym_lssvr.html">rmspe_sym_lssvr()</a></code> for accepted values and semantics.</p>
     </div>
 
     <div class="section level2">

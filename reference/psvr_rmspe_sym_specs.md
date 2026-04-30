@@ -79,6 +79,17 @@ psvr_rmspe_sym_linear(mode = "regression", engine = "psvr", cost = NULL)
 
 A parsnip `model_spec` object of the corresponding class.
 
+## Engine arguments
+
+The `precondition` argument of
+[`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md)
+is exposed as a non-tunable engine argument. Pass it via
+[`parsnip::set_engine()`](https://parsnip.tidymodels.org/reference/set_engine.html),
+e.g. `set_engine("psvr", precondition = "always")`. Default is `"auto"`.
+See
+[`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md)
+for accepted values and semantics.
+
 ## Examples
 
 ``` r

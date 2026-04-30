@@ -1,5 +1,42 @@
 # Changelog
 
+## psvr 0.0.2 (unreleased)
+
+### New features
+
+- The `precondition` argument from
+  [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
+  and
+  [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md)
+  is now configurable via parsnip’s
+  [`set_engine()`](https://parsnip.tidymodels.org/reference/set_engine.html)
+  for all six RMSPE spec functions (rbf/poly/linear, both symmetric and
+  non-symmetric). Default is `"auto"`; pass via
+  `set_engine("psvr", precondition = "always")`, `"never"`, or a numeric
+  threshold. Not registered as a tunable parameter — it is a
+  configuration flag, not a hyperparameter.
+
+## psvr 0.0.1
+
+### New features
+
+- Added optional preconditioner for LS-SVR variants
+  ([`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md),
+  [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md))
+  via the `precondition` argument. Accepted values: “always”, “never”,
+  “auto” (default; activates when max(y)/min(y) \> 10), or a numeric
+  threshold. The preconditioner is a mathematically exact change of
+  variable that improves numerical conditioning at large target dynamic
+  ranges without changing predictions in exact arithmetic.
+- Returned model objects now include `precondition_applied` (logical)
+  for diagnostic transparency. The `print` method displays this field
+  when TRUE.
+
+### Documentation
+
+- Updated `@details` for both LS-SVR fitters with the bordered-system
+  formulation and the recovery formula α_k = α̃\_k / y_k.
+
 ## psvr 0.0.0.9005
 
 #### New features

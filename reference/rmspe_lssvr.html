@@ -11,7 +11,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9005</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,12 +28,9 @@
     <li><h6 class="dropdown-header" data-toc-skip>Workflows</h6></li>
     <li><a class="dropdown-item" href="../articles/tidymodels-workflow.html">tidymodels workflow with psvr</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Case Studies</h6></li>
-    <li><a class="dropdown-item" href="../articles/electricity-forecasting.html">Case Study: Victorian Electricity Demand</a></li>
-    <li><a class="dropdown-item" href="../articles/when-to-use-psvr.html">When to Use Percentage-Error SVR</a></li>
-    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Technical Notes</h6></li>
     <li><a class="dropdown-item" href="../articles/python-replication.html">Python Replication: Numerical Equivalence Check</a></li>
+    <li><a class="dropdown-item" href="../articles/when-to-use-psvr.html">When to Use Percentage-Error SVR</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
   </ul></li>
@@ -60,7 +57,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rmspe_lssvr</span><span class="op">(</span><span class="va">X</span>, <span class="va">y</span>, <span class="va">kernel</span>, <span class="va">gamma</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">rmspe_lssvr</span><span class="op">(</span><span class="va">X</span>, <span class="va">y</span>, <span class="va">kernel</span>, <span class="va">gamma</span>, precondition <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -82,11 +79,32 @@
 <dt id="arg-gamma">gamma<a class="anchor" aria-label="anchor" href="#arg-gamma"></a></dt>
 <dd><p>Regularization parameter <code>Γ &gt; 0</code>.</p></dd>
 
+
+<dt id="arg-precondition">precondition<a class="anchor" aria-label="anchor" href="#arg-precondition"></a></dt>
+<dd><p>Optional symmetric rescaling preconditioner derived
+from Remark 17 of the companion paper, used when the target dynamic range
+<code>ρ = max(y) / min(y)</code> is large enough to make <code>Ω + YΓ</code> ill-conditioned.
+One of:</p><dl><dt><code>"auto"</code> (default)</dt>
+<dd><p>Apply the preconditioner when <code>ρ &gt; 10</code>.</p></dd>
+
+<dt><code>"always"</code></dt>
+<dd><p>Apply the preconditioner unconditionally.</p></dd>
+
+<dt><code>"never"</code></dt>
+<dd><p>Disable the preconditioner (legacy behaviour).</p></dd>
+
+<dt>a positive numeric scalar</dt>
+<dd><p>Apply when <code>ρ &gt; precondition</code>.</p></dd>
+
+
+</dl></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>An object of class <code>"psvr_rmspe"</code>, a list with components:</p><dl><dt><code>alpha</code></dt>
-<dd><p>Numeric vector of dual variables (length N).</p></dd>
+<dd><p>Numeric vector of dual variables (length N), in the
+original variable space.</p></dd>
 
 <dt><code>b</code></dt>
 <dd><p>Numeric scalar bias term.</p></dd>
@@ -106,6 +124,10 @@
 <dt><code>p_train</code></dt>
 <dd><p>Number of training features (columns).</p></dd>
 
+<dt><code>precondition_applied</code></dt>
+<dd><p>Logical scalar; <code>TRUE</code> if the
+preconditioner was applied for this fit.</p></dd>
+
 
 </dl></div>
     <div class="section level2">
@@ -113,6 +135,28 @@
     <p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>[ <span class="dv">0</span>   <span class="dv">1</span>ᵀ     ] [ b ]   [ <span class="dv">0</span> ]</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>[ <span class="dv">1</span>   Ω <span class="sc">+</span> YΓ ] [ α ] <span class="ot">=</span> [ y ]</span></code></pre><p></p></div>
 <p>where <code>YΓ = diag(y₁²/Γ, …, yN²/Γ)</code> is added to the diagonal of Ω.</p>
+<p>When the target dynamic range <code>ρ = max(y) / min(y)</code> is large, the
+diagonal of <code>YΓ = diag(yₖ²/Γ)</code> varies as <code>O(ρ²)</code>, making <code>Ω + YΓ</code>
+ill-conditioned. Remark 17 of the companion paper derives a symmetric
+rescaling preconditioner <code>P = diag(1/yₖ)</code> via the change of variable
+<code>α = P ᾱ</code> (i.e. <code>αₖ = ᾱₖ / yₖ</code>). Multiplying the inner block of the
+bordered system by <code>P</code> from the left gives
+<code>(P Ω P + Γ⁻¹·I) ᾱ = P y − b · P 1 = 1 − b · P 1</code>,
+with constant-diagonal regularization <code>Γ⁻¹ · I</code> independent of <code>yₖ</code>.
+The constraint <code>1ᵀ α = 0</code> becomes <code>(P 1)ᵀ ᾱ = 0</code>, so the bordered
+system used by the preconditioned solver is</p><div class="sourceCode"><pre><code>
+[ 0      (P 1)ᵀ          ] [ b ]   [ 0 ]
+[ P 1    P Ω P + Γ⁻¹·I    ] [ ᾱ ] = [ 1 ]
+</code></pre></div><p>Recovery is <code>α = ᾱ / y</code> (elementwise division). The bias <code>b</code> is the
+same constraint multiplier in both systems.</p>
+<p>This is a strict change of variable: in exact arithmetic the
+preconditioned and unconditioned solvers produce identical predictions.
+Its purpose is to preserve solver accuracy under finite floating-point
+precision when <code>ρ</code> is large; for moderate <code>ρ</code> the two paths agree to
+within machine epsilon. Use <code>precondition = "auto"</code> (default) for
+typical workloads, <code>"never"</code> for legacy behaviour, or a custom numeric
+threshold for fine-grained control. The chosen behaviour is recorded
+in <code>precondition_applied</code>.</p>
     </div>
 
     <div class="section level2">

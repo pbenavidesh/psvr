@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9005</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,12 +24,9 @@
     <li><h6 class="dropdown-header" data-toc-skip>Workflows</h6></li>
     <li><a class="dropdown-item" href="../articles/tidymodels-workflow.html">tidymodels workflow with psvr</a></li>
     <li><hr class="dropdown-divider"></li>
-    <li><h6 class="dropdown-header" data-toc-skip>Case Studies</h6></li>
-    <li><a class="dropdown-item" href="../articles/electricity-forecasting.html">Case Study: Victorian Electricity Demand</a></li>
-    <li><a class="dropdown-item" href="../articles/when-to-use-psvr.html">When to Use Percentage-Error SVR</a></li>
-    <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Technical Notes</h6></li>
     <li><a class="dropdown-item" href="../articles/python-replication.html">Python Replication: Numerical Equivalence Check</a></li>
+    <li><a class="dropdown-item" href="../articles/when-to-use-psvr.html">When to Use Percentage-Error SVR</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
   </ul></li>
@@ -47,6 +44,25 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.2" id="psvr-002-unreleased">psvr 0.0.2 (unreleased)<a class="anchor" aria-label="anchor" href="#psvr-002-unreleased"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-0-2">New features<a class="anchor" aria-label="anchor" href="#new-features-0-0-2"></a></h3>
+<ul><li>The <code>precondition</code> argument from <code><a href="../reference/rmspe_lssvr.html">rmspe_lssvr()</a></code> and <code><a href="../reference/rmspe_sym_lssvr.html">rmspe_sym_lssvr()</a></code> is now configurable via parsnip’s <code><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine()</a></code> for all six RMSPE spec functions (rbf/poly/linear, both symmetric and non-symmetric). Default is <code>"auto"</code>; pass via <code>set_engine("psvr", precondition = "always")</code>, <code>"never"</code>, or a numeric threshold. Not registered as a tunable parameter — it is a configuration flag, not a hyperparameter.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.1" id="psvr-001">psvr 0.0.1<a class="anchor" aria-label="anchor" href="#psvr-001"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-0-1">New features<a class="anchor" aria-label="anchor" href="#new-features-0-0-1"></a></h3>
+<ul><li>Added optional preconditioner for LS-SVR variants (<code><a href="../reference/rmspe_lssvr.html">rmspe_lssvr()</a></code>, <code><a href="../reference/rmspe_sym_lssvr.html">rmspe_sym_lssvr()</a></code>) via the <code>precondition</code> argument. Accepted values: “always”, “never”, “auto” (default; activates when max(y)/min(y) &gt; 10), or a numeric threshold. The preconditioner is a mathematically exact change of variable that improves numerical conditioning at large target dynamic ranges without changing predictions in exact arithmetic.</li>
+<li>Returned model objects now include <code>precondition_applied</code> (logical) for diagnostic transparency. The <code>print</code> method displays this field when TRUE.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-0-1">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-0-1"></a></h3>
+<ul><li>Updated <code>@details</code> for both LS-SVR fitters with the bordered-system formulation and the recovery formula α_k = α̃_k / y_k.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.0.9005" id="psvr-0009005">psvr 0.0.0.9005<a class="anchor" aria-label="anchor" href="#psvr-0009005"></a></h2>
 <div class="section level4">

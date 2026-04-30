@@ -41,17 +41,39 @@ psvr_mape_sym_poly_fit(
 
 psvr_mape_sym_linear_fit(x, y, C, eps, a = 1L, tol = 1e-05)
 
-psvr_rmspe_rbf_fit(x, y, gamma, rbf_sigma = 1)
+psvr_rmspe_rbf_fit(x, y, gamma, rbf_sigma = 1, precondition = "auto")
 
-psvr_rmspe_poly_fit(x, y, gamma, degree = 3L, scale_factor = 1)
+psvr_rmspe_poly_fit(
+  x,
+  y,
+  gamma,
+  degree = 3L,
+  scale_factor = 1,
+  precondition = "auto"
+)
 
-psvr_rmspe_linear_fit(x, y, gamma)
+psvr_rmspe_linear_fit(x, y, gamma, precondition = "auto")
 
-psvr_rmspe_sym_rbf_fit(x, y, gamma, rbf_sigma = 1, sym_type = "even")
+psvr_rmspe_sym_rbf_fit(
+  x,
+  y,
+  gamma,
+  rbf_sigma = 1,
+  sym_type = "even",
+  precondition = "auto"
+)
 
-psvr_rmspe_sym_poly_fit(x, y, gamma, degree = 3L, scale_factor = 1, a = 1L)
+psvr_rmspe_sym_poly_fit(
+  x,
+  y,
+  gamma,
+  degree = 3L,
+  scale_factor = 1,
+  a = 1L,
+  precondition = "auto"
+)
 
-psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L)
+psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L, precondition = "auto")
 ```
 
 ## Arguments
@@ -99,3 +121,12 @@ psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L)
 
   Regularization parameter for RMSPE models (see
   [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)).
+
+- precondition:
+
+  Optional symmetric rescaling preconditioner for the RMSPE LS-SVR
+  fitters. Forwarded to
+  [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
+  /
+  [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md);
+  see those functions for accepted values and semantics.

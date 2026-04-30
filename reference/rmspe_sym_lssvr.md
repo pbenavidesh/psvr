@@ -9,7 +9,7 @@ al. (2026). Identical in structure to
 ## Usage
 
 ``` r
-rmspe_sym_lssvr(X, y, kernel, gamma, a = 1)
+rmspe_sym_lssvr(X, y, kernel, gamma, a = 1, precondition = "auto")
 ```
 
 ## Arguments
@@ -36,13 +36,37 @@ rmspe_sym_lssvr(X, y, kernel, gamma, a = 1)
   Symmetry parameter: `1` for even symmetry `f(x) = f(-x)`, `-1` for odd
   symmetry `f(x) = -f(-x)`.
 
+- precondition:
+
+  Optional symmetric rescaling preconditioner derived from Remark 17 of
+  the companion paper, used when the target dynamic range
+  `ρ = max(y) / min(y)` is large enough to make `Ωs + YΓ`
+  ill-conditioned. One of:
+
+  `"auto"` (default)
+
+  :   Apply the preconditioner when `ρ > 10`.
+
+  `"always"`
+
+  :   Apply the preconditioner unconditionally.
+
+  `"never"`
+
+  :   Disable the preconditioner (legacy behaviour).
+
+  a positive numeric scalar
+
+  :   Apply when `ρ > precondition`.
+
 ## Value
 
 An object of class `"psvr_rmspe_sym"`, a list with components:
 
 - `alpha`:
 
-  Numeric vector of dual variables (length N).
+  Numeric vector of dual variables (length N), in the original variable
+  space.
 
 - `b`:
 
@@ -72,6 +96,10 @@ An object of class `"psvr_rmspe_sym"`, a list with components:
 
   Number of training features (columns).
 
+- `precondition_applied`:
+
+  Logical scalar; `TRUE` if the preconditioner was applied for this fit.
+
 ## Details
 
     [ 0   1ᵀ      ] [ b ]   [ 0 ]
@@ -83,6 +111,33 @@ The kernel must satisfy Assumption 3 of the paper (kernel symmetry):
 `K(-xi, xj) = K(xi, -xj)` and `K(-xi, -xj) = K(xi, xj)`. RBF and
 even-degree polynomial kernels satisfy this; see
 [`make_kernel()`](https://pbenavidesh.github.io/psvr/reference/make_kernel.md).
+
+When `ρ = max(y) / min(y)` is large, `Ωs + YΓ` becomes ill-conditioned
+because the diagonal of `YΓ = diag(yₖ²/Γ)` varies as `O(ρ²)`. Remark 17
+of the companion paper derives a symmetric rescaling preconditioner
+`P = diag(1/yₖ)` via the change of variable `α = P ᾱ` (i.e.
+`αₖ = ᾱₖ / yₖ`). Multiplying the inner block of the bordered system by
+`P` from the left gives
+`(P Ωs P + Γ⁻¹·I) ᾱ = P y − b · P 1 = 1 − b · P 1`, with
+constant-diagonal regularization `Γ⁻¹ · I`. The preconditioner is
+applied to the symmetrized kernel matrix `Ωs` (after symmetrization).
+The constraint `1ᵀ α = 0` becomes `(P 1)ᵀ ᾱ = 0`, so the bordered system
+used by the preconditioned solver is
+
+    [ 0      (P 1)ᵀ          ] [ b ]   [ 0 ]
+    [ P 1    P Ωs P + Γ⁻¹·I   ] [ ᾱ ] = [ 1 ]
+
+Recovery is `α = ᾱ / y` (elementwise division). The bias `b` is the same
+constraint multiplier in both systems.
+
+This is a strict change of variable: in exact arithmetic the
+preconditioned and unconditioned solvers produce identical predictions.
+Its purpose is to preserve solver accuracy under finite floating-point
+precision when `ρ` is large; for moderate `ρ` the two paths agree to
+within machine epsilon. Use `precondition = "auto"` (default) for
+typical workloads, `"never"` for legacy behaviour, or a custom numeric
+threshold for fine-grained control. The chosen behaviour is recorded in
+`precondition_applied`.
 
 ## Examples
 
