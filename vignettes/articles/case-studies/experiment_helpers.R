@@ -196,14 +196,14 @@ make_specs_and_grids <- function() {
     cost = tune::tune(),
     rbf_sigma = tune::tune()
   ) |>
-    parsnip::set_engine("psvr")
-
+    parsnip::set_engine("psvr", precondition = "never")
+  
   spec_m4 <- psvr::psvr_rmspe_sym_rbf(
     cost = tune::tune(),
     rbf_sigma = tune::tune(),
     sym_type = tune::tune()
   ) |>
-    parsnip::set_engine("psvr")
+    parsnip::set_engine("psvr", precondition = "never")
 
   spec_b1 <- parsnip::svm_rbf(
     cost = tune::tune(),
