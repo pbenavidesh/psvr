@@ -57,6 +57,14 @@ kernel type.  The symmetry type is exposed as the tunable \code{sym_type}
 argument (\code{"even"} for a = 1, \code{"odd"} for a = -1); pass
 \code{sym_type = tune()} to let CV select it automatically.
 }
+\section{Engine arguments}{
+
+The \code{precondition} argument of \code{\link[=rmspe_sym_lssvr]{rmspe_sym_lssvr()}} is exposed as a
+non-tunable engine argument. Pass it via \code{\link[parsnip:set_engine]{parsnip::set_engine()}}, e.g.
+\code{set_engine("psvr", precondition = "always")}. Default is \code{"auto"}. See
+\code{\link[=rmspe_sym_lssvr]{rmspe_sym_lssvr()}} for accepted values and semantics.
+}
+
 \examples{
 \dontrun{
 library(parsnip)

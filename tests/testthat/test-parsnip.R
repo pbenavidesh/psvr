@@ -90,3 +90,81 @@ test_that("psvr_rmspe_sym_linear smoke", {
   smoke(psvr_rmspe_sym_linear(cost = 1000) |>
           set_engine("psvr", a = 1L))
 })
+
+# ---- precondition engine-arg forwarding (RMSPE specs) -------------------
+# Use a separate fixture with rho > 10 so the "auto" default activates.
+
+set.seed(7)
+n_p  <- 30
+X_p  <- matrix(runif(n_p * 2, 0, 1), ncol = 2,
+               dimnames = list(NULL, c("V1", "V2")))
+y_p  <- pmax(1 + 99 * X_p[, 1]^2 + rnorm(n_p, sd = 0.05), 1e-3)
+stopifnot(max(y_p) / min(y_p) > 10)
+
+fit_p <- function(spec) parsnip::fit_xy(spec, x = X_p, y = y_p)
+
+# rbf
+
+test_that("psvr_rmspe_rbf forwards precondition='always'", {
+  fit_obj <- fit_p(psvr_rmspe_rbf(cost = 1, rbf_sigma = 1) |>
+                     set_engine("psvr", precondition = "always"))
+  expect_true(fit_obj$fit$precondition_applied)
+})
+
+test_that("psvr_rmspe_rbf forwards precondition='never'", {
+  fit_obj <- fit_p(psvr_rmspe_rbf(cost = 1, rbf_sigma = 1) |>
+                     set_engine("psvr", precondition = "never"))
+  expect_false(fit_obj$fit$precondition_applied)
+})
+
+# poly
+
+test_that("psvr_rmspe_poly forwards precondition='always'", {
+  fit_obj <- fit_p(psvr_rmspe_poly(cost = 1, degree = 2, scale_factor = 1) |>
+                     set_engine("psvr", precondition = "always"))
+  expect_true(fit_obj$fit$precondition_applied)
+})
+
+test_that("psvr_rmspe_poly forwards precondition='never'", {
+  fit_obj <- fit_p(psvr_rmspe_poly(cost = 1, degree = 2, scale_factor = 1) |>
+                     set_engine("psvr", precondition = "never"))
+  expect_false(fit_obj$fit$precondition_applied)
+})
+
+# linear
+
+test_that("psvr_rmspe_linear forwards precondition='always'", {
+  fit_obj <- fit_p(psvr_rmspe_linear(cost = 1) |>
+                     set_engine("psvr", precondition = "always"))
+  expect_true(fit_obj$fit$precondition_applied)
+})
+
+test_that("psvr_rmspe_linear forwards precondition='never'", {
+  fit_obj <- fit_p(psvr_rmspe_linear(cost = 1) |>
+                     set_engine("psvr", precondition = "never"))
+  expect_false(fit_obj$fit$precondition_applied)
+})
+
+# sym_rbf
+
+test_that("psvr_rmspe_sym_rbf forwards precondition='always'", {
+  fit_obj <- fit_p(psvr_rmspe_sym_rbf(cost = 1, rbf_sigma = 1,
+                                      sym_type = "even") |>
+                     set_engine("psvr", precondition = "always"))
+  expect_true(fit_obj$fit$precondition_applied)
+})
+
+test_that("psvr_rmspe_sym_rbf forwards precondition='never'", {
+  fit_obj <- fit_p(psvr_rmspe_sym_rbf(cost = 1, rbf_sigma = 1,
+                                      sym_type = "even") |>
+                     set_engine("psvr", precondition = "never"))
+  expect_false(fit_obj$fit$precondition_applied)
+})
+
+# auto activates above the rho threshold (in passing)
+
+test_that("psvr_rmspe_rbf default precondition='auto' activates at rho > 10", {
+  fit_obj <- fit_p(psvr_rmspe_rbf(cost = 1, rbf_sigma = 1) |>
+                     set_engine("psvr"))
+  expect_true(fit_obj$fit$precondition_applied)
+})

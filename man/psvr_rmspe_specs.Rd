@@ -51,6 +51,14 @@ A parsnip \code{model_spec} object of the corresponding class.
 Create parsnip model specifications for \code{\link[=rmspe_lssvr]{rmspe_lssvr()}} with a fixed kernel
 type.  \code{cost} maps to the regularization parameter \code{Γ}.
 }
+\section{Engine arguments}{
+
+The \code{precondition} argument of \code{\link[=rmspe_lssvr]{rmspe_lssvr()}} is exposed as a non-tunable
+engine argument. Pass it via \code{\link[parsnip:set_engine]{parsnip::set_engine()}}, e.g.
+\code{set_engine("psvr", precondition = "always")}. Default is \code{"auto"}. See
+\code{\link[=rmspe_lssvr]{rmspe_lssvr()}} for accepted values and semantics.
+}
+
 \examples{
 \dontrun{
 library(parsnip)

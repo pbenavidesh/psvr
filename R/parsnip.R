@@ -37,6 +37,9 @@ utils::globalVariables(c("object", "new_data"))
 #' @param sym_type Symmetry type (`"even"` or `"odd"`) for symmetric models;
 #'   translated to `a = 1L` or `a = -1L` before calling the solver.
 #' @param tol Solver zero-threshold (see [mape_svr()]).
+#' @param precondition Optional symmetric rescaling preconditioner for the
+#'   RMSPE LS-SVR fitters. Forwarded to [rmspe_lssvr()] / [rmspe_sym_lssvr()];
+#'   see those functions for accepted values and semantics.
 #' @name psvr-fit-wrappers
 #' @keywords internal
 NULL
@@ -97,52 +100,58 @@ psvr_mape_sym_linear_fit <- function(x, y, C, eps, a = 1L, tol = 1e-5) {
 
 #' @rdname psvr-fit-wrappers
 #' @export
-psvr_rmspe_rbf_fit <- function(x, y, gamma, rbf_sigma = 1) {
+psvr_rmspe_rbf_fit <- function(x, y, gamma, rbf_sigma = 1,
+                               precondition = "auto") {
   rmspe_lssvr(X = x, y = y,
               kernel = make_kernel("rbf", sigma = rbf_sigma),
-              gamma = gamma)
+              gamma = gamma, precondition = precondition)
 }
 
 #' @rdname psvr-fit-wrappers
 #' @export
-psvr_rmspe_poly_fit <- function(x, y, gamma, degree = 3L, scale_factor = 1) {
+psvr_rmspe_poly_fit <- function(x, y, gamma, degree = 3L, scale_factor = 1,
+                                precondition = "auto") {
   rmspe_lssvr(X = x, y = y,
               kernel = make_kernel("polynomial", degree = degree,
                                    coef0 = scale_factor),
-              gamma = gamma)
+              gamma = gamma, precondition = precondition)
 }
 
 #' @rdname psvr-fit-wrappers
 #' @export
-psvr_rmspe_linear_fit <- function(x, y, gamma) {
-  rmspe_lssvr(X = x, y = y, kernel = make_kernel("linear"), gamma = gamma)
+psvr_rmspe_linear_fit <- function(x, y, gamma, precondition = "auto") {
+  rmspe_lssvr(X = x, y = y, kernel = make_kernel("linear"),
+              gamma = gamma, precondition = precondition)
 }
 
 #' @rdname psvr-fit-wrappers
 #' @export
 psvr_rmspe_sym_rbf_fit <- function(x, y, gamma, rbf_sigma = 1,
-                                   sym_type = "even") {
+                                   sym_type = "even",
+                                   precondition = "auto") {
   a <- if (sym_type == "even") 1L else -1L
   rmspe_sym_lssvr(X = x, y = y,
                   kernel = make_kernel("rbf", sigma = rbf_sigma),
-                  gamma = gamma, a = a)
+                  gamma = gamma, a = a, precondition = precondition)
 }
 
 #' @rdname psvr-fit-wrappers
 #' @export
 psvr_rmspe_sym_poly_fit <- function(x, y, gamma, degree = 3L,
-                                    scale_factor = 1, a = 1L) {
+                                    scale_factor = 1, a = 1L,
+                                    precondition = "auto") {
   rmspe_sym_lssvr(X = x, y = y,
                   kernel = make_kernel("polynomial", degree = degree,
                                        coef0 = scale_factor),
-                  gamma = gamma, a = a)
+                  gamma = gamma, a = a, precondition = precondition)
 }
 
 #' @rdname psvr-fit-wrappers
 #' @export
-psvr_rmspe_sym_linear_fit <- function(x, y, gamma, a = 1L) {
+psvr_rmspe_sym_linear_fit <- function(x, y, gamma, a = 1L,
+                                      precondition = "auto") {
   rmspe_sym_lssvr(X = x, y = y, kernel = make_kernel("linear"),
-                  gamma = gamma, a = a)
+                  gamma = gamma, a = a, precondition = precondition)
 }
 
 
@@ -366,6 +375,12 @@ psvr_mape_sym_linear <- function(mode = "regression", engine = "psvr",
 #'
 #' @return A parsnip `model_spec` object of the corresponding class.
 #'
+#' @section Engine arguments:
+#' The `precondition` argument of [rmspe_lssvr()] is exposed as a non-tunable
+#' engine argument. Pass it via [parsnip::set_engine()], e.g.
+#' `set_engine("psvr", precondition = "always")`. Default is `"auto"`. See
+#' [rmspe_lssvr()] for accepted values and semantics.
+#'
 #' @examples
 #' \dontrun{
 #' library(parsnip)
@@ -449,6 +464,12 @@ psvr_rmspe_linear <- function(mode = "regression", engine = "psvr",
 #'   (a = -1).  Use [tune()] to optimise over both values during CV.
 #'
 #' @return A parsnip `model_spec` object of the corresponding class.
+#'
+#' @section Engine arguments:
+#' The `precondition` argument of [rmspe_sym_lssvr()] is exposed as a
+#' non-tunable engine argument. Pass it via [parsnip::set_engine()], e.g.
+#' `set_engine("psvr", precondition = "always")`. Default is `"auto"`. See
+#' [rmspe_sym_lssvr()] for accepted values and semantics.
 #'
 #' @examples
 #' \dontrun{
@@ -801,19 +822,25 @@ make_psvr_engines <- function() {
 
   # ---- Model 3: LS-SVR with RMSPE ----
   .reg_psvr("psvr_rmspe_rbf_model",    "psvr_rmspe_rbf_fit",
-            list(.A_COST_GAMMA, .A_SIGMA))
+            list(.A_COST_GAMMA, .A_SIGMA),
+            defaults = list(precondition = "auto"))
   .reg_psvr("psvr_rmspe_poly_model",   "psvr_rmspe_poly_fit",
-            list(.A_COST_GAMMA, .A_DEGREE, .A_SCALE))
+            list(.A_COST_GAMMA, .A_DEGREE, .A_SCALE),
+            defaults = list(precondition = "auto"))
   .reg_psvr("psvr_rmspe_linear_model", "psvr_rmspe_linear_fit",
-            list(.A_COST_GAMMA))
+            list(.A_COST_GAMMA),
+            defaults = list(precondition = "auto"))
 
   # ---- Model 4: symmetric LS-SVR with RMSPE ----
   .reg_psvr("psvr_rmspe_sym_rbf_model",    "psvr_rmspe_sym_rbf_fit",
-            list(.A_COST_GAMMA, .A_SIGMA, .A_SYM_TYPE))
+            list(.A_COST_GAMMA, .A_SIGMA, .A_SYM_TYPE),
+            defaults = list(precondition = "auto"))
   .reg_psvr("psvr_rmspe_sym_poly_model",   "psvr_rmspe_sym_poly_fit",
-            list(.A_COST_GAMMA, .A_DEGREE, .A_SCALE), defaults = list(a = 1L))
+            list(.A_COST_GAMMA, .A_DEGREE, .A_SCALE),
+            defaults = list(a = 1L, precondition = "auto"))
   .reg_psvr("psvr_rmspe_sym_linear_model", "psvr_rmspe_sym_linear_fit",
-            list(.A_COST_GAMMA), defaults = list(a = 1L))
+            list(.A_COST_GAMMA),
+            defaults = list(a = 1L, precondition = "auto"))
 }
 
 

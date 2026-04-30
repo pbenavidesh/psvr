@@ -45,17 +45,39 @@ psvr_mape_sym_poly_fit(
 
 psvr_mape_sym_linear_fit(x, y, C, eps, a = 1L, tol = 1e-05)
 
-psvr_rmspe_rbf_fit(x, y, gamma, rbf_sigma = 1)
+psvr_rmspe_rbf_fit(x, y, gamma, rbf_sigma = 1, precondition = "auto")
 
-psvr_rmspe_poly_fit(x, y, gamma, degree = 3L, scale_factor = 1)
+psvr_rmspe_poly_fit(
+  x,
+  y,
+  gamma,
+  degree = 3L,
+  scale_factor = 1,
+  precondition = "auto"
+)
 
-psvr_rmspe_linear_fit(x, y, gamma)
+psvr_rmspe_linear_fit(x, y, gamma, precondition = "auto")
 
-psvr_rmspe_sym_rbf_fit(x, y, gamma, rbf_sigma = 1, sym_type = "even")
+psvr_rmspe_sym_rbf_fit(
+  x,
+  y,
+  gamma,
+  rbf_sigma = 1,
+  sym_type = "even",
+  precondition = "auto"
+)
 
-psvr_rmspe_sym_poly_fit(x, y, gamma, degree = 3L, scale_factor = 1, a = 1L)
+psvr_rmspe_sym_poly_fit(
+  x,
+  y,
+  gamma,
+  degree = 3L,
+  scale_factor = 1,
+  a = 1L,
+  precondition = "auto"
+)
 
-psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L)
+psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L, precondition = "auto")
 }
 \arguments{
 \item{x}{Numeric predictor matrix (parsnip matrix interface).}
@@ -78,6 +100,10 @@ psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L)
 translated to \code{a = 1L} or \code{a = -1L} before calling the solver.}
 
 \item{gamma}{Regularization parameter for RMSPE models (see \code{\link[=rmspe_lssvr]{rmspe_lssvr()}}).}
+
+\item{precondition}{Optional symmetric rescaling preconditioner for the
+RMSPE LS-SVR fitters. Forwarded to \code{\link[=rmspe_lssvr]{rmspe_lssvr()}} / \code{\link[=rmspe_sym_lssvr]{rmspe_sym_lssvr()}};
+see those functions for accepted values and semantics.}
 }
 \description{
 Low-level bridge functions called by parsnip when fitting psvr model specs.

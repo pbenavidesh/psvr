@@ -1,3 +1,14 @@
+# psvr 0.0.2 (unreleased)
+
+## New features
+
+* The `precondition` argument from `rmspe_lssvr()` and `rmspe_sym_lssvr()`
+  is now configurable via parsnip's `set_engine()` for all six RMSPE spec
+  functions (rbf/poly/linear, both symmetric and non-symmetric). Default
+  is `"auto"`; pass via `set_engine("psvr", precondition = "always")`,
+  `"never"`, or a numeric threshold. Not registered as a tunable
+  parameter — it is a configuration flag, not a hyperparameter.
+
 # psvr 0.0.1
 
 ## New features
