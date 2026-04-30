@@ -192,6 +192,15 @@ make_specs_and_grids <- function() {
   ) |>
     parsnip::set_engine("psvr")
 
+  # NOTE: precondition = "never" is set explicitly to reproduce the published
+  # experimental results. The default behaviour ("auto" with rho threshold 10)
+  # would activate the preconditioner on Boston and Diabetes (rho ~ 10 and 14),
+  # producing slightly different BO trajectories under early-stopping (control_bayes
+  # no_improve = 10). The preconditioner is a mathematically exact change of variable
+  # (Remark on numerical conditioning in the companion paper), but its effect on
+  # the BO surrogate when combined with patience-based termination introduces a
+  # reproducibility risk. The published *-results.csv files were generated under
+  # precondition = "never"; this setting preserves that protocol.  
   spec_m3 <- psvr::psvr_rmspe_rbf(
     cost = tune::tune(),
     rbf_sigma = tune::tune()
