@@ -14,7 +14,7 @@ factor of ten.
 The `psvr` package provides four SVR variants that optimise
 percentage-error losses directly:
 
-- **Model 1** (`psvr_mape_rbf`): $\varepsilon$-SVR with MAPE loss
+- **Model 1** (`psvr_mape_rbf`): $`\varepsilon`$-SVR with MAPE loss
 - **Model 2** (`psvr_mape_sym_rbf`): symmetric-kernel extension of Model
   1
 - **Model 3** (`psvr_rmspe_rbf`): LS-SVR with RMSPE loss
@@ -40,6 +40,7 @@ outperform models that optimise absolute error?**
 Code
 
 ``` r
+
 library(tidyverse)
 library(tidymodels)
 library(psvr)
@@ -64,6 +65,7 @@ percentage-error evaluation.
 Code
 
 ``` r
+
 data(concrete, package = "modeldata")
 
 glimpse(concrete)
@@ -84,6 +86,7 @@ glimpse(concrete)
 Code
 
 ``` r
+
 concrete |>
   ggplot(aes(x = compressive_strength)) +
   geom_histogram(bins = 40, fill = "#2c7bb6", colour = "white", alpha = 0.85) +
@@ -122,6 +125,7 @@ metrics. The distribution is right-skewed with a long upper tail.
 Code
 
 ``` r
+
 set.seed(42)
 split <- initial_split(concrete, prop = 0.80, strata = compressive_strength)
 train <- training(split)
@@ -148,6 +152,7 @@ space.
 Code
 
 ``` r
+
 rec_base <- recipe(compressive_strength ~ ., data = train) |>
   step_normalize(all_numeric_predictors())
 ```
@@ -161,6 +166,7 @@ rec_base <- recipe(compressive_strength ~ ., data = train) |>
 Code
 
 ``` r
+
 spec_lm  <- linear_reg() |>
   set_engine("lm")
 
@@ -186,12 +192,14 @@ spec_xgb <- boost_tree(
 
 All four models use the RBF kernel. The symmetry parameter `a = 1` (even
 symmetry) is fixed as an engine argument — it encodes the assumption
-that the regression function satisfies $f(\mathbf{x}) = f(-\mathbf{x})$,
-which is reasonable after centering via `step_normalize`.
+that the regression function satisfies
+$`f(\mathbf{x}) = f(-\mathbf{x})`$, which is reasonable after centering
+via `step_normalize`.
 
 Code
 
 ``` r
+
 spec_m1 <- psvr_mape_rbf(
   cost       = tune(),
   svm_margin = tune(),
@@ -240,6 +248,7 @@ spec_m4 <- psvr_rmspe_sym_rbf(
 >   — see the code below.
 
 ``` r
+
 # Compute data-driven rbf_sigma parameter from the normalised training predictors
 train_baked      <- rec_base |> prep() |> bake(new_data = train)
 rbf_sigma_custom <- rbf_sigma_psvr_data(
@@ -263,6 +272,7 @@ and evaluates with 10-fold CV on the full training set.
 Code
 
 ``` r
+
 wf_set <- workflow_set(
   preproc = list(base = rec_base),
   models  = list(
@@ -300,6 +310,7 @@ wf_set
 Code
 
 ``` r
+
 plan(multisession)
 
 set.seed(123)
@@ -328,6 +339,7 @@ plan(sequential)
 Code
 
 ``` r
+
 rank_res <- rank_results(tune_res, rank_metric = "mape", select_best = TRUE)
 
 rank_res |>
@@ -369,6 +381,7 @@ distinguish model families.
 Code
 
 ``` r
+
 rank_res |>
   filter(.metric == "mape") |>
   select(rank, wflow_id, mean, std_err, n) |>
@@ -394,7 +407,8 @@ rank_res |>
 |    7 | base_m3_rmspe     | 50.66 | 1.30 |    10 |
 |    8 | base_m4_rmspe_sym | 51.51 | 1.17 |    10 |
 
-Cross-validated MAPE — best configuration per workflow
+Cross-validated MAPE — best configuration per workflow {.table
+.caption-top}
 
 ### MAPE vs. RMSE trade-off
 
@@ -405,6 +419,7 @@ workflow.
 Code
 
 ``` r
+
 best_mape <- rank_results(tune_res, rank_metric = "mape", select_best = TRUE) |>
   filter(.metric == "mape") |>
   select(wflow_id, mape = mean)
@@ -454,6 +469,7 @@ evaluate it on the held-out test set.
 Code
 
 ``` r
+
 best_wf_id <- rank_results(tune_res, rank_metric = "mape", select_best = TRUE) |>
   filter(.metric == "mape") |>
   slice_min(mean, n = 1) |>
@@ -467,6 +483,7 @@ cat("Best workflow:", best_wf_id, "\n")
 Code
 
 ``` r
+
 best_wf <- extract_workflow(tune_res, id = best_wf_id)
 
 best_params <- tune_res |>
@@ -490,6 +507,7 @@ collect_metrics(final_fit)
 Code
 
 ``` r
+
 collect_predictions(final_fit) |>
   ggplot(aes(x = compressive_strength, y = .pred)) +
   geom_point(alpha = 0.5, size = 1.8, colour = "#2c7bb6") +
@@ -529,8 +547,8 @@ accuracy to fit high-strength observations.
 - Settings where all targets are on the same scale and absolute accuracy
   is the natural metric (e.g., measuring deviation from a fixed
   setpoint)
-- Very large datasets ($n > 5,000$), where the $O(n^{2})$ kernel matrix
-  becomes expensive — gradient-boosted trees scale much better
+- Very large datasets ($`n > 5{,}000`$), where the $`O(n^2)`$ kernel
+  matrix becomes expensive — gradient-boosted trees scale much better
 
 ------------------------------------------------------------------------
 
@@ -539,6 +557,7 @@ accuracy to fit high-strength observations.
 Code
 
 ``` r
+
 sessioninfo::session_info()
 ```
 
@@ -553,7 +572,7 @@ sessioninfo::session_info()
      ctype    C.UTF-8
      tz       UTC
      date     2026-04-30
-     pandoc   3.1.11 @ /opt/hostedtoolcache/pandoc/3.1.11/x64/ (via rmarkdown)
+     pandoc   3.8.3 @ /opt/hostedtoolcache/pandoc/3.8.3/x64/ (via rmarkdown)
      quarto   1.9.37 @ /usr/local/bin/quarto
 
     ─ Packages ───────────────────────────────────────────────────────────────────

@@ -42,8 +42,6 @@
     <li><h6 class="dropdown-header" data-toc-skip>Technical Notes</h6></li>
     <li><a class="dropdown-item" href="../articles/python-replication.html">Python Replication: Numerical Equivalence Check</a></li>
     <li><a class="dropdown-item" href="../articles/when-to-use-psvr.html">When to Use Percentage-Error SVR</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="../articles/index.html">More articles...</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -192,13 +190,13 @@ RBF kernel operates on a comparable scale across all 13 predictors.</p>
 </h2>
 <p>The LS-SVR formulation replaces the QP with a linear system by using
 a quadratic penalty on percentage residuals. The dual reduces to:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd><mtd columnalign="center" style="text-align: center"><msup><mn>𝟏</mn><mi>⊤</mi></msup></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>𝟏</mn></mtd><mtd columnalign="center" style="text-align: center"><mi>Ω</mi><mo>+</mo><msub><mi>Y</mi><mi>Γ</mi></msub></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mi>b</mi></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mi>𝛂</mi></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mi>𝐲</mi></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd><mtd columnalign="center" style="text-align: center"><msup><mn>𝟏</mn><mi>⊤</mi></msup></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>𝟏</mn></mtd><mtd columnalign="center" style="text-align: center"><mi mathvariant="normal">Ω</mi><mo>+</mo><msub><mi>Y</mi><mi mathvariant="normal">Γ</mi></msub></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mi>b</mi></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mi>𝛂</mi></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mi>𝐲</mi></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">
 \begin{bmatrix} 0 &amp; \mathbf{1}^\top \\ \mathbf{1} &amp; \Omega + Y_\Gamma \end{bmatrix}
 \begin{bmatrix} b \\ \boldsymbol{\alpha} \end{bmatrix}
 = \begin{bmatrix} 0 \\ \mathbf{y} \end{bmatrix}
 </annotation></semantics></math></p>
 <p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mi>Γ</mi></msub><mo>=</mo><mo>diag</mo><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>y</mi><mn>1</mn><mn>2</mn></msubsup><mi>/</mi><mi>Γ</mi><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mi>y</mi><mi>N</mi><mn>2</mn></msubsup><mi>/</mi><mi>Γ</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">Y_\Gamma = \operatorname{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)</annotation></semantics></math>.</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mi mathvariant="normal">Γ</mi></msub><mo>=</mo><mrow><mi mathvariant="normal">diag</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msubsup><mi>y</mi><mn>1</mn><mn>2</mn></msubsup><mi>/</mi><mi mathvariant="normal">Γ</mi><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mi>y</mi><mi>N</mi><mn>2</mn></msubsup><mi>/</mi><mi mathvariant="normal">Γ</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">Y_\Gamma = \operatorname{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)</annotation></semantics></math>.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># make_kernel() returns a closure K(xi, xj) = exp(-||xi - xj||^2 / (2 sigma^2))</span></span>
 <span><span class="va">K</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/make_kernel.html">make_kernel</a></span><span class="op">(</span><span class="st">"rbf"</span>, sigma <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
@@ -233,7 +231,7 @@ a quadratic penalty on percentage residuals. The dual reduces to:</p>
 </h2>
 <p>The ε-SVR formulation optimises a QP with <strong>sample-dependent
 box constraints</strong>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">|</mo><msub><mi>β</mi><mi>k</mi></msub><mo stretchy="true" form="postfix">|</mo></mrow><mo>≤</mo><mn>100</mn><mi>C</mi><mi>/</mi><msub><mi>y</mi><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">|\beta_k| \le 100C/y_k</annotation></semantics></math>:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><msub><mi>β</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mn>100</mn><mi>C</mi><mi>/</mi><msub><mi>y</mi><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">|\beta_k| \le 100C/y_k</annotation></semantics></math>:
 tighter bounds for small targets, concentrating model capacity on
 low-magnitude observations.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">

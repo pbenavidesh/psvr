@@ -15,24 +15,24 @@ Regression Models with Symmetric Kernel Extensions* (MDPI Mathematics,
 
 ## Mathematical notation
 
-| Symbol                               | Meaning                                          |
-|--------------------------------------|--------------------------------------------------|
-| N                                    | number of training samples                       |
-| `xk ∈ Rᵖ`                            | input vector for sample k                        |
-| `yk > 0`                             | strictly positive target (Assumption 2 in paper) |
-| `K(xi, xj)`                          | kernel function                                  |
-| `C > 0`                              | regularization parameter (ε-SVR models)          |
-| `ε ≥ 0`                              | insensitivity tube width (ε-SVR models)          |
-| `Γ > 0`                              | regularization parameter (LS-SVR models)         |
-| `a ∈ {-1, 1}`                        | symmetry type: 1 = even, -1 = odd                |
-| `βk = αk - αk*`                      | dual variable differences (ε-SVR)                |
-| `αk ∈ R`                             | dual / Lagrange multipliers (LS-SVR)             |
-| `b`                                  | bias term                                        |
-| `Ω ∈ R^{N×N}`                        | kernel matrix, `Ωkl = K(xk, xl)`                 |
-| `Ωs = ½(Ω + aΩ*)`                    | symmetrized kernel matrix                        |
-| `Ω*kl = K(xk, -xl)`                  | cross-negation kernel matrix                     |
-| `Ks(xi,xj) = K(xi,xj) + a·K(xi,-xj)` | symmetric kernel                                 |
-| `YΓ = diag(y1²/Γ, …, yN²/Γ)`         | target-weighted regularization diagonal          |
+| Symbol | Meaning |
+|----|----|
+| N | number of training samples |
+| `xk ∈ Rᵖ` | input vector for sample k |
+| `yk > 0` | strictly positive target (Assumption 2 in paper) |
+| `K(xi, xj)` | kernel function |
+| `C > 0` | regularization parameter (ε-SVR models) |
+| `ε ≥ 0` | insensitivity tube width (ε-SVR models) |
+| `Γ > 0` | regularization parameter (LS-SVR models) |
+| `a ∈ {-1, 1}` | symmetry type: 1 = even, -1 = odd |
+| `βk = αk - αk*` | dual variable differences (ε-SVR) |
+| `αk ∈ R` | dual / Lagrange multipliers (LS-SVR) |
+| `b` | bias term |
+| `Ω ∈ R^{N×N}` | kernel matrix, `Ωkl = K(xk, xl)` |
+| `Ωs = ½(Ω + aΩ*)` | symmetrized kernel matrix |
+| `Ω*kl = K(xk, -xl)` | cross-negation kernel matrix |
+| `Ks(xi,xj) = K(xi,xj) + a·K(xi,-xj)` | symmetric kernel |
+| `YΓ = diag(y1²/Γ, …, yN²/Γ)` | target-weighted regularization diagonal |
 
 ------------------------------------------------------------------------
 

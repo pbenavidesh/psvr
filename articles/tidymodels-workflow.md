@@ -5,9 +5,10 @@ data splitting, preprocessing, hyperparameter tuning by
 cross-validation, and final model evaluation. We use
 [`psvr_rmspe_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md)
 (LS-SVR with RMSPE loss, RBF kernel) and tune the regularisation
-parameter `cost` ($\Gamma$) against MAPE.
+parameter `cost` ($`\Gamma`$) against MAPE.
 
 ``` r
+
 library(psvr)
 library(parsnip)
 library(rsample)
@@ -21,11 +22,12 @@ library(yardstick)
 ## Data
 
 The synthetic even-function dataset from the package README:
-$y = 2 + x_{1}^{2} + 0.5\, x_{2}^{2} + \varepsilon$,
-$\varepsilon \sim \mathcal{N}\left( 0,\, 0.1^{2} \right)$. Targets are
-strictly positive by construction ($y > 0$).
+$`y = 2 + x_1^2 + 0.5\,x_2^2 + \varepsilon`$,
+$`\varepsilon \sim \mathcal{N}(0,\,0.1^2)`$. Targets are strictly
+positive by construction ($`y > 0`$).
 
 ``` r
+
 set.seed(42)
 n   <- 200
 x1  <- runif(n, -3, 3)
@@ -37,6 +39,7 @@ dat <- data.frame(y = y, x1 = x1, x2 = x2)
 ## 1 — Split
 
 ``` r
+
 set.seed(1)
 split <- initial_split(dat, prop = 0.75)
 train <- training(split)
@@ -49,18 +52,20 @@ Centre and scale all predictors so the RBF kernel operates on a
 standardised feature space.
 
 ``` r
+
 rec <- recipe(y ~ x1 + x2, data = train) |>
   step_normalize(all_predictors())
 ```
 
 ## 3 — Model spec with `tune()`
 
-Both `cost` (maps to $\Gamma$) and `rbf_sigma` (the RBF bandwidth
-$\sigma$) are
+Both `cost` (maps to $`\Gamma`$) and `rbf_sigma` (the RBF bandwidth
+$`\sigma`$) are
 [`tune()`](https://hardhat.tidymodels.org/reference/tune.html)
 placeholders; the grid search will explore all combinations.
 
 ``` r
+
 spec <- psvr_rmspe_rbf(cost = tune(), rbf_sigma = tune()) |>
   set_engine("psvr")
 ```
@@ -68,6 +73,7 @@ spec <- psvr_rmspe_rbf(cost = tune(), rbf_sigma = tune()) |>
 ## 4 — Workflow
 
 ``` r
+
 wf <- workflow() |>
   add_recipe(rec) |>
   add_model(spec)
@@ -84,6 +90,7 @@ centred on the median pairwise distance in the normalised feature space.
 only solves a linear system, so 75 fits complete in seconds.
 
 ``` r
+
 set.seed(2)
 folds <- vfold_cv(train, v = 5)
 
@@ -99,13 +106,14 @@ tune_res <- tune_grid(
   resamples  = folds,
   grid       = 15,
   param_info = wf_params,
-  metrics    = metric_set(mape)
+  metrics    = metric_set(yardstick::mape)
 )
 ```
 
 Cross-validated MAPE for each candidate (lower is better):
 
 ``` r
+
 collect_metrics(tune_res)[, c("cost", "rbf_sigma", "mean", "std_err")]
 #> # A tibble: 15 × 4
 #>        cost rbf_sigma  mean std_err
@@ -130,6 +138,7 @@ collect_metrics(tune_res)[, c("cost", "rbf_sigma", "mean", "std_err")]
 ## 6 — Select best
 
 ``` r
+
 best_params <- select_best(tune_res, metric = "mape")
 best_params
 #> # A tibble: 1 × 3
@@ -145,8 +154,9 @@ refits on the full training set with the chosen `cost` and evaluates
 once on the held-out test data.
 
 ``` r
+
 final_wf  <- finalize_workflow(wf, best_params)
-final_fit <- last_fit(final_wf, split, metrics = metric_set(mape))
+final_fit <- last_fit(final_wf, split, metrics = metric_set(yardstick::mape))
 
 collect_metrics(final_fit)
 #> # A tibble: 1 × 4
@@ -158,6 +168,7 @@ collect_metrics(final_fit)
 Predictions on the test set:
 
 ``` r
+
 preds <- collect_predictions(final_fit)
 head(preds[, c(".row", "y", ".pred")])
 #> # A tibble: 6 × 3
@@ -174,6 +185,7 @@ head(preds[, c(".row", "y", ".pred")])
 The fitted workflow can also be used directly for new data:
 
 ``` r
+
 new_obs <- data.frame(x1 = c(0, 1, -2), x2 = c(0, 1, 2))
 predict(extract_workflow(final_fit), new_data = new_obs)
 #> # A tibble: 3 × 1
@@ -192,6 +204,7 @@ Extract it to use [`print()`](https://rdrr.io/r/base/print.html) and
 [`coef()`](https://rdrr.io/r/stats/coef.html) directly.
 
 ``` r
+
 # extract_fit_engine() unwraps the parsnip/workflow layer to the raw psvr object
 psvr_fit <- extract_fit_engine(extract_workflow(final_fit))
 print(psvr_fit)
@@ -204,6 +217,7 @@ print(psvr_fit)
 ```
 
 ``` r
+
 cf <- coef(psvr_fit)
 # alpha: N dual variables; weight each training point in f(x) = sum_k alpha_k K(x_k, x) + b
 # b:     bias / intercept term

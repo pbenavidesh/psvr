@@ -107,6 +107,7 @@ constant-diagonal regularization `Γ⁻¹ · I` independent of `yₖ`. The
 constraint `1ᵀ α = 0` becomes `(P 1)ᵀ ᾱ = 0`, so the bordered system
 used by the preconditioned solver is
 
+
     [ 0      (P 1)ᵀ          ] [ b ]   [ 0 ]
     [ P 1    P Ω P + Γ⁻¹·I    ] [ ᾱ ] = [ 1 ]
 

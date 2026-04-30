@@ -124,6 +124,7 @@ applied to the symmetrized kernel matrix `Ωs` (after symmetrization).
 The constraint `1ᵀ α = 0` becomes `(P 1)ᵀ ᾱ = 0`, so the bordered system
 used by the preconditioned solver is
 
+
     [ 0      (P 1)ᵀ          ] [ b ]   [ 0 ]
     [ P 1    P Ωs P + Γ⁻¹·I   ] [ ᾱ ] = [ 1 ]
 

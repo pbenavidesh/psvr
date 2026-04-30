@@ -28,6 +28,7 @@ reported metrics.
 ## Setup
 
 ``` r
+
 library(psvr)
 library(ggplot2)
 
@@ -50,6 +51,7 @@ The Python experiments used
 this with `set.seed(4)` and a stratified-equivalent random draw.
 
 ``` r
+
 set.seed(4)
 n      <- nrow(X_raw)
 tr_idx <- sample(n, floor(0.7 * n))
@@ -67,6 +69,7 @@ Features are centred and scaled using **training-set** mean and standard
 deviation, mimicking `StandardScaler().fit(X_train).transform(...)`.
 
 ``` r
+
 col_mean <- colMeans(X_raw_tr)
 col_sd   <- apply(X_raw_tr, 2, sd)
 
@@ -77,6 +80,7 @@ X_te <- scale(X_raw_te, center = col_mean, scale = col_sd)
 ### Helper metrics
 
 ``` r
+
 mape_fn  <- function(y, yhat) mean(abs(y - yhat) / y) * 100
 rmspe_fn <- function(y, yhat) sqrt(mean(((y - yhat) / y)^2)) * 100
 r2_fn    <- function(y, yhat) 1 - sum((y - yhat)^2) / sum((y - mean(y))^2)
@@ -95,12 +99,13 @@ mse_fn   <- function(y, yhat) mean((y - yhat)^2)
 | RBF `gamma_py` | 0.050967     | `sigma = sqrt(1 / (2 × 0.050967))` |
 
 The Python RBF kernel uses `gamma_py` in the convention
-$K\left( \mathbf{x}_{i},\mathbf{x}_{j} \right) = \exp\left( - \gamma_{\text{py}} \parallel \mathbf{x}_{i} - \mathbf{x}_{j} \parallel^{2} \right)$,
+$`K(\mathbf{x}_i, \mathbf{x}_j) = \exp(-\gamma_{\text{py}} \|\mathbf{x}_i - \mathbf{x}_j\|^2)`$,
 which is equivalent to the `psvr` RBF convention
-$K\left( \mathbf{x}_{i},\mathbf{x}_{j} \right) = \exp\left( - \parallel \mathbf{x}_{i} - \mathbf{x}_{j} \parallel^{2}/2\sigma^{2} \right)$
-with $\sigma = \sqrt{1/\left( 2\,\gamma_{\text{py}} \right)}$.
+$`K(\mathbf{x}_i, \mathbf{x}_j) = \exp(-\|\mathbf{x}_i - \mathbf{x}_j\|^2 / 2\sigma^2)`$
+with $`\sigma = \sqrt{1 / (2\,\gamma_{\text{py}})}`$.
 
 ``` r
+
 sigma_m3 <- sqrt(1 / (2 * 0.050967))
 cat("Model 3 — sigma:", round(sigma_m3, 6), "\n")
 #> Model 3 — sigma: 3.132135
@@ -131,6 +136,7 @@ print(fit_m3)
 ![](python-replication_files/figure-html/model3-plot-1.png)
 
 ``` r
+
 cf_m3 <- coef(fit_m3)
 # alpha: N dual variables; weight each training point in f(x) = sum_k alpha_k K(x_k, x) + b
 # b:     bias / intercept term
@@ -153,6 +159,7 @@ cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
 | RBF `gamma_py` | 0.032920     | `sigma = sqrt(1 / (2 × 0.032920))` |
 
 ``` r
+
 sigma_m1 <- sqrt(1 / (2 * 0.032920))
 cat("Model 1 — sigma:", round(sigma_m1, 6), "\n")
 #> Model 1 — sigma: 3.897221
@@ -188,6 +195,7 @@ print(fit_m1)
 ![](python-replication_files/figure-html/model1-plot-1.png)
 
 ``` r
+
 cf_m1 <- coef(fit_m1)
 # alpha: beta_k = alpha_k - alpha_k* for each support vector; non-zero for
 #        points outside the percentage-error ε-tube (sparse)
@@ -214,6 +222,7 @@ implementations is verified by the KKT unit tests in `tests/testthat/`,
 not by matching these held-out metrics.
 
 ``` r
+
 # Python reference values from Tables 1-2 of Benavides-Herrera et al. (2026)
 py_m3_mape  <- 10.06        # Table 1, Model 3 — MAPE (%)
 py_m3_rmspe <- NA_real_     # Table 1, Model 3 — RMSPE (%) not reported
@@ -252,18 +261,18 @@ knitr::kable(
 )
 ```
 
-| Implementation                           | MAPE (%) | RMSPE (%) |       R² |      MSE |
-|:-----------------------------------------|---------:|----------:|---------:|---------:|
-| Model 3 — LS-SVR RMSPE (R)               |  11.0495 |   18.7205 | 0.819584 | 14.12763 |
-| Model 3 — LS-SVR RMSPE (Python, Table 1) |  10.0600 |        NA | 0.895900 |       NA |
-| Model 1 — ε-SVR MAPE (R)                 |  10.6892 |   18.5526 | 0.810705 | 14.82289 |
-| Model 1 — ε-SVR MAPE (Python, Table 2)   |  10.2900 |        NA | 0.860200 |       NA |
+| Implementation | MAPE (%) | RMSPE (%) | R² | MSE |
+|:---|---:|---:|---:|---:|
+| Model 3 — LS-SVR RMSPE (R) | 11.0495 | 18.7205 | 0.819584 | 14.12763 |
+| Model 3 — LS-SVR RMSPE (Python, Table 1) | 10.0600 | NA | 0.895900 | NA |
+| Model 1 — ε-SVR MAPE (R) | 10.6892 | 18.5526 | 0.810705 | 14.82289 |
+| Model 1 — ε-SVR MAPE (Python, Table 2) | 10.2900 | NA | 0.860200 | NA |
 
 Test-set metrics — Boston Housing, 70/30 split. R rows: set.seed(4) with
 R’s RNG. Python rows: random_state=4 with numpy’s RNG (different test
 set). Splits are not equivalent; metric differences reflect different
 test observations, not implementation errors. NA: not reported in the
-paper.
+paper. {.table}
 
 ### Why the metrics differ
 

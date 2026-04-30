@@ -10,12 +10,12 @@ but large when it is 2.
 **psvr** implements four SVR variants derived from percentage-error loss
 functions (Benavides-Herrera et al., 2026):
 
-| Model                                                                                  | Loss                     | Solver            |
-|----------------------------------------------------------------------------------------|--------------------------|-------------------|
-| [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)         | RMSPE — least-squares    | linear system     |
-| [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md) | RMSPE — symmetric kernel | linear system     |
-| [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md)               | MAPE — ε-insensitive     | quadratic program |
-| [`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md)       | MAPE — symmetric kernel  | quadratic program |
+| Model | Loss | Solver |
+|----|----|----|
+| [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md) | RMSPE — least-squares | linear system |
+| [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md) | RMSPE — symmetric kernel | linear system |
+| [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md) | MAPE — ε-insensitive | quadratic program |
+| [`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md) | MAPE — symmetric kernel | quadratic program |
 
 All models require **strictly positive targets** (`y > 0`), which is the
 condition under which percentage residuals are well-defined.
@@ -23,6 +23,7 @@ condition under which percentage residuals are well-defined.
 ## Installation
 
 ``` r
+
 # CRAN (once released)
 install.packages("psvr")
 
@@ -38,6 +39,7 @@ observations have strictly positive median home values (MEDV, in
 thousands of USD), making MAPE well-defined throughout.
 
 ``` r
+
 library(psvr)
 library(ggplot2)
 
@@ -60,6 +62,7 @@ Features are standardised using training-set statistics so that the RBF
 kernel operates on a comparable scale across all 13 predictors.
 
 ``` r
+
 set.seed(42)
 n      <- nrow(X_raw)
 tr_idx <- sample(n, floor(0.7 * n))
@@ -77,6 +80,7 @@ X_te <- scale(X_raw_te, center = col_mean, scale = col_sd)
 ### Helper metrics
 
 ``` r
+
 mape  <- function(y, yhat) mean(abs(y - yhat) / y) * 100
 rmspe <- function(y, yhat) sqrt(mean(((y - yhat) / y)^2)) * 100
 r2    <- function(y, yhat) 1 - sum((y - yhat)^2) / sum((y - mean(y))^2)
@@ -85,6 +89,7 @@ r2    <- function(y, yhat) 1 - sum((y - yhat)^2) / sum((y - mean(y))^2)
 ### Baseline: linear regression
 
 ``` r
+
 lm_df_tr <- as.data.frame(X_tr)
 lm_df_te <- as.data.frame(X_te)
 lm_fit   <- lm(y_tr ~ ., data = lm_df_tr)
@@ -100,21 +105,17 @@ cat(sprintf("Linear regression — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
 The LS-SVR formulation replaces the QP with a linear system by using a
 quadratic penalty on percentage residuals. The dual reduces to:
 
-$$\begin{bmatrix}
-0 & \mathbf{1}^{\top} \\
-\mathbf{1} & {\Omega + Y_{\Gamma}}
-\end{bmatrix}\begin{bmatrix}
-b \\
-{\mathbf{α}}
-\end{bmatrix} = \begin{bmatrix}
-0 \\
-\mathbf{y}
-\end{bmatrix}$$
+``` math
+\begin{bmatrix} 0 & \mathbf{1}^\top \\ \mathbf{1} & \Omega + Y_\Gamma \end{bmatrix}
+\begin{bmatrix} b \\ \boldsymbol{\alpha} \end{bmatrix}
+= \begin{bmatrix} 0 \\ \mathbf{y} \end{bmatrix}
+```
 
 where
-$Y_{\Gamma} = \operatorname{diag}\left( y_{1}^{2}/\Gamma,\ldots,y_{N}^{2}/\Gamma \right)$.
+$`Y_\Gamma = \operatorname{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)`$.
 
 ``` r
+
 # make_kernel() returns a closure K(xi, xj) = exp(-||xi - xj||^2 / (2 sigma^2))
 K <- make_kernel("rbf", sigma = 1)
 
@@ -137,6 +138,7 @@ print(fit_ls)
 ![](getting-started_files/figure-html/rmspe-plot-1.png)
 
 ``` r
+
 cf_ls <- coef(fit_ls)
 # alpha: N dual variables; weight each training point's kernel contribution
 #        in f(x) = sum_k alpha_k K(x_k, x) + b (all N points, no sparsity)
@@ -150,11 +152,11 @@ cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
 ## Model 1: ε-SVR with MAPE
 
 The ε-SVR formulation optimises a QP with **sample-dependent box
-constraints** $\left| \beta_{k} \right| \leq 100C/y_{k}$: tighter bounds
-for small targets, concentrating model capacity on low-magnitude
-observations.
+constraints** $`|\beta_k| \le 100C/y_k`$: tighter bounds for small
+targets, concentrating model capacity on low-magnitude observations.
 
 ``` r
+
 # C = 10: per-sample box bound |beta_k| <= 100*C/y_k; eps = 1: tube width (% of y_k)
 fit_ep <- mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = 1)
 pred_ep <- predict(fit_ep, X_te)
@@ -178,6 +180,7 @@ print(fit_ep)
 ![](getting-started_files/figure-html/mape-plot-1.png)
 
 ``` r
+
 cf_ep <- coef(fit_ep)
 # alpha: beta_k = alpha_k - alpha_k* for each support vector; non-zero only for
 #        training points outside the percentage-error ε-tube (sparse)
@@ -191,6 +194,7 @@ cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
 ## Comparing objectives
 
 ``` r
+
 results <- data.frame(
   Model = c("Linear regression", "LS-SVR RMSPE (Model 3)",
             "\u03b5-SVR MAPE (Model 1)"),
@@ -218,7 +222,7 @@ knitr::kable(results, col.names = c("Model", "MAPE (%)", "RMSPE (%)", "R²"),
 | ε-SVR MAPE (Model 1)   |    15.76 |     27.54 | 0.76 |
 
 Test-set performance on Boston Housing (70/30 split, RBF kernel, single
-run).
+run). {.table}
 
 Both psvr models improve on the linear baseline under their respective
 percentage-error objectives. The LS-SVR formulation (Model 3) minimises

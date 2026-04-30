@@ -10,18 +10,19 @@ scale-dependent: an error of 1 unit is negligible when the target is 1
 and RMSPE directly, making it well-suited for forecasting tasks where
 targets are strictly positive and relative accuracy is what matters.
 
-| Function                                                                               | Loss                     | Solver                   |
-|----------------------------------------------------------------------------------------|--------------------------|--------------------------|
-| [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md)               | MAPE — ε-insensitive     | quadratic program (osqp) |
-| [`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md)       | MAPE — symmetric kernel  | quadratic program (osqp) |
-| [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)         | RMSPE — least-squares    | linear system            |
-| [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md) | RMSPE — symmetric kernel | linear system            |
+| Function | Loss | Solver |
+|----|----|----|
+| [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md) | MAPE — ε-insensitive | quadratic program (osqp) |
+| [`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md) | MAPE — symmetric kernel | quadratic program (osqp) |
+| [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md) | RMSPE — least-squares | linear system |
+| [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md) | RMSPE — symmetric kernel | linear system |
 
 All models require **strictly positive targets** (`y > 0`).
 
 ## Installation
 
 ``` r
+
 # Development version from GitHub
 remotes::install_github("pbenavidesh/psvr")
 ```
@@ -29,6 +30,7 @@ remotes::install_github("pbenavidesh/psvr")
 ## Quick start
 
 ``` r
+
 library(psvr)
 
 # Synthetic dataset: even function (f(-x) = f(x)), targets strictly positive

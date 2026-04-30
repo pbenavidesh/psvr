@@ -27,8 +27,6 @@
     <li><h6 class="dropdown-header" data-toc-skip>Technical Notes</h6></li>
     <li><a class="dropdown-item" href="articles/python-replication.html">Python Replication: Numerical Equivalence Check</a></li>
     <li><a class="dropdown-item" href="articles/when-to-use-psvr.html">When to Use Percentage-Error SVR</a></li>
-    <li><hr class="dropdown-divider"></li>
-    <li><a class="dropdown-item" href="articles/index.html">More articles...</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/pbenavidesh/psvr" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
@@ -53,40 +51,40 @@
 <hr></div>
 <div class="section level2">
 <h2 id="mathematical-notation">Mathematical notation<a class="anchor" aria-label="anchor" href="#mathematical-notation"></a></h2>
-<table class="table"><colgroup><col width="47%"><col width="52%"></colgroup><thead><tr class="header"><th>Symbol</th>
+<table class="table"><colgroup><col width="47%"><col width="52%"></colgroup><thead><tr><th>Symbol</th>
 <th>Meaning</th>
-</tr></thead><tbody><tr class="odd"><td>N</td>
+</tr></thead><tbody><tr><td>N</td>
 <td>number of training samples</td>
-</tr><tr class="even"><td><code>xk ∈ Rᵖ</code></td>
+</tr><tr><td><code>xk ∈ Rᵖ</code></td>
 <td>input vector for sample k</td>
-</tr><tr class="odd"><td><code>yk &gt; 0</code></td>
+</tr><tr><td><code>yk &gt; 0</code></td>
 <td>strictly positive target (Assumption 2 in paper)</td>
-</tr><tr class="even"><td><code>K(xi, xj)</code></td>
+</tr><tr><td><code>K(xi, xj)</code></td>
 <td>kernel function</td>
-</tr><tr class="odd"><td><code>C &gt; 0</code></td>
+</tr><tr><td><code>C &gt; 0</code></td>
 <td>regularization parameter (ε-SVR models)</td>
-</tr><tr class="even"><td><code>ε ≥ 0</code></td>
+</tr><tr><td><code>ε ≥ 0</code></td>
 <td>insensitivity tube width (ε-SVR models)</td>
-</tr><tr class="odd"><td><code>Γ &gt; 0</code></td>
+</tr><tr><td><code>Γ &gt; 0</code></td>
 <td>regularization parameter (LS-SVR models)</td>
-</tr><tr class="even"><td><code>a ∈ {-1, 1}</code></td>
+</tr><tr><td><code>a ∈ {-1, 1}</code></td>
 <td>symmetry type: 1 = even, -1 = odd</td>
-</tr><tr class="odd"><td><code>βk = αk - αk*</code></td>
+</tr><tr><td><code>βk = αk - αk*</code></td>
 <td>dual variable differences (ε-SVR)</td>
-</tr><tr class="even"><td><code>αk ∈ R</code></td>
+</tr><tr><td><code>αk ∈ R</code></td>
 <td>dual / Lagrange multipliers (LS-SVR)</td>
-</tr><tr class="odd"><td><code>b</code></td>
+</tr><tr><td><code>b</code></td>
 <td>bias term</td>
-</tr><tr class="even"><td><code>Ω ∈ R^{N×N}</code></td>
+</tr><tr><td><code>Ω ∈ R^{N×N}</code></td>
 <td>kernel matrix, <code>Ωkl = K(xk, xl)</code>
 </td>
-</tr><tr class="odd"><td><code>Ωs = ½(Ω + aΩ*)</code></td>
+</tr><tr><td><code>Ωs = ½(Ω + aΩ*)</code></td>
 <td>symmetrized kernel matrix</td>
-</tr><tr class="even"><td><code>Ω*kl = K(xk, -xl)</code></td>
+</tr><tr><td><code>Ω*kl = K(xk, -xl)</code></td>
 <td>cross-negation kernel matrix</td>
-</tr><tr class="odd"><td><code>Ks(xi,xj) = K(xi,xj) + a·K(xi,-xj)</code></td>
+</tr><tr><td><code>Ks(xi,xj) = K(xi,xj) + a·K(xi,-xj)</code></td>
 <td>symmetric kernel</td>
-</tr><tr class="even"><td><code>YΓ = diag(y1²/Γ, …, yN²/Γ)</code></td>
+</tr><tr><td><code>YΓ = diag(y1²/Γ, …, yN²/Γ)</code></td>
 <td>target-weighted regularization diagonal</td>
 </tr></tbody></table><hr></div>
 <div class="section level2">
