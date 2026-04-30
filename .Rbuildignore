@@ -12,3 +12,7 @@
 ^vignettes/articles$
 ^vignettes/\.quarto$
 ^vignettes/_freeze$
+^vignettes/figure$
+^figure$
+^CITATION\.cff$
+^NULL$

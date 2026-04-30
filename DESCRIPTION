@@ -28,8 +28,10 @@ Imports:
     workflowsets
 Suggests:
     dplyr,
+    ggplot2,
     knitr,
     MASS,
+    mlbench,
     osqp,
     recipes,
     rmarkdown,

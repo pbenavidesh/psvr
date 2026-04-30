@@ -1,0 +1,23 @@
+citHeader("To cite psvr in publications, please use the accompanying paper (currently under review):")
+
+bibentry(
+  bibtype = "Article",
+  title   = paste(
+    "A Unified Family of Percentage-Error Support Vector Regression Models",
+    "with Symmetric Kernel Extensions"
+  ),
+  author = c(
+    person("Pablo", "Benavides-Herrera",
+           email = "pbenavides@iteso.mx",
+           comment = c(ORCID = "0000-0003-4926-4763")),
+    person("Gerardo", "Álvarez-Álvarez"),
+    person("Riemann", "Ruiz-Cruz"),
+    person(c("Juan", "Diego"), "Sánchez-Torres")
+  ),
+  journal   = "Mathematics",
+  publisher = "MDPI",
+  year      = "2026",
+  note      = "Under review at MDPI Mathematics",
+  url       = "https://github.com/pbenavidesh/psvr",
+  doi       = "10.5281/zenodo.19643526"
+)
