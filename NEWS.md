@@ -1,3 +1,23 @@
+# psvr 0.0.1
+
+## New features
+
+* Added optional preconditioner for LS-SVR variants (`rmspe_lssvr()`,
+  `rmspe_sym_lssvr()`) via the `precondition` argument. Accepted values:
+  "always", "never", "auto" (default; activates when
+  max(y)/min(y) > 10), or a numeric threshold. The preconditioner is a
+  mathematically exact change of variable that improves numerical
+  conditioning at large target dynamic ranges without changing
+  predictions in exact arithmetic.
+* Returned model objects now include `precondition_applied` (logical)
+  for diagnostic transparency. The `print` method displays this field
+  when TRUE.
+
+## Documentation
+
+* Updated `@details` for both LS-SVR fitters with the bordered-system
+  formulation and the recovery formula α_k = α̃_k / y_k.
+
 # psvr 0.0.0.9005
 
 ### New features

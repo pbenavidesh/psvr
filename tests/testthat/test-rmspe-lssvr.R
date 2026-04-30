@@ -9,7 +9,8 @@ test_that("rmspe_lssvr returns psvr_rmspe object with expected fields", {
   fit <- rmspe_lssvr(X_tr, y_tr, kernel = K, gamma = 1)
   expect_s3_class(fit, "psvr_rmspe")
   expect_named(fit, c("alpha", "b", "X_train", "kernel",
-                      "gamma", "n_train", "p_train"))
+                      "gamma", "n_train", "p_train",
+                      "precondition_applied"))
   expect_length(fit$alpha, nrow(X_tr))
   expect_true(is.numeric(fit$b) && length(fit$b) == 1L)
   expect_equal(fit$gamma, 1)

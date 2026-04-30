@@ -23,10 +23,49 @@
 #' @param gamma Regularization parameter `Γ > 0`.
 #' @param a Symmetry parameter: `1` for even symmetry `f(x) = f(-x)`,
 #'   `-1` for odd symmetry `f(x) = -f(-x)`.
+#' @param precondition Optional symmetric rescaling preconditioner derived
+#'   from Remark 17 of the companion paper, used when the target dynamic range
+#'   `ρ = max(y) / min(y)` is large enough to make `Ωs + YΓ` ill-conditioned.
+#'   One of:
+#'   \describe{
+#'     \item{`"auto"` (default)}{Apply the preconditioner when `ρ > 10`.}
+#'     \item{`"always"`}{Apply the preconditioner unconditionally.}
+#'     \item{`"never"`}{Disable the preconditioner (legacy behaviour).}
+#'     \item{a positive numeric scalar}{Apply when `ρ > precondition`.}
+#'   }
+#'
+#' @details
+#' When `ρ = max(y) / min(y)` is large, `Ωs + YΓ` becomes ill-conditioned
+#' because the diagonal of `YΓ = diag(yₖ²/Γ)` varies as `O(ρ²)`. Remark 17
+#' of the companion paper derives a symmetric rescaling preconditioner
+#' `P = diag(1/yₖ)` via the change of variable `α = P ᾱ`
+#' (i.e. `αₖ = ᾱₖ / yₖ`). Multiplying the inner block of the bordered
+#' system by `P` from the left gives
+#' `(P Ωs P + Γ⁻¹·I) ᾱ = P y − b · P 1 = 1 − b · P 1`,
+#' with constant-diagonal regularization `Γ⁻¹ · I`. The preconditioner is
+#' applied to the symmetrized kernel matrix `Ωs` (after symmetrization).
+#' The constraint `1ᵀ α = 0` becomes `(P 1)ᵀ ᾱ = 0`, so the bordered
+#' system used by the preconditioned solver is
+#' \preformatted{
+#' [ 0      (P 1)ᵀ          ] [ b ]   [ 0 ]
+#' [ P 1    P Ωs P + Γ⁻¹·I   ] [ ᾱ ] = [ 1 ]
+#' }
+#' Recovery is `α = ᾱ / y` (elementwise division). The bias `b` is the
+#' same constraint multiplier in both systems.
+#'
+#' This is a strict change of variable: in exact arithmetic the
+#' preconditioned and unconditioned solvers produce identical predictions.
+#' Its purpose is to preserve solver accuracy under finite floating-point
+#' precision when `ρ` is large; for moderate `ρ` the two paths agree to
+#' within machine epsilon. Use `precondition = "auto"` (default) for
+#' typical workloads, `"never"` for legacy behaviour, or a custom numeric
+#' threshold for fine-grained control. The chosen behaviour is recorded
+#' in `precondition_applied`.
 #'
 #' @return An object of class `"psvr_rmspe_sym"`, a list with components:
 #'   \describe{
-#'     \item{`alpha`}{Numeric vector of dual variables (length N).}
+#'     \item{`alpha`}{Numeric vector of dual variables (length N), in the
+#'       original variable space.}
 #'     \item{`b`}{Numeric scalar bias term.}
 #'     \item{`X_train`}{The training matrix `X` (kept for prediction).}
 #'     \item{`kernel`}{The kernel function used.}
@@ -34,6 +73,8 @@
 #'     \item{`a`}{The symmetry parameter.}
 #'     \item{`n_train`}{Number of training observations.}
 #'     \item{`p_train`}{Number of training features (columns).}
+#'     \item{`precondition_applied`}{Logical scalar; `TRUE` if the
+#'       preconditioner was applied for this fit.}
 #'   }
 #'
 #' @examples
@@ -44,7 +85,7 @@
 #' predict(fit, X)
 #'
 #' @export
-rmspe_sym_lssvr <- function(X, y, kernel, gamma, a = 1) {
+rmspe_sym_lssvr <- function(X, y, kernel, gamma, a = 1, precondition = "auto") {
   X <- as.matrix(X)
   y <- as.numeric(y)
   if (!all(y > 0)) {
@@ -58,6 +99,8 @@ rmspe_sym_lssvr <- function(X, y, kernel, gamma, a = 1) {
   if (gamma <= 0)       stop("`gamma` must be positive")
   if (!a %in% c(-1, 1)) stop("`a` must be 1 (even) or -1 (odd)")
 
+  use_precond <- .resolve_precondition(precondition, y)
+
   N <- nrow(X)
   if (N > 2000L) {
     warning(sprintf(
@@ -68,29 +111,44 @@ rmspe_sym_lssvr <- function(X, y, kernel, gamma, a = 1) {
   }
 
   Omega_s <- sym_kernel_matrix(kernel, X, a)   # ½(Ω + a·Ω*)
-  diag(Omega_s) <- diag(Omega_s) + 1e-6
-  diag(Omega_s) <- diag(Omega_s) + y^2 / gamma # add YΓ to diagonal in place
+  diag(Omega_s) <- diag(Omega_s) + 1e-6        # Tikhonov jitter
 
-  # Augmented (N+1)×(N+1) system: [0, 1ᵀ; 1, Ωs+YΓ][b; α] = [0; y]
+  if (use_precond) {
+    P       <- 1 / y
+    Omega_s <- (P %o% P) * Omega_s             # P Ωs P
+    diag(Omega_s) <- diag(Omega_s) + 1 / gamma
+    border <- P                                # (P 1) in border / row
+    rhs_y  <- P * y                            # = rep(1, N)
+  } else {
+    diag(Omega_s) <- diag(Omega_s) + y^2 / gamma  # add YΓ to diagonal
+    border <- rep(1, N)                        # legacy 1ᵀ borders
+    rhs_y  <- y
+  }
+
+  # Augmented (N+1)×(N+1) bordered system
   A <- matrix(0.0, N + 1L, N + 1L)
-  A[1L, 2L:(N + 1L)] <- 1.0
-  A[2L:(N + 1L), 1L] <- 1.0
+  A[1L, 2L:(N + 1L)] <- border
+  A[2L:(N + 1L), 1L] <- border
   A[2L:(N + 1L), 2L:(N + 1L)] <- Omega_s
 
-  rhs <- c(0.0, y)
+  rhs <- c(0.0, rhs_y)
 
   sol <- solve(A, rhs)
 
+  alpha <- sol[2L:(N + 1L)]
+  if (use_precond) alpha <- alpha / y          # recover α = ᾱ / y
+
   structure(
     list(
-      alpha   = sol[2L:(N + 1L)],
-      b       = sol[1L],
-      X_train = X,
-      kernel  = kernel,
-      gamma   = gamma,
-      a       = a,
-      n_train = N,
-      p_train = ncol(X)
+      alpha                = alpha,
+      b                    = sol[1L],
+      X_train              = X,
+      kernel               = kernel,
+      gamma                = gamma,
+      a                    = a,
+      n_train              = N,
+      p_train              = ncol(X),
+      precondition_applied = use_precond
     ),
     class = "psvr_rmspe_sym"
   )
@@ -143,9 +201,13 @@ print.psvr_rmspe_sym <- function(x, ...) {
   kdesc <- .kernel_desc(ki)
   sym   <- if (x$a == 1L) "even  (a = 1)" else "odd   (a = -1)"
   cat(sprintf(
-    "\nSymmetric LS-SVR with RMSPE loss  [psvr_rmspe_sym]\n\n  Kernel:        %s\n  Gamma:         %g\n  Symmetry:      %s\n  Training obs.: %d\n\n",
+    "\nSymmetric LS-SVR with RMSPE loss  [psvr_rmspe_sym]\n\n  Kernel:        %s\n  Gamma:         %g\n  Symmetry:      %s\n  Training obs.: %d\n",
     kdesc, x$gamma, sym, x$n_train
   ))
+  if (isTRUE(x$precondition_applied)) {
+    cat("  Preconditioner: applied (diag(1/y) symmetric rescaling)\n")
+  }
+  cat("\n")
   invisible(x)
 }
 

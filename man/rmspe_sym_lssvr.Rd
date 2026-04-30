@@ -4,7 +4,7 @@
 \alias{rmspe_sym_lssvr}
 \title{Fit symmetric LS-SVR with RMSPE loss (Model 4)}
 \usage{
-rmspe_sym_lssvr(X, y, kernel, gamma, a = 1)
+rmspe_sym_lssvr(X, y, kernel, gamma, a = 1, precondition = "auto")
 }
 \arguments{
 \item{X}{Numeric matrix of training inputs, one observation per row (N × p).}
@@ -17,11 +17,23 @@ rmspe_sym_lssvr(X, y, kernel, gamma, a = 1)
 
 \item{a}{Symmetry parameter: \code{1} for even symmetry \code{f(x) = f(-x)},
 \code{-1} for odd symmetry \code{f(x) = -f(-x)}.}
+
+\item{precondition}{Optional symmetric rescaling preconditioner derived
+from Remark 17 of the companion paper, used when the target dynamic range
+\code{ρ = max(y) / min(y)} is large enough to make \code{Ωs + YΓ} ill-conditioned.
+One of:
+\describe{
+\item{\code{"auto"} (default)}{Apply the preconditioner when \code{ρ > 10}.}
+\item{\code{"always"}}{Apply the preconditioner unconditionally.}
+\item{\code{"never"}}{Disable the preconditioner (legacy behaviour).}
+\item{a positive numeric scalar}{Apply when \code{ρ > precondition}.}
+}}
 }
 \value{
 An object of class \code{"psvr_rmspe_sym"}, a list with components:
 \describe{
-\item{\code{alpha}}{Numeric vector of dual variables (length N).}
+\item{\code{alpha}}{Numeric vector of dual variables (length N), in the
+original variable space.}
 \item{\code{b}}{Numeric scalar bias term.}
 \item{\code{X_train}}{The training matrix \code{X} (kept for prediction).}
 \item{\code{kernel}}{The kernel function used.}
@@ -29,6 +41,8 @@ An object of class \code{"psvr_rmspe_sym"}, a list with components:
 \item{\code{a}}{The symmetry parameter.}
 \item{\code{n_train}}{Number of training observations.}
 \item{\code{p_train}}{Number of training features (columns).}
+\item{\code{precondition_applied}}{Logical scalar; \code{TRUE} if the
+preconditioner was applied for this fit.}
 }
 }
 \description{
@@ -48,6 +62,33 @@ where \verb{YΓ = diag(y₁²/Γ, …, yN²/Γ)}.
 The kernel must satisfy Assumption 3 of the paper (kernel symmetry):
 \code{K(-xi, xj) = K(xi, -xj)} and \code{K(-xi, -xj) = K(xi, xj)}.
 RBF and even-degree polynomial kernels satisfy this; see \code{\link[=make_kernel]{make_kernel()}}.
+
+When \code{ρ = max(y) / min(y)} is large, \code{Ωs + YΓ} becomes ill-conditioned
+because the diagonal of \verb{YΓ = diag(yₖ²/Γ)} varies as \verb{O(ρ²)}. Remark 17
+of the companion paper derives a symmetric rescaling preconditioner
+\code{P = diag(1/yₖ)} via the change of variable \verb{α = P ᾱ}
+(i.e. \code{αₖ = ᾱₖ / yₖ}). Multiplying the inner block of the bordered
+system by \code{P} from the left gives
+\verb{(P Ωs P + Γ⁻¹·I) ᾱ = P y − b · P 1 = 1 − b · P 1},
+with constant-diagonal regularization \verb{Γ⁻¹ · I}. The preconditioner is
+applied to the symmetrized kernel matrix \code{Ωs} (after symmetrization).
+The constraint \verb{1ᵀ α = 0} becomes \verb{(P 1)ᵀ ᾱ = 0}, so the bordered
+system used by the preconditioned solver is
+\preformatted{
+[ 0      (P 1)ᵀ          ] [ b ]   [ 0 ]
+[ P 1    P Ωs P + Γ⁻¹·I   ] [ ᾱ ] = [ 1 ]
+}
+Recovery is \code{α = ᾱ / y} (elementwise division). The bias \code{b} is the
+same constraint multiplier in both systems.
+
+This is a strict change of variable: in exact arithmetic the
+preconditioned and unconditioned solvers produce identical predictions.
+Its purpose is to preserve solver accuracy under finite floating-point
+precision when \code{ρ} is large; for moderate \code{ρ} the two paths agree to
+within machine epsilon. Use \code{precondition = "auto"} (default) for
+typical workloads, \code{"never"} for legacy behaviour, or a custom numeric
+threshold for fine-grained control. The chosen behaviour is recorded
+in \code{precondition_applied}.
 }
 \examples{
 X <- matrix(c(1, 2, 3, 4, 5, 6), ncol = 2)

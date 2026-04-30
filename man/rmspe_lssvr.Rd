@@ -4,7 +4,7 @@
 \alias{rmspe_lssvr}
 \title{Fit LS-SVR with RMSPE loss (Model 3)}
 \usage{
-rmspe_lssvr(X, y, kernel, gamma)
+rmspe_lssvr(X, y, kernel, gamma, precondition = "auto")
 }
 \arguments{
 \item{X}{Numeric matrix of training inputs, one observation per row (N × p).}
@@ -14,17 +14,31 @@ rmspe_lssvr(X, y, kernel, gamma)
 \item{kernel}{A kernel function created by \code{\link[=make_kernel]{make_kernel()}}.}
 
 \item{gamma}{Regularization parameter \code{Γ > 0}.}
+
+\item{precondition}{Optional symmetric rescaling preconditioner derived
+from Remark 17 of the companion paper, used when the target dynamic range
+\code{ρ = max(y) / min(y)} is large enough to make \code{Ω + YΓ} ill-conditioned.
+One of:
+\describe{
+\item{\code{"auto"} (default)}{Apply the preconditioner when \code{ρ > 10}.}
+\item{\code{"always"}}{Apply the preconditioner unconditionally.}
+\item{\code{"never"}}{Disable the preconditioner (legacy behaviour).}
+\item{a positive numeric scalar}{Apply when \code{ρ > precondition}.}
+}}
 }
 \value{
 An object of class \code{"psvr_rmspe"}, a list with components:
 \describe{
-\item{\code{alpha}}{Numeric vector of dual variables (length N).}
+\item{\code{alpha}}{Numeric vector of dual variables (length N), in the
+original variable space.}
 \item{\code{b}}{Numeric scalar bias term.}
 \item{\code{X_train}}{The training matrix \code{X} (kept for prediction).}
 \item{\code{kernel}}{The kernel function used.}
 \item{\code{gamma}}{The regularization parameter \code{Γ}.}
 \item{\code{n_train}}{Number of training observations.}
 \item{\code{p_train}}{Number of training features (columns).}
+\item{\code{precondition_applied}}{Logical scalar; \code{TRUE} if the
+preconditioner was applied for this fit.}
 }
 }
 \description{
@@ -38,6 +52,32 @@ Solves the linear system derived in Theorem 3 of Benavides-Herrera et al.
 }\if{html}{\out{</div>}}
 
 where \verb{YΓ = diag(y₁²/Γ, …, yN²/Γ)} is added to the diagonal of Ω.
+
+When the target dynamic range \code{ρ = max(y) / min(y)} is large, the
+diagonal of \verb{YΓ = diag(yₖ²/Γ)} varies as \verb{O(ρ²)}, making \code{Ω + YΓ}
+ill-conditioned. Remark 17 of the companion paper derives a symmetric
+rescaling preconditioner \code{P = diag(1/yₖ)} via the change of variable
+\verb{α = P ᾱ} (i.e. \code{αₖ = ᾱₖ / yₖ}). Multiplying the inner block of the
+bordered system by \code{P} from the left gives
+\verb{(P Ω P + Γ⁻¹·I) ᾱ = P y − b · P 1 = 1 − b · P 1},
+with constant-diagonal regularization \verb{Γ⁻¹ · I} independent of \code{yₖ}.
+The constraint \verb{1ᵀ α = 0} becomes \verb{(P 1)ᵀ ᾱ = 0}, so the bordered
+system used by the preconditioned solver is
+\preformatted{
+[ 0      (P 1)ᵀ          ] [ b ]   [ 0 ]
+[ P 1    P Ω P + Γ⁻¹·I    ] [ ᾱ ] = [ 1 ]
+}
+Recovery is \code{α = ᾱ / y} (elementwise division). The bias \code{b} is the
+same constraint multiplier in both systems.
+
+This is a strict change of variable: in exact arithmetic the
+preconditioned and unconditioned solvers produce identical predictions.
+Its purpose is to preserve solver accuracy under finite floating-point
+precision when \code{ρ} is large; for moderate \code{ρ} the two paths agree to
+within machine epsilon. Use \code{precondition = "auto"} (default) for
+typical workloads, \code{"never"} for legacy behaviour, or a custom numeric
+threshold for fine-grained control. The chosen behaviour is recorded
+in \code{precondition_applied}.
 }
 \examples{
 X <- matrix(c(1, 2, 3, 4, 5, 6), ncol = 2)
