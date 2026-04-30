@@ -72,7 +72,7 @@ library(here)
 library(knitr)
 library(kableExtra)
 
-here::i_am("vignettes/articles/case-studies/boston-reflection-ablation.qmd")
+here::i_am("vignettes/articles/boston-reflection-ablation.qmd")
 source(here::here("vignettes/articles/case-studies/experiment_helpers.R"))
 source(here::here("vignettes/articles/case-studies/boston_ablation_helpers.R"))
 
