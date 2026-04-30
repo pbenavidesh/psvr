@@ -117,19 +117,6 @@ articles:
     contents:
       - tidymodels-workflow
 
-  
-  - title: "Case Studies"
-    desc: >
-      Reproducibility articles for the submitted manuscript.
-      Results correspond to 30-seed benchmarks across three
-      datasets.
-    contents:
-      - articles/boston-housing
-      - articles/diabetes
-      - articles/energy-efficiency
-      - articles/electricity-forecasting
-      - articles/boston-reflection-ablation
-
   - title: "Technical Notes"
     navbar: "Technical Notes"
     contents:
