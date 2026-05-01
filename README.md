@@ -1,5 +1,7 @@
 # psvr — Percentage-Error Support Vector Regression
 
+# psvr <img src="man/figures/logo.png" align="right" height="139"/>
+
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19643526.svg)](https://doi.org/10.5281/zenodo.19643526)
 
 `psvr` implements four support vector regression models derived from a unified
