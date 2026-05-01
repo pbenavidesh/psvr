@@ -1,6 +1,6 @@
 # Changelog
 
-## psvr 0.0.2 (unreleased)
+## psvr 0.0.2 (2026-04-30)
 
 ### New features
 

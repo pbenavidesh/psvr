@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -43,7 +43,7 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.0.2" id="psvr-002-unreleased">psvr 0.0.2 (unreleased)<a class="anchor" aria-label="anchor" href="#psvr-002-unreleased"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.0.2" id="psvr-002-2026-04-30">psvr 0.0.2 (2026-04-30)<a class="anchor" aria-label="anchor" href="#psvr-002-2026-04-30"></a></h2>
 <div class="section level3">
 <h3 id="new-features-0-0-2">New features<a class="anchor" aria-label="anchor" href="#new-features-0-0-2"></a></h3>
 <ul><li>The <code>precondition</code> argument from <code><a href="../reference/rmspe_lssvr.html">rmspe_lssvr()</a></code> and <code><a href="../reference/rmspe_sym_lssvr.html">rmspe_sym_lssvr()</a></code> is now configurable via parsnip’s <code><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine()</a></code> for all six RMSPE spec functions (rbf/poly/linear, both symmetric and non-symmetric). Default is <code>"auto"</code>; pass via <code>set_engine("psvr", precondition = "always")</code>, <code>"never"</code>, or a numeric threshold. Not registered as a tunable parameter — it is a configuration flag, not a hyperparameter.</li>
