@@ -15,6 +15,7 @@
 ">
 <meta property="og:description" content="Four support vector regression models derived from a unified percentage-error loss framework (MAPE and RMSPE), with optional symmetric kernel extensions and tidymodels integration.
 ">
+<meta property="og:image" content="https://pbenavidesh.github.io/psvr/logo.png">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -60,8 +61,14 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="psvr--percentage-error-support-vector-regression">psvr — Percentage-Error Support Vector Regression<a class="anchor" aria-label="anchor" href="#psvr--percentage-error-support-vector-regression"></a>
-</h1></div>
+<div class="page-header">
+<img src="logo.png" class="logo" alt=""><h1 id="psvr--percentage-error-support-vector-regression">psvr — Percentage-Error Support Vector Regression<a class="anchor" aria-label="anchor" href="#psvr--percentage-error-support-vector-regression"></a>
+</h1>
+</div>
+</div>
+<div class="section level1">
+<h1 id="psvr-">psvr <a class="anchor" aria-label="anchor" href="#psvr-"></a>
+</h1>
 <p><a href="https://doi.org/10.5281/zenodo.19643526" class="external-link"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.19643526.svg" alt="DOI"></a></p>
 <p><code>psvr</code> implements four support vector regression models derived from a unified mathematical framework for percentage-error loss functions. Classical SVR minimises absolute-error losses (MAE, MSE), which are scale-dependent: an error of 1 unit is negligible when the target is 1 000 but critical when it is 2. <code>psvr</code> addresses this by optimising MAPE and RMSPE directly, making it well-suited for forecasting tasks where targets are strictly positive and relative accuracy is what matters.</p>
 <table class="table">
@@ -163,6 +170,7 @@
 <p>Benavides-Herrera, P., Álvarez-Álvarez, G., Ruiz-Cruz, R., &amp; Sánchez-Torres, J. D. (2026). A unified family of percentage-error support vector regression models with symmetric kernel extensions. <em>Mathematics</em>, MDPI. (under review)</p>
 </div>
 </div>
+
   </main><aside class="col-md-3"><div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
