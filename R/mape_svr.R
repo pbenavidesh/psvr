@@ -27,7 +27,8 @@
   diag(Omega) <- diag(Omega) + 1e-6
 
   if (solver == "smo") {
-    sol        <- .smo_solve(Omega, y, C, eps)
+    K_acc      <- .make_kernel_accessor(Omega)
+    sol        <- .smo_solve(K_acc, y, C, eps)
     alpha      <- sol$alpha
     alpha_star <- sol$alpha_star
     beta       <- alpha - alpha_star
