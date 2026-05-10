@@ -50,6 +50,9 @@
   # tau is in the same units as y, so apply tol relatively (per-target scale).
   # This keeps convergence behaviour consistent across kernels whose Omega
   # entries vary by orders of magnitude (e.g., RBF in [0,1] vs polynomial).
+  # tol_eff is retained for the WSS3 candidate noise floor only (line ~132);
+  # the convergence test uses the per-pair tol_pair scaled by max(y[p], y[k_j_w1])
+  # (Theorem 8 of arXiv:2605.01446 v3).
   tol_eff <- tol * mean(y)
   y_bar   <- mean(y)
 
@@ -112,7 +115,20 @@
     tau_j_w1 <- low_tau_pool[pos_min]
     Delta    <- tau_i - tau_j_w1
 
-    if (Delta <= tol_eff) {
+    # Theorem 8: per-pair tolerance, evaluated against the WSS1 convergence pair.
+    # The paper text (Theorem 8 of arXiv:2605.01446 v3) says "j* = WSS3 pick", but
+    # this would force WSS3 to run before the convergence test - both wasteful and
+    # mathematically incorrect: Delta_w3 <= Delta_w1 by construction (WSS3 picks j
+    # to maximize second-order gain, not minimize tau_j), so testing Delta_w3
+    # against the tolerance would stop prematurely, before the true KKT optimality
+    # gap (which equals Delta_w1) is below tolerance. The WSS1 (i_w1, j_w1) pair
+    # IS the KKT optimality gap; that is the correct convergence test. This
+    # deviation from literal paper text is flagged for paper-side notation fix in
+    # F8 (paper TODO #4).
+    k_j_w1   <- low_idx_pool[pos_min]
+    tol_pair <- tol * max(y[p], y[k_j_w1])
+
+    if (Delta <= tol_pair) {
       if (any(!active_alpha) || any(!active_astar)) {
         # Active-set converged with shrunk variables: rebuild and reactivate.
         beta_full     <- alpha - alpha_star
