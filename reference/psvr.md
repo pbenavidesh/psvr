@@ -146,8 +146,12 @@ An object of class `"psvr_fit"`, a list with components:
 
 - `solver_meta`:
 
-  Named list `(backend, iters, converged, precondition_applied)`
-  describing the solve.
+  Named list
+  `(backend, iters, converged, precondition_applied, spectral)`
+  describing the solve. The `spectral` slot is populated only for
+  symmetric MAPE fits (`loss = "mape"`, `sym != NULL`) and reports
+  Algorithm 2 diagnostics (`mu`, `lambda_min_hat`, `lambda_max_hat`,
+  `branch_taken`, `n_power_iterations`); `NULL` otherwise.
 
 ## Cross-loss arguments
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -186,7 +186,7 @@ s.t. yk = ωᵀφ(xk) + b + ek</code></pre>
 <li><label><input type="checkbox" checked><code>tests/</code> — testthat unit tests for all four models (84 tests, 0 failures)</label></li>
 <li><label><input type="checkbox" checked><strong>F1</strong> — Unified <code><a href="reference/psvr.html">psvr()</a></code> entry point + <code>psvr_fit</code> class + DRY consolidation + symmetric-kernel standardization (<code>R/psvr-main.R</code>, <code>R/psvr-methods.R</code>, <code>R/utils-*.R</code>, <code>R/deprecated.R</code>).</label></li>
 <li><label><input type="checkbox" checked><strong>F2</strong> — Kernel accessor interface (<code>R/kernel-accessor.R</code>); SMO loop reads kernel data via <code>K_acc</code> closures. Foundation for F3/F6.</label></li>
-<li><label><input type="checkbox"><strong>F3</strong> — Algorithm 2: adaptive spectral shift (placeholder in <code>R/kernel-spectral.R</code>).</label></li>
+<li><label><input type="checkbox" checked><strong>F3</strong> — Algorithm 2: adaptive spectral shift (<code>R/kernel-spectral.R</code>). <code><a href="reference/dot-fit_mape_sym.html">.fit_mape_sym()</a></code> now invokes <code><a href="reference/dot-adaptive_spectral_shift.html">.adaptive_spectral_shift()</a></code> between the diagonal-jitter step and the SMO/osqp solve; spectral diagnostics surface under <code>solver_meta$spectral</code> on <code>psvr_fit</code> objects.</label></li>
 <li><label><input type="checkbox"><strong>F4–F8</strong> — Theorems 3–8 from arXiv:2605.01446 v3.</label></li>
 </ol><hr></div>
 <div class="section level2">
@@ -254,6 +254,47 @@ n              -&gt; nrow(Omega)              (integer)</code></pre>
 <p><strong>Scope.</strong> The accessor is used by Models 1 and 2 only (the SMO path). LS-SVR fitters (<code>.fit_rmspe</code>, <code>.fit_rmspe_sym</code>) solve a single linear system via <code><a href="https://rdrr.io/r/base/solve.html" class="external-link">base::solve()</a></code> and do <strong>not</strong> use accessors — caching is not applicable to a one-shot factorisation.</p>
 <p><strong>Future swap point.</strong> F6 will replace <code><a href="reference/dot-make_kernel_accessor.html">.make_kernel_accessor()</a></code> with a cache-backed implementation (likely Rcpp). The five-method contract is the only API surface the SMO solver depends on; consumers stay unchanged. Predictions remain bit-identical to F1 at tolerance <code>1e-10</code> (verified by the 16+12 golden snapshots).</p>
 <hr></div>
+<div class="section level2">
+<h2 id="adaptive-spectral-regularization-post-f3">Adaptive Spectral Regularization (post-F3)<a class="anchor" aria-label="anchor" href="#adaptive-spectral-regularization-post-f3"></a></h2>
+<p><code><a href="reference/dot-fit_mape_sym.html">.fit_mape_sym()</a></code> (Model 2) calls <code><a href="reference/dot-adaptive_spectral_shift.html">.adaptive_spectral_shift()</a></code> from <code>R/kernel-spectral.R</code> between the <code>0.5e-6</code> diagonal jitter step and the SMO/osqp solve. The shift is invoked <strong>unconditionally</strong> (independent of <code>a</code> or kernel type); the branch decision is made on the estimated <code>λ_min(Ωs)</code>. This implements Theorem 2 / Algorithm 2 of arXiv:2605.01446 v3 with one corrected detail (see “Paper deviation” below).</p>
+<div class="section level3">
+<h3 id="api">API<a class="anchor" aria-label="anchor" href="#api"></a></h3>
+<pre><code>.adaptive_spectral_shift(Omega_s, T_pi = 5L, delta_stab = 1e-8) -&gt;
+  list(Omega_use, mu, lambda_min_hat, lambda_max_hat,
+       branch_taken ∈ {"no_shift", "shifted"},
+       n_power_iterations = c(iter1, iter2))</code></pre>
+<p>The function never modifies the input; when shifted, <code>Omega_use</code> is a fresh matrix equal to <code>Omega_s + mu * I</code>. Results are deterministic: both passes start from the uniform unit vector <code>rep(1, N) / sqrt(N)</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="two-pass-shifted-power-iteration">Two-pass shifted power iteration<a class="anchor" aria-label="anchor" href="#two-pass-shifted-power-iteration"></a></h3>
+<p>Pass 1 runs plain power iteration on <code>Ωs</code> and returns the Rayleigh quotient <code>lambda_max_hat</code>. Pass 2 runs power iteration on <code>rho * I - Ωs</code> with <code>rho = |lambda_max_hat|</code> (the spectral radius) and returns the Rayleigh <code>lambda_min_hat = v^T Ωs v</code> on the converged <code>v</code>. Both passes are O(N²); total cost is <code>2 * T_pi</code> matvecs.</p>
+</div>
+<div class="section level3">
+<h3 id="paper-deviation">Paper deviation<a class="anchor" aria-label="anchor" href="#paper-deviation"></a></h3>
+<p>Algorithm 2 line 6 of the paper, as literally written (<code>v ← -Ωs · v / ||Ωs · v||</code>), estimates <code>-λ_max(Ωs)</code> rather than <code>λ_min(Ωs)</code>: power iteration on <code>-Ωs</code> converges to the eigenvector of largest |eigenvalue|, which is <code>v_max(Ωs)</code> whenever <code>|λ_max| &gt; |λ_min|</code> (the typical case for Mercer-PSD kernel matrices). The Pass 2 shift uses <code>|Pass 1 Rayleigh|</code>, not Pass 1’s signed Rayleigh, to handle the <code>λ_min</code>-dominant case where <code>|λ_min| &gt; λ_max</code> and Pass 1 converges to <code>v_min</code> with negative Rayleigh; using <code>abs(...)</code> ensures <code>rho * I - Ωs</code> is PSD, so Pass 2 reliably finds <code>v_min(Ωs)</code> regardless of which side of the spectrum dominated Pass 1. This deviation is documented inline in <code>R/kernel-spectral.R</code> and is to be flagged as a paper-side erratum (smo-v3.tex line 3467) in F8.</p>
+</div>
+<div class="section level3">
+<h3 id="diagnostics">Diagnostics<a class="anchor" aria-label="anchor" href="#diagnostics"></a></h3>
+<p><code>psvr_fit$solver_meta$spectral</code> is populated only for symmetric MAPE fits (<code>loss = "mape"</code> and <code>sym != NULL</code>); <code>NULL</code> for Models 1, 3, 4. Schema:</p>
+<pre><code>$mu                  numeric scalar; 0 if branch_taken == "no_shift"
+$lambda_min_hat      numeric; Rayleigh from Pass 2
+$lambda_max_hat      numeric; Rayleigh from Pass 1 (see note)
+$branch_taken        "no_shift" | "shifted"
+$n_power_iterations  integer length-2: iterations executed in Pass 1, Pass 2</code></pre>
+<p><code>lambda_max_hat</code> reports Pass 1’s signed Rayleigh and equals <code>λ_max(Ωs)</code> for PSD or <code>λ_max</code>-dominant matrices; for the <code>λ_min</code>-dominant pathological case it equals <code>λ_min(Ωs)</code>. The branch decision is made correctly via <code>lambda_min_hat</code> in either case.</p>
+</div>
+<div class="section level3">
+<h3 id="why-the-shifted-branch-is-dormant-in-production">Why the shifted branch is dormant in production<a class="anchor" aria-label="anchor" href="#why-the-shifted-branch-is-dormant-in-production"></a></h3>
+<p>With the three Mercer kernels supplied by <code><a href="reference/make_kernel.html">make_kernel()</a></code> (<code>"rbf"</code>, <code>"linear"</code>, <code>"polynomial"</code>), <code>Ωs = ½(Ω + a·Ω*)</code> is <strong>always PSD</strong> by Aronszajn’s closure (shift-invariant kernels) and Schur’s product theorem (polynomial kernels collapse <code>K - K*</code> for odd / even degrees into non-negative linear combinations of valid Mercer kernels). The shifted branch is therefore a defensive guard that activates only with <strong>non-Mercer kernels</strong> (e.g., tanh / sigmoid in some parameter ranges) supplied via a custom kernel closure — a use case not currently documented or tested. Production fits with the supplied <code><a href="reference/make_kernel.html">make_kernel()</a></code> types always take the no-shift branch and remain bit-identical to F2.</p>
+</div>
+<div class="section level3">
+<h3 id="known-limitations">Known limitations<a class="anchor" aria-label="anchor" href="#known-limitations"></a></h3>
+<p>Theorem 2(a) guarantees that the spectrally-shifted matrix <code>Omega_use</code> satisfies <code>Omega_use ⪰ delta_stab * I</code> in the <strong>limit</strong> <code>T_pi → ∞</code>. At finite <code>T_pi</code>, the estimate of <code>λ_min</code> has a residual bias that bleeds into <code>Omega_use</code>; the resulting matrix is “almost PSD” but may not strictly clear the <code>delta_stab</code> floor.</p>
+<p>For kernel matrices with well-separated spectra (the typical case for Mercer kernels with decaying eigenvalues), <code>T_pi = 5</code> suffices for ~10⁻⁶ accuracy in <code>lambda_min_hat</code>, and <code>Omega_use</code> cleanly clears the floor. For pathological cases with clustered spectra (e.g., Wigner-random matrices, where eigenvalues fill the interval <code>[-rho, rho]</code> densely per the semicircle law), Pass 2’s convergence rate is approximately 1, and reaching the strict floor requires <code>T_pi ~ 200</code> iterations.</p>
+<p>Practically, even <code>T_pi = 20</code> reduces indefiniteness by ~1000× on pathological cases, which is sufficient for the SMO solver to handle via its existing <code>0.5e-6</code> diagonal jitter and convergence safeguards. Callers can override the default via <code>.adaptive_spectral_shift(Omega_s, T_pi = 200)</code>.</p>
+<p>Note: with the three Mercer kernels supported by <code><a href="reference/make_kernel.html">make_kernel()</a></code> (RBF, linear, polynomial), <code>Ωs</code> is always PSD (see “Why the shifted branch is dormant” above), so the shifted branch is unreachable in production and these limitations are not user-visible.</p>
+<hr></div>
+</div>
 <div class="section level2">
 <h2 id="r-environment">R environment<a class="anchor" aria-label="anchor" href="#r-environment"></a></h2>
 <ul><li>
