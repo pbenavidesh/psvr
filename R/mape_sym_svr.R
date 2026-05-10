@@ -38,7 +38,8 @@
     # Pass Ωs directly; matches Model 1's SMO contract (the ½ from the
     # symmetric representer is already in Ωs).  Bias `b` and bounds match
     # Model 1.
-    sol        <- .smo_solve(Omega_s, y, C, eps)
+    K_acc      <- .make_kernel_accessor(Omega_s)
+    sol        <- .smo_solve(K_acc, y, C, eps)
     alpha      <- sol$alpha
     alpha_star <- sol$alpha_star
     beta       <- alpha - alpha_star

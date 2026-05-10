@@ -121,8 +121,9 @@ test_that("SMO emits a warning when max_iter is reached", {
   # a problem with this many SVs, so 1 iteration cannot satisfy the tolerance.
   Omega <- kernel_matrix(K_rbf, X_tr)
   diag(Omega) <- diag(Omega) + 1e-6
+  K_acc <- psvr:::.make_kernel_accessor(Omega)
   expect_warning(
-    psvr:::.smo_solve(Omega, y_tr, C = 10, eps = 5, max_iter = 1L),
+    psvr:::.smo_solve(K_acc, y_tr, C = 10, eps = 5, max_iter = 1L),
     "did not converge"
   )
 })
