@@ -1,6 +1,20 @@
 # Changelog
 
-## psvr 0.0.2.9000 (development)
+## psvr 0.0.2.9001 (development)
+
+### Internal changes
+
+- The SMO solver now reads kernel values via a
+  [`.make_kernel_accessor()`](https://pbenavidesh.github.io/psvr/reference/dot-make_kernel_accessor.md)
+  wrapper (`R/kernel-accessor.R`), decoupling the inner loop from the
+  matrix representation. The F2 implementation is a thin closure over
+  the materialised `Ω`/`Ωs`; future phases (F3 spectral shift, F6 LRU
+  cache, F7 block working set) will swap in alternative implementations
+  without touching the SMO loop or the fitters. No user-visible change;
+  predictions are bit-identical to v0.0.2.9000 at tolerance `1e-10` on
+  the 16 + 12 golden snapshots.
+
+## psvr 0.0.2.9000
 
 ### New features
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,7 +42,14 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.0.2.9000" id="psvr-0029000-development">psvr 0.0.2.9000 (development)<a class="anchor" aria-label="anchor" href="#psvr-0029000-development"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.0.2.9001" id="psvr-0029001-development">psvr 0.0.2.9001 (development)<a class="anchor" aria-label="anchor" href="#psvr-0029001-development"></a></h2>
+<div class="section level3">
+<h3 id="internal-changes-0-0-2-9001">Internal changes<a class="anchor" aria-label="anchor" href="#internal-changes-0-0-2-9001"></a></h3>
+<ul><li>The SMO solver now reads kernel values via a <code><a href="../reference/dot-make_kernel_accessor.html">.make_kernel_accessor()</a></code> wrapper (<code>R/kernel-accessor.R</code>), decoupling the inner loop from the matrix representation. The F2 implementation is a thin closure over the materialised <code>Ω</code>/<code>Ωs</code>; future phases (F3 spectral shift, F6 LRU cache, F7 block working set) will swap in alternative implementations without touching the SMO loop or the fitters. No user-visible change; predictions are bit-identical to v0.0.2.9000 at tolerance <code>1e-10</code> on the 16 + 12 golden snapshots.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.2.9000" id="psvr-0029000">psvr 0.0.2.9000<a class="anchor" aria-label="anchor" href="#psvr-0029000"></a></h2>
 <div class="section level3">
 <h3 id="new-features-0-0-2-9000">New features<a class="anchor" aria-label="anchor" href="#new-features-0-0-2-9000"></a></h3>
 <ul><li>New unified entry point <code>psvr(X, y, loss, sym, kernel, ...)</code>. Selects among the four model families via <code>loss = "mape" | "rmspe"</code> and <code>sym = NULL | +1L | -1L</code>. Returns a single <code>psvr_fit</code> S3 object with a unified field schema (<code>alpha</code>, <code>b</code>, <code>support_data</code>, <code>support_targets</code>, <code>n_train</code>, <code>n_sv</code>, <code>p_train</code>, <code>hyperparameters</code>, <code>solver_meta</code>, plus <code>loss</code>, <code>sym</code>, <code>kernel</code>).</li>

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -185,7 +185,7 @@ s.t. yk = ωᵀφ(xk) + b + ek</code></pre>
 <li><label><input type="checkbox" checked><code>R/mape_sym_svr.R</code> — Model 2: now <code><a href="reference/dot-fit_mape_sym.html">.fit_mape_sym()</a></code> + <code><a href="reference/predict.psvr_mape_sym.html">predict.psvr_mape_sym()</a></code></label></li>
 <li><label><input type="checkbox" checked><code>tests/</code> — testthat unit tests for all four models (84 tests, 0 failures)</label></li>
 <li><label><input type="checkbox" checked><strong>F1</strong> — Unified <code><a href="reference/psvr.html">psvr()</a></code> entry point + <code>psvr_fit</code> class + DRY consolidation + symmetric-kernel standardization (<code>R/psvr-main.R</code>, <code>R/psvr-methods.R</code>, <code>R/utils-*.R</code>, <code>R/deprecated.R</code>).</label></li>
-<li><label><input type="checkbox"><strong>F2</strong> — Kernel column cache.</label></li>
+<li><label><input type="checkbox" checked><strong>F2</strong> — Kernel accessor interface (<code>R/kernel-accessor.R</code>); SMO loop reads kernel data via <code>K_acc</code> closures. Foundation for F3/F6.</label></li>
 <li><label><input type="checkbox"><strong>F3</strong> — Algorithm 2: adaptive spectral shift (placeholder in <code>R/kernel-spectral.R</code>).</label></li>
 <li><label><input type="checkbox"><strong>F4–F8</strong> — Theorems 3–8 from arXiv:2605.01446 v3.</label></li>
 </ol><hr></div>
@@ -240,6 +240,20 @@ s.t. yk = ωᵀφ(xk) + b + ek</code></pre>
 <p>followed by an OLD→NEW shape rewrap. The deprecation wrappers in <code>R/deprecated.R</code> skip this rewrap and return the <code>.fit_*</code> output as-is. Net effect: shape translation lives in exactly one place.</p>
 <hr></div>
 </div>
+<div class="section level2">
+<h2 id="kernel-accessor-post-f2">Kernel Accessor (post-F2)<a class="anchor" aria-label="anchor" href="#kernel-accessor-post-f2"></a></h2>
+<p>The SMO inner loop reads kernel values through an <strong>accessor closure</strong> built by <code>.make_kernel_accessor(Omega)</code> in <code>R/kernel-accessor.R</code>. The accessor is a list with five components:</p>
+<pre><code>get_column(p)  -&gt; Omega[, p]               (length-N numeric)
+get_diag()     -&gt; diag(Omega)              (cached at construction)
+get_entry(p,q) -&gt; Omega[p, q]              (scalar)
+get_matvec(v)  -&gt; as.numeric(Omega %*% v)  (length-N; preserves BLAS)
+n              -&gt; nrow(Omega)              (integer)</code></pre>
+<p><strong>Why.</strong> Decoupling the SMO solver from the matrix representation is the foundation for the F3–F7 efficiency theorems: - F3 — Algorithm 2 (adaptive spectral shift): the accessor can wrap a spectrally-shifted kernel without touching the solver. - F6 — adaptive LRU cache via Rcpp (Theorem 6): the closure-based wrapper is replaced with a cache-backed implementation; the SMO loop and fitters do not change. - F7 — block-<code>k=4</code> working set (Theorem 7): the per-iteration column fetch generalises to a block fetch through the same interface.</p>
+<p><strong>Symmetry invariant.</strong> The wrapped matrix is assumed symmetric. Both <code>Ω</code> (a kernel matrix for symmetric <code>K</code>) and <code>Ωs = ½(Ω + a·Ω*)</code> (the unified symmetric-kernel matrix from <code><a href="reference/sym_kernel_matrix.html">sym_kernel_matrix()</a></code>, valid when <code>K</code> satisfies Assumption 3) are symmetric throughout this package, so the SMO loop substitutes <code>K_acc$get_column(p)[k]</code> for the row read <code>Omega[p, k]</code> (used in WSS3).</p>
+<p><strong>Current implementation.</strong> F2 ships a thin closure wrapper over the fully materialised matrix: - Two column fetches per inner SMO iteration: <code>K_p</code> once after WSS1 picks <code>p</code> (reused for WSS3, the 1-D step size, and the gradient update) and <code>K_q</code> once after WSS3 picks <code>q</code> (used for the gradient update only). - Diagonal cached at construction (<code><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag()</a></code> called once). - The two full matvecs (the shrink-rebuild path inside the loop and the post-loop tau refresh) go through <code>get_matvec()</code>, which delegates to <code>as.numeric(Omega %*% v)</code> so BLAS is preserved. - No per-cell <code>get_entry()</code> access inside the inner loop.</p>
+<p><strong>Scope.</strong> The accessor is used by Models 1 and 2 only (the SMO path). LS-SVR fitters (<code>.fit_rmspe</code>, <code>.fit_rmspe_sym</code>) solve a single linear system via <code><a href="https://rdrr.io/r/base/solve.html" class="external-link">base::solve()</a></code> and do <strong>not</strong> use accessors — caching is not applicable to a one-shot factorisation.</p>
+<p><strong>Future swap point.</strong> F6 will replace <code><a href="reference/dot-make_kernel_accessor.html">.make_kernel_accessor()</a></code> with a cache-backed implementation (likely Rcpp). The five-method contract is the only API surface the SMO solver depends on; consumers stay unchanged. Predictions remain bit-identical to F1 at tolerance <code>1e-10</code> (verified by the 16+12 golden snapshots).</p>
+<hr></div>
 <div class="section level2">
 <h2 id="r-environment">R environment<a class="anchor" aria-label="anchor" href="#r-environment"></a></h2>
 <ul><li>

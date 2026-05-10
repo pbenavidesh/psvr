@@ -628,7 +628,7 @@ sessioninfo::session_info()
      pillar         1.11.1     2025-09-17 [1] RSPM
      pkgconfig      2.0.3      2019-09-22 [1] RSPM
      prodlim        2026.03.11 2026-03-11 [1] RSPM
-     psvr         * 0.0.2.9000 2026-05-10 [1] local
+     psvr         * 0.0.2.9001 2026-05-10 [1] local
      purrr        * 1.2.2      2026-04-10 [1] RSPM
      R6             2.6.1      2025-02-15 [1] RSPM
      RColorBrewer   1.1-3      2022-04-03 [1] RSPM
