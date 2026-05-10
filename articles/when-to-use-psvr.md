@@ -571,7 +571,7 @@ sessioninfo::session_info()
      collate  C.UTF-8
      ctype    C.UTF-8
      tz       UTC
-     date     2026-05-01
+     date     2026-05-10
      pandoc   3.8.3 @ /opt/hostedtoolcache/pandoc/3.8.3/x64/ (via rmarkdown)
      quarto   1.9.37 @ /usr/local/bin/quarto
 
@@ -584,7 +584,7 @@ sessioninfo::session_info()
      cli            3.6.6      2026-04-09 [1] RSPM
      codetools      0.2-20     2024-03-31 [3] CRAN (R 4.6.0)
      conflicted     1.2.0      2023-02-01 [1] RSPM
-     data.table     1.18.2.1   2026-01-27 [1] RSPM
+     data.table     1.18.4     2026-05-06 [1] RSPM
      dials        * 1.4.3      2026-04-11 [1] RSPM
      DiceDesign     1.10       2023-12-07 [1] RSPM
      digest         0.6.39     2025-11-19 [1] RSPM
@@ -628,7 +628,7 @@ sessioninfo::session_info()
      pillar         1.11.1     2025-09-17 [1] RSPM
      pkgconfig      2.0.3      2019-09-22 [1] RSPM
      prodlim        2026.03.11 2026-03-11 [1] RSPM
-     psvr         * 0.0.2      2026-05-01 [1] local
+     psvr         * 0.0.2      2026-05-10 [1] local
      purrr        * 1.2.2      2026-04-10 [1] RSPM
      R6             2.6.1      2025-02-15 [1] RSPM
      RColorBrewer   1.1-3      2022-04-03 [1] RSPM
