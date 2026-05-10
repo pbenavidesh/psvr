@@ -43,8 +43,14 @@
 #'     \item{`loss`}{`"mape"` or `"rmspe"`.}
 #'     \item{`sym`}{`NULL`, `+1L`, or `-1L`.}
 #'     \item{`kernel`}{The kernel closure used.}
-#'     \item{`alpha`}{Dual coefficients. For `loss = "mape"` this holds
-#'       `α − α* = β`; for `loss = "rmspe"` it holds the LS-SVR `α`.}
+#'     \item{`alpha`}{For `loss = "mape"`, the dual variable `α` of length
+#'       `N` (pre-pruning, i.e. across the full training set); for
+#'       `loss = "rmspe"`, the LS-SVR `α` of length `N`.}
+#'     \item{`alpha_star`}{For `loss = "mape"`, the dual variable `α*` of
+#'       length `N`; `NULL` for `loss = "rmspe"`.}
+#'     \item{`beta`}{For `loss = "mape"`, the pruned dual difference
+#'       `β = α − α*` over the support-vector indices (length `n_sv`);
+#'       `NULL` for `loss = "rmspe"`. Used by `predict()`.}
 #'     \item{`b`}{Bias term.}
 #'     \item{`support_data`}{Support-vector matrix (after pruning) for
 #'       `loss = "mape"`, or the full training matrix `X` for
@@ -61,6 +67,15 @@
 #'       diagnostics (`mu`, `lambda_min_hat`, `lambda_max_hat`,
 #'       `branch_taken`, `n_power_iterations`); `NULL` otherwise.}
 #'   }
+#'
+#' @section Breaking change (psvr 0.0.2.9004):
+#' Prior versions exposed the MAPE dual-difference `β = α − α*` under the
+#' name `fit$alpha` (length `n_sv`, post-pruning). As of 0.0.2.9004, that
+#' field is renamed to `fit$beta`, and `fit$alpha` now holds the true
+#' length-`N` dual variable `α` (pre-pruning). The new `fit$alpha_star`
+#' holds `α*` (length `N`, `NULL` for `loss = "rmspe"`). Downstream code
+#' that read `fit$alpha` on a MAPE fit for prediction or diagnostics must
+#' switch to `fit$beta`.
 #'
 #' @examples
 #' set.seed(1)
@@ -132,10 +147,21 @@ psvr <- function(X, y,
 
   is_mape <- loss == "mape"
 
-  alpha           <- if (is_mape) fit$beta    else fit$alpha
-  support_data    <- if (is_mape) fit$X_sv    else fit$X_train
-  support_targets <- if (is_mape) fit$y_sv    else NULL
-  n_sv            <- if (is_mape) length(fit$beta) else fit$n_train
+  if (is_mape) {
+    beta            <- fit$beta
+    alpha           <- fit$alpha       # length N (pre-pruning)
+    alpha_star      <- fit$alpha_star  # length N (pre-pruning)
+    support_data    <- fit$X_sv
+    support_targets <- fit$y_sv
+    n_sv            <- length(fit$beta)
+  } else {
+    beta            <- NULL
+    alpha           <- fit$alpha       # length N (LS-SVR)
+    alpha_star      <- NULL
+    support_data    <- fit$X_train
+    support_targets <- NULL
+    n_sv            <- fit$n_train
+  }
 
   hyperparameters <- list(
     C     = if (is_mape) C     else NULL,
@@ -167,6 +193,8 @@ psvr <- function(X, y,
       sym             = if (is.null(sym)) NULL else as.integer(sym),
       kernel          = kernel,
       alpha           = alpha,
+      alpha_star      = alpha_star,
+      beta            = beta,
       b               = fit$b,
       support_data    = support_data,
       support_targets = support_targets,

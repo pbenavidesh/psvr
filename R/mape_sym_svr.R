@@ -124,22 +124,24 @@
 
   structure(
     list(
-      beta     = beta[sv_idx],
-      b        = b,
-      X_sv     = X[sv_idx, , drop = FALSE],
-      y_sv     = y[sv_idx],
-      kernel   = kernel,
-      C        = C,
-      eps      = eps,
-      a        = a,
-      n_train  = N,
-      p_train  = ncol(X),
+      beta       = beta[sv_idx],
+      alpha      = alpha,        # length-N pre-pruning (for warm-start)
+      alpha_star = alpha_star,   # length-N pre-pruning (for warm-start)
+      b          = b,
+      X_sv       = X[sv_idx, , drop = FALSE],
+      y_sv       = y[sv_idx],
+      kernel     = kernel,
+      C          = C,
+      eps        = eps,
+      a          = a,
+      n_train    = N,
+      p_train    = ncol(X),
       # F3 — spectral diagnostics (Algorithm 2). psvr-main.R surfaces this
       # under solver_meta$spectral on psvr_fit objects; the legacy
       # mape_sym_svr() wrapper passes the legacy shape through unchanged,
       # so callers of the deprecated API can still inspect $spectral.
-      spectral = spec[c("mu", "lambda_min_hat", "lambda_max_hat",
-                        "branch_taken", "n_power_iterations")]
+      spectral   = spec[c("mu", "lambda_min_hat", "lambda_max_hat",
+                          "branch_taken", "n_power_iterations")]
     ),
     class = "psvr_mape_sym"
   )

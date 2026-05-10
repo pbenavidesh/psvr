@@ -106,15 +106,17 @@
 
   structure(
     list(
-      beta    = beta[sv_idx],
-      b       = b,
-      X_sv    = X[sv_idx, , drop = FALSE],
-      y_sv    = y[sv_idx],
-      kernel  = kernel,
-      C       = C,
-      eps     = eps,
-      n_train = N,
-      p_train = ncol(X)
+      beta       = beta[sv_idx],
+      alpha      = alpha,        # length-N pre-pruning (for warm-start)
+      alpha_star = alpha_star,   # length-N pre-pruning (for warm-start)
+      b          = b,
+      X_sv       = X[sv_idx, , drop = FALSE],
+      y_sv       = y[sv_idx],
+      kernel     = kernel,
+      C          = C,
+      eps        = eps,
+      n_train    = N,
+      p_train    = ncol(X)
     ),
     class = "psvr_mape"
   )

@@ -64,8 +64,14 @@ An object of class \code{"psvr_fit"}, a list with components:
 \item{\code{loss}}{\code{"mape"} or \code{"rmspe"}.}
 \item{\code{sym}}{\code{NULL}, \code{+1L}, or \code{-1L}.}
 \item{\code{kernel}}{The kernel closure used.}
-\item{\code{alpha}}{Dual coefficients. For \code{loss = "mape"} this holds
-\verb{α − α* = β}; for \code{loss = "rmspe"} it holds the LS-SVR \code{α}.}
+\item{\code{alpha}}{For \code{loss = "mape"}, the dual variable \code{α} of length
+\code{N} (pre-pruning, i.e. across the full training set); for
+\code{loss = "rmspe"}, the LS-SVR \code{α} of length \code{N}.}
+\item{\code{alpha_star}}{For \code{loss = "mape"}, the dual variable \verb{α*} of
+length \code{N}; \code{NULL} for \code{loss = "rmspe"}.}
+\item{\code{beta}}{For \code{loss = "mape"}, the pruned dual difference
+\verb{β = α − α*} over the support-vector indices (length \code{n_sv});
+\code{NULL} for \code{loss = "rmspe"}. Used by \code{predict()}.}
 \item{\code{b}}{Bias term.}
 \item{\code{support_data}}{Support-vector matrix (after pruning) for
 \code{loss = "mape"}, or the full training matrix \code{X} for
@@ -98,6 +104,17 @@ and \code{precondition} are ignored (with a warning if supplied non-\code{NULL})
 When \code{loss = "rmspe"}, \code{C}, \code{eps}, \code{solver}, and \code{tol} are ignored
 (same warning rule). Default values do not trigger warnings — only
 user-supplied values do, detected via \code{missing()}.
+}
+
+\section{Breaking change (psvr 0.0.2.9004)}{
+
+Prior versions exposed the MAPE dual-difference \verb{β = α − α*} under the
+name \code{fit$alpha} (length \code{n_sv}, post-pruning). As of 0.0.2.9004, that
+field is renamed to \code{fit$beta}, and \code{fit$alpha} now holds the true
+length-\code{N} dual variable \code{α} (pre-pruning). The new \code{fit$alpha_star}
+holds \verb{α*} (length \code{N}, \code{NULL} for \code{loss = "rmspe"}). Downstream code
+that read \code{fit$alpha} on a MAPE fit for prediction or diagnostics must
+switch to \code{fit$beta}.
 }
 
 \examples{
