@@ -26,6 +26,9 @@
   Omega <- kernel_matrix(kernel, X)
   diag(Omega) <- diag(Omega) + 1e-6
 
+  iterations <- NA_integer_
+  converged  <- NA
+
   if (solver == "smo") {
     K_acc      <- .make_kernel_accessor(Omega)
     sol        <- .smo_solve(K_acc, y, C, eps)
@@ -33,6 +36,8 @@
     alpha_star <- sol$alpha_star
     beta       <- alpha - alpha_star
     b          <- sol$b
+    iterations <- sol$iterations
+    converged  <- sol$converged
   } else {
     if (!requireNamespace("osqp", quietly = TRUE)) {
       stop('solver = "osqp" requires the osqp package. Install it with:\n',
@@ -116,7 +121,9 @@
       C          = C,
       eps        = eps,
       n_train    = N,
-      p_train    = ncol(X)
+      p_train    = ncol(X),
+      iterations = iterations,
+      converged  = converged
     ),
     class = "psvr_mape"
   )

@@ -22,7 +22,7 @@ test_that("mape_svr emits deprecation notice and returns legacy psvr_mape shape"
   expect_s3_class(fit, "psvr_mape")
   expect_named(fit, c("beta", "alpha", "alpha_star", "b",
                       "X_sv", "y_sv", "kernel", "C", "eps",
-                      "n_train", "p_train"))
+                      "n_train", "p_train", "iterations", "converged"))
   expect_true(is.numeric(fit$beta))
   expect_true(is.numeric(fit$b) && length(fit$b) == 1L)
   expect_equal(ncol(fit$X_sv), ncol(X_tr))
@@ -34,6 +34,9 @@ test_that("mape_svr emits deprecation notice and returns legacy psvr_mape shape"
   # F5: full-length pre-pruning duals exposed for warm-start.
   expect_length(fit$alpha,      nrow(X_tr))
   expect_length(fit$alpha_star, nrow(X_tr))
+  # F5: SMO meta propagated through the fitter.
+  expect_true(is.numeric(fit$iterations) || is.integer(fit$iterations))
+  expect_true(is.logical(fit$converged))
 })
 
 test_that("predict.psvr_mape returns plain numeric vector of correct length", {

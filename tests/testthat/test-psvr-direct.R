@@ -158,3 +158,15 @@ test_that("psvr_fit RMSPE: alpha length N, alpha_star and beta are NULL", {
   expect_null(fit$alpha_star)
   expect_null(fit$beta)
 })
+
+test_that("psvr_fit MAPE: solver_meta$iters and converged propagate from SMO", {
+  fx <- make_fixture()
+  K  <- make_kernel("rbf", sigma = HP$rbf_sigma)
+  fit <- suppressWarnings(
+    psvr(fx$X, fx$y, loss = "mape", kernel = K, C = HP$C, eps = HP$eps)
+  )
+  expect_true(is.numeric(fit$solver_meta$iters) ||
+              is.integer(fit$solver_meta$iters))
+  expect_true(fit$solver_meta$iters >= 1L)
+  expect_true(is.logical(fit$solver_meta$converged))
+})

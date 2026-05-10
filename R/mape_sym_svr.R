@@ -42,6 +42,9 @@
   spec    <- .adaptive_spectral_shift(Omega_s)
   Omega_s <- spec$Omega_use
 
+  iterations <- NA_integer_
+  converged  <- NA
+
   if (solver == "smo") {
     # Pass Ωs directly; matches Model 1's SMO contract (the ½ from the
     # symmetric representer is already in Ωs).  Bias `b` and bounds match
@@ -52,6 +55,8 @@
     alpha_star <- sol$alpha_star
     beta       <- alpha - alpha_star
     b          <- sol$b
+    iterations <- sol$iterations
+    converged  <- sol$converged
   } else {
     if (!requireNamespace("osqp", quietly = TRUE)) {
       stop('solver = "osqp" requires the osqp package. Install it with:\n',
@@ -136,6 +141,8 @@
       a          = a,
       n_train    = N,
       p_train    = ncol(X),
+      iterations = iterations,
+      converged  = converged,
       # F3 — spectral diagnostics (Algorithm 2). psvr-main.R surfaces this
       # under solver_meta$spectral on psvr_fit objects; the legacy
       # mape_sym_svr() wrapper passes the legacy shape through unchanged,

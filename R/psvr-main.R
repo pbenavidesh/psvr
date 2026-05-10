@@ -172,8 +172,8 @@ psvr <- function(X, y,
 
   solver_meta <- if (is_mape) {
     list(backend              = solver,
-         iters                = NA_integer_,
-         converged            = NA,
+         iters                = fit$iterations,
+         converged            = fit$converged,
          precondition_applied = NA,
          # spectral diagnostics (F3, Algorithm 2) populated for symmetric
          # MAPE only; NULL for the non-symmetric path where Ωs is not built
