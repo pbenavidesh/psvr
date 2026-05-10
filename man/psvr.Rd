@@ -75,7 +75,11 @@ An object of class \code{"psvr_fit"}, a list with components:
 \item{\code{n_train}, \code{n_sv}, \code{p_train}}{Training counts.}
 \item{\code{hyperparameters}}{Named list \verb{(C, eps, gamma, a)} with \code{NULL}
 entries for the family that doesn't apply.}
-\item{\code{solver_meta}}{Named list \verb{(backend, iters, converged, precondition_applied)} describing the solve.}
+\item{\code{solver_meta}}{Named list \verb{(backend, iters, converged, precondition_applied, spectral)} describing the solve. The
+\code{spectral} slot is populated only for symmetric MAPE fits
+(\code{loss = "mape"}, \code{sym != NULL}) and reports Algorithm 2
+diagnostics (\code{mu}, \code{lambda_min_hat}, \code{lambda_max_hat},
+\code{branch_taken}, \code{n_power_iterations}); \code{NULL} otherwise.}
 }
 }
 \description{
