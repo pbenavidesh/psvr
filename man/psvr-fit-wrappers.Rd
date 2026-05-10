@@ -84,13 +84,13 @@ psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L, precondition = "auto")
 
 \item{y}{Numeric outcome vector (strictly positive).}
 
-\item{C}{Regularization parameter for MAPE models (see \code{\link[=mape_svr]{mape_svr()}}).}
+\item{C}{Regularization parameter for MAPE models.}
 
 \item{eps}{Epsilon tube half-width for MAPE models.}
 
 \item{rbf_sigma}{RBF bandwidth σ > 0.}
 
-\item{tol}{Solver zero-threshold (see \code{\link[=mape_svr]{mape_svr()}}).}
+\item{tol}{Solver zero-threshold.}
 
 \item{degree}{Polynomial degree ≥ 1.}
 
@@ -99,15 +99,15 @@ psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L, precondition = "auto")
 \item{sym_type}{Symmetry type (\code{"even"} or \code{"odd"}) for symmetric models;
 translated to \code{a = 1L} or \code{a = -1L} before calling the solver.}
 
-\item{gamma}{Regularization parameter for RMSPE models (see \code{\link[=rmspe_lssvr]{rmspe_lssvr()}}).}
+\item{gamma}{Regularization parameter for RMSPE models.}
 
 \item{precondition}{Optional symmetric rescaling preconditioner for the
-RMSPE LS-SVR fitters. Forwarded to \code{\link[=rmspe_lssvr]{rmspe_lssvr()}} / \code{\link[=rmspe_sym_lssvr]{rmspe_sym_lssvr()}};
-see those functions for accepted values and semantics.}
+RMSPE LS-SVR fitters. See \code{\link[=rmspe_lssvr]{rmspe_lssvr()}} for accepted values and
+semantics.}
 }
 \description{
-Low-level bridge functions called by parsnip when fitting psvr model specs.
-Not intended for direct use; call \code{\link[=mape_svr]{mape_svr()}}, \code{\link[=mape_sym_svr]{mape_sym_svr()}},
-\code{\link[=rmspe_lssvr]{rmspe_lssvr()}}, or \code{\link[=rmspe_sym_lssvr]{rmspe_sym_lssvr()}} directly instead.
+Bridge functions called by parsnip when fitting psvr model specs.
+Exported only because parsnip's resolver requires it; not intended
+for direct use. Call \code{\link[=psvr]{psvr()}} instead for direct fitting.
 }
 \keyword{internal}

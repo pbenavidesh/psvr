@@ -1,4 +1,5 @@
 ^CLAUDE\.md$
+^dev$
 ^paper\.tex$
 ^psvr\.Rproj$
 ^\.Rproj\.user$
@@ -16,3 +17,5 @@
 ^figure$
 ^CITATION\.cff$
 ^NULL$
+^doc$
+^Meta$

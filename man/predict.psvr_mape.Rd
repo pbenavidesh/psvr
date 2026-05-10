@@ -17,13 +17,7 @@
 Numeric vector of length M with predicted values.
 }
 \description{
-Predict from a fitted epsilon-SVR with MAPE model
-}
-\examples{
-X <- matrix(1:6, ncol = 2)
-y <- c(2.1, 3.8, 6.2)
-K <- make_kernel("rbf", sigma = 1)
-fit <- mape_svr(X, y, kernel = K, C = 10, eps = 5)
-predict(fit, X)
-
+Method dispatched on the legacy \code{"psvr_mape"} class returned by the
+deprecated \code{\link[=mape_svr]{mape_svr()}}. New code should use \code{\link[=psvr]{psvr()}} (which returns a
+\code{"psvr_fit"} object dispatched by \code{\link[=predict.psvr_fit]{predict.psvr_fit()}}).
 }

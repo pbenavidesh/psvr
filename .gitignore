@@ -31,3 +31,5 @@ vignettes/articles/case-studies/results/partial/
 **/*.quarto_ipynb
 vignettes/articles/case-studies/results/energy-efficiency-results-w8.csv
 vignettes/articles/case-studies/results/energy-efficiency-tune-results-w8.rds
+/doc/
+/Meta/

@@ -115,7 +115,7 @@ sigma_m3 <- sqrt(1 / (2 * 0.050967))
 cat("Model 3 — sigma:", round(sigma_m3, 6), "\n")
 
 K3  <- make_kernel("rbf", sigma = sigma_m3)
-fit_m3 <- rmspe_lssvr(X_tr, y_tr, kernel = K3, gamma = 16962.540770)
+fit_m3 <- psvr(X_tr, y_tr, loss = "rmspe", kernel = K3, gamma = 16962.540770)
 pred_m3 <- predict(fit_m3, X_te)
 
 m3_mape  <- mape_fn(y_te, pred_m3)
@@ -143,9 +143,11 @@ data.frame(actual = y_te, predicted = pred_m3) |>
 
 ```{r model3-coef}
 cf_m3 <- coef(fit_m3)
-# alpha: N dual variables; weight each training point in f(x) = sum_k alpha_k K(x_k, x) + b
-# b:     bias / intercept term
-# X_sv:  all N training inputs (LS-SVR — no sparsity, every point contributes)
+# alpha:        N dual variables; weight each training point in
+#               f(x) = sum_k alpha_k K(x_k, x) + b
+# b:            bias / intercept term
+# support_data: all N training inputs (LS-SVR — no sparsity, every point
+#               contributes)
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf_m3$b, min(cf_m3$alpha), max(cf_m3$alpha)))
 ```
@@ -167,7 +169,8 @@ sigma_m1 <- sqrt(1 / (2 * 0.032920))
 cat("Model 1 — sigma:", round(sigma_m1, 6), "\n")
 
 K1  <- make_kernel("rbf", sigma = sigma_m1)
-fit_m1 <- mape_svr(X_tr, y_tr, kernel = K1, C = 15.631280, eps = 5.804601)
+fit_m1 <- psvr(X_tr, y_tr, loss = "mape", kernel = K1,
+               C = 15.631280, eps = 5.804601)
 pred_m1 <- predict(fit_m1, X_te)
 
 m1_mape  <- mape_fn(y_te, pred_m1)
@@ -180,7 +183,7 @@ cat(sprintf(
   m1_mape, m1_rmspe, m1_r2, m1_mse
 ))
 cat(sprintf("Support vectors: %d / %d training points\n",
-            sum(fit_m1$beta != 0), nrow(X_tr)))
+            fit_m1$n_sv, fit_m1$n_train))
 print(fit_m1)
 ```
 
@@ -197,10 +200,11 @@ data.frame(actual = y_te, predicted = pred_m1) |>
 
 ```{r model1-coef}
 cf_m1 <- coef(fit_m1)
-# alpha: beta_k = alpha_k - alpha_k* for each support vector; non-zero for
-#        points outside the percentage-error ε-tube (sparse)
-# b:     bias / intercept term
-# X_sv:  training rows for support vectors only
+# alpha:        beta_k = alpha_k - alpha_k* for each support vector;
+#               non-zero for points outside the percentage-error ε-tube
+#               (sparse)
+# b:            bias / intercept term
+# support_data: training rows for support vectors only
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf_m1$b, min(cf_m1$alpha), max(cf_m1$alpha)))
 ```

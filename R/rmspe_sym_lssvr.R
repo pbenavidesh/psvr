@@ -1,114 +1,29 @@
-#' Fit symmetric LS-SVR with RMSPE loss (Model 4)
+#' Fit symmetric LS-SVR with RMSPE loss (Model 4) — internal
 #'
-#' Solves the linear system derived in Theorem 4 of Benavides-Herrera et al.
-#' (2026). Identical in structure to [rmspe_lssvr()] (Model 3) but replaces
-#' the kernel matrix Ω with the symmetrized matrix
-#' `Ωs = ½(Ω + a·Ω*)`, where `Ω*ₖₗ = K(xₖ, -xₗ)`.
-#' The system solved is
+#' Internal fitter for the symmetric RMSPE LS-SVR family. Use [psvr()]
+#' with `loss = "rmspe"` and `sym = +1L` / `-1L` instead. Returns the
+#' legacy `psvr_rmspe_sym` shape; the deprecation wrapper
+#' [rmspe_sym_lssvr()] forwards directly to this function. The kernel must
+#' satisfy Assumption 3 of the paper (kernel symmetry); see [make_kernel()].
 #'
-#' ```
-#' [ 0   1ᵀ      ] [ b ]   [ 0 ]
-#' [ 1   Ωs + YΓ ] [ α ] = [ y ]
-#' ```
+#' @param X,y,kernel,gamma,a,precondition See [rmspe_sym_lssvr()] for the
+#'   full semantics of each argument (including the Remark-17
+#'   preconditioner).
 #'
-#' where `YΓ = diag(y₁²/Γ, …, yN²/Γ)`.
+#' @return A list of class `"psvr_rmspe_sym"` (legacy shape).
 #'
-#' The kernel must satisfy Assumption 3 of the paper (kernel symmetry):
-#' `K(-xi, xj) = K(xi, -xj)` and `K(-xi, -xj) = K(xi, xj)`.
-#' RBF and even-degree polynomial kernels satisfy this; see [make_kernel()].
-#'
-#' @param X Numeric matrix of training inputs, one observation per row (N × p).
-#' @param y Numeric vector of training targets, length N. Must satisfy `y > 0`.
-#' @param kernel A kernel function created by [make_kernel()].
-#' @param gamma Regularization parameter `Γ > 0`.
-#' @param a Symmetry parameter: `1` for even symmetry `f(x) = f(-x)`,
-#'   `-1` for odd symmetry `f(x) = -f(-x)`.
-#' @param precondition Optional symmetric rescaling preconditioner derived
-#'   from Remark 17 of the companion paper, used when the target dynamic range
-#'   `ρ = max(y) / min(y)` is large enough to make `Ωs + YΓ` ill-conditioned.
-#'   One of:
-#'   \describe{
-#'     \item{`"auto"` (default)}{Apply the preconditioner when `ρ > 10`.}
-#'     \item{`"always"`}{Apply the preconditioner unconditionally.}
-#'     \item{`"never"`}{Disable the preconditioner (legacy behaviour).}
-#'     \item{a positive numeric scalar}{Apply when `ρ > precondition`.}
-#'   }
-#'
-#' @details
-#' When `ρ = max(y) / min(y)` is large, `Ωs + YΓ` becomes ill-conditioned
-#' because the diagonal of `YΓ = diag(yₖ²/Γ)` varies as `O(ρ²)`. Remark 17
-#' of the companion paper derives a symmetric rescaling preconditioner
-#' `P = diag(1/yₖ)` via the change of variable `α = P ᾱ`
-#' (i.e. `αₖ = ᾱₖ / yₖ`). Multiplying the inner block of the bordered
-#' system by `P` from the left gives
-#' `(P Ωs P + Γ⁻¹·I) ᾱ = P y − b · P 1 = 1 − b · P 1`,
-#' with constant-diagonal regularization `Γ⁻¹ · I`. The preconditioner is
-#' applied to the symmetrized kernel matrix `Ωs` (after symmetrization).
-#' The constraint `1ᵀ α = 0` becomes `(P 1)ᵀ ᾱ = 0`, so the bordered
-#' system used by the preconditioned solver is
-#' \preformatted{
-#' [ 0      (P 1)ᵀ          ] [ b ]   [ 0 ]
-#' [ P 1    P Ωs P + Γ⁻¹·I   ] [ ᾱ ] = [ 1 ]
-#' }
-#' Recovery is `α = ᾱ / y` (elementwise division). The bias `b` is the
-#' same constraint multiplier in both systems.
-#'
-#' This is a strict change of variable: in exact arithmetic the
-#' preconditioned and unconditioned solvers produce identical predictions.
-#' Its purpose is to preserve solver accuracy under finite floating-point
-#' precision when `ρ` is large; for moderate `ρ` the two paths agree to
-#' within machine epsilon. Use `precondition = "auto"` (default) for
-#' typical workloads, `"never"` for legacy behaviour, or a custom numeric
-#' threshold for fine-grained control. The chosen behaviour is recorded
-#' in `precondition_applied`.
-#'
-#' @return An object of class `"psvr_rmspe_sym"`, a list with components:
-#'   \describe{
-#'     \item{`alpha`}{Numeric vector of dual variables (length N), in the
-#'       original variable space.}
-#'     \item{`b`}{Numeric scalar bias term.}
-#'     \item{`X_train`}{The training matrix `X` (kept for prediction).}
-#'     \item{`kernel`}{The kernel function used.}
-#'     \item{`gamma`}{The regularization parameter `Γ`.}
-#'     \item{`a`}{The symmetry parameter.}
-#'     \item{`n_train`}{Number of training observations.}
-#'     \item{`p_train`}{Number of training features (columns).}
-#'     \item{`precondition_applied`}{Logical scalar; `TRUE` if the
-#'       preconditioner was applied for this fit.}
-#'   }
-#'
-#' @examples
-#' X <- matrix(c(1, 2, 3, 4, 5, 6), ncol = 2)
-#' y <- c(2.1, 3.8, 6.2)
-#' K <- make_kernel("rbf", sigma = 1)
-#' fit <- rmspe_sym_lssvr(X, y, kernel = K, gamma = 1, a = 1)
-#' predict(fit, X)
-#'
-#' @export
-rmspe_sym_lssvr <- function(X, y, kernel, gamma, a = 1, precondition = "auto") {
+#' @keywords internal
+.fit_rmspe_sym <- function(X, y, kernel, gamma, a = 1, precondition = "auto") {
   X <- as.matrix(X)
   y <- as.numeric(y)
-  if (!all(y > 0)) {
-    n_bad <- sum(y <= 0)
-    stop(sprintf(
-      paste0("%d target value%s non-positive (min = %g). ",
-             "All targets must be strictly positive for percentage-error loss."),
-      n_bad, if (n_bad == 1L) " is" else "s are", min(y)
-    ))
-  }
+  .validate_y_positive(y)
   if (gamma <= 0)       stop("`gamma` must be positive")
   if (!a %in% c(-1, 1)) stop("`a` must be 1 (even) or -1 (odd)")
 
   use_precond <- .resolve_precondition(precondition, y)
 
   N <- nrow(X)
-  if (N > 2000L) {
-    warning(sprintf(
-      paste0("Large dataset (N = %d): kernel matrix is %d x %d (%.1f MB). ",
-             "Consider subsampling for hyperparameter tuning."),
-      N, N, N, N^2 * 8 / 1e6
-    ))
-  }
+  .warn_large_n(N)
 
   Omega_s <- sym_kernel_matrix(kernel, X, a)   # ½(Ω + a·Ω*)
   diag(Omega_s) <- diag(Omega_s) + 1e-6        # Tikhonov jitter
@@ -156,21 +71,16 @@ rmspe_sym_lssvr <- function(X, y, kernel, gamma, a = 1, precondition = "auto") {
 
 #' Predict from a fitted symmetric LS-SVR with RMSPE model
 #'
-#' Prediction uses the symmetric representer:
-#' `f(x) = Σₖ αₖ · ½(K(xₖ, x) + a·K(xₖ, -x)) + b`.
+#' Method dispatched on the legacy `"psvr_rmspe_sym"` class returned by the
+#' deprecated [rmspe_sym_lssvr()]. Uses the symmetric representer
+#' `f(x) = Σₖ αₖ · ½(K(xₖ, x) + a·K(xₖ, -x)) + b`. New code should use
+#' [psvr()].
 #'
 #' @param object An object of class `"psvr_rmspe_sym"` from [rmspe_sym_lssvr()].
 #' @param newdata Numeric matrix of new inputs, one observation per row (M × p).
 #' @param ... Ignored.
 #'
 #' @return Numeric vector of length M with predicted values.
-#'
-#' @examples
-#' X <- matrix(c(1, 2, 3, 4, 5, 6), ncol = 2)
-#' y <- c(2.1, 3.8, 6.2)
-#' K <- make_kernel("rbf", sigma = 1)
-#' fit <- rmspe_sym_lssvr(X, y, kernel = K, gamma = 1, a = 1)
-#' predict(fit, X)
 #'
 #' @export
 predict.psvr_rmspe_sym <- function(object, newdata, ...) {
