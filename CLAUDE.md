@@ -188,7 +188,8 @@ Required for Models 2 and 4:
 9. [x] **F1** — Unified `psvr()` entry point + `psvr_fit` class + DRY consolidation +
        symmetric-kernel standardization (`R/psvr-main.R`, `R/psvr-methods.R`,
        `R/utils-*.R`, `R/deprecated.R`).
-10. [ ] **F2** — Kernel column cache.
+10. [x] **F2** — Kernel accessor interface (`R/kernel-accessor.R`); SMO
+        loop reads kernel data via `K_acc` closures. Foundation for F3/F6.
 11. [ ] **F3** — Algorithm 2: adaptive spectral shift (placeholder in `R/kernel-spectral.R`).
 12. [ ] **F4–F8** — Theorems 3–8 from arXiv:2605.01446 v3.
 
@@ -273,6 +274,62 @@ fit <- switch(paste(loss, ifelse(is.null(sym), "std", "sym"), sep = "_"),
 followed by an OLD→NEW shape rewrap. The deprecation wrappers in
 `R/deprecated.R` skip this rewrap and return the `.fit_*` output as-is.
 Net effect: shape translation lives in exactly one place.
+
+---
+
+## Kernel Accessor (post-F2)
+
+The SMO inner loop reads kernel values through an **accessor closure**
+built by `.make_kernel_accessor(Omega)` in `R/kernel-accessor.R`. The
+accessor is a list with five components:
+
+```
+get_column(p)  -> Omega[, p]               (length-N numeric)
+get_diag()     -> diag(Omega)              (cached at construction)
+get_entry(p,q) -> Omega[p, q]              (scalar)
+get_matvec(v)  -> as.numeric(Omega %*% v)  (length-N; preserves BLAS)
+n              -> nrow(Omega)              (integer)
+```
+
+**Why.** Decoupling the SMO solver from the matrix representation is
+the foundation for the F3–F7 efficiency theorems:
+- F3 — Algorithm 2 (adaptive spectral shift): the accessor can wrap a
+  spectrally-shifted kernel without touching the solver.
+- F6 — adaptive LRU cache via Rcpp (Theorem 6): the closure-based
+  wrapper is replaced with a cache-backed implementation; the SMO loop
+  and fitters do not change.
+- F7 — block-`k=4` working set (Theorem 7): the per-iteration column
+  fetch generalises to a block fetch through the same interface.
+
+**Symmetry invariant.** The wrapped matrix is assumed symmetric. Both
+`Ω` (a kernel matrix for symmetric `K`) and `Ωs = ½(Ω + a·Ω*)` (the
+unified symmetric-kernel matrix from `sym_kernel_matrix()`, valid when
+`K` satisfies Assumption 3) are symmetric throughout this package, so
+the SMO loop substitutes `K_acc$get_column(p)[k]` for the row read
+`Omega[p, k]` (used in WSS3).
+
+**Current implementation.** F2 ships a thin closure wrapper over the
+fully materialised matrix:
+- Two column fetches per inner SMO iteration: `K_p` once after WSS1
+  picks `p` (reused for WSS3, the 1-D step size, and the gradient
+  update) and `K_q` once after WSS3 picks `q` (used for the gradient
+  update only).
+- Diagonal cached at construction (`diag()` called once).
+- The two full matvecs (the shrink-rebuild path inside the loop and the
+  post-loop tau refresh) go through `get_matvec()`, which delegates to
+  `as.numeric(Omega %*% v)` so BLAS is preserved.
+- No per-cell `get_entry()` access inside the inner loop.
+
+**Scope.** The accessor is used by Models 1 and 2 only (the SMO path).
+LS-SVR fitters (`.fit_rmspe`, `.fit_rmspe_sym`) solve a single linear
+system via `base::solve()` and do **not** use accessors — caching is not
+applicable to a one-shot factorisation.
+
+**Future swap point.** F6 will replace `.make_kernel_accessor()` with a
+cache-backed implementation (likely Rcpp). The five-method contract is
+the only API surface the SMO solver depends on; consumers stay
+unchanged. Predictions remain bit-identical to F1 at tolerance `1e-10`
+(verified by the 16+12 golden snapshots).
 
 ---
 
