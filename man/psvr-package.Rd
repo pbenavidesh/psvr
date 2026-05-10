@@ -2,7 +2,6 @@
 % Please edit documentation in R/psvr-package.R
 \docType{package}
 \name{psvr-package}
-\alias{psvr}
 \alias{psvr-package}
 \title{psvr: Percentage-Error Support Vector Regression}
 \description{

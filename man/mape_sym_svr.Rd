@@ -32,10 +32,7 @@ mape_sym_svr(
 \item{solver}{Backend that solves the dual QP.  \code{"smo"} (default) uses an
 internal libsvm-style SMO solver with no third-party dependency; \code{"osqp"}
 delegates to the \code{osqp} package.  Both backends solve the same QP and
-return the same support vectors and bias up to numerical tolerance.
-When \code{solver = "smo"}, the \verb{½} factor on the symmetric kernel \code{Ks} lives
-in the effective \verb{Omega = ½·Ks} passed to the solver, so the
-prediction-time \verb{½} in the symmetric representer theorem is unchanged.}
+return the same support vectors and bias up to numerical tolerance.}
 
 \item{tol}{Threshold below which \verb{|βk|} is treated as zero (default \code{1e-5}).}
 }
@@ -57,22 +54,21 @@ An object of class \code{"psvr_mape_sym"}, a list with components:
 \description{
 Solves the quadratic program derived in Theorem 2 of Benavides-Herrera et al.
 (2026) via \code{osqp}. The symmetry constraint \verb{f(x) = a·f(-x)} is enforced by
-replacing the kernel with \verb{Ks(xi, xj) = K(xi, xj) + a·K(xi, -xj)}.
+the symmetric kernel matrix \verb{Ωs = ½(Ω + a·Ω*)} (with the \verb{½} from the
+representer theorem baked in), built via \code{\link[=sym_kernel_matrix]{sym_kernel_matrix()}}.
 }
 \details{
 The dual in variables \verb{u = [α; α*] ∈ R^\{2N\}} is:
 \itemize{
-\item \strong{P} = \verb{½ · [Ks, -Ks; -Ks, Ks]} so that osqp's \verb{½ uᵀPu} evaluates to
-\verb{¼ βᵀKsβ}, matching the \verb{−¼} coefficient in Theorem 2.
+\item \strong{P} = \verb{[Ωs, -Ωs; -Ωs, Ωs]} so that osqp's \verb{½ uᵀPu} evaluates to
+\verb{½ βᵀΩsβ = ¼ βᵀKsβ}, matching the \verb{−¼} coefficient in Theorem 2.
 \item \strong{q} = \verb{[y(ε/100 − 1); y(1 + ε/100)]} (identical to Model 1)
 \item \strong{Equality:} \verb{[1ᵀ, −1ᵀ] u = 0}
 \item \strong{Box:} \verb{0 ≤ αk ≤ 100C/yk}, \verb{0 ≤ αk* ≤ 100C/yk} (identical to Model 1)
 }
 
-Note: \verb{Ks = Ω + a·Ω*} carries \strong{no} \verb{½} factor here. The \verb{½} lives in P
-so that osqp's internal \verb{½} produces the required \verb{¼} overall.
-Contrast with \code{\link[=rmspe_sym_lssvr]{rmspe_sym_lssvr()}} (Model 4), which uses
-\code{sym_kernel_matrix()} returning \verb{½(Ω + a·Ω*)} = \code{Ωs}.
+This convention matches \code{\link[=rmspe_sym_lssvr]{rmspe_sym_lssvr()}} (Model 4): both pass \code{Ωs}
+(with \verb{½} already absorbed) into the solver.
 
 The kernel must satisfy Assumption 3 of the paper; see \code{\link[=make_kernel]{make_kernel()}}.
 }

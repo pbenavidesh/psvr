@@ -67,18 +67,19 @@
     if (is.null(eps)) stop('`eps` is required when `loss = "mape"`')
     if (C   <= 0) stop("`C` must be positive")
     if (eps <  0) stop("`eps` must be non-negative")
-    # Cross-loss: warn only when the user actively supplied an LS-SVR-only arg.
-    if (isTRUE(passed$gamma))
+    # Cross-loss: warn only when the user actively supplied a non-NULL value
+    # for an LS-SVR-only arg.  (Explicit `gamma = NULL` ≡ not passing.)
+    if (isTRUE(passed$gamma) && !is.null(gamma))
       warning('`gamma` is ignored when `loss = "mape"`')
     if (isTRUE(passed$precondition))
       warning('`precondition` is ignored when `loss = "mape"`')
   } else {  # rmspe
     if (is.null(gamma)) stop('`gamma` is required when `loss = "rmspe"`')
     if (gamma <= 0)     stop("`gamma` must be positive")
-    if (isTRUE(passed$C))      warning('`C` is ignored when `loss = "rmspe"`')
-    if (isTRUE(passed$eps))    warning('`eps` is ignored when `loss = "rmspe"`')
-    if (isTRUE(passed$solver)) warning('`solver` is ignored when `loss = "rmspe"`')
-    if (isTRUE(passed$tol))    warning('`tol` is ignored when `loss = "rmspe"`')
+    if (isTRUE(passed$C)   && !is.null(C))   warning('`C` is ignored when `loss = "rmspe"`')
+    if (isTRUE(passed$eps) && !is.null(eps)) warning('`eps` is ignored when `loss = "rmspe"`')
+    if (isTRUE(passed$solver))               warning('`solver` is ignored when `loss = "rmspe"`')
+    if (isTRUE(passed$tol))                  warning('`tol` is ignored when `loss = "rmspe"`')
   }
 
   invisible(NULL)
