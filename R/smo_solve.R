@@ -6,9 +6,18 @@
 #                                + (eps/100) sum_k (alpha_k + alpha_star_k) y_k
 #   s.t. sum_k beta_k = 0;  alpha_k, alpha_star_k in [0, 100 C / y_k]
 #
-# where beta_k = alpha_k - alpha_star_k.  The argument `Omega` is the
-# *effective* kernel matrix (jitter and any (1/2) factor already applied):
-# Omega for Model 1, 0.5 * Ks for Model 2.
+# where beta_k = alpha_k - alpha_star_k.  The argument `K_acc` is a kernel
+# accessor (see .make_kernel_accessor) wrapping the *effective* kernel
+# matrix with jitter and any (1/2) factor already applied by the caller:
+# Omega for Model 1, Omega_s = (1/2)(Omega + a Omega*) for Model 2.
+#
+# Inside the inner loop we read kernel data via two column fetches per
+# iteration -- K_p once after WSS1 picks p, K_q once after WSS3 picks q --
+# and reuse them for WSS3, the 1-D step-size, and the gradient update.
+# Diagonal entries come from K_acc$get_diag() (cached at construction);
+# the two full matvecs (shrink rebuild and post-loop refresh) go through
+# K_acc$get_matvec() so BLAS is preserved on the materialised path.  See
+# the F2 design note in CLAUDE.md ("Kernel Accessor (post-F2)").
 #
 # The solver follows libsvm-style working-set selection on the gradient
 # projection
@@ -26,16 +35,16 @@
 #
 # Shrinking: every `n_check` iterations, mark variables that have stayed
 # at a boundary with a "wrong-side" tau for `n_freeze` consecutive checks
-# as inactive; restored from scratch (recomputing tau via Omega %*% beta)
-# when the active-set gap drops to tol.
+# as inactive; restored from scratch (recomputing tau via
+# K_acc$get_matvec(beta)) when the active-set gap drops to tol.
 
-.smo_solve <- function(Omega, y, C, eps,
+.smo_solve <- function(K_acc, y, C, eps,
                        tol = 1e-3, max_iter = 100000L,
                        n_check = NULL, n_freeze = 5L) {
   N     <- length(y)
   scale <- eps / 100
   C_k   <- 100 * C / y
-  if (is.null(n_check)) n_check <- min(N, 1000L)
+  if (is.null(n_check)) n_check <- min(K_acc$n, 1000L)
   if (n_check < 1L)     n_check <- 1L
 
   # tau is in the same units as y, so apply tol relatively (per-target scale).
@@ -43,7 +52,7 @@
   # entries vary by orders of magnitude (e.g., RBF in [0,1] vs polynomial).
   tol_eff <- tol * mean(y)
 
-  diag_Omega    <- diag(Omega)
+  diag_Omega    <- K_acc$get_diag()
   alpha         <- numeric(N)
   alpha_star    <- numeric(N)
   tau_alpha     <- y * (1 - scale)
@@ -99,7 +108,7 @@
       if (any(!active_alpha) || any(!active_astar)) {
         # Active-set converged with shrunk variables: rebuild and reactivate.
         beta_full     <- alpha - alpha_star
-        Kbeta         <- as.numeric(Omega %*% beta_full)
+        Kbeta         <- K_acc$get_matvec(beta_full)
         tau_alpha     <- y * (1 - scale) - Kbeta
         tau_alphastar <- y * (1 + scale) - Kbeta
         active_alpha[] <- TRUE
@@ -116,11 +125,15 @@
     # Among I_down with tau_t < tau_i, score = (tau_i - tau_t)^2 / a_pt
     # where a_pt = Omega[p,p] - 2 Omega[p,t] + Omega[t,t] is the curvature
     # of the (i,j) 1-D subproblem (Fan, Chen & Lin 2005, eq. 14).
+    # Column-fetch K_p once and reuse for WSS3, step-size, and the gradient
+    # update.  Row-vs-column equivalence relies on the symmetry invariant
+    # documented on .make_kernel_accessor().
+    K_p       <- K_acc$get_column(p)
     cand_mask <- low_tau_pool < tau_i - tol_eff
     if (any(cand_mask)) {
       cand_idx <- low_idx_pool[cand_mask]
       cand_tau <- low_tau_pool[cand_mask]
-      a_pt     <- Omega[p, p] - 2 * Omega[p, cand_idx] + diag_Omega[cand_idx]
+      a_pt     <- K_p[p] - 2 * K_p[cand_idx] + diag_Omega[cand_idx]
       a_pt     <- pmax(a_pt, 1e-12)
       score    <- (tau_i - cand_tau)^2 / a_pt
       pos_j    <- which(cand_mask)[which.max(score)]
@@ -132,7 +145,7 @@
     tau_j      <- low_tau_pool[pos_j]
 
     # ---- 1-D step size ----
-    eta       <- Omega[p, p] - 2 * Omega[p, q] + diag_Omega[q]
+    eta       <- K_p[p] - 2 * K_p[q] + diag_Omega[q]
     R_i       <- if (i_is_alpha) C_k[p] - alpha[p] else alpha_star[p]
     R_j       <- if (j_is_alpha) alpha[q]          else C_k[q] - alpha_star[q]
     delta_max <- min(R_i, R_j)
@@ -153,7 +166,8 @@
     alpha_star[q] <- max(0, min(alpha_star[q], C_k[q]))
 
     # ---- Gradient (tau) update over the active set ----
-    diff_pq <- Omega[, p] - Omega[, q]
+    K_q     <- K_acc$get_column(q)
+    diff_pq <- K_p - K_q
     if (length(aa)  > 0L) tau_alpha[aa]      <- tau_alpha[aa]      - delta * diff_pq[aa]
     if (length(ast) > 0L) tau_alphastar[ast] <- tau_alphastar[ast] - delta * diff_pq[ast]
 
@@ -189,7 +203,7 @@
 
   # ---- Refresh full tau (post-shrinking it can be stale) ----
   beta_full     <- alpha - alpha_star
-  Kbeta         <- as.numeric(Omega %*% beta_full)
+  Kbeta         <- K_acc$get_matvec(beta_full)
   tau_alpha     <- y * (1 - scale) - Kbeta
   tau_alphastar <- y * (1 + scale) - Kbeta
 
