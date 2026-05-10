@@ -78,26 +78,13 @@
 rmspe_lssvr <- function(X, y, kernel, gamma, precondition = "auto") {
   X <- as.matrix(X)
   y <- as.numeric(y)
-  if (!all(y > 0)) {
-    n_bad <- sum(y <= 0)
-    stop(sprintf(
-      paste0("%d target value%s non-positive (min = %g). ",
-             "All targets must be strictly positive for percentage-error loss."),
-      n_bad, if (n_bad == 1L) " is" else "s are", min(y)
-    ))
-  }
-  if (gamma <= 0)  stop("`gamma` must be positive")
+  .validate_y_positive(y)
+  if (gamma <= 0) stop("`gamma` must be positive")
 
   use_precond <- .resolve_precondition(precondition, y)
 
   N <- nrow(X)
-  if (N > 2000L) {
-    warning(sprintf(
-      paste0("Large dataset (N = %d): kernel matrix is %d x %d (%.1f MB). ",
-             "Consider subsampling for hyperparameter tuning."),
-      N, N, N, N^2 * 8 / 1e6
-    ))
-  }
+  .warn_large_n(N)
 
   Omega <- kernel_matrix(kernel, X)
   diag(Omega) <- diag(Omega) + 1e-6           # Tikhonov jitter for PD-ness
@@ -210,31 +197,4 @@ print.psvr_rmspe <- function(x, ...) {
 #' @export
 coef.psvr_rmspe <- function(object, ...) {
   list(alpha = object$alpha, b = object$b, X_sv = object$X_train)
-}
-
-# Resolve the `precondition` argument shared by the LS-SVR fitters.
-# Returns a single logical (TRUE = apply, FALSE = don't).
-.resolve_precondition <- function(precondition, y) {
-  if (is.character(precondition)) {
-    if (length(precondition) != 1L)
-      stop("`precondition` must be a length-1 character or numeric scalar")
-    choices <- c("always", "never", "auto")
-    if (!precondition %in% choices)
-      stop(sprintf(
-        "`precondition` must be one of %s, or a positive numeric threshold",
-        paste(sprintf('"%s"', choices), collapse = ", ")
-      ))
-    switch(
-      precondition,
-      always = TRUE,
-      never  = FALSE,
-      auto   = (max(y) / min(y)) > 10
-    )
-  } else if (is.numeric(precondition)) {
-    if (length(precondition) != 1L || !is.finite(precondition) || precondition <= 0)
-      stop("`precondition` numeric threshold must be a single positive finite value")
-    (max(y) / min(y)) > as.numeric(precondition)
-  } else {
-    stop('`precondition` must be one of "always", "never", "auto", or a positive numeric threshold')
-  }
 }

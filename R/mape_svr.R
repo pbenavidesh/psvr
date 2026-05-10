@@ -53,25 +53,12 @@ mape_svr <- function(X, y, kernel, C, eps,
   solver <- match.arg(solver)
   X <- as.matrix(X)
   y <- as.numeric(y)
-  if (!all(y > 0)) {
-    n_bad <- sum(y <= 0)
-    stop(sprintf(
-      paste0("%d target value%s non-positive (min = %g). ",
-             "All targets must be strictly positive for percentage-error loss."),
-      n_bad, if (n_bad == 1L) " is" else "s are", min(y)
-    ))
-  }
-  if (C   <= 0)    stop("`C` must be positive")
-  if (eps <  0)    stop("`eps` must be non-negative")
+  .validate_y_positive(y)
+  if (C   <= 0) stop("`C` must be positive")
+  if (eps <  0) stop("`eps` must be non-negative")
 
-  N     <- nrow(X)
-  if (N > 2000L) {
-    warning(sprintf(
-      paste0("Large dataset (N = %d): kernel matrix is %d x %d (%.1f MB). ",
-             "Consider subsampling for hyperparameter tuning."),
-      N, N, N, N^2 * 8 / 1e6
-    ))
-  }
+  N <- nrow(X)
+  .warn_large_n(N)
   scale <- eps / 100          # ε/100, used throughout
   ub    <- 100 * C / y        # per-sample upper bounds on αk and αk*
 
@@ -237,15 +224,4 @@ print.psvr_mape <- function(x, ...) {
 #' @export
 coef.psvr_mape <- function(object, ...) {
   list(alpha = object$beta, b = object$b, X_sv = object$X_sv)
-}
-
-# Internal helper: build a human-readable kernel description from kernel_info.
-.kernel_desc <- function(ki) {
-  if (is.null(ki)) return("user-supplied function")
-  switch(ki$type,
-    rbf        = sprintf("RBF (sigma = %g)", ki$sigma),
-    linear     = "Linear",
-    polynomial = sprintf("Polynomial (degree = %d, coef0 = %g)", ki$degree, ki$coef0),
-    ki$type
-  )
 }
