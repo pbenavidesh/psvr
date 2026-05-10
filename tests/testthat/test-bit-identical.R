@@ -38,11 +38,17 @@ HP <- list(
 
 
 # ---- 4 direct-fitter golden tests (RBF kernel) ---------------------------
+# These tests intentionally call the deprecated wrappers to lock in the
+# pre-refactor numerics. The .Deprecated() notice is asserted in the
+# dedicated contract tests of test-mape-svr.R / test-rmspe-lssvr.R / etc.;
+# here it is suppressed to keep snapshot-test output focused.
 
 test_that("Model 1 mape_svr (RBF) — direct golden", {
   fx  <- make_fixture()
   K   <- make_kernel("rbf", sigma = HP$rbf_sigma)
-  fit <- mape_svr(fx$X, fx$y, kernel = K, C = HP$C, eps = HP$eps)
+  fit <- suppressWarnings(
+    mape_svr(fx$X, fx$y, kernel = K, C = HP$C, eps = HP$eps)
+  )
   preds <- predict(fit, fx$X_test)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
 })
@@ -50,8 +56,10 @@ test_that("Model 1 mape_svr (RBF) — direct golden", {
 test_that("Model 2 mape_sym_svr (RBF) — direct golden", {
   fx  <- make_fixture()
   K   <- make_kernel("rbf", sigma = HP$rbf_sigma)
-  fit <- mape_sym_svr(fx$X, fx$y, kernel = K,
-                      C = HP$C, eps = HP$eps, a = HP$a)
+  fit <- suppressWarnings(
+    mape_sym_svr(fx$X, fx$y, kernel = K,
+                 C = HP$C, eps = HP$eps, a = HP$a)
+  )
   preds <- predict(fit, fx$X_test)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
 })
@@ -59,7 +67,9 @@ test_that("Model 2 mape_sym_svr (RBF) — direct golden", {
 test_that("Model 3 rmspe_lssvr (RBF) — direct golden", {
   fx  <- make_fixture()
   K   <- make_kernel("rbf", sigma = HP$rbf_sigma)
-  fit <- rmspe_lssvr(fx$X, fx$y, kernel = K, gamma = HP$gamma)
+  fit <- suppressWarnings(
+    rmspe_lssvr(fx$X, fx$y, kernel = K, gamma = HP$gamma)
+  )
   preds <- predict(fit, fx$X_test)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
 })
@@ -67,8 +77,10 @@ test_that("Model 3 rmspe_lssvr (RBF) — direct golden", {
 test_that("Model 4 rmspe_sym_lssvr (RBF) — direct golden", {
   fx  <- make_fixture()
   K   <- make_kernel("rbf", sigma = HP$rbf_sigma)
-  fit <- rmspe_sym_lssvr(fx$X, fx$y, kernel = K,
-                         gamma = HP$gamma, a = HP$a)
+  fit <- suppressWarnings(
+    rmspe_sym_lssvr(fx$X, fx$y, kernel = K,
+                    gamma = HP$gamma, a = HP$a)
+  )
   preds <- predict(fit, fx$X_test)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
 })

@@ -6,6 +6,14 @@
 # alpha, b, and predictions. These tests verify that property to within
 # machine epsilon for moderate rho, and to a looser numerical-stability
 # tolerance at extreme rho.
+#
+# These tests exercise the deprecated rmspe_lssvr() / rmspe_sym_lssvr()
+# wrappers; quiet helpers swallow the .Deprecated() noise so the test
+# output stays focused on preconditioner behavior. The deprecation
+# contract itself is asserted in test-rmspe-lssvr.R / test-rmspe-sym-lssvr.R.
+
+.q_rmspe_lssvr     <- function(...) suppressWarnings(rmspe_lssvr(...))
+.q_rmspe_sym_lssvr <- function(...) suppressWarnings(rmspe_sym_lssvr(...))
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -28,7 +36,7 @@ K_rbf <- make_kernel("rbf", sigma = 0.3)
 test_that("rmspe_lssvr precondition='never' satisfies legacy KKT equality", {
   d     <- make_synth(rho = 8, N = 30, seed = 11L)
   gamma <- 2
-  fit   <- rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = gamma,
+  fit   <- .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = gamma,
                        precondition = "never")
   expect_false(fit$precondition_applied)
 
@@ -42,7 +50,7 @@ test_that("rmspe_lssvr precondition='never' satisfies legacy KKT equality", {
 test_that("rmspe_sym_lssvr precondition='never' satisfies legacy KKT equality", {
   d     <- make_synth(rho = 8, N = 30, seed = 12L)
   gamma <- 2
-  fit   <- rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = gamma, a = 1,
+  fit   <- .q_rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = gamma, a = 1,
                            precondition = "never")
   expect_false(fit$precondition_applied)
 
@@ -56,9 +64,9 @@ test_that("rmspe_sym_lssvr precondition='never' satisfies legacy KKT equality", 
 
 test_that("rmspe_lssvr precondition='always' == 'never' on moderate-rho data", {
   d <- make_synth(rho = 10, N = 40, seed = 21L)
-  fit_n <- rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
+  fit_n <- .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
                        precondition = "never")
-  fit_a <- rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
+  fit_a <- .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
                        precondition = "always")
   expect_true(fit_a$precondition_applied)
   expect_false(fit_n$precondition_applied)
@@ -71,9 +79,9 @@ test_that("rmspe_lssvr precondition='always' == 'never' on moderate-rho data", {
 
 test_that("rmspe_sym_lssvr precondition='always' == 'never' on moderate-rho data", {
   d <- make_synth(rho = 10, N = 40, seed = 22L)
-  fit_n <- rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
+  fit_n <- .q_rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
                            precondition = "never")
-  fit_a <- rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
+  fit_a <- .q_rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
                            precondition = "always")
   expect_true(fit_a$precondition_applied)
 
@@ -87,9 +95,9 @@ test_that("rmspe_sym_lssvr precondition='always' == 'never' on moderate-rho data
 
 test_that("rmspe_lssvr precondition='always' is numerically stable at rho=1000", {
   d <- make_synth(rho = 1000, N = 60, seed = 31L)
-  fit_n <- rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
+  fit_n <- .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
                        precondition = "never")
-  fit_a <- rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
+  fit_a <- .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
                        precondition = "always")
 
   X_te <- matrix(seq(0, 1, length.out = 25), ncol = 1)
@@ -99,9 +107,9 @@ test_that("rmspe_lssvr precondition='always' is numerically stable at rho=1000",
 
 test_that("rmspe_sym_lssvr precondition='always' is numerically stable at rho=1000", {
   d <- make_synth(rho = 1000, N = 60, seed = 32L)
-  fit_n <- rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
+  fit_n <- .q_rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
                            precondition = "never")
-  fit_a <- rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
+  fit_a <- .q_rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
                            precondition = "always")
 
   X_te <- matrix(seq(0, 1, length.out = 25), ncol = 1)
@@ -113,9 +121,9 @@ test_that("rmspe_sym_lssvr precondition='always' is numerically stable at rho=10
 
 test_that("rmspe_lssvr precondition='auto' off below default threshold", {
   d   <- make_synth(rho = 5, N = 30, seed = 41L)
-  fit_auto <- rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
+  fit_auto <- .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
                           precondition = "auto")
-  fit_n    <- rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
+  fit_n    <- .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
                           precondition = "never")
   expect_false(fit_auto$precondition_applied)
 
@@ -125,9 +133,9 @@ test_that("rmspe_lssvr precondition='auto' off below default threshold", {
 
 test_that("rmspe_lssvr precondition='auto' on above default threshold", {
   d   <- make_synth(rho = 20, N = 30, seed = 42L)
-  fit_auto <- rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
+  fit_auto <- .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
                           precondition = "auto")
-  fit_n    <- rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
+  fit_n    <- .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
                           precondition = "never")
   expect_true(fit_auto$precondition_applied)
 
@@ -137,9 +145,9 @@ test_that("rmspe_lssvr precondition='auto' on above default threshold", {
 
 test_that("rmspe_lssvr precondition=<numeric> uses the supplied threshold", {
   d        <- make_synth(rho = 8, N = 30, seed = 43L)
-  fit_off  <- rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
+  fit_off  <- .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
                           precondition = 50)
-  fit_on   <- rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
+  fit_on   <- .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1,
                           precondition = 5)
   expect_false(fit_off$precondition_applied)
   expect_true(fit_on$precondition_applied)
@@ -147,9 +155,9 @@ test_that("rmspe_lssvr precondition=<numeric> uses the supplied threshold", {
 
 test_that("rmspe_sym_lssvr precondition='auto' off below default threshold", {
   d   <- make_synth(rho = 5, N = 30, seed = 44L)
-  fit_auto <- rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
+  fit_auto <- .q_rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
                               precondition = "auto")
-  fit_n    <- rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
+  fit_n    <- .q_rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
                               precondition = "never")
   expect_false(fit_auto$precondition_applied)
 
@@ -159,9 +167,9 @@ test_that("rmspe_sym_lssvr precondition='auto' off below default threshold", {
 
 test_that("rmspe_sym_lssvr precondition='auto' on above default threshold", {
   d   <- make_synth(rho = 20, N = 30, seed = 45L)
-  fit_auto <- rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
+  fit_auto <- .q_rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
                               precondition = "auto")
-  fit_n    <- rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
+  fit_n    <- .q_rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
                               precondition = "never")
   expect_true(fit_auto$precondition_applied)
 
@@ -171,9 +179,9 @@ test_that("rmspe_sym_lssvr precondition='auto' on above default threshold", {
 
 test_that("rmspe_sym_lssvr precondition=<numeric> uses the supplied threshold", {
   d        <- make_synth(rho = 8, N = 30, seed = 46L)
-  fit_off  <- rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
+  fit_off  <- .q_rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
                               precondition = 50)
-  fit_on   <- rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
+  fit_on   <- .q_rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
                               precondition = 5)
   expect_false(fit_off$precondition_applied)
   expect_true(fit_on$precondition_applied)
@@ -185,31 +193,31 @@ test_that("rmspe_lssvr rejects invalid `precondition` values", {
   d <- make_synth(rho = 5, N = 20, seed = 51L)
 
   expect_error(
-    rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, precondition = "yes"),
+    .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, precondition = "yes"),
     "precondition"
   )
   expect_error(
-    rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, precondition = "true"),
+    .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, precondition = "true"),
     "precondition"
   )
   expect_error(
-    rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, precondition = -1),
+    .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, precondition = -1),
     "precondition"
   )
   expect_error(
-    rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, precondition = 0),
+    .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, precondition = 0),
     "precondition"
   )
   expect_error(
-    rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, precondition = c(5, 10)),
+    .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, precondition = c(5, 10)),
     "precondition"
   )
   expect_error(
-    rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, precondition = NA),
+    .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, precondition = NA),
     "precondition"
   )
   expect_error(
-    rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, precondition = TRUE),
+    .q_rmspe_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, precondition = TRUE),
     "precondition"
   )
 })
@@ -218,17 +226,17 @@ test_that("rmspe_sym_lssvr rejects invalid `precondition` values", {
   d <- make_synth(rho = 5, N = 20, seed = 52L)
 
   expect_error(
-    rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
+    .q_rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
                     precondition = "yes"),
     "precondition"
   )
   expect_error(
-    rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
+    .q_rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
                     precondition = -1),
     "precondition"
   )
   expect_error(
-    rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
+    .q_rmspe_sym_lssvr(d$X, d$y, kernel = K_rbf, gamma = 1, a = 1,
                     precondition = c(5, 10)),
     "precondition"
   )

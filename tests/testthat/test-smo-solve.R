@@ -13,18 +13,25 @@ skip_if_no_osqp <- function() {
   testthat::skip_if_not_installed("osqp")
 }
 
+# These tests exercise the deprecated mape_svr() / mape_sym_svr() wrappers;
+# quiet helpers swallow the .Deprecated() noise so the test output stays
+# focused on solver-parity behavior. The deprecation contract itself is
+# asserted in test-mape-svr.R / test-mape-sym-svr.R.
+.q_mape_svr     <- function(...) suppressWarnings(mape_svr(...))
+.q_mape_sym_svr <- function(...) suppressWarnings(mape_sym_svr(...))
+
 # ---- 1. Prediction parity, Model 1 -----------------------------------------
 
 test_that("mape_svr SMO and osqp predictions agree within 1% of mean(y)", {
   skip_if_no_osqp()
 
   t_smo  <- system.time(
-    fit_smo  <- mape_svr(X_tr, y_tr, kernel = K_rbf, C = 10, eps = 5,
-                         solver = "smo")
+    fit_smo  <- .q_mape_svr(X_tr, y_tr, kernel = K_rbf, C = 10, eps = 5,
+                            solver = "smo")
   )[["elapsed"]]
   t_osqp <- system.time(
-    fit_osqp <- mape_svr(X_tr, y_tr, kernel = K_rbf, C = 10, eps = 5,
-                         solver = "osqp")
+    fit_osqp <- .q_mape_svr(X_tr, y_tr, kernel = K_rbf, C = 10, eps = 5,
+                            solver = "osqp")
   )[["elapsed"]]
 
   p_smo  <- predict(fit_smo,  X_tr)
@@ -46,12 +53,12 @@ test_that("mape_sym_svr SMO and osqp predictions agree within 1% of mean(y)", {
   skip_if_no_osqp()
 
   t_smo  <- system.time(
-    fit_smo  <- mape_sym_svr(X_tr, y_tr, kernel = K_rbf, C = 10, eps = 5,
-                             a = 1, solver = "smo")
+    fit_smo  <- .q_mape_sym_svr(X_tr, y_tr, kernel = K_rbf, C = 10, eps = 5,
+                                a = 1, solver = "smo")
   )[["elapsed"]]
   t_osqp <- system.time(
-    fit_osqp <- mape_sym_svr(X_tr, y_tr, kernel = K_rbf, C = 10, eps = 5,
-                             a = 1, solver = "osqp")
+    fit_osqp <- .q_mape_sym_svr(X_tr, y_tr, kernel = K_rbf, C = 10, eps = 5,
+                                a = 1, solver = "osqp")
   )[["elapsed"]]
 
   p_smo  <- predict(fit_smo,  X_tr)
@@ -71,10 +78,10 @@ test_that("mape_sym_svr SMO and osqp predictions agree within 1% of mean(y)", {
 test_that("mape_sym_svr SMO matches osqp under odd symmetry (a = -1)", {
   skip_if_no_osqp()
 
-  fit_smo  <- mape_sym_svr(X_tr, y_tr, kernel = K_rbf, C = 5, eps = 5,
-                           a = -1, solver = "smo")
-  fit_osqp <- mape_sym_svr(X_tr, y_tr, kernel = K_rbf, C = 5, eps = 5,
-                           a = -1, solver = "osqp")
+  fit_smo  <- .q_mape_sym_svr(X_tr, y_tr, kernel = K_rbf, C = 5, eps = 5,
+                              a = -1, solver = "smo")
+  fit_osqp <- .q_mape_sym_svr(X_tr, y_tr, kernel = K_rbf, C = 5, eps = 5,
+                              a = -1, solver = "osqp")
   max_diff <- max(abs(predict(fit_smo, X_tr) - predict(fit_osqp, X_tr)))
   expect_lt(max_diff, 0.01 * mean_y)
 })
@@ -100,8 +107,8 @@ test_that("parsnip default fit (solver = 'smo') runs and predicts", {
 # ---- 4. Degenerate case: tiny C → no free SVs, b must still be finite -------
 
 test_that("SMO bias falls back to sandwich when no free SVs exist", {
-  fit <- mape_svr(X_tr, y_tr, kernel = K_rbf, C = 1e-4, eps = 5,
-                  solver = "smo")
+  fit <- .q_mape_svr(X_tr, y_tr, kernel = K_rbf, C = 1e-4, eps = 5,
+                     solver = "smo")
   expect_true(is.finite(fit$b))
   preds <- predict(fit, X_tr)
   expect_true(all(is.finite(preds)))

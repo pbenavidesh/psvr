@@ -25,48 +25,21 @@ navbar:
       aria-label: GitHub
 
 reference:
+  - title: "Unified entry point"
+    desc: >
+      `psvr()` is the single primary fitter for all four model families.
+      Selects via `loss = "mape" | "rmspe"` and `sym = NULL | +1L | -1L`.
+    contents:
+      - psvr
+      - predict.psvr_fit
+      - print.psvr_fit
+      - coef.psvr_fit
+      - summary.psvr_fit
+
   - title: "Kernel factory"
     desc: "Shared kernel interface used by all four models."
     contents:
       - make_kernel
-
-  - title: "Model 1 — ε-SVR with MAPE"
-    desc: "Epsilon-insensitive SVR minimising the MAPE loss (Theorem 1)."
-    contents:
-      - mape_svr
-      - predict.psvr_mape
-
-  - title: "Model 2 — Symmetric ε-SVR with MAPE"
-    desc: >
-      Adds an even/odd symmetry constraint via the symmetric kernel
-      `Ks(xi, xj) = K(xi, xj) + a·K(xi, -xj)` (Theorem 2).
-    contents:
-      - mape_sym_svr
-      - predict.psvr_mape_sym
-
-  - title: "Model 3 — LS-SVR with RMSPE"
-    desc: "Least-squares SVR minimising the RMSPE loss (Theorem 3)."
-    contents:
-      - rmspe_lssvr
-      - predict.psvr_rmspe
-
-  - title: "Model 4 — Symmetric LS-SVR with RMSPE"
-    desc: "Symmetric kernel extension of Model 3 (Theorem 4)."
-    contents:
-      - rmspe_sym_lssvr
-      - predict.psvr_rmspe_sym
-
-  - title: "Model methods"
-    desc: "S3 methods for inspecting and printing fitted psvr models."
-    contents:
-      - print.psvr_mape
-      - print.psvr_mape_sym
-      - print.psvr_rmspe
-      - print.psvr_rmspe_sym
-      - coef.psvr_mape
-      - coef.psvr_mape_sym
-      - coef.psvr_rmspe
-      - coef.psvr_rmspe_sym
 
   - title: "tidymodels / parsnip interface — ε-SVR with MAPE (Model 1)"
     desc: "Parsnip model specifications for Model 1 (one per kernel type)."
@@ -101,10 +74,27 @@ reference:
       - cost_psvr_ls_data
       - sym_type_param
 
-  - title: "Internal fit wrappers"
-    desc: "Low-level bridge functions called by parsnip; not for direct use."
+  - title: "Deprecated API"
+    desc: >
+      Soft-deprecated wrappers retained for backwards compatibility.
+      New code should use `psvr()`. Scheduled removal: v0.2.0+.
     contents:
-      - psvr-fit-wrappers
+      - mape_svr
+      - mape_sym_svr
+      - rmspe_lssvr
+      - rmspe_sym_lssvr
+      - predict.psvr_mape
+      - predict.psvr_mape_sym
+      - predict.psvr_rmspe
+      - predict.psvr_rmspe_sym
+      - print.psvr_mape
+      - print.psvr_mape_sym
+      - print.psvr_rmspe
+      - print.psvr_rmspe_sym
+      - coef.psvr_mape
+      - coef.psvr_mape_sym
+      - coef.psvr_rmspe
+      - coef.psvr_rmspe_sym
 
 articles:
   - title: ~

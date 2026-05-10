@@ -1,4 +1,5 @@
 ^CLAUDE\.md$
+^dev$
 ^paper\.tex$
 ^psvr\.Rproj$
 ^\.Rproj\.user$
