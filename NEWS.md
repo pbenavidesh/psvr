@@ -1,3 +1,25 @@
+# psvr 0.0.2.9002 (development)
+
+## Internal changes
+
+* `.fit_mape_sym()` (Model 2) now invokes Algorithm 2 (Theorem 2 of
+  arXiv:2605.01446 v3) via the new `.adaptive_spectral_shift()` in
+  `R/kernel-spectral.R`. Two-pass shifted power iteration estimates
+  `λ_min(Ωs)`; if numerically negative, an adaptive `μ·I` shift is
+  applied so the SMO Hessian is provably PSD. Diagnostics (`mu`,
+  `lambda_min_hat`, `lambda_max_hat`, `branch_taken`,
+  `n_power_iterations`) surface under
+  `psvr_fit$solver_meta$spectral` for symmetric MAPE fits; `NULL` for
+  Models 1, 3, 4. The implementation deviates from the paper's
+  Algorithm 2 line 6 by using the spectral radius `|Pass 1 Rayleigh|`
+  rather than the signed Rayleigh as the Pass 2 shift; rationale is
+  documented inline in `R/kernel-spectral.R` and to be flagged as a
+  paper-side erratum in F8. With the three Mercer kernels supported by
+  `make_kernel()` (RBF / linear / polynomial), `Ωs` is always PSD by
+  Aronszajn closure / Schur product theorem, so the shifted branch is
+  unreachable in production fits and predictions are bit-identical to
+  v0.0.2.9001 at tolerance `1e-10` on the 16 + 12 golden snapshots.
+
 # psvr 0.0.2.9001 (development)
 
 ## Internal changes
