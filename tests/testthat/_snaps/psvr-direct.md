@@ -1,9 +1,9 @@
 # psvr mape / no sym / RBF — direct golden
 
-    WAoAAAACAAQFAwACAwAAAAAOAAAAFD/1/lFtHdmiP/CxwKcEgGg/7ZLh2daGij/rNRpcK4mv
-    P+2ldapntLQ/8kO6bSD3ED/3+50lQbh6P/CJKTOLvMo/6yA6ASDp2D/3n6oGMFb4P/Z8nJ92
-    vl8/7LdyW+BRjj/y/t5KtZTVP/AqAPQk3tM/87v6JGpBTj/0BbaRsd71P/QAeeQxHyA/8fkk
-    2oKPrD/pFCLDeUxeP+dJcRzy5aI=
+    WAoAAAACAAQFAwACAwAAAAAOAAAAFD/1/mUK8Dp4P/CysVJP69w/7ZRvVsXsuj/rOat6gta4
+    P+2lDt13Df4/8kQBb2U/kj/3/KB+GvUEP/CJ+b9Awbw/6yJHz5wHXD/3n8Nhjm4DP/Z9HqrP
+    L8s/7LcR3FftnD/y/+kFCHjeP/Aqg35KBVs/87yIZToj+z/0BfABWaVYP/P9A4zNSZk/8fli
+    WCw8SD/pFYlBqvyCP+dLahyX/04=
 
 # psvr mape / no sym / poly — direct golden
 
@@ -14,17 +14,17 @@
 
 # psvr mape / no sym / linear — direct golden
 
-    WAoAAAACAAQFAwACAwAAAAAOAAAAFD/rcrrvUUMqP+51ZFRMgZ4/7EWKqsCMKj/tcvywVgsS
-    P+resFqLGSY/6OCraXwIsj/u1yjCktr6P+lX6cD7/1o/6SOyhYeJsj/rKXNi7QVyP+kJfnjE
-    G/I/7zsN9VQCcj/lTUzlvGQ6P+uv9yEJcK4/6vGF6Cvesj/slMIUkfTiP+0FfFeOW4I/7WxN
-    f9Bv0j/t9pq6rMlCP+ikFzUcB9o=
+    WAoAAAACAAQFAwACAwAAAAAOAAAAFD/va5mFS6f5P+vcNYrCPIE/7U3sFdTlwT/qkrs5mkTx
+    P+5Ovo5n610/709xza0XAT/vLSqhcqeRP+m9v/S0xok/64GUn06tUT/s/itKkeDxP+7Ur0fw
+    rlE/7E6JsC+UkT/qhbCyMaVxP+avwvrNygE/7j66evccUT/wQqMB0nTKP+8gk29LyDE/687q
+    sP/SIT/qEhWvs+tpP+shx+IG5qE=
 
 # psvr mape / sym=+1 / RBF — direct golden
 
-    WAoAAAACAAQFAwACAwAAAAAOAAAAFD/52/0NyJ0eP+/sn+lN8f4/83kJdnCG5D/+xb03SIn9
-    P+lVdSmA/oA/69XllQJzHj/5K1ZOlcU0P/WBkhH3uzg/8h1Usop91j/7Cft3UkKwP/aEeEHP
-    WFo/7qF/xtULDT/x/1VApzT9P/GS/6AGviQ/8vdwhg8WoT/yRTjO0/6nP+/trK66V0g/66iS
-    LfIp0z/38qN/FS5NP+SBKMmdpn8=
+    WAoAAAACAAQFAwACAwAAAAAOAAAAFD/53UkFd7NLP+/teJADgW4/83iV8S1P9D/+xlnjv0fm
+    P+lWFiheO+4/69ahHSmSMj/5K0ACujzSP/WBPo2FgdM/8hxjFhkOWz/7CqsRMwZOP/aEeOZI
+    CZI/7pw9dwHF5D/x/y2AYjgwP/GVsScjzj8/8ve84eXOUj/yRPK/Op4CP+/sY7m0YwU/66ky
+    jAQRZj/38Om/nAjQP+SCWeXhMTg=
 
 # psvr mape / sym=+1 / poly — direct golden
 

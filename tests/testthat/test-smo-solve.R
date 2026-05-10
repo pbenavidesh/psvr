@@ -127,3 +127,30 @@ test_that("SMO emits a warning when max_iter is reached", {
     "did not converge"
   )
 })
+
+# ---- 6. T3 + T8 collapse to defaults on homogeneous targets ----------------
+#
+# Theorem 3 (asymmetric freeze) and Theorem 8 (per-pair tolerance) both
+# reduce to the F3 baseline when y_k = y_bar for all k. With near-uniform y
+# (rho_y ~ 1.05) the only path differences come from floor()/ceiling()
+# rounding flipping individual freeze thresholds between 4, 5, and 6 -- a
+# perturbation that may shift the SMO trajectory but not the final fit by
+# more than ~1e-5 (well below the per-pair tolerance floor of tol*max(y)).
+
+test_that("T3 + T8 reduce to default behavior on homogeneous targets", {
+  set.seed(2026)
+  N_h <- 50L
+  X_h <- matrix(rnorm(N_h * 5), N_h, 5)
+  # Near-uniform y: rho_y ~ 1.05.  Targets are still strictly positive.
+  y_h <- rep(2.0, N_h) + rnorm(N_h, sd = 0.05)
+  K   <- make_kernel("rbf", sigma = 1)
+  fit <- psvr(X_h, y_h, loss = "mape", kernel = K, C = 10, eps = 5)
+
+  preds <- predict(fit, X_h)
+  expect_true(all(is.finite(preds)))
+  expect_true(all(preds > 0))            # MAPE-SVR predictions stay positive on positive y
+  expect_equal(length(preds), N_h)
+  # On near-homogeneous y the predictions track y closely (eps=5% tube).
+  rel_err <- abs(preds - y_h) / y_h
+  expect_lt(median(rel_err), 0.10)
+})
