@@ -1,6 +1,12 @@
 # Predict from a fitted epsilon-SVR with MAPE model
 
-Predict from a fitted epsilon-SVR with MAPE model
+Method dispatched on the legacy `"psvr_mape"` class returned by the
+deprecated
+[`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md).
+New code should use
+[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) (which
+returns a `"psvr_fit"` object dispatched by
+[`predict.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/predict.psvr_fit.md)).
 
 ## Usage
 
@@ -27,14 +33,3 @@ predict(object, newdata, ...)
 ## Value
 
 Numeric vector of length M with predicted values.
-
-## Examples
-
-``` r
-X <- matrix(1:6, ncol = 2)
-y <- c(2.1, 3.8, 6.2)
-K <- make_kernel("rbf", sigma = 1)
-fit <- mape_svr(X, y, kernel = K, C = 10, eps = 5)
-predict(fit, X)
-#> [1] 2.207585 3.988709 5.888707
-```

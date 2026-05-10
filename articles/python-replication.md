@@ -111,7 +111,7 @@ cat("Model 3 — sigma:", round(sigma_m3, 6), "\n")
 #> Model 3 — sigma: 3.132135
 
 K3  <- make_kernel("rbf", sigma = sigma_m3)
-fit_m3 <- rmspe_lssvr(X_tr, y_tr, kernel = K3, gamma = 16962.540770)
+fit_m3 <- psvr(X_tr, y_tr, loss = "rmspe", kernel = K3, gamma = 16962.540770)
 pred_m3 <- predict(fit_m3, X_te)
 
 m3_mape  <- mape_fn(y_te, pred_m3)
@@ -126,11 +126,11 @@ cat(sprintf(
 #> Model 3 (R) — MAPE: 11.0495%  RMSPE: 18.7205%  R²: 0.819584  MSE: 14.127632
 print(fit_m3)
 #> 
-#> LS-SVR with RMSPE loss  [psvr_rmspe]
+#> LS-SVR with RMSPE loss  [psvr_fit]
 #> 
-#>   Kernel:        RBF (sigma = 3.13213)
-#>   Gamma:         16962.5
-#>   Training obs.: 354
+#>   Kernel:          RBF (sigma = 3.13213)
+#>   Gamma:           16962.5
+#>   Training obs.:   354
 ```
 
 ![](python-replication_files/figure-html/model3-plot-1.png)
@@ -138,9 +138,11 @@ print(fit_m3)
 ``` r
 
 cf_m3 <- coef(fit_m3)
-# alpha: N dual variables; weight each training point in f(x) = sum_k alpha_k K(x_k, x) + b
-# b:     bias / intercept term
-# X_sv:  all N training inputs (LS-SVR — no sparsity, every point contributes)
+# alpha:        N dual variables; weight each training point in
+#               f(x) = sum_k alpha_k K(x_k, x) + b
+# b:            bias / intercept term
+# support_data: all N training inputs (LS-SVR — no sparsity, every point
+#               contributes)
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf_m3$b, min(cf_m3$alpha), max(cf_m3$alpha)))
 #> b = 25.1360  |  alpha range: [-774.4447, 307.9511]
@@ -165,7 +167,8 @@ cat("Model 1 — sigma:", round(sigma_m1, 6), "\n")
 #> Model 1 — sigma: 3.897221
 
 K1  <- make_kernel("rbf", sigma = sigma_m1)
-fit_m1 <- mape_svr(X_tr, y_tr, kernel = K1, C = 15.631280, eps = 5.804601)
+fit_m1 <- psvr(X_tr, y_tr, loss = "mape", kernel = K1,
+               C = 15.631280, eps = 5.804601)
 pred_m1 <- predict(fit_m1, X_te)
 
 m1_mape  <- mape_fn(y_te, pred_m1)
@@ -179,11 +182,11 @@ cat(sprintf(
 ))
 #> Model 1 (R) — MAPE: 10.6892%  RMSPE: 18.5526%  R²: 0.810705  MSE: 14.822893
 cat(sprintf("Support vectors: %d / %d training points\n",
-            sum(fit_m1$beta != 0), nrow(X_tr)))
+            fit_m1$n_sv, fit_m1$n_train))
 #> Support vectors: 214 / 354 training points
 print(fit_m1)
 #> 
-#> Epsilon-SVR with MAPE loss  [psvr_mape]
+#> epsilon-SVR with MAPE loss  [psvr_fit]
 #> 
 #>   Kernel:          RBF (sigma = 3.89722)
 #>   C:               15.6313
@@ -197,10 +200,11 @@ print(fit_m1)
 ``` r
 
 cf_m1 <- coef(fit_m1)
-# alpha: beta_k = alpha_k - alpha_k* for each support vector; non-zero for
-#        points outside the percentage-error ε-tube (sparse)
-# b:     bias / intercept term
-# X_sv:  training rows for support vectors only
+# alpha:        beta_k = alpha_k - alpha_k* for each support vector;
+#               non-zero for points outside the percentage-error ε-tube
+#               (sparse)
+# b:            bias / intercept term
+# support_data: training rows for support vectors only
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf_m1$b, min(cf_m1$alpha), max(cf_m1$alpha)))
 #> b = 25.4658  |  alpha range: [-248.1156, 163.4649]

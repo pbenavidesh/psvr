@@ -1,13 +1,10 @@
 # Fit wrappers for parsnip engine dispatch
 
-Low-level bridge functions called by parsnip when fitting psvr model
-specs. Not intended for direct use; call
-[`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md),
-[`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md),
-[`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md),
-or
-[`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md)
-directly instead.
+Bridge functions called by parsnip when fitting psvr model specs.
+Exported only because parsnip's resolver requires it; not intended for
+direct use. Call
+[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) instead
+for direct fitting.
 
 ## Usage
 
@@ -88,8 +85,7 @@ psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L, precondition = "auto")
 
 - C:
 
-  Regularization parameter for MAPE models (see
-  [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md)).
+  Regularization parameter for MAPE models.
 
 - eps:
 
@@ -101,8 +97,7 @@ psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L, precondition = "auto")
 
 - tol:
 
-  Solver zero-threshold (see
-  [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md)).
+  Solver zero-threshold.
 
 - degree:
 
@@ -119,14 +114,11 @@ psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L, precondition = "auto")
 
 - gamma:
 
-  Regularization parameter for RMSPE models (see
-  [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)).
+  Regularization parameter for RMSPE models.
 
 - precondition:
 
   Optional symmetric rescaling preconditioner for the RMSPE LS-SVR
-  fitters. Forwarded to
+  fitters. See
   [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
-  /
-  [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md);
-  see those functions for accepted values and semantics.
+  for accepted values and semantics.

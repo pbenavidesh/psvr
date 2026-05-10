@@ -1,5 +1,61 @@
 # Changelog
 
+## psvr 0.0.2.9000 (development)
+
+### New features
+
+- New unified entry point `psvr(X, y, loss, sym, kernel, ...)`. Selects
+  among the four model families via `loss = "mape" | "rmspe"` and
+  `sym = NULL | +1L | -1L`. Returns a single `psvr_fit` S3 object with a
+  unified field schema (`alpha`, `b`, `support_data`, `support_targets`,
+  `n_train`, `n_sv`, `p_train`, `hyperparameters`, `solver_meta`, plus
+  `loss`, `sym`, `kernel`).
+- New methods on the `psvr_fit` class:
+  [`predict()`](https://rdrr.io/r/stats/predict.html),
+  [`print()`](https://rdrr.io/r/base/print.html),
+  [`coef()`](https://rdrr.io/r/stats/coef.html), and
+  [`summary()`](https://rdrr.io/r/base/summary.html). The summary method
+  is new — there was no analogue on the four legacy classes.
+
+### Deprecations
+
+- [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md),
+  [`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md),
+  [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md),
+  [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md)
+  are soft-deprecated. They continue to work and return the same legacy
+  shape (`psvr_mape`, `psvr_mape_sym`, `psvr_rmspe`, `psvr_rmspe_sym`)
+  with the same predict/print/coef methods, but each emits
+  `.Deprecated("psvr")`. Migrate by replacing, for example,
+  `mape_svr(X, y, kernel = K, C = 10, eps = 5)` with
+  `psvr(X, y, loss = "mape", kernel = K, C = 10, eps = 5)`. Scheduled
+  removal: v0.2.0 or later.
+
+### Internal changes
+
+- The 12 parsnip fit wrappers
+  ([`psvr_mape_rbf_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)
+  etc.) are now tagged `@keywords internal` and hidden from the pkgdown
+  reference index. They remain exported (parsnip’s resolver requires it)
+  but are no longer advertised as user API; call \[psvr()\] for direct
+  fitting. The 12 spec constructors
+  ([`psvr_mape_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md)
+  etc.) remain public API and are unchanged.
+- The four model fitter bodies have been renamed to internal helpers
+  ([`.fit_mape()`](https://pbenavidesh.github.io/psvr/reference/dot-fit_mape.md),
+  [`.fit_mape_sym()`](https://pbenavidesh.github.io/psvr/reference/dot-fit_mape_sym.md),
+  [`.fit_rmspe()`](https://pbenavidesh.github.io/psvr/reference/dot-fit_rmspe.md),
+  [`.fit_rmspe_sym()`](https://pbenavidesh.github.io/psvr/reference/dot-fit_rmspe_sym.md)).
+  The deprecation wrappers delegate to these directly.
+- DRY consolidation: shared validation, large-N warnings, predict
+  dispatch, preconditioner resolution, and kernel description live in
+  new internal-only files under `R/utils-*.R`.
+- Model 2 (symmetric MAPE epsilon-SVR) now uses
+  [`sym_kernel_matrix()`](https://pbenavidesh.github.io/psvr/reference/sym_kernel_matrix.md)
+  to build `Ωs = ½(Ω + a·Ω*)` (matching Model 4’s existing convention),
+  with diagonal jitter `0.5e-6` to preserve bit-identicality with the
+  pre-F1 path.
+
 ## psvr 0.0.2 (2026-04-30)
 
 ### New features

@@ -59,5 +59,5 @@ sigma_med <- sigma_heuristic(X)
 rbf_sigma_psvr(range = c(log10(sigma_med / 10), log10(sigma_med * 10)))
 #> RBF Sigma (psvr) (quantitative)
 #> Transformer: log-10 [1e-100, Inf]
-#> Range (transformed scale): [-0.568, 1.43]
+#> Range (transformed scale): [-0.599, 1.4]
 ```

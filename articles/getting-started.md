@@ -8,14 +8,28 @@ forecasting. An error of 1 unit is negligible when the target is 1 000
 but large when it is 2.
 
 **psvr** implements four SVR variants derived from percentage-error loss
-functions (Benavides-Herrera et al., 2026):
+functions (Benavides-Herrera et al., 2026), accessed through the unified
+[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) entry
+point:
 
-| Model | Loss | Solver |
-|----|----|----|
-| [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md) | RMSPE — least-squares | linear system |
-| [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md) | RMSPE — symmetric kernel | linear system |
-| [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md) | MAPE — ε-insensitive | quadratic program |
-| [`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md) | MAPE — symmetric kernel | quadratic program |
+| Model | `loss`    | `sym`         | Solver            |
+|-------|-----------|---------------|-------------------|
+| 3     | `"rmspe"` | `NULL`        | linear system     |
+| 4     | `"rmspe"` | `+1L` / `-1L` | linear system     |
+| 1     | `"mape"`  | `NULL`        | quadratic program |
+| 2     | `"mape"`  | `+1L` / `-1L` | quadratic program |
+
+`sym = +1L` enforces even symmetry `f(x) = f(-x)`; `sym = -1L` enforces
+odd symmetry. Use the symmetric variants only with kernels that satisfy
+Assumption 3 of the paper (RBF and even-degree polynomial kernels do).
+
+The four legacy fitters
+([`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md),
+[`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md),
+[`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md),
+[`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md))
+remain available as soft-deprecated wrappers and will be removed in a
+future release.
 
 All models require **strictly positive targets** (`y > 0`), which is the
 condition under which percentage residuals are well-defined.
@@ -120,7 +134,7 @@ $`Y_\Gamma = \operatorname{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)`$.
 K <- make_kernel("rbf", sigma = 1)
 
 # gamma = 5000: regularisation; larger gamma -> smaller Y_Gamma diagonal -> tighter fit
-fit_ls <- rmspe_lssvr(X_tr, y_tr, kernel = K, gamma = 5000)
+fit_ls <- psvr(X_tr, y_tr, loss = "rmspe", kernel = K, gamma = 5000)
 pred_ls <- predict(fit_ls, X_te)
 
 cat(sprintf("LS-SVR RMSPE  — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
@@ -128,11 +142,11 @@ cat(sprintf("LS-SVR RMSPE  — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
 #> LS-SVR RMSPE  — MAPE: 15.46%  RMSPE: 27.21%  R²: 0.7277
 print(fit_ls)
 #> 
-#> LS-SVR with RMSPE loss  [psvr_rmspe]
+#> LS-SVR with RMSPE loss  [psvr_fit]
 #> 
-#>   Kernel:        RBF (sigma = 1)
-#>   Gamma:         5000
-#>   Training obs.: 354
+#>   Kernel:          RBF (sigma = 1)
+#>   Gamma:           5000
+#>   Training obs.:   354
 ```
 
 ![](getting-started_files/figure-html/rmspe-plot-1.png)
@@ -140,10 +154,11 @@ print(fit_ls)
 ``` r
 
 cf_ls <- coef(fit_ls)
-# alpha: N dual variables; weight each training point's kernel contribution
-#        in f(x) = sum_k alpha_k K(x_k, x) + b (all N points, no sparsity)
-# b:     bias / intercept term
-# X_sv:  all N training inputs stored for prediction
+# alpha:        N dual variables; weight each training point's kernel
+#               contribution in f(x) = sum_k alpha_k K(x_k, x) + b
+#               (all N points, no sparsity)
+# b:            bias / intercept term
+# support_data: all N training inputs stored for prediction
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf_ls$b, min(cf_ls$alpha), max(cf_ls$alpha)))
 #> b = 22.5268  |  alpha range: [-59.7517, 43.7321]
@@ -158,17 +173,17 @@ targets, concentrating model capacity on low-magnitude observations.
 ``` r
 
 # C = 10: per-sample box bound |beta_k| <= 100*C/y_k; eps = 1: tube width (% of y_k)
-fit_ep <- mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = 1)
+fit_ep <- psvr(X_tr, y_tr, loss = "mape", kernel = K, C = 10, eps = 1)
 pred_ep <- predict(fit_ep, X_te)
 
 cat(sprintf("ε-SVR MAPE    — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
             mape(y_te, pred_ep), rmspe(y_te, pred_ep), r2(y_te, pred_ep)))
 #> ε-SVR MAPE    — MAPE: 15.76%  RMSPE: 27.54%  R²: 0.7617
-cat(sprintf("Support vectors: %d / %d\n", length(fit_ep$beta), nrow(X_tr)))
+cat(sprintf("Support vectors: %d / %d\n", fit_ep$n_sv, fit_ep$n_train))
 #> Support vectors: 327 / 354
 print(fit_ep)
 #> 
-#> Epsilon-SVR with MAPE loss  [psvr_mape]
+#> epsilon-SVR with MAPE loss  [psvr_fit]
 #> 
 #>   Kernel:          RBF (sigma = 1)
 #>   C:               10
@@ -182,10 +197,11 @@ print(fit_ep)
 ``` r
 
 cf_ep <- coef(fit_ep)
-# alpha: beta_k = alpha_k - alpha_k* for each support vector; non-zero only for
-#        training points outside the percentage-error ε-tube (sparse)
-# b:     bias / intercept term
-# X_sv:  training rows corresponding to support vectors only
+# alpha:        beta_k = alpha_k - alpha_k* for each support vector;
+#               non-zero only for training points outside the
+#               percentage-error ε-tube (sparse)
+# b:            bias / intercept term
+# support_data: training rows corresponding to support vectors only
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf_ep$b, min(cf_ep$alpha), max(cf_ep$alpha)))
 #> b = 23.1087  |  alpha range: [-110.6876, 82.6446]

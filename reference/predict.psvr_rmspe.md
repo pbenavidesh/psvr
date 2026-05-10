@@ -1,6 +1,10 @@
 # Predict from a fitted LS-SVR with RMSPE model
 
-Predict from a fitted LS-SVR with RMSPE model
+Method dispatched on the legacy `"psvr_rmspe"` class returned by the
+deprecated
+[`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md).
+New code should use
+[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md).
 
 ## Usage
 
@@ -27,14 +31,3 @@ predict(object, newdata, ...)
 ## Value
 
 Numeric vector of length M with predicted values.
-
-## Examples
-
-``` r
-X <- matrix(c(1, 2, 3, 4, 5, 6), ncol = 2)
-y <- c(2.1, 3.8, 6.2)
-K <- make_kernel("rbf", sigma = 1)
-fit <- rmspe_lssvr(X, y, kernel = K, gamma = 1)
-predict(fit, X)
-#> [1] 2.743967 2.904833 2.969809
-```
