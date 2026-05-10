@@ -55,7 +55,11 @@
 #'     \item{`hyperparameters`}{Named list `(C, eps, gamma, a)` with `NULL`
 #'       entries for the family that doesn't apply.}
 #'     \item{`solver_meta`}{Named list `(backend, iters, converged,
-#'       precondition_applied)` describing the solve.}
+#'       precondition_applied, spectral)` describing the solve. The
+#'       `spectral` slot is populated only for symmetric MAPE fits
+#'       (`loss = "mape"`, `sym != NULL`) and reports Algorithm 2
+#'       diagnostics (`mu`, `lambda_min_hat`, `lambda_max_hat`,
+#'       `branch_taken`, `n_power_iterations`); `NULL` otherwise.}
 #'   }
 #'
 #' @examples
@@ -144,12 +148,17 @@ psvr <- function(X, y,
     list(backend              = solver,
          iters                = NA_integer_,
          converged            = NA,
-         precondition_applied = NA)
+         precondition_applied = NA,
+         # spectral diagnostics (F3, Algorithm 2) populated for symmetric
+         # MAPE only; NULL for the non-symmetric path where Ωs is not built
+         # and the spectral guard does not run.
+         spectral             = if (!is.null(sym)) fit$spectral else NULL)
   } else {
     list(backend              = "linsolve",
          iters                = 1L,
          converged            = TRUE,
-         precondition_applied = isTRUE(fit$precondition_applied))
+         precondition_applied = isTRUE(fit$precondition_applied),
+         spectral             = NULL)
   }
 
   structure(

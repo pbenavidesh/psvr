@@ -34,6 +34,14 @@
   # of 0.5e-6.
   diag(Omega_s) <- diag(Omega_s) + 0.5e-6
 
+  # F3 — Algorithm 2 (Theorem 2 of arXiv:2605.01446 v3): adaptive spectral
+  # regularization. Estimates λ_min(Ωs) by two-pass shifted power iteration
+  # and adds a μ·I shift if the matrix is numerically indefinite. For
+  # shift-invariant kernels (e.g., RBF), Ωs is PSD and the no-shift branch
+  # always selects, preserving bit-identicality with F1/F2.
+  spec    <- .adaptive_spectral_shift(Omega_s)
+  Omega_s <- spec$Omega_use
+
   if (solver == "smo") {
     # Pass Ωs directly; matches Model 1's SMO contract (the ½ from the
     # symmetric representer is already in Ωs).  Bias `b` and bounds match
@@ -116,16 +124,22 @@
 
   structure(
     list(
-      beta    = beta[sv_idx],
-      b       = b,
-      X_sv    = X[sv_idx, , drop = FALSE],
-      y_sv    = y[sv_idx],
-      kernel  = kernel,
-      C       = C,
-      eps     = eps,
-      a       = a,
-      n_train = N,
-      p_train = ncol(X)
+      beta     = beta[sv_idx],
+      b        = b,
+      X_sv     = X[sv_idx, , drop = FALSE],
+      y_sv     = y[sv_idx],
+      kernel   = kernel,
+      C        = C,
+      eps      = eps,
+      a        = a,
+      n_train  = N,
+      p_train  = ncol(X),
+      # F3 — spectral diagnostics (Algorithm 2). psvr-main.R surfaces this
+      # under solver_meta$spectral on psvr_fit objects; the legacy
+      # mape_sym_svr() wrapper passes the legacy shape through unchanged,
+      # so callers of the deprecated API can still inspect $spectral.
+      spectral = spec[c("mu", "lambda_min_hat", "lambda_max_hat",
+                        "branch_taken", "n_power_iterations")]
     ),
     class = "psvr_mape_sym"
   )
