@@ -17,13 +17,6 @@
 Numeric vector of length M with predicted values.
 }
 \description{
-Predict from a fitted LS-SVR with RMSPE model
-}
-\examples{
-X <- matrix(c(1, 2, 3, 4, 5, 6), ncol = 2)
-y <- c(2.1, 3.8, 6.2)
-K <- make_kernel("rbf", sigma = 1)
-fit <- rmspe_lssvr(X, y, kernel = K, gamma = 1)
-predict(fit, X)
-
+Method dispatched on the legacy \code{"psvr_rmspe"} class returned by the
+deprecated \code{\link[=rmspe_lssvr]{rmspe_lssvr()}}. New code should use \code{\link[=psvr]{psvr()}}.
 }

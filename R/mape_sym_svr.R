@@ -1,60 +1,18 @@
-#' Fit symmetric epsilon-SVR with MAPE loss (Model 2)
+#' Fit symmetric epsilon-SVR with MAPE loss (Model 2) — internal
 #'
-#' Solves the quadratic program derived in Theorem 2 of Benavides-Herrera et al.
-#' (2026) via `osqp`. The symmetry constraint `f(x) = a·f(-x)` is enforced by
-#' the symmetric kernel matrix `Ωs = ½(Ω + a·Ω*)` (with the `½` from the
-#' representer theorem baked in), built via [sym_kernel_matrix()].
+#' Internal fitter for the symmetric MAPE epsilon-SVR family. Use [psvr()]
+#' with `loss = "mape"` and `sym = +1L` / `-1L` instead. Returns the legacy
+#' `psvr_mape_sym` shape; the deprecation wrapper [mape_sym_svr()] forwards
+#' directly to this function. The kernel must satisfy Assumption 3 of the
+#' paper; see [make_kernel()].
 #'
-#' The dual in variables `u = [α; α*] ∈ R^{2N}` is:
+#' @param X,y,kernel,C,eps,a,solver,tol See [mape_sym_svr()].
 #'
-#' - **P** = `[Ωs, -Ωs; -Ωs, Ωs]` so that osqp's `½ uᵀPu` evaluates to
-#'   `½ βᵀΩsβ = ¼ βᵀKsβ`, matching the `−¼` coefficient in Theorem 2.
-#' - **q** = `[y(ε/100 − 1); y(1 + ε/100)]` (identical to Model 1)
-#' - **Equality:** `[1ᵀ, −1ᵀ] u = 0`
-#' - **Box:** `0 ≤ αk ≤ 100C/yk`, `0 ≤ αk* ≤ 100C/yk` (identical to Model 1)
+#' @return A list of class `"psvr_mape_sym"` (legacy shape).
 #'
-#' This convention matches [rmspe_sym_lssvr()] (Model 4): both pass `Ωs`
-#' (with `½` already absorbed) into the solver.
-#'
-#' The kernel must satisfy Assumption 3 of the paper; see [make_kernel()].
-#'
-#' @param X Numeric matrix of training inputs, one observation per row (N × p).
-#' @param y Numeric vector of training targets, length N. Must satisfy `y > 0`.
-#' @param kernel A kernel function created by [make_kernel()].
-#' @param C Regularization parameter `C > 0`.
-#' @param eps Insensitivity tube half-width `ε ≥ 0` (in percentage units).
-#' @param a Symmetry parameter: `1` for even symmetry `f(x) = f(-x)`,
-#'   `-1` for odd symmetry `f(x) = -f(-x)`.
-#' @param solver Backend that solves the dual QP.  `"smo"` (default) uses an
-#'   internal libsvm-style SMO solver with no third-party dependency; `"osqp"`
-#'   delegates to the `osqp` package.  Both backends solve the same QP and
-#'   return the same support vectors and bias up to numerical tolerance.
-#' @param tol Threshold below which `|βk|` is treated as zero (default `1e-5`).
-#'
-#' @return An object of class `"psvr_mape_sym"`, a list with components:
-#'   \describe{
-#'     \item{`beta`}{Numeric vector of non-zero dual differences `βk`.}
-#'     \item{`b`}{Numeric scalar bias term.}
-#'     \item{`X_sv`}{Numeric matrix of support vector inputs.}
-#'     \item{`y_sv`}{Numeric vector of support vector targets.}
-#'     \item{`kernel`}{The kernel function used.}
-#'     \item{`C`}{The regularization parameter `C`.}
-#'     \item{`eps`}{The `ε` value used.}
-#'     \item{`a`}{The symmetry parameter.}
-#'     \item{`n_train`}{Number of training observations.}
-#'     \item{`p_train`}{Number of training features (columns).}
-#'   }
-#'
-#' @examples
-#' X <- matrix(1:6, ncol = 2)
-#' y <- c(2.1, 3.8, 6.2)
-#' K <- make_kernel("rbf", sigma = 1)
-#' fit <- mape_sym_svr(X, y, kernel = K, C = 10, eps = 5, a = 1)
-#' predict(fit, X)
-#'
-#' @export
-mape_sym_svr <- function(X, y, kernel, C, eps, a = 1,
-                         solver = c("smo", "osqp"), tol = 1e-5) {
+#' @keywords internal
+.fit_mape_sym <- function(X, y, kernel, C, eps, a = 1,
+                          solver = c("smo", "osqp"), tol = 1e-5) {
   solver <- match.arg(solver)
   X <- as.matrix(X)
   y <- as.numeric(y)
@@ -174,22 +132,16 @@ mape_sym_svr <- function(X, y, kernel, C, eps, a = 1,
 
 #' Predict from a fitted symmetric epsilon-SVR with MAPE model
 #'
-#' Uses the symmetric representer theorem:
-#' `f(x) = ½ Σk βk Ks(xk, x) + b`
-#' where `Ks(xk, x) = K(xk, x) + a·K(xk, -x)`.
+#' Method dispatched on the legacy `"psvr_mape_sym"` class returned by the
+#' deprecated [mape_sym_svr()]. Uses the symmetric representer theorem
+#' `f(x) = ½ Σk βk Ks(xk, x) + b` with
+#' `Ks(xk, x) = K(xk, x) + a·K(xk, -x)`. New code should use [psvr()].
 #'
 #' @param object An object of class `"psvr_mape_sym"` from [mape_sym_svr()].
 #' @param newdata Numeric matrix of new inputs, one observation per row (M × p).
 #' @param ... Ignored.
 #'
 #' @return Numeric vector of length M with predicted values.
-#'
-#' @examples
-#' X <- matrix(1:6, ncol = 2)
-#' y <- c(2.1, 3.8, 6.2)
-#' K <- make_kernel("rbf", sigma = 1)
-#' fit <- mape_sym_svr(X, y, kernel = K, C = 10, eps = 5, a = 1)
-#' predict(fit, X)
 #'
 #' @export
 predict.psvr_mape_sym <- function(object, newdata, ...) {

@@ -17,15 +17,8 @@
 Numeric vector of length M with predicted values.
 }
 \description{
-Uses the symmetric representer theorem:
-\verb{f(x) = ½ Σk βk Ks(xk, x) + b}
-where \verb{Ks(xk, x) = K(xk, x) + a·K(xk, -x)}.
-}
-\examples{
-X <- matrix(1:6, ncol = 2)
-y <- c(2.1, 3.8, 6.2)
-K <- make_kernel("rbf", sigma = 1)
-fit <- mape_sym_svr(X, y, kernel = K, C = 10, eps = 5, a = 1)
-predict(fit, X)
-
+Method dispatched on the legacy \code{"psvr_mape_sym"} class returned by the
+deprecated \code{\link[=mape_sym_svr]{mape_sym_svr()}}. Uses the symmetric representer theorem
+\verb{f(x) = ½ Σk βk Ks(xk, x) + b} with
+\verb{Ks(xk, x) = K(xk, x) + a·K(xk, -x)}. New code should use \code{\link[=psvr]{psvr()}}.
 }

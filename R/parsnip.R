@@ -18,140 +18,155 @@ utils::globalVariables(c("object", "new_data"))
 
 # ---- Fit wrappers --------------------------------------------------------
 # parsnip calls each wrapper with (x, y, <original-arg-names>, ...).
-# The wrapper builds the kernel and delegates to the underlying model function.
-# All wrappers are exported so parsnip can resolve them via pkg::fun.
+# The wrapper builds the kernel and delegates to the underlying internal
+# fitter. The wrappers must be EXPORTED (parsnip's set_fit resolves
+# `c(pkg, fun)` via `pkg::fun`, which only sees exported objects), but
+# they are tagged `@keywords internal` so they are hidden from the
+# pkgdown reference index and not advertised as user API.
 
 #' @title Fit wrappers for parsnip engine dispatch
 #' @description
-#' Low-level bridge functions called by parsnip when fitting psvr model specs.
-#' Not intended for direct use; call [mape_svr()], [mape_sym_svr()],
-#' [rmspe_lssvr()], or [rmspe_sym_lssvr()] directly instead.
+#' Bridge functions called by parsnip when fitting psvr model specs.
+#' Exported only because parsnip's resolver requires it; not intended
+#' for direct use. Call [psvr()] instead for direct fitting.
 #' @param x Numeric predictor matrix (parsnip matrix interface).
 #' @param y Numeric outcome vector (strictly positive).
-#' @param C Regularization parameter for MAPE models (see [mape_svr()]).
+#' @param C Regularization parameter for MAPE models.
 #' @param eps Epsilon tube half-width for MAPE models.
-#' @param gamma Regularization parameter for RMSPE models (see [rmspe_lssvr()]).
+#' @param gamma Regularization parameter for RMSPE models.
 #' @param rbf_sigma RBF bandwidth σ > 0.
 #' @param degree Polynomial degree ≥ 1.
 #' @param scale_factor Polynomial constant term (coef₀).
 #' @param sym_type Symmetry type (`"even"` or `"odd"`) for symmetric models;
 #'   translated to `a = 1L` or `a = -1L` before calling the solver.
-#' @param tol Solver zero-threshold (see [mape_svr()]).
+#' @param tol Solver zero-threshold.
 #' @param precondition Optional symmetric rescaling preconditioner for the
-#'   RMSPE LS-SVR fitters. Forwarded to [rmspe_lssvr()] / [rmspe_sym_lssvr()];
-#'   see those functions for accepted values and semantics.
+#'   RMSPE LS-SVR fitters. See [rmspe_lssvr()] for accepted values and
+#'   semantics.
 #' @name psvr-fit-wrappers
 #' @keywords internal
 NULL
 
 #' @rdname psvr-fit-wrappers
+#' @keywords internal
 #' @export
 psvr_mape_rbf_fit <- function(x, y, C, eps, rbf_sigma = 1, tol = 1e-5) {
-  mape_svr(X = x, y = y,
-           kernel = make_kernel("rbf", sigma = rbf_sigma),
-           C = C, eps = eps, tol = tol)
+  .fit_mape(X = x, y = y,
+            kernel = make_kernel("rbf", sigma = rbf_sigma),
+            C = C, eps = eps, tol = tol)
 }
 
 #' @rdname psvr-fit-wrappers
+#' @keywords internal
 #' @export
 psvr_mape_poly_fit <- function(x, y, C, eps, degree = 3L, scale_factor = 1,
                                tol = 1e-5) {
-  mape_svr(X = x, y = y,
-           kernel = make_kernel("polynomial", degree = degree,
-                                coef0 = scale_factor),
-           C = C, eps = eps, tol = tol)
+  .fit_mape(X = x, y = y,
+            kernel = make_kernel("polynomial", degree = degree,
+                                 coef0 = scale_factor),
+            C = C, eps = eps, tol = tol)
 }
 
 #' @rdname psvr-fit-wrappers
+#' @keywords internal
 #' @export
 psvr_mape_linear_fit <- function(x, y, C, eps, tol = 1e-5) {
-  mape_svr(X = x, y = y,
-           kernel = make_kernel("linear"),
-           C = C, eps = eps, tol = tol)
+  .fit_mape(X = x, y = y,
+            kernel = make_kernel("linear"),
+            C = C, eps = eps, tol = tol)
 }
 
 #' @rdname psvr-fit-wrappers
+#' @keywords internal
 #' @export
 psvr_mape_sym_rbf_fit <- function(x, y, C, eps, rbf_sigma = 1,
                                   sym_type = "even", tol = 1e-5) {
   a <- if (sym_type == "even") 1L else -1L
-  mape_sym_svr(X = x, y = y,
-               kernel = make_kernel("rbf", sigma = rbf_sigma),
-               C = C, eps = eps, a = a, tol = tol)
+  .fit_mape_sym(X = x, y = y,
+                kernel = make_kernel("rbf", sigma = rbf_sigma),
+                C = C, eps = eps, a = a, tol = tol)
 }
 
 #' @rdname psvr-fit-wrappers
+#' @keywords internal
 #' @export
 psvr_mape_sym_poly_fit <- function(x, y, C, eps, degree = 3L,
                                    scale_factor = 1, a = 1L, tol = 1e-5) {
-  mape_sym_svr(X = x, y = y,
-               kernel = make_kernel("polynomial", degree = degree,
-                                    coef0 = scale_factor),
-               C = C, eps = eps, a = a, tol = tol)
+  .fit_mape_sym(X = x, y = y,
+                kernel = make_kernel("polynomial", degree = degree,
+                                     coef0 = scale_factor),
+                C = C, eps = eps, a = a, tol = tol)
 }
 
 #' @rdname psvr-fit-wrappers
+#' @keywords internal
 #' @export
 psvr_mape_sym_linear_fit <- function(x, y, C, eps, a = 1L, tol = 1e-5) {
-  mape_sym_svr(X = x, y = y,
-               kernel = make_kernel("linear"),
-               C = C, eps = eps, a = a, tol = tol)
+  .fit_mape_sym(X = x, y = y,
+                kernel = make_kernel("linear"),
+                C = C, eps = eps, a = a, tol = tol)
 }
 
 #' @rdname psvr-fit-wrappers
+#' @keywords internal
 #' @export
 psvr_rmspe_rbf_fit <- function(x, y, gamma, rbf_sigma = 1,
                                precondition = "auto") {
-  rmspe_lssvr(X = x, y = y,
-              kernel = make_kernel("rbf", sigma = rbf_sigma),
-              gamma = gamma, precondition = precondition)
+  .fit_rmspe(X = x, y = y,
+             kernel = make_kernel("rbf", sigma = rbf_sigma),
+             gamma = gamma, precondition = precondition)
 }
 
 #' @rdname psvr-fit-wrappers
+#' @keywords internal
 #' @export
 psvr_rmspe_poly_fit <- function(x, y, gamma, degree = 3L, scale_factor = 1,
                                 precondition = "auto") {
-  rmspe_lssvr(X = x, y = y,
-              kernel = make_kernel("polynomial", degree = degree,
-                                   coef0 = scale_factor),
-              gamma = gamma, precondition = precondition)
+  .fit_rmspe(X = x, y = y,
+             kernel = make_kernel("polynomial", degree = degree,
+                                  coef0 = scale_factor),
+             gamma = gamma, precondition = precondition)
 }
 
 #' @rdname psvr-fit-wrappers
+#' @keywords internal
 #' @export
 psvr_rmspe_linear_fit <- function(x, y, gamma, precondition = "auto") {
-  rmspe_lssvr(X = x, y = y, kernel = make_kernel("linear"),
-              gamma = gamma, precondition = precondition)
+  .fit_rmspe(X = x, y = y, kernel = make_kernel("linear"),
+             gamma = gamma, precondition = precondition)
 }
 
 #' @rdname psvr-fit-wrappers
+#' @keywords internal
 #' @export
 psvr_rmspe_sym_rbf_fit <- function(x, y, gamma, rbf_sigma = 1,
                                    sym_type = "even",
                                    precondition = "auto") {
   a <- if (sym_type == "even") 1L else -1L
-  rmspe_sym_lssvr(X = x, y = y,
-                  kernel = make_kernel("rbf", sigma = rbf_sigma),
-                  gamma = gamma, a = a, precondition = precondition)
+  .fit_rmspe_sym(X = x, y = y,
+                 kernel = make_kernel("rbf", sigma = rbf_sigma),
+                 gamma = gamma, a = a, precondition = precondition)
 }
 
 #' @rdname psvr-fit-wrappers
+#' @keywords internal
 #' @export
 psvr_rmspe_sym_poly_fit <- function(x, y, gamma, degree = 3L,
                                     scale_factor = 1, a = 1L,
                                     precondition = "auto") {
-  rmspe_sym_lssvr(X = x, y = y,
-                  kernel = make_kernel("polynomial", degree = degree,
-                                       coef0 = scale_factor),
-                  gamma = gamma, a = a, precondition = precondition)
+  .fit_rmspe_sym(X = x, y = y,
+                 kernel = make_kernel("polynomial", degree = degree,
+                                      coef0 = scale_factor),
+                 gamma = gamma, a = a, precondition = precondition)
 }
 
 #' @rdname psvr-fit-wrappers
+#' @keywords internal
 #' @export
 psvr_rmspe_sym_linear_fit <- function(x, y, gamma, a = 1L,
                                       precondition = "auto") {
-  rmspe_sym_lssvr(X = x, y = y, kernel = make_kernel("linear"),
-                  gamma = gamma, a = a, precondition = precondition)
+  .fit_rmspe_sym(X = x, y = y, kernel = make_kernel("linear"),
+                 gamma = gamma, a = a, precondition = precondition)
 }
 
 

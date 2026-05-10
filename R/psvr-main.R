@@ -114,18 +114,16 @@ psvr <- function(X, y,
                         reg = reg,
                         passed = passed)
 
-  # Route to one of the four fitters. In Step 4 these are still under
-  # their public names; Step 5 will rename them to `.fit_*` and update
-  # the routing in lock-step.
+  # Route to one of the four internal fitters.
   fit <- switch(paste(loss, ifelse(is.null(sym), "std", "sym"), sep = "_"),
-    mape_std  = mape_svr(X, y, kernel = kernel, C = C, eps = eps,
-                         solver = solver, tol = tol),
-    mape_sym  = mape_sym_svr(X, y, kernel = kernel, C = C, eps = eps,
-                             a = a, solver = solver, tol = tol),
-    rmspe_std = rmspe_lssvr(X, y, kernel = kernel, gamma = gamma,
-                            precondition = precondition),
-    rmspe_sym = rmspe_sym_lssvr(X, y, kernel = kernel, gamma = gamma,
-                                a = a, precondition = precondition)
+    mape_std  = .fit_mape(X, y, kernel = kernel, C = C, eps = eps,
+                          solver = solver, tol = tol),
+    mape_sym  = .fit_mape_sym(X, y, kernel = kernel, C = C, eps = eps,
+                              a = a, solver = solver, tol = tol),
+    rmspe_std = .fit_rmspe(X, y, kernel = kernel, gamma = gamma,
+                           precondition = precondition),
+    rmspe_sym = .fit_rmspe_sym(X, y, kernel = kernel, gamma = gamma,
+                               a = a, precondition = precondition)
   )
 
   is_mape <- loss == "mape"
