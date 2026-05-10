@@ -180,7 +180,7 @@ cat(sprintf("ε-SVR MAPE    — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
             mape(y_te, pred_ep), rmspe(y_te, pred_ep), r2(y_te, pred_ep)))
 #> ε-SVR MAPE    — MAPE: 15.76%  RMSPE: 27.54%  R²: 0.7617
 cat(sprintf("Support vectors: %d / %d\n", fit_ep$n_sv, fit_ep$n_train))
-#> Support vectors: 327 / 354
+#> Support vectors: 326 / 354
 print(fit_ep)
 #> 
 #> epsilon-SVR with MAPE loss  [psvr_fit]
@@ -189,7 +189,7 @@ print(fit_ep)
 #>   C:               10
 #>   eps:             1
 #>   Training obs.:   354
-#>   Support vectors: 327 (92.4%)
+#>   Support vectors: 326 (92.1%)
 ```
 
 ![](getting-started_files/figure-html/mape-plot-1.png)
@@ -204,7 +204,7 @@ cf_ep <- coef(fit_ep)
 # support_data: training rows corresponding to support vectors only
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf_ep$b, min(cf_ep$alpha), max(cf_ep$alpha)))
-#> b = 23.1087  |  alpha range: [-110.6876, 82.6446]
+#> b = 23.1110  |  alpha range: [-110.4651, 82.6446]
 ```
 
 ## Comparing objectives

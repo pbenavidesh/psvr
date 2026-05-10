@@ -231,7 +231,13 @@ now invokes
 between the diagonal-jitter step and the SMO/osqp solve; spectral
 diagnostics surface under `solver_meta$spectral` on `psvr_fit` objects.
 
-**F4–F8** — Theorems 3–8 from arXiv:2605.01446 v3.
+**F4** — Theorems 3 + 8 from arXiv:2605.01446 v3 (asymmetric freeze
+per-sample thresholds + per-pair tolerance scaling). Modifies
+`R/smo_solve.R` only. Bit-identicalidad with F3 NOT preserved on
+heterogeneous-target data (intentional); homogeneous regime collapses to
+F3 baseline. Iter reduction ~25% on rho_y \>\> 50 datasets.
+
+**F5–F8** — Theorems 4–7 from arXiv:2605.01446 v3.
 
 ------------------------------------------------------------------------
 
@@ -502,6 +508,145 @@ Note: with the three Mercer kernels supported by
 (RBF, linear, polynomial), `Ωs` is always PSD (see “Why the shifted
 branch is dormant” above), so the shifted branch is unreachable in
 production and these limitations are not user-visible.
+
+------------------------------------------------------------------------
+
+## Asymmetric Freeze + Per-pair Tolerance (post-F4)
+
+`.smo_solve()` (`R/smo_solve.R`) now implements **Theorem 3**
+(asymmetric per-sample freeze thresholds) and **Theorem 8** (per-pair
+tolerance scaling) of arXiv:2605.01446 v3. Both modifications are
+applied unconditionally: they reduce to the F3 defaults whenever `y` is
+homogeneous (`y_k = mean(y)` for all `k`), so no opt-in flag exists.
+
+### Theorem 3 — asymmetric freeze thresholds
+
+The uniform shrinking threshold `n_freeze = 5L` is replaced at function
+entry by two length-N integer vectors, indexed by sample type:
+
+    n_freeze_alpha_per[k] = max(5L, ceil(n_freeze * mean(y) / y[k]))   # for alpha_k
+    n_freeze_astar_per[k] = max(1L, floor(n_freeze * y[k] / mean(y)))  # for alpha*_k
+
+Properties:
+
+- Homogeneous regime (`y_k = mean(y)`): both vectors collapse to
+  `n_freeze = 5L`, recovering F3 behaviour exactly.
+- α\*-variables tied to large `y_k` see a larger threshold (slow
+  freeze); α-variables tied to small `y_k` see a larger threshold (slow
+  freeze). The asymmetry exploits Lemma 4 of the paper (`α` vs `α*`
+  saturation rate scales differently with `1/y_k` via the per-sample box
+  `100C/y_k`).
+- Convergence is preserved by the libsvm unshrinking step: any premature
+  freeze is undone when the active-set gap drops to `tol`, and the
+  rebuilt full `tau` is recomputed via `K_acc$get_matvec(beta)`.
+
+### Theorem 8 — per-pair tolerance scaling
+
+The uniform stopping tolerance `tol_eff = tol * mean(y)` is replaced
+**at the convergence test only** by the per-pair value:
+
+    tol_pair = tol * max(y[p], y[k_j_w1])
+
+where `(p, k_j_w1)` is the WSS1 convergence pair (`p` from WSS1 over
+`I_up`, `k_j_w1` from the global `I_down` minimum). The convergence test
+becomes `Delta = tau_i - tau_j_w1 <= tol_pair`.
+
+The WSS3 candidate filter at the working-set selection step
+(`cand_mask <- low_tau_pool < tau_i - tol_eff`) **retains the global**
+`tol_eff = tol * mean(y)`. That filter is a numerical noise floor on the
+candidate gap and serves a different purpose from the convergence test;
+per-pair-izing it has no theorem coverage. The two scalars now coexist:
+
+| Variable | Site | Purpose |
+|----|----|----|
+| `tol_pair` | line ~131 (convergence) | KKT gap test, scales with the WSS1 pair |
+| `tol_eff` | line ~156 (WSS3 filter) | candidate noise floor, unchanged from F3 |
+
+### Paper deviation (paper TODO \#4)
+
+The paper (smo-v3.tex Theorem 8) reads “j\* is the WSS3-selected
+variable”. Implementing this literally would force WSS3 to run before
+the convergence test — both wasteful and **mathematically incorrect**:
+`Delta_w3 <= Delta_w1` by construction (WSS3 picks `j` to maximise
+second-order gain, not minimise `tau_j`), so testing `Delta_w3` against
+the tolerance would stop **prematurely**, before the true KKT optimality
+gap (`= Delta_w1`) is below tolerance. The WSS1 pair `(i_w1, j_w1)` IS
+the KKT optimality gap; that is the correct convergence test. This
+deviation is documented inline in `R/smo_solve.R` and flagged for a
+paper-side notation fix in F8 (paper TODO \#4 below).
+
+### Empirical evidence
+
+Snapshot fixture (`set.seed(2026); rlnorm(50, sdlog = 0.5)`,
+`rho_y ~ 6.7`): - 8 SMO-backed snapshot tests show drift `<= 8.5e-4` per
+prediction — comfortably below the per-pair tolerance floor
+`tol * max(y) ~ 2.6e-3`. - 6 LS-SVR (Models 3, 4) snapshots stay
+bit-identical (no SMO). - 6 polynomial / linear-kernel snapshots show no
+drift OR pre-existing non-convergence; see “Known issues” below.
+
+Benchmark (`set.seed(2026); rlnorm(200, sdlog = 1.5)`, `rho_y ~ 1273`,
+RBF kernel, 20 reps each): - Heterogeneous: F3 372 iters / 0.180 s → F4
+280 iters / 0.170 s. Iter reduction **24.7%**, wall reduction 5.6%. Iter
+speedup sits in the predicted 15–30% band (T3 ~20% × T8 ~10%,
+multiplicative ~32%). - Homogeneous (`rho_y ~ 1.16`): identical iter
+count (10 = 10) and identical wall time. Default-collapse confirmed.
+
+The wall-clock speedup is smaller than the iter speedup because at
+moderate `N` the kernel-matrix construction (`O(N²·p)` work) and other
+fixed overheads dominate the per-iteration cost. The wall benefit scales
+with `N`.
+
+### Default-collapse test
+
+`tests/testthat/test-smo-solve.R` test \#6 (“T3 + T8 reduce to default
+behavior on homogeneous targets”) fits
+[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) on
+near-uniform `y` (`rho_y ~ 1.05`) and asserts that predictions are
+finite and stay positive. The
+[`floor()`](https://rdrr.io/r/base/Round.html)/[`ceiling()`](https://rdrr.io/r/base/Round.html)
+rounding in the per-sample threshold formula may flip individual
+thresholds between 4, 5, and 6 when `y_k / mean(y)` crosses an integer
+boundary, so the trajectory may diverge by a tiny amount; the test does
+not assert bit-identicality with F3 (drift `~1e-5` is expected).
+RBF-kernel smoke is sufficient.
+
+------------------------------------------------------------------------
+
+## Known issues
+
+### TODO \#5 — Pre-existing SMO convergence pathology on linear / polynomial kernels
+
+`.smo_solve()` fails to converge within `max_iter = 100000` on MAPE fits
+with linear and polynomial kernels (RBF works correctly). Symptom:
+`solver_meta$converged = FALSE`, `iterations = max_iter`. Tests document
+this via “did not converge” warnings in `test-bit-identical.R` and
+`test-psvr-direct.R` for `mape_lin`, `mape_poly`, `mape_sym_poly`. The
+pathology predates F1 and was identified during F4 drift quantification
+(6 of 28 snapshot tests show the `STALE F3+F4` verdict — both F3 and F4
+stall at `max_iter` at divergent non-converged endpoints).
+
+Root cause unknown — candidates: (a) kernel-matrix near-degeneracy on
+the synthetic test data; (b) bias-update instability with non-RBF
+kernels; (c) shrinking heuristic mis-fires on linear-kernel `tau`
+distributions.
+
+Defer investigation; not blocking the F1–F8 refactor track. Production
+use of [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md)
+with linear / polynomial kernels and MAPE loss should be reviewed before
+relying on results — prefer the `osqp` backend (`solver = "osqp"`),
+which has its own internal convergence guard and does not exhibit this
+pathology, when accuracy is critical.
+
+------------------------------------------------------------------------
+
+## Paper TODOs (to be applied in F8)
+
+| \# | Location | Issue | Type |
+|----|----|----|----|
+| 1 | smo-v3.tex (Algorithm 2 line 6) | `v ← -Ωs · v / ||Ωs · v||` estimates `-λ_max(Ωs)`, not `λ_min(Ωs)` (post-F3). | Mathematical correction |
+| 2 | smo-v3.tex line 3467 | F3 paper-side erratum on Algorithm 2 (Theorem 2) Pass 2 shift. | Notation slip |
+| 3 | smo-v3.tex (Theorem 2 statement) | Document the `T_pi → ∞` requirement for the strict `δ_stab` floor; finite-`T_pi` clears the floor only on well-separated spectra. | Clarification |
+| 4 | smo-v3.tex Theorem 8 | “j\* is the WSS3-selected variable” should read “convergence-pair variable (WSS1 j*)“. WSS3 j* in the convergence test would break optimality (`Delta_w3 <= Delta_w1`). Notation slip, mathematically incorrect as written. | Notation slip |
 
 ------------------------------------------------------------------------
 

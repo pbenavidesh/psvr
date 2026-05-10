@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9002</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9003</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -187,7 +187,8 @@ s.t. yk = ωᵀφ(xk) + b + ek</code></pre>
 <li><label><input type="checkbox" checked><strong>F1</strong> — Unified <code><a href="reference/psvr.html">psvr()</a></code> entry point + <code>psvr_fit</code> class + DRY consolidation + symmetric-kernel standardization (<code>R/psvr-main.R</code>, <code>R/psvr-methods.R</code>, <code>R/utils-*.R</code>, <code>R/deprecated.R</code>).</label></li>
 <li><label><input type="checkbox" checked><strong>F2</strong> — Kernel accessor interface (<code>R/kernel-accessor.R</code>); SMO loop reads kernel data via <code>K_acc</code> closures. Foundation for F3/F6.</label></li>
 <li><label><input type="checkbox" checked><strong>F3</strong> — Algorithm 2: adaptive spectral shift (<code>R/kernel-spectral.R</code>). <code><a href="reference/dot-fit_mape_sym.html">.fit_mape_sym()</a></code> now invokes <code><a href="reference/dot-adaptive_spectral_shift.html">.adaptive_spectral_shift()</a></code> between the diagonal-jitter step and the SMO/osqp solve; spectral diagnostics surface under <code>solver_meta$spectral</code> on <code>psvr_fit</code> objects.</label></li>
-<li><label><input type="checkbox"><strong>F4–F8</strong> — Theorems 3–8 from arXiv:2605.01446 v3.</label></li>
+<li><label><input type="checkbox" checked><strong>F4</strong> — Theorems 3 + 8 from arXiv:2605.01446 v3 (asymmetric freeze per-sample thresholds + per-pair tolerance scaling). Modifies <code>R/smo_solve.R</code> only. Bit-identicalidad with F3 NOT preserved on heterogeneous-target data (intentional); homogeneous regime collapses to F3 baseline. Iter reduction ~25% on rho_y &gt;&gt; 50 datasets.</label></li>
+<li><label><input type="checkbox"><strong>F5–F8</strong> — Theorems 4–7 from arXiv:2605.01446 v3.</label></li>
 </ol><hr></div>
 <div class="section level2">
 <h2 id="architecture-post-f1">Architecture (post-F1)<a class="anchor" aria-label="anchor" href="#architecture-post-f1"></a></h2>
@@ -295,6 +296,83 @@ $n_power_iterations  integer length-2: iterations executed in Pass 1, Pass 2</co
 <p>Note: with the three Mercer kernels supported by <code><a href="reference/make_kernel.html">make_kernel()</a></code> (RBF, linear, polynomial), <code>Ωs</code> is always PSD (see “Why the shifted branch is dormant” above), so the shifted branch is unreachable in production and these limitations are not user-visible.</p>
 <hr></div>
 </div>
+<div class="section level2">
+<h2 id="asymmetric-freeze--per-pair-tolerance-post-f4">Asymmetric Freeze + Per-pair Tolerance (post-F4)<a class="anchor" aria-label="anchor" href="#asymmetric-freeze--per-pair-tolerance-post-f4"></a></h2>
+<p><code>.smo_solve()</code> (<code>R/smo_solve.R</code>) now implements <strong>Theorem 3</strong> (asymmetric per-sample freeze thresholds) and <strong>Theorem 8</strong> (per-pair tolerance scaling) of arXiv:2605.01446 v3. Both modifications are applied unconditionally: they reduce to the F3 defaults whenever <code>y</code> is homogeneous (<code>y_k = mean(y)</code> for all <code>k</code>), so no opt-in flag exists.</p>
+<div class="section level3">
+<h3 id="theorem-3--asymmetric-freeze-thresholds">Theorem 3 — asymmetric freeze thresholds<a class="anchor" aria-label="anchor" href="#theorem-3--asymmetric-freeze-thresholds"></a></h3>
+<p>The uniform shrinking threshold <code>n_freeze = 5L</code> is replaced at function entry by two length-N integer vectors, indexed by sample type:</p>
+<pre><code><span><span class="va">n_freeze_alpha_per</span><span class="op">[</span><span class="va">k</span><span class="op">]</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fl">5L</span>, <span class="fu">ceil</span><span class="op">(</span><span class="va">n_freeze</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span> <span class="op">/</span> <span class="va">y</span><span class="op">[</span><span class="va">k</span><span class="op">]</span><span class="op">)</span><span class="op">)</span>   <span class="co"># for alpha_k</span></span>
+<span><span class="va">n_freeze_astar_per</span><span class="op">[</span><span class="va">k</span><span class="op">]</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">floor</a></span><span class="op">(</span><span class="va">n_freeze</span> <span class="op">*</span> <span class="va">y</span><span class="op">[</span><span class="va">k</span><span class="op">]</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>  <span class="co"># for alpha*_k</span></span></code></pre>
+<p>Properties:</p>
+<ul><li>Homogeneous regime (<code>y_k = mean(y)</code>): both vectors collapse to <code>n_freeze = 5L</code>, recovering F3 behaviour exactly.</li>
+<li>α*-variables tied to large <code>y_k</code> see a larger threshold (slow freeze); α-variables tied to small <code>y_k</code> see a larger threshold (slow freeze). The asymmetry exploits Lemma 4 of the paper (<code>α</code> vs <code>α*</code> saturation rate scales differently with <code>1/y_k</code> via the per-sample box <code>100C/y_k</code>).</li>
+<li>Convergence is preserved by the libsvm unshrinking step: any premature freeze is undone when the active-set gap drops to <code>tol</code>, and the rebuilt full <code>tau</code> is recomputed via <code>K_acc$get_matvec(beta)</code>.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="theorem-8--per-pair-tolerance-scaling">Theorem 8 — per-pair tolerance scaling<a class="anchor" aria-label="anchor" href="#theorem-8--per-pair-tolerance-scaling"></a></h3>
+<p>The uniform stopping tolerance <code>tol_eff = tol * mean(y)</code> is replaced <strong>at the convergence test only</strong> by the per-pair value:</p>
+<pre><code><span><span class="va">tol_pair</span> <span class="op">=</span> <span class="va">tol</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">y</span><span class="op">[</span><span class="va">p</span><span class="op">]</span>, <span class="va">y</span><span class="op">[</span><span class="va">k_j_w1</span><span class="op">]</span><span class="op">)</span></span></code></pre>
+<p>where <code>(p, k_j_w1)</code> is the WSS1 convergence pair (<code>p</code> from WSS1 over <code>I_up</code>, <code>k_j_w1</code> from the global <code>I_down</code> minimum). The convergence test becomes <code>Delta = tau_i - tau_j_w1 &lt;= tol_pair</code>.</p>
+<p>The WSS3 candidate filter at the working-set selection step (<code>cand_mask &lt;- low_tau_pool &lt; tau_i - tol_eff</code>) <strong>retains the global</strong> <code>tol_eff = tol * mean(y)</code>. That filter is a numerical noise floor on the candidate gap and serves a different purpose from the convergence test; per-pair-izing it has no theorem coverage. The two scalars now coexist:</p>
+<table class="table"><colgroup><col width="16%"><col width="35%"><col width="47%"></colgroup><thead><tr><th>Variable</th>
+<th>Site</th>
+<th>Purpose</th>
+</tr></thead><tbody><tr><td><code>tol_pair</code></td>
+<td>line ~131 (convergence)</td>
+<td>KKT gap test, scales with the WSS1 pair</td>
+</tr><tr><td><code>tol_eff</code></td>
+<td>line ~156 (WSS3 filter)</td>
+<td>candidate noise floor, unchanged from F3</td>
+</tr></tbody></table></div>
+<div class="section level3">
+<h3 id="paper-deviation-paper-todo-4">Paper deviation (paper TODO #4)<a class="anchor" aria-label="anchor" href="#paper-deviation-paper-todo-4"></a></h3>
+<p>The paper (smo-v3.tex Theorem 8) reads “j* is the WSS3-selected variable”. Implementing this literally would force WSS3 to run before the convergence test — both wasteful and <strong>mathematically incorrect</strong>: <code>Delta_w3 &lt;= Delta_w1</code> by construction (WSS3 picks <code>j</code> to maximise second-order gain, not minimise <code>tau_j</code>), so testing <code>Delta_w3</code> against the tolerance would stop <strong>prematurely</strong>, before the true KKT optimality gap (<code>= Delta_w1</code>) is below tolerance. The WSS1 pair <code>(i_w1, j_w1)</code> IS the KKT optimality gap; that is the correct convergence test. This deviation is documented inline in <code>R/smo_solve.R</code> and flagged for a paper-side notation fix in F8 (paper TODO #4 below).</p>
+</div>
+<div class="section level3">
+<h3 id="empirical-evidence">Empirical evidence<a class="anchor" aria-label="anchor" href="#empirical-evidence"></a></h3>
+<p>Snapshot fixture (<code>set.seed(2026); rlnorm(50, sdlog = 0.5)</code>, <code>rho_y ~ 6.7</code>): - 8 SMO-backed snapshot tests show drift <code>&lt;= 8.5e-4</code> per prediction — comfortably below the per-pair tolerance floor <code>tol * max(y) ~ 2.6e-3</code>. - 6 LS-SVR (Models 3, 4) snapshots stay bit-identical (no SMO). - 6 polynomial / linear-kernel snapshots show no drift OR pre-existing non-convergence; see “Known issues” below.</p>
+<p>Benchmark (<code>set.seed(2026); rlnorm(200, sdlog = 1.5)</code>, <code>rho_y ~ 1273</code>, RBF kernel, 20 reps each): - Heterogeneous: F3 372 iters / 0.180 s → F4 280 iters / 0.170 s. Iter reduction <strong>24.7%</strong>, wall reduction 5.6%. Iter speedup sits in the predicted 15–30% band (T3 ~20% × T8 ~10%, multiplicative ~32%). - Homogeneous (<code>rho_y ~ 1.16</code>): identical iter count (10 = 10) and identical wall time. Default-collapse confirmed.</p>
+<p>The wall-clock speedup is smaller than the iter speedup because at moderate <code>N</code> the kernel-matrix construction (<code>O(N²·p)</code> work) and other fixed overheads dominate the per-iteration cost. The wall benefit scales with <code>N</code>.</p>
+</div>
+<div class="section level3">
+<h3 id="default-collapse-test">Default-collapse test<a class="anchor" aria-label="anchor" href="#default-collapse-test"></a></h3>
+<p><code>tests/testthat/test-smo-solve.R</code> test #6 (“T3 + T8 reduce to default behavior on homogeneous targets”) fits <code><a href="reference/psvr.html">psvr()</a></code> on near-uniform <code>y</code> (<code>rho_y ~ 1.05</code>) and asserts that predictions are finite and stay positive. The <code><a href="https://rdrr.io/r/base/Round.html" class="external-link">floor()</a></code>/<code><a href="https://rdrr.io/r/base/Round.html" class="external-link">ceiling()</a></code> rounding in the per-sample threshold formula may flip individual thresholds between 4, 5, and 6 when <code>y_k / mean(y)</code> crosses an integer boundary, so the trajectory may diverge by a tiny amount; the test does not assert bit-identicality with F3 (drift <code>~1e-5</code> is expected). RBF-kernel smoke is sufficient.</p>
+<hr></div>
+</div>
+<div class="section level2">
+<h2 id="known-issues">Known issues<a class="anchor" aria-label="anchor" href="#known-issues"></a></h2>
+<div class="section level3">
+<h3 id="todo-5--pre-existing-smo-convergence-pathology-on-linear--polynomial-kernels">TODO #5 — Pre-existing SMO convergence pathology on linear / polynomial kernels<a class="anchor" aria-label="anchor" href="#todo-5--pre-existing-smo-convergence-pathology-on-linear--polynomial-kernels"></a></h3>
+<p><code>.smo_solve()</code> fails to converge within <code>max_iter = 100000</code> on MAPE fits with linear and polynomial kernels (RBF works correctly). Symptom: <code>solver_meta$converged = FALSE</code>, <code>iterations = max_iter</code>. Tests document this via “did not converge” warnings in <code>test-bit-identical.R</code> and <code>test-psvr-direct.R</code> for <code>mape_lin</code>, <code>mape_poly</code>, <code>mape_sym_poly</code>. The pathology predates F1 and was identified during F4 drift quantification (6 of 28 snapshot tests show the <code>STALE F3+F4</code> verdict — both F3 and F4 stall at <code>max_iter</code> at divergent non-converged endpoints).</p>
+<p>Root cause unknown — candidates: (a) kernel-matrix near-degeneracy on the synthetic test data; (b) bias-update instability with non-RBF kernels; (c) shrinking heuristic mis-fires on linear-kernel <code>tau</code> distributions.</p>
+<p>Defer investigation; not blocking the F1–F8 refactor track. Production use of <code><a href="reference/psvr.html">psvr()</a></code> with linear / polynomial kernels and MAPE loss should be reviewed before relying on results — prefer the <code>osqp</code> backend (<code>solver = "osqp"</code>), which has its own internal convergence guard and does not exhibit this pathology, when accuracy is critical.</p>
+<hr></div>
+</div>
+<div class="section level2">
+<h2 id="paper-todos-to-be-applied-in-f8">Paper TODOs (to be applied in F8)<a class="anchor" aria-label="anchor" href="#paper-todos-to-be-applied-in-f8"></a></h2>
+<table class="table"><colgroup><col width="25%"><col width="25%"><col width="25%"><col width="25%"></colgroup><thead><tr><th>#</th>
+<th>Location</th>
+<th>Issue</th>
+<th>Type</th>
+</tr></thead><tbody><tr><td>1</td>
+<td>smo-v3.tex (Algorithm 2 line 6)</td>
+<td>
+<code>v ← -Ωs · v / ||Ωs · v||</code> estimates <code>-λ_max(Ωs)</code>, not <code>λ_min(Ωs)</code> (post-F3).</td>
+<td>Mathematical correction</td>
+</tr><tr><td>2</td>
+<td>smo-v3.tex line 3467</td>
+<td>F3 paper-side erratum on Algorithm 2 (Theorem 2) Pass 2 shift.</td>
+<td>Notation slip</td>
+</tr><tr><td>3</td>
+<td>smo-v3.tex (Theorem 2 statement)</td>
+<td>Document the <code>T_pi → ∞</code> requirement for the strict <code>δ_stab</code> floor; finite-<code>T_pi</code> clears the floor only on well-separated spectra.</td>
+<td>Clarification</td>
+</tr><tr><td>4</td>
+<td>smo-v3.tex Theorem 8</td>
+<td>“j* is the WSS3-selected variable” should read “convergence-pair variable (WSS1 j<em>)“. WSS3 j</em> in the convergence test would break optimality (<code>Delta_w3 &lt;= Delta_w1</code>). Notation slip, mathematically incorrect as written.</td>
+<td>Notation slip</td>
+</tr></tbody></table><hr></div>
 <div class="section level2">
 <h2 id="r-environment">R environment<a class="anchor" aria-label="anchor" href="#r-environment"></a></h2>
 <ul><li>

@@ -1,5 +1,63 @@
 # Changelog
 
+## psvr 0.0.2.9003 (development)
+
+### Internal changes
+
+- `.smo_solve()` (`R/smo_solve.R`) now implements Theorems 3 and 8 of
+  arXiv:2605.01446 v3:
+
+  - **Theorem 3 (asymmetric freeze):** the uniform freeze-counter
+    threshold `n_freeze = 5L` is replaced by per-sample,
+    per-variable-type thresholds:
+
+    ``` R
+    n_freeze_astar_per[k] = max(1L, floor(n_freeze * y[k] / mean(y)))
+    n_freeze_alpha_per[k] = max(5L, ceil( n_freeze * mean(y) / y[k]))
+    ```
+
+    α\*-variables tied to high-`y_k` samples freeze faster; α-variables
+    tied to high-`y_k` samples freeze slower. Reduces to the scalar
+    default when `y` is homogeneous.
+
+  - **Theorem 8 (per-pair tolerance):** the uniform convergence
+    threshold `tol * mean(y)` is replaced at the convergence test by a
+    per-pair threshold `tol * max(y[p], y[k_j_w1])`, where `(p, k_j_w1)`
+    is the WSS1 pair. The WSS3 candidate filter at the working-set
+    selection step retains the global `tol * mean(y)` for noise-floor
+    purposes.
+
+### Behavior change
+
+- SMO iteration count decreases by ~10–30% on heterogeneous-target
+  datasets (`rho_y = max(y) / min(y) >= 50`). The wall-clock speedup is
+  smaller (depends on `N`: kernel-matrix construction overhead dominates
+  at moderate `N`). Empirical benchmark at `N = 200`, `rho_y = 1273`:
+  24.7% iter reduction, 5.6% wall-clock speedup. Homogeneous datasets
+  (`rho_y ~ 1`) are unaffected — the new thresholds collapse to the F3
+  defaults.
+
+### Numerical drift
+
+- Predictions on heterogeneous-target datasets differ from v0.0.2.9002
+  by `O(tol * max(y))`. Empirical magnitude on the snapshot fixture
+  (`rho_y = 6.7`, `max(y) = 2.6`, `tol = 1e-3`): max drift `8.5e-4` per
+  prediction (well below the per-pair tolerance floor of `2.6e-3`).
+- The 28 golden snapshot tests have been re-recorded with F4 numerics as
+  the new regression baseline at tolerance `1e-10` within F4.
+  Bit-identicalidad with v0.0.2.9002 is intentionally NOT preserved on
+  SMO-backed paths; LS-SVR paths (Models 3, 4 via linear system) remain
+  bit-identical.
+
+### Paper deviation
+
+- The convergence test uses the WSS1 pair `(i_w1, j_w1)` rather than the
+  paper’s literal text (“j\* = WSS3 pick”). Rationale documented inline
+  in `R/smo_solve.R`: `Delta_w3 <= Delta_w1` by construction, so testing
+  `Delta_w3` against the tolerance would stop prematurely before the
+  true KKT optimality gap is below tolerance. Flagged for paper-side
+  notation fix in F8 (paper TODO \#4).
+
 ## psvr 0.0.2.9002 (development)
 
 ### Internal changes

@@ -175,7 +175,7 @@ fit_rmspe <- psvr(X, y, loss = "rmspe", kernel = K, gamma = 100)
 fit_sym   <- psvr(X, y, loss = "rmspe", sym = +1L, kernel = K, gamma = 100)
 
 predict(fit_mape,  X[1:3, , drop = FALSE])
-#> [1] 0.8061082 0.7365284 0.8547480
+#> [1] 0.8066870 0.7365194 0.8556591
 predict(fit_rmspe, X[1:3, , drop = FALSE])
 #> [1] 0.9189556 0.7369731 0.8524386
 predict(fit_sym,   X[1:3, , drop = FALSE])

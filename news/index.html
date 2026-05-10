@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9002</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9003</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,6 +41,35 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.2.9003" id="psvr-0029003-development">psvr 0.0.2.9003 (development)<a class="anchor" aria-label="anchor" href="#psvr-0029003-development"></a></h2>
+<div class="section level3">
+<h3 id="internal-changes-0-0-2-9003">Internal changes<a class="anchor" aria-label="anchor" href="#internal-changes-0-0-2-9003"></a></h3>
+<ul><li>
+<p><code>.smo_solve()</code> (<code>R/smo_solve.R</code>) now implements Theorems 3 and 8 of arXiv:2605.01446 v3:</p>
+<ul><li>
+<p><strong>Theorem 3 (asymmetric freeze):</strong> the uniform freeze-counter threshold <code>n_freeze = 5L</code> is replaced by per-sample, per-variable-type thresholds:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>n_freeze_astar_per[k] <span class="ot">=</span> <span class="fu">max</span>(<span class="dv">1</span><span class="dt">L</span>, <span class="fu">floor</span>(n_freeze <span class="sc">*</span> y[k] <span class="sc">/</span> <span class="fu">mean</span>(y)))</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>n_freeze_alpha_per[k] <span class="ot">=</span> <span class="fu">max</span>(<span class="dv">5</span><span class="dt">L</span>, <span class="fu">ceil</span>( n_freeze <span class="sc">*</span> <span class="fu">mean</span>(y) <span class="sc">/</span> y[k]))</span></code></pre></div>
+<p>α*-variables tied to high-<code>y_k</code> samples freeze faster; α-variables tied to high-<code>y_k</code> samples freeze slower. Reduces to the scalar default when <code>y</code> is homogeneous.</p>
+</li>
+<li><p><strong>Theorem 8 (per-pair tolerance):</strong> the uniform convergence threshold <code>tol * mean(y)</code> is replaced at the convergence test by a per-pair threshold <code>tol * max(y[p], y[k_j_w1])</code>, where <code>(p, k_j_w1)</code> is the WSS1 pair. The WSS3 candidate filter at the working-set selection step retains the global <code>tol * mean(y)</code> for noise-floor purposes.</p></li>
+</ul></li>
+</ul></div>
+<div class="section level3">
+<h3 id="behavior-change-0-0-2-9003">Behavior change<a class="anchor" aria-label="anchor" href="#behavior-change-0-0-2-9003"></a></h3>
+<ul><li>SMO iteration count decreases by ~10–30% on heterogeneous-target datasets (<code>rho_y = max(y) / min(y) &gt;= 50</code>). The wall-clock speedup is smaller (depends on <code>N</code>: kernel-matrix construction overhead dominates at moderate <code>N</code>). Empirical benchmark at <code>N = 200</code>, <code>rho_y = 1273</code>: 24.7% iter reduction, 5.6% wall-clock speedup. Homogeneous datasets (<code>rho_y ~ 1</code>) are unaffected — the new thresholds collapse to the F3 defaults.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="numerical-drift-0-0-2-9003">Numerical drift<a class="anchor" aria-label="anchor" href="#numerical-drift-0-0-2-9003"></a></h3>
+<ul><li>Predictions on heterogeneous-target datasets differ from v0.0.2.9002 by <code>O(tol * max(y))</code>. Empirical magnitude on the snapshot fixture (<code>rho_y = 6.7</code>, <code>max(y) = 2.6</code>, <code>tol = 1e-3</code>): max drift <code>8.5e-4</code> per prediction (well below the per-pair tolerance floor of <code>2.6e-3</code>).</li>
+<li>The 28 golden snapshot tests have been re-recorded with F4 numerics as the new regression baseline at tolerance <code>1e-10</code> within F4. Bit-identicalidad with v0.0.2.9002 is intentionally NOT preserved on SMO-backed paths; LS-SVR paths (Models 3, 4 via linear system) remain bit-identical.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="paper-deviation-0-0-2-9003">Paper deviation<a class="anchor" aria-label="anchor" href="#paper-deviation-0-0-2-9003"></a></h3>
+<ul><li>The convergence test uses the WSS1 pair <code>(i_w1, j_w1)</code> rather than the paper’s literal text (“j* = WSS3 pick”). Rationale documented inline in <code>R/smo_solve.R</code>: <code>Delta_w3 &lt;= Delta_w1</code> by construction, so testing <code>Delta_w3</code> against the tolerance would stop prematurely before the true KKT optimality gap is below tolerance. Flagged for paper-side notation fix in F8 (paper TODO #4).</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.2.9002" id="psvr-0029002-development">psvr 0.0.2.9002 (development)<a class="anchor" aria-label="anchor" href="#psvr-0029002-development"></a></h2>
 <div class="section level3">

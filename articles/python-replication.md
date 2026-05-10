@@ -180,7 +180,7 @@ cat(sprintf(
   "Model 1 (R) — MAPE: %.4f%%  RMSPE: %.4f%%  R²: %.6f  MSE: %.6f\n",
   m1_mape, m1_rmspe, m1_r2, m1_mse
 ))
-#> Model 1 (R) — MAPE: 10.6892%  RMSPE: 18.5526%  R²: 0.810705  MSE: 14.822893
+#> Model 1 (R) — MAPE: 10.6878%  RMSPE: 18.5432%  R²: 0.810768  MSE: 14.817930
 cat(sprintf("Support vectors: %d / %d training points\n",
             fit_m1$n_sv, fit_m1$n_train))
 #> Support vectors: 214 / 354 training points
@@ -207,7 +207,7 @@ cf_m1 <- coef(fit_m1)
 # support_data: training rows for support vectors only
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf_m1$b, min(cf_m1$alpha), max(cf_m1$alpha)))
-#> b = 25.4658  |  alpha range: [-248.1156, 163.4649]
+#> b = 25.4649  |  alpha range: [-248.1156, 163.2763]
 ```
 
 ------------------------------------------------------------------------
@@ -269,7 +269,7 @@ knitr::kable(
 |:---|---:|---:|---:|---:|
 | Model 3 — LS-SVR RMSPE (R) | 11.0495 | 18.7205 | 0.819584 | 14.12763 |
 | Model 3 — LS-SVR RMSPE (Python, Table 1) | 10.0600 | NA | 0.895900 | NA |
-| Model 1 — ε-SVR MAPE (R) | 10.6892 | 18.5526 | 0.810705 | 14.82289 |
+| Model 1 — ε-SVR MAPE (R) | 10.6878 | 18.5432 | 0.810768 | 14.81793 |
 | Model 1 — ε-SVR MAPE (Python, Table 2) | 10.2900 | NA | 0.860200 | NA |
 
 Test-set metrics — Boston Housing, 70/30 split. R rows: set.seed(4) with
