@@ -50,7 +50,18 @@
   # tau is in the same units as y, so apply tol relatively (per-target scale).
   # This keeps convergence behaviour consistent across kernels whose Omega
   # entries vary by orders of magnitude (e.g., RBF in [0,1] vs polynomial).
+  # tol_eff is retained for the WSS3 candidate noise floor only (line ~132);
+  # the convergence test uses the per-pair tol_pair scaled by max(y[p], y[k_j_w1])
+  # (Theorem 8 of arXiv:2605.01446 v3).
   tol_eff <- tol * mean(y)
+  y_bar   <- mean(y)
+
+  # Theorem 3 (arXiv:2605.01446 v3): asymmetric per-sample freeze thresholds.
+  # alpha-variables tied to small y_k freeze SLOWER (threshold grows like y_bar/y);
+  # alpha*-variables tied to small y_k freeze FASTER (threshold floors at 1).
+  # Reduces to scalar n_freeze = 5 when y is homogeneous (y_k = y_bar for all k).
+  n_freeze_alpha_per <- pmax(5L, as.integer(ceiling(n_freeze * y_bar / y)))
+  n_freeze_astar_per <- pmax(1L, as.integer(floor  (n_freeze * y     / y_bar)))
 
   diag_Omega    <- K_acc$get_diag()
   alpha         <- numeric(N)
@@ -104,7 +115,20 @@
     tau_j_w1 <- low_tau_pool[pos_min]
     Delta    <- tau_i - tau_j_w1
 
-    if (Delta <= tol_eff) {
+    # Theorem 8: per-pair tolerance, evaluated against the WSS1 convergence pair.
+    # The paper text (Theorem 8 of arXiv:2605.01446 v3) says "j* = WSS3 pick", but
+    # this would force WSS3 to run before the convergence test - both wasteful and
+    # mathematically incorrect: Delta_w3 <= Delta_w1 by construction (WSS3 picks j
+    # to maximize second-order gain, not minimize tau_j), so testing Delta_w3
+    # against the tolerance would stop prematurely, before the true KKT optimality
+    # gap (which equals Delta_w1) is below tolerance. The WSS1 (i_w1, j_w1) pair
+    # IS the KKT optimality gap; that is the correct convergence test. This
+    # deviation from literal paper text is flagged for paper-side notation fix in
+    # F8 (paper TODO #4).
+    k_j_w1   <- low_idx_pool[pos_min]
+    tol_pair <- tol * max(y[p], y[k_j_w1])
+
+    if (Delta <= tol_pair) {
       if (any(!active_alpha) || any(!active_astar)) {
         # Active-set converged with shrunk variables: rebuild and reactivate.
         beta_full     <- alpha - alpha_star
@@ -185,14 +209,14 @@
       shr_a_now <- active_alpha & (cond_a_s1 | cond_a_s2)
       shrink_a[shr_a_now]   <- shrink_a[shr_a_now] + 1L
       shrink_a[!shr_a_now]  <- 0L
-      active_alpha[shrink_a >= n_freeze] <- FALSE
+      active_alpha[shrink_a >= n_freeze_alpha_per] <- FALSE   # Theorem 3: per-sample threshold
 
       cond_s_s3 <- (alpha_star <= tol_bound)        & (tau_alphastar > tau_i_now)
       cond_s_s4 <- (alpha_star >= C_k - tol_bound)  & (tau_alphastar < tau_j_now)
       shr_s_now <- active_astar & (cond_s_s3 | cond_s_s4)
       shrink_s[shr_s_now]   <- shrink_s[shr_s_now] + 1L
       shrink_s[!shr_s_now]  <- 0L
-      active_astar[shrink_s >= n_freeze] <- FALSE
+      active_astar[shrink_s >= n_freeze_astar_per] <- FALSE   # Theorem 3: per-sample threshold
     }
   }
 

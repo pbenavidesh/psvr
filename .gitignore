@@ -33,3 +33,11 @@ vignettes/articles/case-studies/results/energy-efficiency-results-w8.csv
 vignettes/articles/case-studies/results/energy-efficiency-tune-results-w8.rds
 /doc/
 /Meta/
+
+# F4 reproducible artifacts (regenerable from dev/*.R scripts)
+dev/preds_F3.rds
+dev/preds_F4.rds
+dev/iters_F3.rds
+dev/iters_F4.rds
+dev/bench_F3.rds
+dev/bench_F4.rds
