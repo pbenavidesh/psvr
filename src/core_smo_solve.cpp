@@ -130,6 +130,10 @@ FitResult smo_fit(const double* Omega, Index N,
   BoolVec joint_log;
   if (opts.block_k4_enabled) joint_log.assign(opts.max_iter, 0u);
 
+  // F7.5 — per-iter WSS1 Delta when opts.trace; remains empty otherwise.
+  Vec delta_history;
+  if (opts.trace) delta_history.reserve(opts.max_iter);
+
   // Reusable scratch vectors (allocated once).
   IndexVec aa, ast;           aa.reserve(N); ast.reserve(N);
   IndexVec up_alpha, up_astar, down_alpha, down_astar;
@@ -206,6 +210,7 @@ FitResult smo_fit(const double* Omega, Index N,
     }
 
     const double Delta = tau_i - tau_j_w1;
+    if (opts.trace) delta_history.push_back(Delta);
 
     // F4 Theorem 8: per-pair tolerance using BOTH sample y's.
     const double tol_pair = opts.tol * std::max(y[p], y[k_j_w1]);
@@ -487,6 +492,7 @@ FitResult smo_fit(const double* Omega, Index N,
   res.decoupling_rate              = decoupling_rate;
   res.early_phase_decoupling_rate  = early_phase_decoupling_rate;
   res.late_phase_decoupling_rate   = late_phase_decoupling_rate;
+  res.delta_history                = std::move(delta_history);
   return res;
 }
 

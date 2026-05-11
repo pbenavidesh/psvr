@@ -58,6 +58,9 @@ struct FitOptions {
   Vec      alpha_init;
   Vec      alpha_star_init;
   BoolVec  new_mask;               // empty = infer from alpha_init == 0
+
+  // F7.5 — record WSS1 Delta per iter into FitResult::delta_history.
+  bool   trace            = false;
 };
 
 // All outputs from smo_fit live here. The R-side binding wraps this
@@ -75,6 +78,10 @@ struct FitResult {
   double decoupling_rate              = -1.0;  // -1 sentinels for NA on R side
   double early_phase_decoupling_rate  = -1.0;
   double late_phase_decoupling_rate   = -1.0;
+
+  // F7.5 — per-iter WSS1 Delta when FitOptions::trace; empty otherwise.
+  // length == iterations on return.
+  Vec    delta_history;
 };
 
 }  // namespace psvr
