@@ -19,6 +19,7 @@
   new_mask = NULL,
   block_k4_enabled = TRUE,
   alpha_couple = 0.5,
+  trace = FALSE,
   engine = c("rcpp", "r")
 )
 }

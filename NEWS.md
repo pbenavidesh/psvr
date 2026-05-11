@@ -1,3 +1,19 @@
+# psvr 0.0.2.9007 (development)
+
+## New features
+
+* **`trace` parameter** on `.smo_solve()` and `.smo_solve_r()` (developer
+  interface; not exposed in `psvr()`). When `TRUE`, the returned list
+  carries a `delta_history` numeric vector of length `iterations`
+  containing the per-iteration WSS1 KKT optimality gap
+  (`Delta = tau_i - tau_j_w1`) — used by the smo-paper convergence
+  diagnostic plot. Default `FALSE` produces bit-identical results to
+  v0.0.2.9006 across both engines (snapshot gates `_snaps/bit-identical.md`,
+  `_snaps/block-k4.md`, `_snaps/engine-equivalence.md`,
+  `_snaps/psvr-direct.md` unchanged). Engine equivalence on
+  `delta_history` is enforced by `tests/testthat/test-trace.R`
+  (4 configs: Models 1 + 2 × `block_k4_enabled` ∈ {FALSE, TRUE} on RBF).
+
 # psvr 0.0.2.9006 (development)
 
 ## Performance

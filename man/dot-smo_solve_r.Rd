@@ -18,7 +18,8 @@
   warm_start_check = TRUE,
   new_mask = NULL,
   block_k4_enabled = TRUE,
-  alpha_couple = 0.5
+  alpha_couple = 0.5,
+  trace = FALSE
 )
 }
 \description{

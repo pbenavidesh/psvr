@@ -242,7 +242,18 @@ Required for Models 2 and 4:
         1.60–4.69× wall speedup; F7 path 1.94–7.73×. F7 vs F4 wall:
         +12.2% R1, +17.5% R4 — paper TODO #9 RESOLVED on converging
         regimes. CV B3-rcpp 4.28× over the F4+F5-R baseline.
-17. [ ] **F8** — Paper-side errata fixes (#1–#11).
+17. [x] **F7.5 — trace parameter** — `.smo_solve()` and
+        `.smo_solve_r()` gain `trace = FALSE`. When `TRUE`, the
+        result list carries `delta_history` (length =
+        `iterations`) with the per-iter WSS1 KKT gap (`Delta =
+        tau_i - tau_j_w1`). Bit-identical to v0.0.2.9006 on the
+        default path (all four `_snaps/*.md` MD5s unchanged);
+        cross-engine bit-identicality on `delta_history` enforced
+        by `tests/testthat/test-trace.R`. Developer-only — not
+        exposed in `psvr()` to keep ~800 KB allocation
+        (max_iter × 8 B) off the default fit path. Lets the
+        smo-paper repo drop its frozen `smo_solve.R` copy.
+18. [ ] **F8** — Paper-side errata fixes (#1–#11).
 
 ---
 
@@ -512,6 +523,37 @@ See [docs/archive/F7-C-full-portable.md](docs/archive/F7-C-full-portable.md)
 for the file-by-file architecture, memory layout & ownership rules,
 BLAS access pattern, full bit-identicality discipline notes, and the
 build-system rationale.
+
+---
+
+## trace parameter (post-F7.5)
+
+`.smo_solve(K_acc, y, C, eps, ..., trace = FALSE, engine = ...)` and
+`.smo_solve_r(...)` accept `trace`. When `TRUE`, the returned list
+adds a numeric `delta_history` of length `iterations` containing the
+per-iter WSS1 KKT gap `Delta = tau_i - tau_j_w1` (computed *before*
+the convergence test). Both engines record at the same site (right
+after `Delta` is computed) and produce **bit-identical**
+`delta_history` vectors — enforced by `tests/testthat/test-trace.R`
+across 4 configs (Models 1 + 2 × `block_k4_enabled` ∈ {FALSE, TRUE}
+on RBF).
+
+`trace` is **not** exposed in the public `psvr()` API. Rationale:
+`delta_history` can reach ~800 KB (`max_iter × 8 B`) and is only
+useful for solver-diagnostic plots; production callers should never
+need it. Research code should reach for it directly:
+
+```r
+fit <- psvr:::.smo_solve(K_acc, y, C, eps, ..., trace = TRUE)
+plot(fit$delta_history, type = "l", log = "y",
+     xlab = "iter", ylab = "KKT gap (Delta)")
+```
+
+Default `trace = FALSE` is bit-identical to v0.0.2.9006 on both
+engines (all four `_snaps/*.md` MD5s unchanged: `46A4FA24…`,
+`6E56F887…`, `113EF25C…`, `712971E6…`). On the C++ path the
+recording cost when `trace = TRUE` is one predicted branch + a
+`reserve`-d `push_back` per iter — no reallocations.
 
 ---
 

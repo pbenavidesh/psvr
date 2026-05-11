@@ -61,6 +61,7 @@
                        new_mask = NULL,
                        block_k4_enabled = TRUE,
                        alpha_couple = 0.5,
+                       trace = FALSE,
                        engine = c("rcpp", "r")) {
   engine <- match.arg(engine)
 
@@ -73,7 +74,8 @@
                         warm_start_check = warm_start_check,
                         new_mask = new_mask,
                         block_k4_enabled = block_k4_enabled,
-                        alpha_couple = alpha_couple))
+                        alpha_couple = alpha_couple,
+                        trace = trace))
   }
 
   # engine = "rcpp": project warm-start in R, then call core.
@@ -102,7 +104,8 @@
     warm_start_check  = isTRUE(warm_start_check),
     alpha_init        = alpha_init_p,
     alpha_star_init   = alpha_star_init_p,
-    new_mask          = new_mask
+    new_mask          = new_mask,
+    trace             = isTRUE(trace)
   )
   sol <- psvr_smo_fit_rcpp(Omega, y, opts)
   if (!isTRUE(sol$converged)) {
@@ -127,7 +130,8 @@
                        warm_start_check = TRUE,
                        new_mask = NULL,
                        block_k4_enabled = TRUE,
-                       alpha_couple = 0.5) {
+                       alpha_couple = 0.5,
+                       trace = FALSE) {
   N     <- length(y)
   scale <- eps / 100
   C_k   <- 100 * C / y
@@ -191,6 +195,9 @@
   k2_fallbacks  <- 0L
   joint_log     <- if (block_k4_enabled) logical(max_iter) else NULL
 
+  # F7.5 — record WSS1 Delta per iter when trace=TRUE; trimmed at return.
+  delta_history <- if (trace) numeric(max_iter) else NULL
+
   while (iter < max_iter) {
     iter <- iter + 1L
 
@@ -227,6 +234,7 @@
     pos_min <- which.min(low_tau_pool)
     tau_j_w1 <- low_tau_pool[pos_min]
     Delta    <- tau_i - tau_j_w1
+    if (trace) delta_history[iter] <- Delta
 
     # Theorem 8: per-pair tolerance, evaluated against the WSS1 convergence pair.
     # The paper text (Theorem 8 of arXiv:2605.01446 v3) says "j* = WSS3 pick", but
@@ -577,6 +585,7 @@
     k2_fallbacks                 = k2_fallbacks,
     decoupling_rate              = decoupling_rate,
     early_phase_decoupling_rate  = early_phase_decoupling_rate,
-    late_phase_decoupling_rate   = late_phase_decoupling_rate
+    late_phase_decoupling_rate   = late_phase_decoupling_rate,
+    delta_history                = if (trace) delta_history[seq_len(iter)] else NULL
   )
 }
