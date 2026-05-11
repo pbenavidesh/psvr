@@ -96,6 +96,28 @@ psvr_cv <- function(splits, ...,
   }
   if (n_splits < 1L) stop("`splits` is empty.")
 
+  # F6 cross-fold kernel reuse: when input is an rset (shared underlying
+  # data), build Omega (or Omega_s) once over the full dataset and slice
+  # per fold. The list-of-tuples path has no shared row-numbering universe,
+  # so it falls back to per-fold kernel construction (per-call Rcpp
+  # acceleration still applies).
+  kernel_arg <- args$kernel
+  sym_arg    <- args$sym
+  a_val      <- if (is.null(sym_arg)) NULL else as.integer(sym_arg)
+  precompute_ok <- is_rset && !is.null(kernel_arg)
+
+  Omega_full   <- NULL
+  Omega_s_full <- NULL
+  if (precompute_ok) {
+    data_full <- splits$splits[[1L]]$data
+    X_full    <- as.matrix(data_full[, X_var, drop = FALSE])
+    if (is.null(sym_arg)) {
+      Omega_full   <- kernel_matrix(kernel_arg, X_full)
+    } else {
+      Omega_s_full <- sym_kernel_matrix(kernel_arg, X_full, a_val)
+    }
+  }
+
   results       <- vector("list", n_splits)
   fit_prev      <- NULL
   row_ids_prev  <- NULL
@@ -138,12 +160,23 @@ psvr_cv <- function(splits, ...,
       warm_started    <- FALSE
     }
 
+    precomp_args <- if (precompute_ok) {
+      if (is.null(sym_arg)) {
+        list(precomputed_Omega   = Omega_full[row_ids_i, row_ids_i, drop = FALSE])
+      } else {
+        list(precomputed_Omega_s = Omega_s_full[row_ids_i, row_ids_i, drop = FALSE])
+      }
+    } else {
+      list()
+    }
+
     t0 <- Sys.time()
     fit_i <- do.call(psvr, c(
       list(X = X_i, y = y_i,
            alpha_init = alpha_init,
            alpha_star_init = alpha_star_init,
            new_mask = new_mask),
+      precomp_args,
       args
     ))
     elapsed <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
