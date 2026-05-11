@@ -38,7 +38,88 @@
 # as inactive; restored from scratch (recomputing tau via
 # K_acc$get_matvec(beta)) when the active-set gap drops to tol.
 
+#' Dispatcher: SMO solver with engine choice (R reference vs Rcpp core).
+#'
+#' Forwards to the F7-C-full Rcpp core (`engine = "rcpp"`, default) or
+#' the R reference implementation (`engine = "r"`). The R path is the
+#' canonical algorithm and remains the bit-identical reference for the
+#' Rcpp port; it will be deprecated in v0.0.4.0 and removed in v0.1.0
+#' once the Rcpp path has cleared its graduation criteria (see CLAUDE.md
+#' "engine = 'r' lifecycle").
+#'
+#' Warm-start projection (Algorithm 1) runs in R via `.warm_start_init()`
+#' BEFORE the core call, regardless of engine, so both paths see
+#' already-feasible alpha/alpha* on entry.
+#'
+#' @keywords internal
 .smo_solve <- function(K_acc, y, C, eps,
+                       tol = 1e-3, max_iter = 100000L,
+                       n_check = NULL, n_freeze = 5L,
+                       alpha_init = NULL,
+                       alpha_star_init = NULL,
+                       warm_start_check = TRUE,
+                       new_mask = NULL,
+                       block_k4_enabled = TRUE,
+                       alpha_couple = 0.5,
+                       engine = c("rcpp", "r")) {
+  engine <- match.arg(engine)
+
+  if (engine == "r") {
+    return(.smo_solve_r(K_acc, y, C, eps,
+                        tol = tol, max_iter = max_iter,
+                        n_check = n_check, n_freeze = n_freeze,
+                        alpha_init = alpha_init,
+                        alpha_star_init = alpha_star_init,
+                        warm_start_check = warm_start_check,
+                        new_mask = new_mask,
+                        block_k4_enabled = block_k4_enabled,
+                        alpha_couple = alpha_couple))
+  }
+
+  # engine = "rcpp": project warm-start in R, then call core.
+  alpha_init_p      <- NULL
+  alpha_star_init_p <- NULL
+  if (!is.null(alpha_init) || !is.null(alpha_star_init)) {
+    N_y <- length(y)
+    C_k <- 100 * C / y
+    ws  <- .warm_start_init(alpha_init, alpha_star_init, N_y, C_k,
+                            new_mask        = new_mask,
+                            warm_start_check = warm_start_check)
+    alpha_init_p      <- ws$alpha
+    alpha_star_init_p <- ws$alpha_star
+  }
+
+  Omega <- K_acc$get_omega()
+  opts <- list(
+    C                 = as.numeric(C),
+    eps               = as.numeric(eps),
+    tol               = as.numeric(tol),
+    max_iter          = as.integer(max_iter),
+    n_check           = if (is.null(n_check)) -1L else as.integer(n_check),
+    n_freeze          = as.integer(n_freeze),
+    block_k4_enabled  = isTRUE(block_k4_enabled),
+    alpha_couple      = as.numeric(alpha_couple),
+    warm_start_check  = isTRUE(warm_start_check),
+    alpha_init        = alpha_init_p,
+    alpha_star_init   = alpha_star_init_p,
+    new_mask          = new_mask
+  )
+  sol <- psvr_smo_fit_rcpp(Omega, y, opts)
+  if (!isTRUE(sol$converged)) {
+    warning(sprintf("SMO solver did not converge within max_iter = %d (final iter = %d)",
+                    as.integer(max_iter), as.integer(sol$iterations)))
+  }
+  sol
+}
+
+#' SMO solver — R reference implementation (engine = "r").
+#'
+#' Canonical R-level algorithm. Bit-identical reference for the Rcpp
+#' core in src/core_smo_solve.cpp. Will be deprecated in v0.0.4.0 and
+#' removed in v0.1.0. Do NOT call directly; go through `.smo_solve()`.
+#'
+#' @keywords internal
+.smo_solve_r <- function(K_acc, y, C, eps,
                        tol = 1e-3, max_iter = 100000L,
                        n_check = NULL, n_freeze = 5L,
                        alpha_init = NULL,
