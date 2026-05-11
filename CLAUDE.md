@@ -201,7 +201,14 @@ Required for Models 2 and 4:
         heterogeneous-target data (intentional); homogeneous regime
         collapses to F3 baseline. Iter reduction ~25% on rho_y >> 50
         datasets.
-13. [ ] **F5–F8** — Theorems 4–7 from arXiv:2605.01446 v3.
+13. [x] **F5** — Theorem 5 (warm-start API with new-samples-only Algorithm
+        1 Step 2 deviation) + `psvr_cv()` CV helper + `fit$alpha` →
+        `fit$beta` rename. Theorem 4 evaluation: Fan-Chen-Lin WSS3
+        unconstrained (libsvm-style) is empirically sufficient for
+        MAPE-SVR; both the original heuristic (`alpha_wss` multiplier)
+        and the Glasmachers-Igel max-gain WSS were evaluated and found
+        to provide no benefit. See paper TODOs #5, #6, #7 below.
+14. [ ] **F6–F8** — Theorems 6–7 from arXiv:2605.01446 v3.
 
 ---
 
@@ -559,6 +566,109 @@ with F3 (drift `~1e-5` is expected). RBF-kernel smoke is sufficient.
 
 ---
 
+## Warm-start API + Working Set Selection Evaluation (post-F5)
+
+### Working Set Selection: empirical finding
+
+`.smo_solve()` uses Fan-Chen-Lin (2005, JMLR 6:1889–1918) WSS3 with the
+unconstrained-gain score `(τ_i − τ_j)² / η`. During F5 development we
+evaluated two alternatives:
+
+- The saturation-distance multiplier proposed in arXiv:2605.01446 v3
+  Theorem 4 (with tunable `alpha_wss` parameter): empirically failed on
+  MAPE-SVR. With `alpha_wss = 0.5` (paper default), N=200 ρ_y=1273 RBF
+  bench showed 140% iter **increase** vs unmodified WSS3. Math invariants
+  held (strict descent OK, converged to same KKT optimum), but the
+  multiplier penalized perfectly-good candidates whose only "fault" was
+  small `R_j` relative to a mean computed over the active set. Root
+  cause: the heuristic assumed room-poor candidates are a minority, but
+  in MAPE-SVR's heterogeneous `C_k = 100C/y_k` regime, room-poor
+  candidates dominate the active set during the early-to-mid SMO phase.
+
+- Glasmachers-Igel (2006, JMLR 7:1437–1466) maximum-gain WSS3 with exact
+  box-clipped realized gain: empirically equivalent to WSS3 on tested
+  regimes (N=50/200, ρ_y=6.7–1273, RBF). Iter counts matched
+  bit-exactly (137=137, 202=202, 43=43 snapshot fixture; 280=280 bench).
+  Max-gain incurred ~12% per-iteration wall overhead from the additional
+  clipping arithmetic. Root cause for the equivalence: WSS3's analytic
+  step `δ_unc = gap / η` typically fits within the per-sample box bounds
+  even for highly heterogeneous `C_k`, so clipping rarely activates and
+  max-gain reduces to WSS3 numerically.
+
+Conclusion: the "saturation problem" both the heuristic and max-gain
+were attempting to solve is a phantom at the WSS3 selection level for
+MAPE-SVR. Fan-Chen-Lin's standard libsvm WSS3 is sufficient. This is a
+useful negative result for future MAPE-SVR optimization research. See
+paper TODO #5 for the implication on smo-v3.tex Theorem 4.
+
+### Warm-start API (Theorem 5 with paper deviation)
+
+The package provides direct warm-start via the `alpha_init` and
+`alpha_star_init` parameters of `psvr()` (validated to length N,
+strictly positive targets for MAPE loss). The `.warm_start_init()`
+helper in `R/warm_start.R` implements Algorithm 1 of arXiv:2605.01446
+v3 with one deviation from the paper text:
+
+- **Paper Algorithm 1 Step 2:** uniform shift over ALL `N` samples by
+  `violation / N`. Empirically degrades the warm-start advantage on
+  10-fold CV (Round 1: 0.97× cumulative).
+- **Our deviation:** distribute violation only over the new-sample
+  subset (`S_new \ S_prev`). Rationale: the equality-constraint
+  violation arises entirely from removed samples (`S_prev \ S_new`)
+  whose dual values are no longer used; retained samples
+  (`S_prev ∩ S_new`) were at the equality-constraint manifold at the
+  previous fold's optimum and should be preserved exactly. The
+  new-sample-only projection preserves retained values to `1e-12`
+  (test verified). When the per-new shift forces clipping at `0` or
+  `C_k`, a one-pass uniform refinement absorbs the residual (rare in
+  typical CV).
+
+This deviation is documented as paper TODO #6 for incorporation into
+the final paper text.
+
+### CV helper `psvr_cv()`
+
+`psvr_cv(splits, X_var, y_var, ...)` accepts an `rsample::rset` OR a
+list-of-tuples and orchestrates warm-start across folds using
+row-ID-based `new_mask` inference. Returns a plain tibble with
+`split_id`, `fit`, `predictions`, `metrics`, `iter_count`,
+`elapsed_sec`, `warm_started`.
+
+Scope: A′ (`psvr_cv` as explicit helper, no parsnip auto-warm-start in
+`tune_grid`). F5b will add parsnip integration if/when warranted.
+
+### Empirical speedup calibration
+
+Paper-predicted cumulative speedup: **3–7×** on 10-fold CV with
+linear-convergence assumption (`T_warm / T_cold ≈ 0.2` per fold).
+
+Observed:
+
+- N=300 (ρ_y=2388, RBF, 10-fold): **1.12× wall**, 12.7% iter reduction.
+- N=1000 (ρ_y=16265, RBF, 10-fold): **1.14× wall**, 13.8% iter reduction.
+
+Per-fold `T_warm / T_cold ≈ 0.88` (not 0.2). Cumulative speedup is
+approximately linear in fold count, not exponential. This is
+N-independent at our tested regimes — see paper TODO #7 for the
+recalibration recommendation.
+
+### Breaking-change: `fit$alpha` → `fit$beta` for MAPE
+
+For MAPE fits (`psvr_fit` with `loss = "mape"`), the field formerly
+called `fit$alpha` (length `n_sv`, post-pruning, holding `β = α − α*`)
+is renamed to `fit$beta`. Two new length-`N` (pre-pruning) fields
+`fit$alpha` and `fit$alpha_star` expose the true SMO dual variables —
+required as warm-start state by `psvr_cv()`. LS-SVR fits
+(`loss = "rmspe"`) retain previous semantics: `fit$alpha` is the
+linear-system solution, `fit$alpha_star = NULL`, `fit$beta = NULL`.
+Downstream code reading `fit$alpha` from MAPE fits must switch to
+`fit$beta`.
+
+`psvr_fit$solver_meta` now propagates real `iters` and `converged`
+values from the SMO solver (previously hard-coded to `NA`).
+
+---
+
 ## Known issues
 
 ### TODO #5 — Pre-existing SMO convergence pathology on linear / polynomial kernels
@@ -588,12 +698,15 @@ does not exhibit this pathology, when accuracy is critical.
 
 ## Paper TODOs (to be applied in F8)
 
-| # | Location | Issue | Type |
+| # | Location | Issue | Severity |
 |---|---|---|---|
-| 1 | smo-v3.tex (Algorithm 2 line 6) | `v ← -Ωs · v / ||Ωs · v||` estimates `-λ_max(Ωs)`, not `λ_min(Ωs)` (post-F3). | Mathematical correction |
-| 2 | smo-v3.tex line 3467 | F3 paper-side erratum on Algorithm 2 (Theorem 2) Pass 2 shift. | Notation slip |
-| 3 | smo-v3.tex (Theorem 2 statement) | Document the `T_pi → ∞` requirement for the strict `δ_stab` floor; finite-`T_pi` clears the floor only on well-separated spectra. | Clarification |
-| 4 | smo-v3.tex Theorem 8 | "j* is the WSS3-selected variable" should read "convergence-pair variable (WSS1 j*)". WSS3 j* in the convergence test would break optimality (`Delta_w3 <= Delta_w1`). Notation slip, mathematically incorrect as written. | Notation slip |
+| 1 | smo-v3.tex:3467 Algorithm 2 line 6 | `v ← -Ωs · v / ‖Ωs · v‖` estimates `−λ_max(Ωs)`, not `λ_min(Ωs)`. Fix: two-pass shifted power iteration with `abs(Pass 1 Rayleigh)` as the Pass 2 shift. Implementation in `R/kernel-spectral.R`; deviation documented inline. | Algorithmic bug |
+| 2 | smo-v3.tex:3525–3536 | Claim that polynomial degree 2 + a = −1 yields generically indefinite `Ωs` is algebraically wrong (Schur product theorem: all Mercer kernels yield PSD `Ωs`). Shifted branch is dormant in production with `make_kernel()` Mercer kernels. | Algebraic error |
+| 3 | smo-v3.tex:3448–3454 | "`T_pi = 3–5` suffices for `δ = 10⁻⁶`" assumes well-separated spectrum. For clustered spectra (Wigner), requires `T_pi ~ 200+`. | Overly optimistic |
+| 4 | smo-v3.tex:4173–4187 Theorem 8 | "`j*` is the WSS3-selected variable" should read "convergence-pair variable (WSS1 `j*`)". WSS3 `j*` in the convergence test would break optimality (`Δ_w3 ≤ Δ_w1`). Notation slip, mathematically incorrect as written. | Notation slip |
+| 5 | smo-v3.tex Section 6 / Theorem 4 | **Drop Theorem 4 from the paper.** The proposed saturation-distance multiplier empirically fails (140% iter increase on N=200 ρ_y=1273 RBF). The "saturation problem" is a phantom: WSS3's `δ_unc` typically fits the per-sample box, so neither the heuristic nor Glasmachers-Igel max-gain provides empirical benefit on MAPE-SVR. Fan-Chen-Lin WSS3 (libsvm) is sufficient. Recompute Corollary 6 without T4's 1.15× multiplier. | Falsified novel claim; substituted by negative empirical finding |
+| 6 | smo-v3.tex Algorithm 1 Step 2 | Replace uniform shift over `N` with new-samples-only projection. Rationale: violation arises entirely from removed samples; retained samples were at the equality-constraint manifold at the previous fold's optimum. Mathematically valid (post-Step-2 violation = 0, convergence preserved); empirically gains 0.17× cumulative speedup on 10-fold CV (0.97× → 1.14×). | Paper-text deviation with positive empirical impact |
+| 7 | smo-v3.tex Theorem 5 speedup prediction | Predicted 3–7× cumulative on 10-fold CV is over-optimistic. Empirical observation at N=300 (ρ_y=2388) and N=1000 (ρ_y=16265): both ~1.12–1.14× cumulative (N-independent). Per-fold `T_warm / T_cold ≈ 0.88`, not 0.2. Cumulative speedup is approximately linear in fold count, not exponential. Recalibrate the prediction or restrict applicable regime. | Empirical calibration |
 
 ---
 

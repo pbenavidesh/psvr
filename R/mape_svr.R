@@ -5,12 +5,24 @@
 #' deprecation wrapper [mape_svr()] forwards directly to this function.
 #'
 #' @param X,y,kernel,C,eps,solver,tol See [mape_svr()].
+#' @param alpha_init,alpha_star_init Optional length-N numeric warm-start
+#'   vectors (Theorem 5); `NULL` cold-starts.
+#' @param warm_start_check Logical; if `TRUE`, validate the post-projection
+#'   feasibility of the warm-start vectors. Default `TRUE`.
+#' @param new_mask Optional logical vector (length N) flagging samples that
+#'   are NEW relative to the previous fit (used to distribute the equality-
+#'   constraint projection over new samples only). `NULL` infers
+#'   "new = both alpha and alpha_star are exactly zero".
 #'
 #' @return A list of class `"psvr_mape"` (legacy shape).
 #'
 #' @keywords internal
 .fit_mape <- function(X, y, kernel, C, eps,
-                      solver = c("smo", "osqp"), tol = 1e-5) {
+                      solver = c("smo", "osqp"), tol = 1e-5,
+                      alpha_init = NULL,
+                      alpha_star_init = NULL,
+                      warm_start_check = TRUE,
+                      new_mask = NULL) {
   solver <- match.arg(solver)
   X <- as.matrix(X)
   y <- as.numeric(y)
@@ -26,13 +38,22 @@
   Omega <- kernel_matrix(kernel, X)
   diag(Omega) <- diag(Omega) + 1e-6
 
+  iterations <- NA_integer_
+  converged  <- NA
+
   if (solver == "smo") {
     K_acc      <- .make_kernel_accessor(Omega)
-    sol        <- .smo_solve(K_acc, y, C, eps)
+    sol        <- .smo_solve(K_acc, y, C, eps,
+                             alpha_init = alpha_init,
+                             alpha_star_init = alpha_star_init,
+                             warm_start_check = warm_start_check,
+                             new_mask = new_mask)
     alpha      <- sol$alpha
     alpha_star <- sol$alpha_star
     beta       <- alpha - alpha_star
     b          <- sol$b
+    iterations <- sol$iterations
+    converged  <- sol$converged
   } else {
     if (!requireNamespace("osqp", quietly = TRUE)) {
       stop('solver = "osqp" requires the osqp package. Install it with:\n',
@@ -106,15 +127,19 @@
 
   structure(
     list(
-      beta    = beta[sv_idx],
-      b       = b,
-      X_sv    = X[sv_idx, , drop = FALSE],
-      y_sv    = y[sv_idx],
-      kernel  = kernel,
-      C       = C,
-      eps     = eps,
-      n_train = N,
-      p_train = ncol(X)
+      beta       = beta[sv_idx],
+      alpha      = alpha,        # length-N pre-pruning (for warm-start)
+      alpha_star = alpha_star,   # length-N pre-pruning (for warm-start)
+      b          = b,
+      X_sv       = X[sv_idx, , drop = FALSE],
+      y_sv       = y[sv_idx],
+      kernel     = kernel,
+      C          = C,
+      eps        = eps,
+      n_train    = N,
+      p_train    = ncol(X),
+      iterations = iterations,
+      converged  = converged
     ),
     class = "psvr_mape"
   )

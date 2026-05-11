@@ -1,3 +1,60 @@
+# psvr 0.0.2.9004 (development)
+
+## Breaking changes
+
+* `psvr_fit$alpha` for MAPE models is renamed to `psvr_fit$beta` to
+  reflect its mathematical role (β = α − α*, length `n_sv`,
+  post-pruning). The new `psvr_fit$alpha` and `psvr_fit$alpha_star`
+  (length `N`, pre-pruning) expose the true SMO dual variables α and α*,
+  required for the warm-start API of Theorem 5 (arXiv:2605.01446 v3).
+  LS-SVR models (`loss = "rmspe"`) retain previous semantics:
+  `fit$alpha` is the linear-system solution, `fit$alpha_star = NULL`,
+  `fit$beta = NULL`. User code reading `fit$alpha` from MAPE fits must
+  be updated to `fit$beta` for the post-pruned coefficient vector.
+
+## New features
+
+* `psvr()` now accepts `alpha_init`, `alpha_star_init`, and
+  `warm_start_check` for SMO warm-start (`loss = "mape"` only).
+  Validation: length-`N` vectors, strictly positive `C_k`; Algorithm 1
+  projection applied to ensure feasibility regardless of input.
+
+* New `psvr_cv()` helper for cross-validation with automatic warm-start
+  across folds. Accepts an `rsample::rset` (`vfold_cv`, `mc_cv`, etc.)
+  or a list of split tuples. Returns a tibble with per-fold fits,
+  predictions, metrics, iter counts, and elapsed times.
+
+## Internal changes
+
+* `psvr_fit$solver_meta` now propagates `iters` and `converged` from the
+  SMO solver (previously hard-coded to `NA`).
+
+* `R/warm_start.R` implements Algorithm 1 of arXiv:2605.01446 v3 with a
+  paper-text deviation in Step 2: distribute the equality-constraint
+  violation over the new-sample subset (`S_new \ S_prev`) rather than
+  uniformly over all `N`. Preserves retained-sample values to `1e-12`.
+  See CLAUDE.md "Warm-start API" for rationale; paper TODO #6 for
+  incorporation into smo-v3.tex Algorithm 1.
+
+## Empirical findings
+
+* **T5 warm-start cumulative speedup is approximately linear in fold
+  count, not exponential.** On 10-fold CV: 1.12× at N=300 (ρ_y=2388),
+  1.14× at N=1000 (ρ_y=16265). Per-fold `T_warm / T_cold ≈ 0.88`, not
+  the 0.2 implicit in the paper's linear-convergence model. Paper
+  TODO #7 flags this for recalibration of the smo-v3.tex Theorem 5
+  prediction.
+
+* **Working set selection evaluation: Fan-Chen-Lin WSS3 (libsvm-style)
+  is sufficient for MAPE-SVR.** During F5 development we evaluated two
+  alternatives — the saturation-distance multiplier from
+  arXiv:2605.01446 v3 Theorem 4 and the Glasmachers-Igel (2006)
+  maximum-gain WSS — and found neither provides empirical benefit on
+  MAPE-SVR's heterogeneous-`C_k` regime. The "saturation problem" both
+  were targeting is a phantom: WSS3's analytic step `δ_unc` typically
+  fits the per-sample box without clipping. Paper TODO #5 flags this
+  for restructure of smo-v3.tex Section 6 / Theorem 4 (drop entirely).
+
 # psvr 0.0.2.9003 (development)
 
 ## Internal changes

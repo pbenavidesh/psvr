@@ -131,3 +131,42 @@ test_that("psvr rmspe / sym=+1 / linear — direct golden", {
   preds <- predict(fit, fx$X_test)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
 })
+
+# ---- F5 field-presence contracts on psvr_fit -------------------------------
+
+test_that("psvr_fit MAPE: alpha/alpha_star length N, beta length n_sv", {
+  fx <- make_fixture()
+  K  <- make_kernel("rbf", sigma = HP$rbf_sigma)
+  fit <- suppressWarnings(
+    psvr(fx$X, fx$y, loss = "mape", kernel = K, C = HP$C, eps = HP$eps)
+  )
+  N <- nrow(fx$X)
+  expect_length(fit$alpha,      N)
+  expect_length(fit$alpha_star, N)
+  expect_equal(length(fit$beta), fit$n_sv)
+  # On SV indices, beta equals alpha - alpha_star within numerical tol.
+  beta_full <- fit$alpha - fit$alpha_star
+  sv_idx <- which(abs(beta_full) > 1e-5)
+  expect_equal(beta_full[sv_idx], fit$beta, tolerance = 1e-10)
+})
+
+test_that("psvr_fit RMSPE: alpha length N, alpha_star and beta are NULL", {
+  fx <- make_fixture()
+  K  <- make_kernel("rbf", sigma = HP$rbf_sigma)
+  fit <- psvr(fx$X, fx$y, loss = "rmspe", kernel = K, gamma = HP$gamma)
+  expect_length(fit$alpha, nrow(fx$X))
+  expect_null(fit$alpha_star)
+  expect_null(fit$beta)
+})
+
+test_that("psvr_fit MAPE: solver_meta$iters and converged propagate from SMO", {
+  fx <- make_fixture()
+  K  <- make_kernel("rbf", sigma = HP$rbf_sigma)
+  fit <- suppressWarnings(
+    psvr(fx$X, fx$y, loss = "mape", kernel = K, C = HP$C, eps = HP$eps)
+  )
+  expect_true(is.numeric(fit$solver_meta$iters) ||
+              is.integer(fit$solver_meta$iters))
+  expect_true(fit$solver_meta$iters >= 1L)
+  expect_true(is.logical(fit$solver_meta$converged))
+})

@@ -12,9 +12,12 @@
 \item{...}{Ignored.}
 }
 \value{
-A named list with components \code{alpha}, \code{b}, \code{support_data}.
-\code{alpha} carries \verb{α − α* = β} for \code{loss = "mape"} and the LS-SVR \code{α}
-for \code{loss = "rmspe"}.
+A named list. For \code{loss = "mape"} it contains \code{alpha} and
+\code{alpha_star} (the length-\code{N} pre-pruning dual variables), \code{beta}
+(the pruned \verb{α − α*} of length \code{n_sv} used by \code{predict()}), \code{b},
+and \code{support_data}. For \code{loss = "rmspe"}, \code{alpha} (length \code{N},
+the LS-SVR solution), \code{b}, and \code{support_data} (with \code{alpha_star}
+and \code{beta} set to \code{NULL}).
 }
 \description{
 Extract coefficients from a psvr_fit model

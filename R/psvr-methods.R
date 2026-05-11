@@ -66,13 +66,18 @@ print.psvr_fit <- function(x, ...) {
 #' @param object An object of class `"psvr_fit"`.
 #' @param ... Ignored.
 #'
-#' @return A named list with components `alpha`, `b`, `support_data`.
-#'   `alpha` carries `α − α* = β` for `loss = "mape"` and the LS-SVR `α`
-#'   for `loss = "rmspe"`.
+#' @return A named list. For `loss = "mape"` it contains `alpha` and
+#'   `alpha_star` (the length-`N` pre-pruning dual variables), `beta`
+#'   (the pruned `α − α*` of length `n_sv` used by `predict()`), `b`,
+#'   and `support_data`. For `loss = "rmspe"`, `alpha` (length `N`,
+#'   the LS-SVR solution), `b`, and `support_data` (with `alpha_star`
+#'   and `beta` set to `NULL`).
 #'
 #' @export
 coef.psvr_fit <- function(object, ...) {
   list(alpha        = object$alpha,
+       alpha_star   = object$alpha_star,
+       beta         = object$beta,
        b            = object$b,
        support_data = object$support_data)
 }

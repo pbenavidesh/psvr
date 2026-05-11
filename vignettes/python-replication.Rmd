@@ -200,13 +200,15 @@ data.frame(actual = y_te, predicted = pred_m1) |>
 
 ```{r model1-coef}
 cf_m1 <- coef(fit_m1)
-# alpha:        beta_k = alpha_k - alpha_k* for each support vector;
-#               non-zero for points outside the percentage-error ε-tube
-#               (sparse)
+# alpha, alpha_star: length-N dual variables (paired); the pre-pruning
+#               solution.  Useful as a warm-start in cross-validation; for
+#               prediction use `beta` instead.
+# beta:         beta_k = alpha_k - alpha_k* for each SUPPORT VECTOR only
+#               (i.e. each k with non-zero contribution to f(x); sparse)
 # b:            bias / intercept term
 # support_data: training rows for support vectors only
-cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
-            cf_m1$b, min(cf_m1$alpha), max(cf_m1$alpha)))
+cat(sprintf("b = %.4f  |  beta range: [%.4f, %.4f]\n",
+            cf_m1$b, min(cf_m1$beta), max(cf_m1$beta)))
 ```
 
 ---

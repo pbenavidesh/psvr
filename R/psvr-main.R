@@ -34,8 +34,19 @@
 #' @param precondition One of `"auto"` (default), `"always"`, `"never"`, or
 #'   a positive numeric threshold; controls Remark-17 symmetric rescaling
 #'   (`loss = "rmspe"` only). See [rmspe_lssvr()] for semantics.
-#' @param alpha_init,alpha_star_init,reg Reserved for future phases (warm
-#'   start, extended Lagrangian). Must be `NULL` in F1.
+#' @param alpha_init,alpha_star_init Optional length-`N` numeric warm-start
+#'   vectors for the SMO solver (Theorem 5; `loss = "mape"` only).
+#'   Projected via Algorithm 1 (new-samples-only shift + box clip) before
+#'   the solve. `NULL` cold-starts. Defaults `NULL`.
+#' @param warm_start_check Logical; if `TRUE`, validate post-projection
+#'   feasibility of the warm-start vectors. Default `TRUE`.
+#' @param new_mask Optional length-`N` logical vector flagging which samples
+#'   are NEW relative to the previous fit (used by Algorithm 1 Step 2 to
+#'   distribute the equality-constraint projection over new samples only).
+#'   `NULL` infers "new = both alpha_init and alpha_star_init are exactly
+#'   zero". Used internally by [psvr_cv()] for fold-to-fold carryover.
+#' @param reg Reserved for future phases (extended Lagrangian). Must be
+#'   `NULL`.
 #' @param ... Currently unused; reserved for future extension.
 #'
 #' @return An object of class `"psvr_fit"`, a list with components:
@@ -43,8 +54,14 @@
 #'     \item{`loss`}{`"mape"` or `"rmspe"`.}
 #'     \item{`sym`}{`NULL`, `+1L`, or `-1L`.}
 #'     \item{`kernel`}{The kernel closure used.}
-#'     \item{`alpha`}{Dual coefficients. For `loss = "mape"` this holds
-#'       `α − α* = β`; for `loss = "rmspe"` it holds the LS-SVR `α`.}
+#'     \item{`alpha`}{For `loss = "mape"`, the dual variable `α` of length
+#'       `N` (pre-pruning, i.e. across the full training set); for
+#'       `loss = "rmspe"`, the LS-SVR `α` of length `N`.}
+#'     \item{`alpha_star`}{For `loss = "mape"`, the dual variable `α*` of
+#'       length `N`; `NULL` for `loss = "rmspe"`.}
+#'     \item{`beta`}{For `loss = "mape"`, the pruned dual difference
+#'       `β = α − α*` over the support-vector indices (length `n_sv`);
+#'       `NULL` for `loss = "rmspe"`. Used by `predict()`.}
 #'     \item{`b`}{Bias term.}
 #'     \item{`support_data`}{Support-vector matrix (after pruning) for
 #'       `loss = "mape"`, or the full training matrix `X` for
@@ -61,6 +78,15 @@
 #'       diagnostics (`mu`, `lambda_min_hat`, `lambda_max_hat`,
 #'       `branch_taken`, `n_power_iterations`); `NULL` otherwise.}
 #'   }
+#'
+#' @section Breaking change (psvr 0.0.2.9004):
+#' Prior versions exposed the MAPE dual-difference `β = α − α*` under the
+#' name `fit$alpha` (length `n_sv`, post-pruning). As of 0.0.2.9004, that
+#' field is renamed to `fit$beta`, and `fit$alpha` now holds the true
+#' length-`N` dual variable `α` (pre-pruning). The new `fit$alpha_star`
+#' holds `α*` (length `N`, `NULL` for `loss = "rmspe"`). Downstream code
+#' that read `fit$alpha` on a MAPE fit for prediction or diagnostics must
+#' switch to `fit$beta`.
 #'
 #' @examples
 #' set.seed(1)
@@ -87,9 +113,11 @@ psvr <- function(X, y,
                  solver = c("smo", "osqp"),
                  tol    = 1e-5,
                  precondition = "auto",
-                 alpha_init      = NULL,
-                 alpha_star_init = NULL,
-                 reg             = NULL,
+                 alpha_init       = NULL,
+                 alpha_star_init  = NULL,
+                 warm_start_check = TRUE,
+                 new_mask         = NULL,
+                 reg              = NULL,
                  ...) {
   # missing() must be evaluated in the function's own frame; capture flags
   # here so the validator can distinguish user-passed vs. default values
@@ -121,9 +149,17 @@ psvr <- function(X, y,
   # Route to one of the four internal fitters.
   fit <- switch(paste(loss, ifelse(is.null(sym), "std", "sym"), sep = "_"),
     mape_std  = .fit_mape(X, y, kernel = kernel, C = C, eps = eps,
-                          solver = solver, tol = tol),
+                          solver = solver, tol = tol,
+                          alpha_init = alpha_init,
+                          alpha_star_init = alpha_star_init,
+                          warm_start_check = warm_start_check,
+                          new_mask = new_mask),
     mape_sym  = .fit_mape_sym(X, y, kernel = kernel, C = C, eps = eps,
-                              a = a, solver = solver, tol = tol),
+                              a = a, solver = solver, tol = tol,
+                              alpha_init = alpha_init,
+                              alpha_star_init = alpha_star_init,
+                              warm_start_check = warm_start_check,
+                              new_mask = new_mask),
     rmspe_std = .fit_rmspe(X, y, kernel = kernel, gamma = gamma,
                            precondition = precondition),
     rmspe_sym = .fit_rmspe_sym(X, y, kernel = kernel, gamma = gamma,
@@ -132,10 +168,21 @@ psvr <- function(X, y,
 
   is_mape <- loss == "mape"
 
-  alpha           <- if (is_mape) fit$beta    else fit$alpha
-  support_data    <- if (is_mape) fit$X_sv    else fit$X_train
-  support_targets <- if (is_mape) fit$y_sv    else NULL
-  n_sv            <- if (is_mape) length(fit$beta) else fit$n_train
+  if (is_mape) {
+    beta            <- fit$beta
+    alpha           <- fit$alpha       # length N (pre-pruning)
+    alpha_star      <- fit$alpha_star  # length N (pre-pruning)
+    support_data    <- fit$X_sv
+    support_targets <- fit$y_sv
+    n_sv            <- length(fit$beta)
+  } else {
+    beta            <- NULL
+    alpha           <- fit$alpha       # length N (LS-SVR)
+    alpha_star      <- NULL
+    support_data    <- fit$X_train
+    support_targets <- NULL
+    n_sv            <- fit$n_train
+  }
 
   hyperparameters <- list(
     C     = if (is_mape) C     else NULL,
@@ -146,8 +193,8 @@ psvr <- function(X, y,
 
   solver_meta <- if (is_mape) {
     list(backend              = solver,
-         iters                = NA_integer_,
-         converged            = NA,
+         iters                = fit$iterations,
+         converged            = fit$converged,
          precondition_applied = NA,
          # spectral diagnostics (F3, Algorithm 2) populated for symmetric
          # MAPE only; NULL for the non-symmetric path where Ωs is not built
@@ -167,6 +214,8 @@ psvr <- function(X, y,
       sym             = if (is.null(sym)) NULL else as.integer(sym),
       kernel          = kernel,
       alpha           = alpha,
+      alpha_star      = alpha_star,
+      beta            = beta,
       b               = fit$b,
       support_data    = support_data,
       support_targets = support_targets,
