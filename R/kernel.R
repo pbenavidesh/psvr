@@ -69,6 +69,15 @@ make_kernel <- function(type = c("rbf", "linear", "polynomial"),
 #' Entry `[i, j]` equals `K(X1[i, ], X2[j, ])`. Used internally by all four
 #' model fitting and prediction functions.
 #'
+#' If `K` was produced by [make_kernel()], dispatch reads the
+#' `kernel_info` attribute and calls the Rcpp implementation for the
+#' three built-in types (`"rbf"`, `"linear"`, `"polynomial"`). For
+#' user-defined closures (no `kernel_info` attribute) the dispatch falls
+#' through to `.legacy_kernel_matrix()`, the original pure-R nested
+#' loop. Predictions are bit-identical to the R-only path on
+#' Windows/Rtools45; see `src/kernel_*.cpp` for the operation-order
+#' rationale.
+#'
 #' @param K A kernel function from [make_kernel()].
 #' @param X1 Numeric matrix with one observation per row (n1 × p).
 #' @param X2 Numeric matrix with one observation per row (n2 × p).
@@ -78,6 +87,32 @@ make_kernel <- function(type = c("rbf", "linear", "polynomial"),
 #'
 #' @keywords internal
 kernel_matrix <- function(K, X1, X2 = X1) {
+  info <- attr(K, "kernel_info")
+  if (!is.null(info)) {
+    X1m <- as.matrix(X1)
+    X2m <- as.matrix(X2)
+    return(switch(info$type,
+      rbf        = kernel_rbf_cpp(X1m, X2m, info$sigma),
+      linear     = kernel_linear_cpp(X1m, X2m),
+      polynomial = kernel_poly_cpp(X1m, X2m, info$coef0, info$degree),
+      .legacy_kernel_matrix(K, X1, X2)
+    ))
+  }
+  .legacy_kernel_matrix(K, X1, X2)
+}
+
+#' Pure-R nested-loop kernel matrix (fallback path)
+#'
+#' Original [kernel_matrix()] body, retained as a fallback for kernel
+#' closures that do not carry a `kernel_info` attribute (i.e., not built
+#' via [make_kernel()]). Also used by tests to verify Rcpp-vs-R parity.
+#'
+#' @inheritParams kernel_matrix
+#'
+#' @return Numeric matrix of size n1 × n2.
+#'
+#' @keywords internal
+.legacy_kernel_matrix <- function(K, X1, X2) {
   n1 <- nrow(X1)
   n2 <- nrow(X2)
   M <- matrix(0.0, n1, n2)

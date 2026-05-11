@@ -21,4 +21,14 @@ Numeric matrix of size n1 × n2.
 Entry \verb{[i, j]} equals \code{K(X1[i, ], X2[j, ])}. Used internally by all four
 model fitting and prediction functions.
 }
+\details{
+If \code{K} was produced by \code{\link[=make_kernel]{make_kernel()}}, dispatch reads the
+\code{kernel_info} attribute and calls the Rcpp implementation for the
+three built-in types (\code{"rbf"}, \code{"linear"}, \code{"polynomial"}). For
+user-defined closures (no \code{kernel_info} attribute) the dispatch falls
+through to \code{.legacy_kernel_matrix()}, the original pure-R nested
+loop. Predictions are bit-identical to the R-only path on
+Windows/Rtools45; see \code{src/kernel_*.cpp} for the operation-order
+rationale.
+}
 \keyword{internal}
