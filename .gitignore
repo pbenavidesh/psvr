@@ -45,6 +45,7 @@ dev/bench_F3.rds
 dev/bench_F4.rds
 dev/bench_F5.rds
 dev/bench_F6.rds
+dev/bench_F7.rds
 
 # Rcpp compiled artefacts (regenerable from src/*.cpp + Rcpp::compileAttributes)
 src/*.o
