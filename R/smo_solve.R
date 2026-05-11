@@ -198,6 +198,10 @@
   # F7.5 — record WSS1 Delta per iter when trace=TRUE; trimmed at return.
   delta_history <- if (trace) numeric(max_iter) else NULL
 
+  # F7.6 — record active-set count (sum(active_alpha) + sum(active_astar))
+  # per iter when trace=TRUE; trimmed at return.
+  active_history <- if (trace) integer(max_iter) else NULL
+
   while (iter < max_iter) {
     iter <- iter + 1L
 
@@ -234,7 +238,10 @@
     pos_min <- which.min(low_tau_pool)
     tau_j_w1 <- low_tau_pool[pos_min]
     Delta    <- tau_i - tau_j_w1
-    if (trace) delta_history[iter] <- Delta
+    if (trace) {
+      delta_history[iter]  <- Delta
+      active_history[iter] <- sum(active_alpha) + sum(active_astar)
+    }
 
     # Theorem 8: per-pair tolerance, evaluated against the WSS1 convergence pair.
     # The paper text (Theorem 8 of arXiv:2605.01446 v3) says "j* = WSS3 pick", but
@@ -586,6 +593,7 @@
     decoupling_rate              = decoupling_rate,
     early_phase_decoupling_rate  = early_phase_decoupling_rate,
     late_phase_decoupling_rate   = late_phase_decoupling_rate,
-    delta_history                = if (trace) delta_history[seq_len(iter)] else NULL
+    delta_history                = if (trace) delta_history[seq_len(iter)] else NULL,
+    active_history               = if (trace) active_history[seq_len(iter)] else NULL
   )
 }

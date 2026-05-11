@@ -108,6 +108,14 @@ List psvr_smo_fit_rcpp(const NumericMatrix& Omega,
                                          r.delta_history.end()))
               : R_NilValue;
 
+  // F7.6 — active_history: NULL when trace=FALSE, integer(iter) when trace=TRUE.
+  // Element t = sum(active_alpha) + sum(active_astar) at the WSS1 selection
+  // point of iter t (same site as delta_history[t]).
+  SEXP ah = fo.trace
+              ? Rcpp::wrap(IntegerVector(r.active_history.begin(),
+                                         r.active_history.end()))
+              : R_NilValue;
+
   return List::create(
     Named("alpha")                       = NumericVector(r.alpha.begin(),      r.alpha.end()),
     Named("alpha_star")                  = NumericVector(r.alpha_star.begin(), r.alpha_star.end()),
@@ -119,6 +127,7 @@ List psvr_smo_fit_rcpp(const NumericMatrix& Omega,
     Named("decoupling_rate")             = dr,
     Named("early_phase_decoupling_rate") = dr_e,
     Named("late_phase_decoupling_rate")  = dr_l,
-    Named("delta_history")               = dh
+    Named("delta_history")               = dh,
+    Named("active_history")              = ah
   );
 }

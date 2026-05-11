@@ -253,7 +253,18 @@ Required for Models 2 and 4:
         exposed in `psvr()` to keep ~800 KB allocation
         (max_iter × 8 B) off the default fit path. Lets the
         smo-paper repo drop its frozen `smo_solve.R` copy.
-18. [ ] **F8** — Paper-side errata fixes (#1–#11).
+18. [x] **F7.6 — active_history trace field** — extends F7.5 with
+        a per-iter active-set count
+        (`sum(active_alpha) + sum(active_astar)`) recorded under
+        `trace = TRUE` at the same loop site as `delta_history`.
+        Integer vector of length `iterations`. Bit-identical
+        across engines (`r` and `rcpp`) on the new field; snapshot
+        gates unchanged from v0.0.2.9007. Needed by the smo-paper
+        Figure 1 active-set fraction panel (bottom row, F8 Phase
+        2.3) to visualize T3 asym-freeze + unshrinking-event
+        dynamics. Engine equivalence enforced by
+        `tests/testthat/test-trace.R`.
+19. [ ] **F8** — Paper-side errata fixes (#1–#11).
 
 ---
 
@@ -526,34 +537,44 @@ build-system rationale.
 
 ---
 
-## trace parameter (post-F7.5)
+## trace parameter (post-F7.5; extended in F7.6)
 
 `.smo_solve(K_acc, y, C, eps, ..., trace = FALSE, engine = ...)` and
 `.smo_solve_r(...)` accept `trace`. When `TRUE`, the returned list
-adds a numeric `delta_history` of length `iterations` containing the
-per-iter WSS1 KKT gap `Delta = tau_i - tau_j_w1` (computed *before*
-the convergence test). Both engines record at the same site (right
-after `Delta` is computed) and produce **bit-identical**
-`delta_history` vectors — enforced by `tests/testthat/test-trace.R`
-across 4 configs (Models 1 + 2 × `block_k4_enabled` ∈ {FALSE, TRUE}
-on RBF).
+adds two telemetry vectors of length `iterations`:
+
+- `delta_history` (numeric, F7.5): per-iter WSS1 KKT gap
+  `Delta = tau_i - tau_j_w1` (computed *before* the convergence test).
+- `active_history` (integer, F7.6): per-iter active-set count
+  `sum(active_alpha) + sum(active_astar)`, captured at the same loop
+  site as `delta_history`. Used by the smo-paper Figure 1 active-set
+  fraction panel.
+
+Both engines record at the same site (right after `Delta` is computed)
+and produce **bit-identical** `delta_history` AND `active_history`
+vectors — enforced by `tests/testthat/test-trace.R` across 4 configs
+(Models 1 + 2 × `block_k4_enabled` ∈ {FALSE, TRUE} on RBF).
 
 `trace` is **not** exposed in the public `psvr()` API. Rationale:
-`delta_history` can reach ~800 KB (`max_iter × 8 B`) and is only
-useful for solver-diagnostic plots; production callers should never
-need it. Research code should reach for it directly:
+`delta_history` can reach ~800 KB (`max_iter × 8 B`), and
+`active_history` adds another ~400 KB (`max_iter × 4 B`); these are
+only useful for solver-diagnostic plots, so production callers should
+never need them. Research code should reach for them directly:
 
 ```r
 fit <- psvr:::.smo_solve(K_acc, y, C, eps, ..., trace = TRUE)
 plot(fit$delta_history, type = "l", log = "y",
      xlab = "iter", ylab = "KKT gap (Delta)")
+plot(fit$active_history / (2 * N), type = "l", ylim = c(0, 1),
+     xlab = "iter", ylab = "|A_active| / (2N)")
 ```
 
 Default `trace = FALSE` is bit-identical to v0.0.2.9006 on both
 engines (all four `_snaps/*.md` MD5s unchanged: `46A4FA24…`,
 `6E56F887…`, `113EF25C…`, `712971E6…`). On the C++ path the
-recording cost when `trace = TRUE` is one predicted branch + a
-`reserve`-d `push_back` per iter — no reallocations.
+recording cost when `trace = TRUE` is one predicted branch + two
+`reserve`-d `push_back`s + one `O(N)` count loop per iter — no
+reallocations.
 
 ---
 

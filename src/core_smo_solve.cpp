@@ -134,6 +134,10 @@ FitResult smo_fit(const double* Omega, Index N,
   Vec delta_history;
   if (opts.trace) delta_history.reserve(opts.max_iter);
 
+  // F7.6 — per-iter active-set count when opts.trace; remains empty otherwise.
+  IntVec active_history;
+  if (opts.trace) active_history.reserve(opts.max_iter);
+
   // Reusable scratch vectors (allocated once).
   IndexVec aa, ast;           aa.reserve(N); ast.reserve(N);
   IndexVec up_alpha, up_astar, down_alpha, down_astar;
@@ -210,7 +214,15 @@ FitResult smo_fit(const double* Omega, Index N,
     }
 
     const double Delta = tau_i - tau_j_w1;
-    if (opts.trace) delta_history.push_back(Delta);
+    if (opts.trace) {
+      delta_history.push_back(Delta);
+      int active_count = 0;
+      for (Index k = 0; k < N; ++k) {
+        active_count += static_cast<int>(active_alpha[k]) +
+                        static_cast<int>(active_astar[k]);
+      }
+      active_history.push_back(active_count);
+    }
 
     // F4 Theorem 8: per-pair tolerance using BOTH sample y's.
     const double tol_pair = opts.tol * std::max(y[p], y[k_j_w1]);
@@ -493,6 +505,7 @@ FitResult smo_fit(const double* Omega, Index N,
   res.early_phase_decoupling_rate  = early_phase_decoupling_rate;
   res.late_phase_decoupling_rate   = late_phase_decoupling_rate;
   res.delta_history                = std::move(delta_history);
+  res.active_history               = std::move(active_history);
   return res;
 }
 

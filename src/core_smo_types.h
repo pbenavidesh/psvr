@@ -36,6 +36,8 @@ using IndexVec = std::vector<Index>;
 // std::vector<bool> is not an addressable contiguous array; use
 // unsigned char for R-interop and pointer arithmetic. 0 = false, 1 = true.
 using BoolVec  = std::vector<unsigned char>;
+// Used for integer-valued telemetry returned to R (IntegerVector).
+using IntVec   = std::vector<int>;
 
 // All inputs to smo_fit live here. The R-side .smo_solve() dispatcher
 // fills this struct from its function arguments before calling the core.
@@ -82,6 +84,11 @@ struct FitResult {
   // F7.5 — per-iter WSS1 Delta when FitOptions::trace; empty otherwise.
   // length == iterations on return.
   Vec    delta_history;
+
+  // F7.6 — per-iter active-set count (sum of active_alpha + active_astar
+  // masks) when FitOptions::trace; empty otherwise. length == iterations
+  // on return. Used by validate_v3.R's Figure 1 active-set fraction panel.
+  IntVec active_history;
 };
 
 }  // namespace psvr

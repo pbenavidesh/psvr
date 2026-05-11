@@ -1,3 +1,20 @@
+# psvr 0.0.2.9008 (development)
+
+## New features
+
+* **`active_history` field** in `.smo_solve()` / `.smo_solve_r()` return
+  when `trace = TRUE` (developer interface; not exposed in `psvr()`).
+  Integer vector of length `iterations` containing the per-iteration
+  active-set count, `sum(active_alpha) + sum(active_astar)`, captured
+  at the same loop site as `delta_history`. Used by the smo-paper
+  Figure 1 active-set fraction panel (bottom row) to visualize
+  shrinking + unshrinking dynamics. Bit-identical across engines
+  (`r` and `rcpp`); snapshot gates unchanged from v0.0.2.9007 on the
+  default `trace = FALSE` path. Engine equivalence on `active_history`
+  is enforced by `tests/testthat/test-trace.R` (4 configs: Models 1 + 2
+  × `block_k4_enabled` ∈ {FALSE, TRUE} on RBF), alongside the existing
+  `delta_history` equivalence gate.
+
 # psvr 0.0.2.9007 (development)
 
 ## New features
