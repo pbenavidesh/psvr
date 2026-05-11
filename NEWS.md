@@ -1,3 +1,46 @@
+# psvr 0.0.2.9005 (development)
+
+## Performance
+
+* **`kernel_matrix()` now dispatches to Rcpp C++** for the three
+  `make_kernel()` types (`"rbf"`, `"linear"`, `"polynomial"`).
+  Bit-identical to the previous R nested loop on Windows / Rtools45
+  (snapshot tests unchanged). At N=1000 RBF: ~12× wall reduction
+  (pre-F6 ~2.4 s → post-F6 ~0.2 s in `dev/bench-F6.R`). The same
+  dispatch incidentally accelerates the predict path.
+
+* **Cross-fold kernel reuse in `psvr_cv()`**. For `rsample::rset`
+  inputs, the full-dataset Omega (or `Omega_s` for `sym != NULL`) is
+  built once and sliced per fold via the new internal
+  `precomputed_Omega` / `precomputed_Omega_s` channel on `psvr()`.
+  List-of-tuples inputs fall back to per-fold construction (still
+  benefits from the per-call Rcpp dispatch).
+
+## New features
+
+* User-defined kernel closures without an `attr(K, "kernel_info")`
+  attribute continue to work via the R-only `.legacy_kernel_matrix()`
+  fallback path; the dispatch in `kernel_matrix()` is transparent.
+
+## Dependencies
+
+* New Imports: `Rcpp (>= 1.0.10)`. LinkingTo: `Rcpp`.
+* New `SystemRequirements: GNU make` (Rtools on Windows; standard
+  `gcc` / `clang` on Linux/macOS — the same toolchain users already
+  need to install most CRAN packages with compiled code).
+
+## Internal changes
+
+* `src/` directory containing the three C++ kernels plus
+  `RcppExports.cpp`.
+* New internal helper `.legacy_kernel_matrix()` in `R/kernel.R` for
+  user-defined closure fallback and as the reference for Rcpp-vs-R
+  parity tests.
+* `.fit_mape()` gains `precomputed_Omega`; `.fit_mape_sym()` gains
+  `precomputed_Omega_s`. Both default to `NULL` (cold-start path).
+  Forwarded transparently through `psvr()`.
+* Paper TODO #8 added (Theorem 6 architectural mismatch — see CLAUDE.md).
+
 # psvr 0.0.2.9004 (development)
 
 ## Breaking changes
