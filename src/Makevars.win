@@ -1,3 +1,18 @@
-# Intentionally empty: rely on R's default optimization flags from
+# Intentionally minimal: rely on R's default optimization flags from
 # ${R_HOME}/etc/Makeconf.win. CRAN policy prohibits package-set -O3 in
 # Makevars (non-portable); Rtools45 already builds with -O2 by default.
+#
+# BLAS_LIBS / FLIBS are needed because core_smo_solve.cpp calls
+# F77_CALL(dgemv) for the warm-start / unshrink-rebuild / post-loop
+# tau refresh. Using R's BLAS (rather than a vendor BLAS the package
+# links itself) is required for bit-identicality with the engine = "r"
+# reference path.
+#
+# Do NOT add $(LAPACK_LIBS) here: we use only BLAS (dgemv), not LAPACK,
+# and R CMD check warns about "$(LAPACK_LIBS) without following
+# $(BLAS_LIBS)" when LAPACK is included without need. If a future
+# revision adds LAPACK calls, the correct order per Writing R
+# Extensions §1.2.3 is:  PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+# (LAPACK first, since the linker resolves dependencies right-to-left
+# and LAPACK depends on BLAS).
+PKG_LIBS = $(BLAS_LIBS) $(FLIBS)
