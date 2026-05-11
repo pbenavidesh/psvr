@@ -10,6 +10,19 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// kernel_rbf_cpp
+NumericMatrix kernel_rbf_cpp(const NumericMatrix& X1, const NumericMatrix& X2, double sigma);
+RcppExport SEXP _psvr_kernel_rbf_cpp(SEXP X1SEXP, SEXP X2SEXP, SEXP sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X1(X1SEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type X2(X2SEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(kernel_rbf_cpp(X1, X2, sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
 // kernel_linear_cpp
 NumericMatrix kernel_linear_cpp(const NumericMatrix& X1, const NumericMatrix& X2);
 RcppExport SEXP _psvr_kernel_linear_cpp(SEXP X1SEXP, SEXP X2SEXP) {
@@ -36,24 +49,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// kernel_rbf_cpp
-NumericMatrix kernel_rbf_cpp(const NumericMatrix& X1, const NumericMatrix& X2, double sigma);
-RcppExport SEXP _psvr_kernel_rbf_cpp(SEXP X1SEXP, SEXP X2SEXP, SEXP sigmaSEXP) {
+// psvr_smo_fit_rcpp
+List psvr_smo_fit_rcpp(const NumericMatrix& Omega, const NumericVector& y, const List& opts);
+RcppExport SEXP _psvr_psvr_smo_fit_rcpp(SEXP OmegaSEXP, SEXP ySEXP, SEXP optsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type X1(X1SEXP);
-    Rcpp::traits::input_parameter< const NumericMatrix& >::type X2(X2SEXP);
-    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
-    rcpp_result_gen = Rcpp::wrap(kernel_rbf_cpp(X1, X2, sigma));
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type Omega(OmegaSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< const List& >::type opts(optsSEXP);
+    rcpp_result_gen = Rcpp::wrap(psvr_smo_fit_rcpp(Omega, y, opts));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_psvr_kernel_rbf_cpp", (DL_FUNC) &_psvr_kernel_rbf_cpp, 3},
     {"_psvr_kernel_linear_cpp", (DL_FUNC) &_psvr_kernel_linear_cpp, 2},
     {"_psvr_kernel_poly_cpp", (DL_FUNC) &_psvr_kernel_poly_cpp, 4},
-    {"_psvr_kernel_rbf_cpp", (DL_FUNC) &_psvr_kernel_rbf_cpp, 3},
+    {"_psvr_psvr_smo_fit_rcpp", (DL_FUNC) &_psvr_psvr_smo_fit_rcpp, 3},
     {NULL, NULL, 0}
 };
 
