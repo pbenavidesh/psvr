@@ -22,7 +22,13 @@
                       alpha_init = NULL,
                       alpha_star_init = NULL,
                       warm_start_check = TRUE,
-                      new_mask = NULL) {
+                      new_mask = NULL,
+                      precomputed_Omega = NULL) {
+  # `precomputed_Omega` is INTERNAL — used by psvr_cv() to share a single
+  # full-dataset Omega across folds. Pass the un-jittered subset
+  # Omega_full[train_idx, train_idx]; this fitter adds the 1e-6 diagonal
+  # jitter on the (subset of the) precomputed matrix in place.
+
   solver <- match.arg(solver)
   X <- as.matrix(X)
   y <- as.numeric(y)
@@ -35,7 +41,14 @@
   scale <- eps / 100          # ε/100, used throughout
   ub    <- 100 * C / y        # per-sample upper bounds on αk and αk*
 
-  Omega <- kernel_matrix(kernel, X)
+  Omega <- if (is.null(precomputed_Omega)) {
+    kernel_matrix(kernel, X)
+  } else {
+    stopifnot(is.matrix(precomputed_Omega),
+              nrow(precomputed_Omega) == N,
+              ncol(precomputed_Omega) == N)
+    precomputed_Omega
+  }
   diag(Omega) <- diag(Omega) + 1e-6
 
   iterations <- NA_integer_

@@ -24,7 +24,14 @@
                           alpha_init = NULL,
                           alpha_star_init = NULL,
                           warm_start_check = TRUE,
-                          new_mask = NULL) {
+                          new_mask = NULL,
+                          precomputed_Omega_s = NULL) {
+  # `precomputed_Omega_s` is INTERNAL — used by psvr_cv() to share a single
+  # full-dataset Ωs across folds. Pass the un-jittered subset
+  # Omega_s_full[train_idx, train_idx]; this fitter adds the 0.5e-6 diagonal
+  # jitter and runs the adaptive spectral shift on the (subset of the)
+  # precomputed matrix in place.
+
   solver <- match.arg(solver)
   X <- as.matrix(X)
   y <- as.numeric(y)
@@ -40,7 +47,14 @@
 
   # Ωs = ½(Ω + a·Ω*) — symmetric kernel matrix with the representer-theorem
   # ½ already baked in.  Same convention used by Model 4.
-  Omega_s <- sym_kernel_matrix(kernel, X, a)
+  Omega_s <- if (is.null(precomputed_Omega_s)) {
+    sym_kernel_matrix(kernel, X, a)
+  } else {
+    stopifnot(is.matrix(precomputed_Omega_s),
+              nrow(precomputed_Omega_s) == N,
+              ncol(precomputed_Omega_s) == N)
+    precomputed_Omega_s
+  }
   # 0.5e-6 (not 1e-6) preserves bit-identicality with pre-F1 behavior, where
   # diag(Ks) += 1e-6 was followed by 0.5*Ks, giving an effective Ωs jitter
   # of 0.5e-6.

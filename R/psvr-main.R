@@ -118,7 +118,13 @@ psvr <- function(X, y,
                  warm_start_check = TRUE,
                  new_mask         = NULL,
                  reg              = NULL,
-                 ...) {
+                 ...,
+                 precomputed_Omega   = NULL,
+                 precomputed_Omega_s = NULL) {
+  # `precomputed_Omega` and `precomputed_Omega_s` are INTERNAL — populated by
+  # psvr_cv() to share a single full-dataset kernel matrix across folds. Not
+  # documented in @param; users should not set them. Ignored for loss =
+  # "rmspe" (LS-SVR fitters do not yet accept precomputed kernels in F6).
   # missing() must be evaluated in the function's own frame; capture flags
   # here so the validator can distinguish user-passed vs. default values
   # for cross-loss warnings (match.arg defaults are otherwise opaque).
@@ -153,13 +159,15 @@ psvr <- function(X, y,
                           alpha_init = alpha_init,
                           alpha_star_init = alpha_star_init,
                           warm_start_check = warm_start_check,
-                          new_mask = new_mask),
+                          new_mask = new_mask,
+                          precomputed_Omega = precomputed_Omega),
     mape_sym  = .fit_mape_sym(X, y, kernel = kernel, C = C, eps = eps,
                               a = a, solver = solver, tol = tol,
                               alpha_init = alpha_init,
                               alpha_star_init = alpha_star_init,
                               warm_start_check = warm_start_check,
-                              new_mask = new_mask),
+                              new_mask = new_mask,
+                              precomputed_Omega_s = precomputed_Omega_s),
     rmspe_std = .fit_rmspe(X, y, kernel = kernel, gamma = gamma,
                            precondition = precondition),
     rmspe_sym = .fit_rmspe_sym(X, y, kernel = kernel, gamma = gamma,
