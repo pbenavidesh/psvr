@@ -75,6 +75,7 @@ psvr::FitOptions parse_fit_options(const List& opts) {
   fo.alpha_init        = get_vec_double   (opts, "alpha_init");
   fo.alpha_star_init   = get_vec_double   (opts, "alpha_star_init");
   fo.new_mask          = get_vec_bool     (opts, "new_mask");
+  fo.trace             = get_scalar_bool  (opts, "trace",             false);
   return fo;
 }
 
@@ -100,6 +101,13 @@ List psvr_smo_fit_rcpp(const NumericMatrix& Omega,
   const double dr_e = (r.early_phase_decoupling_rate  < 0) ? NA_REAL : r.early_phase_decoupling_rate;
   const double dr_l = (r.late_phase_decoupling_rate   < 0) ? NA_REAL : r.late_phase_decoupling_rate;
 
+  // F7.5 — delta_history: NULL when trace=FALSE, numeric(iter) when trace=TRUE
+  // (possibly numeric(0) if max_iter=0). Matches .smo_solve_r() shape.
+  SEXP dh = fo.trace
+              ? Rcpp::wrap(NumericVector(r.delta_history.begin(),
+                                         r.delta_history.end()))
+              : R_NilValue;
+
   return List::create(
     Named("alpha")                       = NumericVector(r.alpha.begin(),      r.alpha.end()),
     Named("alpha_star")                  = NumericVector(r.alpha_star.begin(), r.alpha_star.end()),
@@ -110,6 +118,7 @@ List psvr_smo_fit_rcpp(const NumericMatrix& Omega,
     Named("k2_fallbacks")                = static_cast<int>(r.k2_fallbacks),
     Named("decoupling_rate")             = dr,
     Named("early_phase_decoupling_rate") = dr_e,
-    Named("late_phase_decoupling_rate")  = dr_l
+    Named("late_phase_decoupling_rate")  = dr_l,
+    Named("delta_history")               = dh
   );
 }
