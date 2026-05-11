@@ -18,6 +18,8 @@ psvr(
   precondition = "auto",
   alpha_init = NULL,
   alpha_star_init = NULL,
+  warm_start_check = TRUE,
+  new_mask = NULL,
   reg = NULL,
   ...
 )
@@ -53,8 +55,22 @@ paper) must hold; see \code{\link[=make_kernel]{make_kernel()}}.}
 a positive numeric threshold; controls Remark-17 symmetric rescaling
 (\code{loss = "rmspe"} only). See \code{\link[=rmspe_lssvr]{rmspe_lssvr()}} for semantics.}
 
-\item{alpha_init, alpha_star_init, reg}{Reserved for future phases (warm
-start, extended Lagrangian). Must be \code{NULL} in F1.}
+\item{alpha_init, alpha_star_init}{Optional length-\code{N} numeric warm-start
+vectors for the SMO solver (Theorem 5; \code{loss = "mape"} only).
+Projected via Algorithm 1 (new-samples-only shift + box clip) before
+the solve. \code{NULL} cold-starts. Defaults \code{NULL}.}
+
+\item{warm_start_check}{Logical; if \code{TRUE}, validate post-projection
+feasibility of the warm-start vectors. Default \code{TRUE}.}
+
+\item{new_mask}{Optional length-\code{N} logical vector flagging which samples
+are NEW relative to the previous fit (used by Algorithm 1 Step 2 to
+distribute the equality-constraint projection over new samples only).
+\code{NULL} infers "new = both alpha_init and alpha_star_init are exactly
+zero". Used internally by \code{\link[=psvr_cv]{psvr_cv()}} for fold-to-fold carryover.}
+
+\item{reg}{Reserved for future phases (extended Lagrangian). Must be
+\code{NULL}.}
 
 \item{...}{Currently unused; reserved for future extension.}
 }

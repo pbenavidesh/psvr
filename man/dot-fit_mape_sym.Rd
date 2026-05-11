@@ -12,11 +12,26 @@
   eps,
   a = 1,
   solver = c("smo", "osqp"),
-  tol = 1e-05
+  tol = 1e-05,
+  alpha_init = NULL,
+  alpha_star_init = NULL,
+  warm_start_check = TRUE,
+  new_mask = NULL
 )
 }
 \arguments{
 \item{X, y, kernel, C, eps, a, solver, tol}{See \code{\link[=mape_sym_svr]{mape_sym_svr()}}.}
+
+\item{alpha_init, alpha_star_init}{Optional length-N numeric warm-start
+vectors (Theorem 5); \code{NULL} cold-starts.}
+
+\item{warm_start_check}{Logical; if \code{TRUE}, validate the post-projection
+feasibility of the warm-start vectors. Default \code{TRUE}.}
+
+\item{new_mask}{Optional logical vector (length N) flagging samples that
+are NEW relative to the previous fit (used to distribute the equality-
+constraint projection over new samples only). \code{NULL} infers
+"new = both alpha and alpha_star are exactly zero".}
 }
 \value{
 A list of class \code{"psvr_mape_sym"} (legacy shape).

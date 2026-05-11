@@ -40,7 +40,11 @@
 
 .smo_solve <- function(K_acc, y, C, eps,
                        tol = 1e-3, max_iter = 100000L,
-                       n_check = NULL, n_freeze = 5L) {
+                       n_check = NULL, n_freeze = 5L,
+                       alpha_init = NULL,
+                       alpha_star_init = NULL,
+                       warm_start_check = TRUE,
+                       new_mask = NULL) {
   N     <- length(y)
   scale <- eps / 100
   C_k   <- 100 * C / y
@@ -63,11 +67,27 @@
   n_freeze_alpha_per <- pmax(5L, as.integer(ceiling(n_freeze * y_bar / y)))
   n_freeze_astar_per <- pmax(1L, as.integer(floor  (n_freeze * y     / y_bar)))
 
-  diag_Omega    <- K_acc$get_diag()
-  alpha         <- numeric(N)
-  alpha_star    <- numeric(N)
-  tau_alpha     <- y * (1 - scale)
-  tau_alphastar <- y * (1 + scale)
+  diag_Omega <- K_acc$get_diag()
+
+  # Theorem 5 (arXiv:2605.01446 v3): warm-start initialization via Algorithm 1.
+  # When both alpha_init and alpha_star_init are NULL we cold-start (canonical
+  # SMO entry point); otherwise we project the caller-supplied vectors to the
+  # feasible region and refresh tau via one full matvec.
+  if (is.null(alpha_init) && is.null(alpha_star_init)) {
+    alpha         <- numeric(N)
+    alpha_star    <- numeric(N)
+    tau_alpha     <- y * (1 - scale)
+    tau_alphastar <- y * (1 + scale)
+  } else {
+    ws         <- .warm_start_init(alpha_init, alpha_star_init, N, C_k,
+                                   new_mask        = new_mask,
+                                   warm_start_check = warm_start_check)
+    alpha      <- ws$alpha
+    alpha_star <- ws$alpha_star
+    Kbeta      <- K_acc$get_matvec(alpha - alpha_star)
+    tau_alpha     <- y * (1 - scale) - Kbeta
+    tau_alphastar <- y * (1 + scale) - Kbeta
+  }
 
   active_alpha <- rep(TRUE, N)
   active_astar <- rep(TRUE, N)

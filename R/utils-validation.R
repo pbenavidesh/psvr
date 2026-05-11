@@ -42,10 +42,29 @@
                                   reg = NULL,
                                   passed = list()) {
 
-  if (!is.null(alpha_init) || !is.null(alpha_star_init) || !is.null(reg)) {
-    stop("F1 does not implement warm-start / extended Lagrangian; ",
-         "planned for future release. ",
-         "Pass NULL for `alpha_init`, `alpha_star_init`, and `reg`.")
+  if (!is.null(reg))
+    stop("psvr 0.0.2.9004 does not implement extended Lagrangian (`reg`); ",
+         "planned for a future phase. Pass `reg = NULL`.")
+
+  has_warm <- !is.null(alpha_init) || !is.null(alpha_star_init)
+  if (has_warm && loss == "rmspe") {
+    stop("Warm-start is not supported for `loss = \"rmspe\"` (LS-SVR is a ",
+         "single linear-system solve; there is no SMO state to carry over). ",
+         "Use `loss = \"mape\"` for warm-start, or `tune::tune_grid()` with ",
+         "parallel cold-start for RMSPE cross-validation.")
+  }
+  if (has_warm) {
+    N <- nrow(X)
+    if (!is.null(alpha_init)) {
+      if (!is.numeric(alpha_init) || length(alpha_init) != N ||
+          any(!is.finite(alpha_init)))
+        stop("`alpha_init` must be a finite numeric vector of length nrow(X).")
+    }
+    if (!is.null(alpha_star_init)) {
+      if (!is.numeric(alpha_star_init) || length(alpha_star_init) != N ||
+          any(!is.finite(alpha_star_init)))
+        stop("`alpha_star_init` must be a finite numeric vector of length nrow(X).")
+    }
   }
 
   if (!loss %in% c("mape", "rmspe"))

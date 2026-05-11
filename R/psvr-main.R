@@ -34,8 +34,19 @@
 #' @param precondition One of `"auto"` (default), `"always"`, `"never"`, or
 #'   a positive numeric threshold; controls Remark-17 symmetric rescaling
 #'   (`loss = "rmspe"` only). See [rmspe_lssvr()] for semantics.
-#' @param alpha_init,alpha_star_init,reg Reserved for future phases (warm
-#'   start, extended Lagrangian). Must be `NULL` in F1.
+#' @param alpha_init,alpha_star_init Optional length-`N` numeric warm-start
+#'   vectors for the SMO solver (Theorem 5; `loss = "mape"` only).
+#'   Projected via Algorithm 1 (new-samples-only shift + box clip) before
+#'   the solve. `NULL` cold-starts. Defaults `NULL`.
+#' @param warm_start_check Logical; if `TRUE`, validate post-projection
+#'   feasibility of the warm-start vectors. Default `TRUE`.
+#' @param new_mask Optional length-`N` logical vector flagging which samples
+#'   are NEW relative to the previous fit (used by Algorithm 1 Step 2 to
+#'   distribute the equality-constraint projection over new samples only).
+#'   `NULL` infers "new = both alpha_init and alpha_star_init are exactly
+#'   zero". Used internally by [psvr_cv()] for fold-to-fold carryover.
+#' @param reg Reserved for future phases (extended Lagrangian). Must be
+#'   `NULL`.
 #' @param ... Currently unused; reserved for future extension.
 #'
 #' @return An object of class `"psvr_fit"`, a list with components:
@@ -102,9 +113,11 @@ psvr <- function(X, y,
                  solver = c("smo", "osqp"),
                  tol    = 1e-5,
                  precondition = "auto",
-                 alpha_init      = NULL,
-                 alpha_star_init = NULL,
-                 reg             = NULL,
+                 alpha_init       = NULL,
+                 alpha_star_init  = NULL,
+                 warm_start_check = TRUE,
+                 new_mask         = NULL,
+                 reg              = NULL,
                  ...) {
   # missing() must be evaluated in the function's own frame; capture flags
   # here so the validator can distinguish user-passed vs. default values
@@ -136,9 +149,17 @@ psvr <- function(X, y,
   # Route to one of the four internal fitters.
   fit <- switch(paste(loss, ifelse(is.null(sym), "std", "sym"), sep = "_"),
     mape_std  = .fit_mape(X, y, kernel = kernel, C = C, eps = eps,
-                          solver = solver, tol = tol),
+                          solver = solver, tol = tol,
+                          alpha_init = alpha_init,
+                          alpha_star_init = alpha_star_init,
+                          warm_start_check = warm_start_check,
+                          new_mask = new_mask),
     mape_sym  = .fit_mape_sym(X, y, kernel = kernel, C = C, eps = eps,
-                              a = a, solver = solver, tol = tol),
+                              a = a, solver = solver, tol = tol,
+                              alpha_init = alpha_init,
+                              alpha_star_init = alpha_star_init,
+                              warm_start_check = warm_start_check,
+                              new_mask = new_mask),
     rmspe_std = .fit_rmspe(X, y, kernel = kernel, gamma = gamma,
                            precondition = precondition),
     rmspe_sym = .fit_rmspe_sym(X, y, kernel = kernel, gamma = gamma,
