@@ -84,6 +84,20 @@ psvr_cv <- function(splits, ...,
     stop("psvr_cv() manages `alpha_init` / `alpha_star_init` internally. ",
          "Do not pass them via `...`.")
 
+  # F7 — informational note about T5 (warm-start) × T7 (block-k=4) interaction.
+  # The two theorems do not compose multiplicatively under CV: T7 dominates
+  # the per-fold iter reduction (~50% on the snapshot fixture), leaving only
+  # a small warm-start perturbation cost (~3% on N=300, rho_y=2388 fixture).
+  # For pure-F5 warm-start behavior, set block_k4_enabled = FALSE.
+  # See paper TODO #10 for the empirical calibration.
+  block_k4_active <- if (is.null(args$block_k4_enabled)) TRUE
+                     else isTRUE(args$block_k4_enabled)
+  if (isTRUE(verbose) && isTRUE(warm_start) && block_k4_active) {
+    message("Note: Theorem 5 (warm-start) and Theorem 7 (block-k=4) interact; ",
+            "warm-start advantage is dominated by block-k=4 gains. For pure ",
+            "F5 warm-start behavior, set block_k4_enabled = FALSE.")
+  }
+
   is_rset <- inherits(splits, "rset")
   if (is_rset) {
     if (!requireNamespace("rsample", quietly = TRUE))
