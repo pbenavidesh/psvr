@@ -25,7 +25,9 @@
                       new_mask = NULL,
                       precomputed_Omega = NULL,
                       block_k4_enabled = TRUE,
-                      alpha_couple = 0.5) {
+                      alpha_couple = 0.5,
+                      engine = c("rcpp", "r")) {
+  engine <- match.arg(engine)
   # `precomputed_Omega` is INTERNAL — used by psvr_cv() to share a single
   # full-dataset Omega across folds. Pass the un-jittered subset
   # Omega_full[train_idx, train_idx]; this fitter adds the 1e-6 diagonal
@@ -69,7 +71,8 @@
                              warm_start_check = warm_start_check,
                              new_mask = new_mask,
                              block_k4_enabled = block_k4_enabled,
-                             alpha_couple = alpha_couple)
+                             alpha_couple = alpha_couple,
+                             engine = engine)
     alpha      <- sol$alpha
     alpha_star <- sol$alpha_star
     beta       <- alpha - alpha_star

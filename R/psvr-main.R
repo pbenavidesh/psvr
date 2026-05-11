@@ -54,8 +54,15 @@
 #'   descent-guaranteed decoupling criterion holds. Set to `FALSE` to
 #'   restore F4 (k=2 only) behaviour bit-identically. Ignored for
 #'   `loss = "rmspe"`.
+#' @param engine One of `"rcpp"` (default) or `"r"`. Selects the SMO
+#'   backend implementation: the C++ core in `src/core_smo_solve.cpp`
+#'   or the R reference implementation in `R/smo_solve.R`. Both
+#'   produce bit-identical results; `"r"` is preserved as the
+#'   reference for the Rcpp port and will be deprecated in v0.0.4.0
+#'   and removed in v0.1.0. Ignored for `loss = "rmspe"` (LS-SVR uses
+#'   `base::solve()` directly).
 #' @param ... Currently unused; reserved for future extension.
-#' @param alpha_couple Numeric in [0, 1] (default `0.5`). Internal F7
+#' @param alpha_couple Numeric between 0 and 1 (default `0.5`). Internal F7
 #'   coupling penalty in the pair-2 WSS3 score
 #'   `score = gain * (1 - alpha_couple * coupling)`. Exposed for
 #'   empirical tuning; rarely needs adjustment. Ignored for
@@ -135,10 +142,12 @@ psvr <- function(X, y,
                  new_mask         = NULL,
                  reg              = NULL,
                  block_k4_enabled = TRUE,
+                 engine           = c("rcpp", "r"),
                  ...,
                  alpha_couple        = 0.5,
                  precomputed_Omega   = NULL,
                  precomputed_Omega_s = NULL) {
+  engine <- match.arg(engine)
   # `precomputed_Omega` and `precomputed_Omega_s` are INTERNAL — populated by
   # psvr_cv() to share a single full-dataset kernel matrix across folds. Not
   # documented in @param; users should not set them. Ignored for loss =
@@ -180,7 +189,8 @@ psvr <- function(X, y,
                           new_mask = new_mask,
                           precomputed_Omega = precomputed_Omega,
                           block_k4_enabled = block_k4_enabled,
-                          alpha_couple = alpha_couple),
+                          alpha_couple = alpha_couple,
+                          engine = engine),
     mape_sym  = .fit_mape_sym(X, y, kernel = kernel, C = C, eps = eps,
                               a = a, solver = solver, tol = tol,
                               alpha_init = alpha_init,
@@ -189,7 +199,8 @@ psvr <- function(X, y,
                               new_mask = new_mask,
                               precomputed_Omega_s = precomputed_Omega_s,
                               block_k4_enabled = block_k4_enabled,
-                              alpha_couple = alpha_couple),
+                              alpha_couple = alpha_couple,
+                              engine = engine),
     rmspe_std = .fit_rmspe(X, y, kernel = kernel, gamma = gamma,
                            precondition = precondition),
     rmspe_sym = .fit_rmspe_sym(X, y, kernel = kernel, gamma = gamma,
