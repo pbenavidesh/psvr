@@ -388,722 +388,130 @@ unchanged. Predictions remain bit-identical to F1 at tolerance `1e-10`
 
 `.fit_mape_sym()` (Model 2) calls `.adaptive_spectral_shift()` from
 `R/kernel-spectral.R` between the `0.5e-6` diagonal jitter step and the
-SMO/osqp solve. The shift is invoked **unconditionally** (independent of
-`a` or kernel type); the branch decision is made on the estimated
-`λ_min(Ωs)`. This implements Theorem 2 / Algorithm 2 of
-arXiv:2605.01446 v3 with one corrected detail (see "Paper deviation"
-below).
+SMO/osqp solve — a two-pass shifted power iteration that estimates
+`λ_min(Ωs)` and adds `μ·I` only if indefinite. With the three Mercer
+kernels supplied by `make_kernel()` the shifted branch is dormant in
+production; diagnostics surface under `psvr_fit$solver_meta$spectral`
+for symmetric MAPE fits only. Paper Algorithm 2 line 6 has a sign bug
+(paper TODO #1).
 
-### API
-
-```
-.adaptive_spectral_shift(Omega_s, T_pi = 5L, delta_stab = 1e-8) ->
-  list(Omega_use, mu, lambda_min_hat, lambda_max_hat,
-       branch_taken ∈ {"no_shift", "shifted"},
-       n_power_iterations = c(iter1, iter2))
-```
-
-The function never modifies the input; when shifted, `Omega_use` is a
-fresh matrix equal to `Omega_s + mu * I`. Results are deterministic:
-both passes start from the uniform unit vector `rep(1, N) / sqrt(N)`.
-
-### Two-pass shifted power iteration
-
-Pass 1 runs plain power iteration on `Ωs` and returns the Rayleigh
-quotient `lambda_max_hat`. Pass 2 runs power iteration on
-`rho * I - Ωs` with `rho = |lambda_max_hat|` (the spectral radius)
-and returns the Rayleigh `lambda_min_hat = v^T Ωs v` on the converged
-`v`. Both passes are O(N²); total cost is `2 * T_pi` matvecs.
-
-### Paper deviation
-
-Algorithm 2 line 6 of the paper, as literally written
-(`v ← -Ωs · v / ||Ωs · v||`), estimates `-λ_max(Ωs)` rather than
-`λ_min(Ωs)`: power iteration on `-Ωs` converges to the eigenvector of
-largest |eigenvalue|, which is `v_max(Ωs)` whenever
-`|λ_max| > |λ_min|` (the typical case for Mercer-PSD kernel matrices).
-The Pass 2 shift uses `|Pass 1 Rayleigh|`, not Pass 1's signed Rayleigh,
-to handle the `λ_min`-dominant case where `|λ_min| > λ_max` and Pass 1
-converges to `v_min` with negative Rayleigh; using `abs(...)` ensures
-`rho * I - Ωs` is PSD, so Pass 2 reliably finds `v_min(Ωs)` regardless
-of which side of the spectrum dominated Pass 1. This deviation is
-documented inline in `R/kernel-spectral.R` and is to be flagged as a
-paper-side erratum (smo-v3.tex line 3467) in F8.
-
-### Diagnostics
-
-`psvr_fit$solver_meta$spectral` is populated only for symmetric MAPE
-fits (`loss = "mape"` and `sym != NULL`); `NULL` for Models 1, 3, 4.
-Schema:
-
-```
-$mu                  numeric scalar; 0 if branch_taken == "no_shift"
-$lambda_min_hat      numeric; Rayleigh from Pass 2
-$lambda_max_hat      numeric; Rayleigh from Pass 1 (see note)
-$branch_taken        "no_shift" | "shifted"
-$n_power_iterations  integer length-2: iterations executed in Pass 1, Pass 2
-```
-
-`lambda_max_hat` reports Pass 1's signed Rayleigh and equals
-`λ_max(Ωs)` for PSD or `λ_max`-dominant matrices; for the
-`λ_min`-dominant pathological case it equals `λ_min(Ωs)`. The branch
-decision is made correctly via `lambda_min_hat` in either case.
-
-### Why the shifted branch is dormant in production
-
-With the three Mercer kernels supplied by `make_kernel()` (`"rbf"`,
-`"linear"`, `"polynomial"`), `Ωs = ½(Ω + a·Ω*)` is **always PSD** by
-Aronszajn's closure (shift-invariant kernels) and Schur's product
-theorem (polynomial kernels collapse `K - K*` for odd / even degrees
-into non-negative linear combinations of valid Mercer kernels). The
-shifted branch is therefore a defensive guard that activates only with
-**non-Mercer kernels** (e.g., tanh / sigmoid in some parameter ranges)
-supplied via a custom kernel closure — a use case not currently
-documented or tested. Production fits with the supplied
-`make_kernel()` types always take the no-shift branch and remain
-bit-identical to F2.
-
-### Known limitations
-
-Theorem 2(a) guarantees that the spectrally-shifted matrix `Omega_use`
-satisfies `Omega_use ⪰ delta_stab * I` in the **limit** `T_pi → ∞`.
-At finite `T_pi`, the estimate of `λ_min` has a residual bias that
-bleeds into `Omega_use`; the resulting matrix is "almost PSD" but may
-not strictly clear the `delta_stab` floor.
-
-For kernel matrices with well-separated spectra (the typical case for
-Mercer kernels with decaying eigenvalues), `T_pi = 5` suffices for
-~10⁻⁶ accuracy in `lambda_min_hat`, and `Omega_use` cleanly clears the
-floor. For pathological cases with clustered spectra (e.g.,
-Wigner-random matrices, where eigenvalues fill the interval
-`[-rho, rho]` densely per the semicircle law), Pass 2's convergence
-rate is approximately 1, and reaching the strict floor requires
-`T_pi ~ 200` iterations.
-
-Practically, even `T_pi = 20` reduces indefiniteness by ~1000× on
-pathological cases, which is sufficient for the SMO solver to handle
-via its existing `0.5e-6` diagonal jitter and convergence safeguards.
-Callers can override the default via
-`.adaptive_spectral_shift(Omega_s, T_pi = 200)`.
-
-Note: with the three Mercer kernels supported by `make_kernel()` (RBF,
-linear, polynomial), `Ωs` is always PSD (see "Why the shifted branch
-is dormant" above), so the shifted branch is unreachable in production
-and these limitations are not user-visible.
+See [docs/archive/F3-spectral-regularization.md](docs/archive/F3-spectral-regularization.md)
+for the API, two-pass algorithm, paper-deviation derivation, diagnostics
+schema, and finite-`T_pi` limitations.
 
 ---
 
 ## Asymmetric Freeze + Per-pair Tolerance (post-F4)
 
-`.smo_solve()` (`R/smo_solve.R`) now implements **Theorem 3** (asymmetric
-per-sample freeze thresholds) and **Theorem 8** (per-pair tolerance
-scaling) of arXiv:2605.01446 v3. Both modifications are applied
-unconditionally: they reduce to the F3 defaults whenever `y` is
-homogeneous (`y_k = mean(y)` for all `k`), so no opt-in flag exists.
+`.smo_solve()` (`R/smo_solve.R`) implements Theorem 3 (asymmetric
+per-sample freeze thresholds, `n_freeze_alpha_per`/`n_freeze_astar_per`
+vectors derived from `mean(y) / y[k]`) and Theorem 8 (per-pair
+tolerance scaling `tol_pair = tol * max(y[p], y[k_j_w1])` at the
+convergence test only — the WSS3 candidate filter keeps the global
+`tol_eff`). Both apply unconditionally and collapse to F3 defaults on
+homogeneous targets. The paper text for T8 says "WSS3-selected `j*`" but
+must read "WSS1 convergence-pair `j*`" — flagged as paper TODO #4.
+Empirical: ~24.7% iter reduction at N=200 ρ_y=1273 RBF.
 
-### Theorem 3 — asymmetric freeze thresholds
-
-The uniform shrinking threshold `n_freeze = 5L` is replaced at function
-entry by two length-N integer vectors, indexed by sample type:
-
-```
-n_freeze_alpha_per[k] = max(5L, ceil(n_freeze * mean(y) / y[k]))   # for alpha_k
-n_freeze_astar_per[k] = max(1L, floor(n_freeze * y[k] / mean(y)))  # for alpha*_k
-```
-
-Properties:
-
-- Homogeneous regime (`y_k = mean(y)`): both vectors collapse to
-  `n_freeze = 5L`, recovering F3 behaviour exactly.
-- α*-variables tied to large `y_k` see a larger threshold (slow freeze);
-  α-variables tied to small `y_k` see a larger threshold (slow freeze).
-  The asymmetry exploits Lemma 4 of the paper (`α` vs `α*` saturation
-  rate scales differently with `1/y_k` via the per-sample box
-  `100C/y_k`).
-- Convergence is preserved by the libsvm unshrinking step: any premature
-  freeze is undone when the active-set gap drops to `tol`, and the
-  rebuilt full `tau` is recomputed via `K_acc$get_matvec(beta)`.
-
-### Theorem 8 — per-pair tolerance scaling
-
-The uniform stopping tolerance `tol_eff = tol * mean(y)` is replaced **at
-the convergence test only** by the per-pair value:
-
-```
-tol_pair = tol * max(y[p], y[k_j_w1])
-```
-
-where `(p, k_j_w1)` is the WSS1 convergence pair (`p` from WSS1 over
-`I_up`, `k_j_w1` from the global `I_down` minimum). The convergence
-test becomes `Delta = tau_i - tau_j_w1 <= tol_pair`.
-
-The WSS3 candidate filter at the working-set selection step (`cand_mask
-<- low_tau_pool < tau_i - tol_eff`) **retains the global**
-`tol_eff = tol * mean(y)`. That filter is a numerical noise floor on
-the candidate gap and serves a different purpose from the convergence
-test; per-pair-izing it has no theorem coverage. The two scalars now
-coexist:
-
-| Variable   | Site                     | Purpose                           |
-|------------|--------------------------|-----------------------------------|
-| `tol_pair` | line ~131 (convergence)  | KKT gap test, scales with the WSS1 pair |
-| `tol_eff`  | line ~156 (WSS3 filter)  | candidate noise floor, unchanged from F3 |
-
-### Paper deviation (paper TODO #4)
-
-The paper (smo-v3.tex Theorem 8) reads "j* is the WSS3-selected
-variable". Implementing this literally would force WSS3 to run before
-the convergence test — both wasteful and **mathematically incorrect**:
-`Delta_w3 <= Delta_w1` by construction (WSS3 picks `j` to maximise
-second-order gain, not minimise `tau_j`), so testing `Delta_w3` against
-the tolerance would stop **prematurely**, before the true KKT
-optimality gap (`= Delta_w1`) is below tolerance. The WSS1 pair
-`(i_w1, j_w1)` IS the KKT optimality gap; that is the correct
-convergence test. This deviation is documented inline in
-`R/smo_solve.R` and flagged for a paper-side notation fix in F8 (paper
-TODO #4 below).
-
-### Empirical evidence
-
-Snapshot fixture (`set.seed(2026); rlnorm(50, sdlog = 0.5)`,
-`rho_y ~ 6.7`):
-- 8 SMO-backed snapshot tests show drift `<= 8.5e-4` per prediction —
-  comfortably below the per-pair tolerance floor
-  `tol * max(y) ~ 2.6e-3`.
-- 6 LS-SVR (Models 3, 4) snapshots stay bit-identical (no SMO).
-- 6 polynomial / linear-kernel snapshots show no drift OR pre-existing
-  non-convergence; see "Known issues" below.
-
-Benchmark (`set.seed(2026); rlnorm(200, sdlog = 1.5)`,
-`rho_y ~ 1273`, RBF kernel, 20 reps each):
-- Heterogeneous: F3 372 iters / 0.180 s → F4 280 iters / 0.170 s. Iter
-  reduction **24.7%**, wall reduction 5.6%. Iter speedup sits in the
-  predicted 15–30% band (T3 ~20% × T8 ~10%, multiplicative ~32%).
-- Homogeneous (`rho_y ~ 1.16`): identical iter count (10 = 10) and
-  identical wall time. Default-collapse confirmed.
-
-The wall-clock speedup is smaller than the iter speedup because at
-moderate `N` the kernel-matrix construction (`O(N²·p)` work) and other
-fixed overheads dominate the per-iteration cost. The wall benefit
-scales with `N`.
-
-### Default-collapse test
-
-`tests/testthat/test-smo-solve.R` test #6 ("T3 + T8 reduce to default
-behavior on homogeneous targets") fits `psvr()` on near-uniform
-`y` (`rho_y ~ 1.05`) and asserts that predictions are finite and stay
-positive. The `floor()`/`ceiling()` rounding in the per-sample
-threshold formula may flip individual thresholds between 4, 5, and 6
-when `y_k / mean(y)` crosses an integer boundary, so the trajectory may
-diverge by a tiny amount; the test does not assert bit-identicality
-with F3 (drift `~1e-5` is expected). RBF-kernel smoke is sufficient.
+See [docs/archive/F4-freeze-tolerance.md](docs/archive/F4-freeze-tolerance.md)
+for the per-sample formulas, the `tol_pair` vs `tol_eff` site table, the
+paper-deviation argument, and the benchmark numbers.
 
 ---
 
-## Warm-start API + Working Set Selection Evaluation (post-F5)
+## Warm-start API + Working Set Selection (post-F5)
 
-### Working Set Selection: empirical finding
+`psvr()` accepts `alpha_init` and `alpha_star_init`; `.warm_start_init()`
+(`R/warm_start.R`) implements Algorithm 1 of arXiv:2605.01446 v3 with a
+deviation — violation distributed over `S_new \ S_prev` only, not
+uniformly over `N`. `psvr_cv()` (`R/psvr_cv.R`) orchestrates warm-start
+across folds using row-ID-based `new_mask`. Empirical cumulative
+speedup on 10-fold CV is **1.12–1.14×** (paper predicted 3–7×;
+recalibration is paper TODO #7). WSS evaluation: Fan-Chen-Lin libsvm
+WSS3 is sufficient — both the paper's saturation-distance multiplier
+(Theorem 4) and Glasmachers-Igel max-gain showed no empirical benefit
+on MAPE-SVR; T4 should be dropped from the paper (paper TODO #5).
 
-`.smo_solve()` uses Fan-Chen-Lin (2005, JMLR 6:1889–1918) WSS3 with the
-unconstrained-gain score `(τ_i − τ_j)² / η`. During F5 development we
-evaluated two alternatives:
+**Breaking change:** for MAPE fits `fit$alpha` was renamed to
+`fit$beta`; new length-N `fit$alpha` / `fit$alpha_star` expose the SMO
+dual variables for warm-start.
 
-- The saturation-distance multiplier proposed in arXiv:2605.01446 v3
-  Theorem 4 (with tunable `alpha_wss` parameter): empirically failed on
-  MAPE-SVR. With `alpha_wss = 0.5` (paper default), N=200 ρ_y=1273 RBF
-  bench showed 140% iter **increase** vs unmodified WSS3. Math invariants
-  held (strict descent OK, converged to same KKT optimum), but the
-  multiplier penalized perfectly-good candidates whose only "fault" was
-  small `R_j` relative to a mean computed over the active set. Root
-  cause: the heuristic assumed room-poor candidates are a minority, but
-  in MAPE-SVR's heterogeneous `C_k = 100C/y_k` regime, room-poor
-  candidates dominate the active set during the early-to-mid SMO phase.
-
-- Glasmachers-Igel (2006, JMLR 7:1437–1466) maximum-gain WSS3 with exact
-  box-clipped realized gain: empirically equivalent to WSS3 on tested
-  regimes (N=50/200, ρ_y=6.7–1273, RBF). Iter counts matched
-  bit-exactly (137=137, 202=202, 43=43 snapshot fixture; 280=280 bench).
-  Max-gain incurred ~12% per-iteration wall overhead from the additional
-  clipping arithmetic. Root cause for the equivalence: WSS3's analytic
-  step `δ_unc = gap / η` typically fits within the per-sample box bounds
-  even for highly heterogeneous `C_k`, so clipping rarely activates and
-  max-gain reduces to WSS3 numerically.
-
-Conclusion: the "saturation problem" both the heuristic and max-gain
-were attempting to solve is a phantom at the WSS3 selection level for
-MAPE-SVR. Fan-Chen-Lin's standard libsvm WSS3 is sufficient. This is a
-useful negative result for future MAPE-SVR optimization research. See
-paper TODO #5 for the implication on smo-v3.tex Theorem 4.
-
-### Warm-start API (Theorem 5 with paper deviation)
-
-The package provides direct warm-start via the `alpha_init` and
-`alpha_star_init` parameters of `psvr()` (validated to length N,
-strictly positive targets for MAPE loss). The `.warm_start_init()`
-helper in `R/warm_start.R` implements Algorithm 1 of arXiv:2605.01446
-v3 with one deviation from the paper text:
-
-- **Paper Algorithm 1 Step 2:** uniform shift over ALL `N` samples by
-  `violation / N`. Empirically degrades the warm-start advantage on
-  10-fold CV (Round 1: 0.97× cumulative).
-- **Our deviation:** distribute violation only over the new-sample
-  subset (`S_new \ S_prev`). Rationale: the equality-constraint
-  violation arises entirely from removed samples (`S_prev \ S_new`)
-  whose dual values are no longer used; retained samples
-  (`S_prev ∩ S_new`) were at the equality-constraint manifold at the
-  previous fold's optimum and should be preserved exactly. The
-  new-sample-only projection preserves retained values to `1e-12`
-  (test verified). When the per-new shift forces clipping at `0` or
-  `C_k`, a one-pass uniform refinement absorbs the residual (rare in
-  typical CV).
-
-This deviation is documented as paper TODO #6 for incorporation into
-the final paper text.
-
-### CV helper `psvr_cv()`
-
-`psvr_cv(splits, X_var, y_var, ...)` accepts an `rsample::rset` OR a
-list-of-tuples and orchestrates warm-start across folds using
-row-ID-based `new_mask` inference. Returns a plain tibble with
-`split_id`, `fit`, `predictions`, `metrics`, `iter_count`,
-`elapsed_sec`, `warm_started`.
-
-Scope: A′ (`psvr_cv` as explicit helper, no parsnip auto-warm-start in
-`tune_grid`). F5b will add parsnip integration if/when warranted.
-
-### Empirical speedup calibration
-
-Paper-predicted cumulative speedup: **3–7×** on 10-fold CV with
-linear-convergence assumption (`T_warm / T_cold ≈ 0.2` per fold).
-
-Observed:
-
-- N=300 (ρ_y=2388, RBF, 10-fold): **1.12× wall**, 12.7% iter reduction.
-- N=1000 (ρ_y=16265, RBF, 10-fold): **1.14× wall**, 13.8% iter reduction.
-
-Per-fold `T_warm / T_cold ≈ 0.88` (not 0.2). Cumulative speedup is
-approximately linear in fold count, not exponential. This is
-N-independent at our tested regimes — see paper TODO #7 for the
-recalibration recommendation.
-
-### Breaking-change: `fit$alpha` → `fit$beta` for MAPE
-
-For MAPE fits (`psvr_fit` with `loss = "mape"`), the field formerly
-called `fit$alpha` (length `n_sv`, post-pruning, holding `β = α − α*`)
-is renamed to `fit$beta`. Two new length-`N` (pre-pruning) fields
-`fit$alpha` and `fit$alpha_star` expose the true SMO dual variables —
-required as warm-start state by `psvr_cv()`. LS-SVR fits
-(`loss = "rmspe"`) retain previous semantics: `fit$alpha` is the
-linear-system solution, `fit$alpha_star = NULL`, `fit$beta = NULL`.
-Downstream code reading `fit$alpha` from MAPE fits must switch to
-`fit$beta`.
-
-`psvr_fit$solver_meta` now propagates real `iters` and `converged`
-values from the SMO solver (previously hard-coded to `NA`).
+See [docs/archive/F5-warmstart-wss.md](docs/archive/F5-warmstart-wss.md)
+for the Algorithm 1 deviation argument, the WSS3 alternative evaluation,
+and the speedup-calibration evidence.
 
 ---
 
 ## Rcpp-accelerated kernel construction (post-F6)
 
-F6 attacks the F5 hot path: `kernel_matrix()` consuming ~89% of wall-
-clock and producing a ~28× memory overhead (R-level intermediates from
-the vectorized nested loop) for an 8 MB output at N=1000. The paper's
-Theorem 6 (LIBSVM column-on-demand cache) targets a different
-architecture (column streaming), not psvr's full-matrix design, so we
-**skip T6** and instead replace the matrix construction itself with a
-C++ implementation, plus a cross-fold reuse path in `psvr_cv()`.
+Three Rcpp kernels (`src/kernel_rbf.cpp`, `kernel_linear.cpp`,
+`kernel_poly.cpp`) replace the R nested loop in `kernel_matrix()` via
+attribute-based dispatch (`attr(K, "kernel_info")` set by
+`make_kernel()`). `psvr_cv()` computes `Omega_full` once across the
+union of all folds' `in_id` and slices per fold. Internal
+`precomputed_Omega` / `precomputed_Omega_s` channel bypasses per-call
+kernel build. Bit-identical with legacy R via three FP-discipline
+choices: long-double accumulators, `powl` for polynomial `degree >= 3`,
+and no self-kernel symmetry shortcut. Wall: ~12× on construction.
+Paper T6 (LIBSVM column-on-demand cache) is skipped — architectural
+mismatch with the full-matrix design (paper TODO #8).
 
-### Architecture
-
-- **Three Rcpp kernels** in `src/kernel_rbf.cpp`, `kernel_linear.cpp`,
-  `kernel_poly.cpp`. The `[[Rcpp::export]]` symbols
-  `kernel_rbf_cpp(X1, X2, sigma)`, `kernel_linear_cpp(X1, X2)`, and
-  `kernel_poly_cpp(X1, X2, coef0, degree)` are internal — callers reach
-  them only through `kernel_matrix()`.
-- **`kernel_matrix(K, X1, X2 = X1)`** in `R/kernel.R` reads
-  `attr(K, "kernel_info")` (set by `make_kernel()` and exposing
-  `type, sigma, degree, coef0`) and dispatches via `switch(info$type, …)`.
-  User-defined closures (no `kernel_info`) fall through to
-  `.legacy_kernel_matrix()`, the original pure-R nested loop. The
-  single swap point covers all four fitters + `sym_kernel_matrix()` +
-  the predict path (`utils-predict.R`).
-- **`precomputed_Omega` / `precomputed_Omega_s`** internal parameters on
-  `psvr()`, `.fit_mape()`, `.fit_mape_sym()` allow callers to bypass
-  the per-call kernel build. Diagonal jitter (`1e-6` for non-sym,
-  `0.5e-6` for sym) and the adaptive spectral shift still run on the
-  (subset of the) precomputed matrix. Precomputed matrices must be
-  **un-jittered**.
-- **`psvr_cv()`** (rset path) computes `Omega_full` or `Omega_s_full`
-  once over the union of `in_id` across all splits (`data_full <-
-  splits$splits[[1]]$data`), then slices
-  `Omega_full[row_ids_i, row_ids_i]` per fold. The list-of-tuples path
-  falls back to per-fold construction (still benefits from the per-call
-  Rcpp dispatch). LS-SVR (`loss = "rmspe"`) is already gated out of
-  `psvr_cv()`.
-
-### Bit-identicality with the legacy R path
-
-Three deliberate choices in C++ preserve bit-equality on Windows /
-Rtools45 with the legacy R nested loop:
-
-1. **Long-double accumulator** in all three kernels' inner reduction
-   (`sum-of-squared-diffs` for RBF, dot product for linear and
-   polynomial). R's `sum()` in `src/main/summary.c` uses
-   `LDOUBLE s = 0.0; s += x[i];` (80-bit extended precision on x87 via
-   mingw-w64). A naive `double` accumulator drifts at ~5e-17 for RBF
-   and ~2e-15 for linear; the long-double version is bit-equal.
-2. **`powl` for polynomial** when `degree >= 3`:
-   `(double) std::pow((long double) base, (long double) degree)`
-   mirrors R's `R_POW` under `HAVE_LONG_DOUBLE` (arithmetic.c calls
-   `(double) powl((LDOUBLE) x, (LDOUBLE) y)`). `degree == 2` falls
-   through to `base * base` (R_POW's special case). Plain
-   `std::pow(double, double)` drifts at ~9e-13.
-3. **No self-kernel symmetry shortcut** — the legacy R loop computes
-   the full upper + lower triangles, so we do too. Bit-symmetry of the
-   output is preserved naturally by IEEE 754 arithmetic.
-
-Verified by the snapshot gate: both `_snaps/bit-identical.md` and
-`_snaps/psvr-direct.md` MD5s are unchanged from F5 baseline
-(`D3FBB28C…` and `C3F3467924…` respectively). `test-rcpp-kernels.R`
-adds 14 elementwise-`identical()` tests at N ∈ {10, 100, 200, 500}
-across all three kernels and polynomial degrees {1, 2, 3, 4}.
-
-### `psvr_cv()` cross-fold reuse
-
-`row_ids_i <- split_i$in_id` (already used for warm-start alignment)
-also serves as the kernel-matrix slice index. `match()`-based mapping
-is unchanged. The F5 warm-start handoff (`new_mask`, `alpha_init`,
-`alpha_star_init`) is preserved exactly. `test-psvr-cv-reuse.R`
-verifies bit-identical fits between the precomputed-Omega path and a
-manual per-fold loop without precompute.
-
-### Performance characteristics (Windows / R 4.5.3 / Rtools45)
-
-The long-double accumulator costs ~5× vs a hypothetical double-only
-Rcpp implementation (x87 FPU on this platform). The trade-off keeps
-the snapshot gate intact. Bench numbers (`dev/bench-F6.R`, RBF,
-N × 5 random Gaussian X):
-
-- `kernel_matrix(N=1000)`:  pre-F6 ~2.4 s  → post-F6 ~0.2 s  (~12× wall)
-- `kernel_matrix(N=3000)`:  pre-F6 ~21 s   → post-F6 ~1.8 s  (~12× wall)
-- `kernel_matrix(N=10000)`: pre-F6 NOT MEASURED (would be ~5 min in
-  pure R) → post-F6 ~21 s.
-
-Cross-fold reuse in `psvr_cv()` adds a smaller benefit (~1.05× on the
-10-fold N=1000 fixture); the SMO solve dominates total wall time, so
-the precomputation savings are absolute (~1.5 s per 10-fold call) but
-small relative to per-fold SMO. The user-visible win is the per-call
-Rcpp dispatch.
-
-### Why paper Theorem 6 is skipped
-
-Theorem 6's LIBSVM-style column-on-demand cache is designed for an
-SMO that requests *individual columns* of `Ω` per iteration and reuses
-them across iterations under an LRU policy. psvr's
-`.make_kernel_accessor()` (post-F2) is a thin closure over an already-
-materialised matrix; the SMO loop reads columns from RAM, never
-synthesizing on demand. Implementing T6 would require either (a)
-abandoning the full-matrix design (~architectural rewrite of F2) or
-(b) building T6 as a *replacement* for `.make_kernel_accessor()` whose
-backing store is column synthesis. (a) is out of F6 scope; (b) saves
-no memory in the typical `kernel_matrix(K, X)` pre-construction path
-since the full matrix is built up front anyway. F6 instead targets
-the matrix construction itself (`O(N²·p)` work, the actual hot path)
-via Rcpp, and the result holds the matrix in RAM. See paper TODO #8
-for the recommended rewrite in the paper text.
+See [docs/archive/F6-rcpp-kernels.md](docs/archive/F6-rcpp-kernels.md)
+for the bit-identicality discipline, `psvr_cv()` reuse mechanics,
+performance characteristics, and the T6-skip rationale.
 
 ---
 
-## Block-k=4 SMO with descent-guaranteed decoupling (post-F7)
+## Block-k=4 SMO (post-F7)
 
-F7 implements Theorem 7 of arXiv:2605.01446 v3 ("strictly novel"
-theorem of the smo-v3 paper). After WSS1 + WSS3 pick pair 1
-`(i_1, j_1)`, the solver tries to find a second sample-disjoint pair
-`(i_2, j_2)` and apply a 2-D joint update governed by a descent-
-guaranteed decoupling criterion. When the test fails the iteration
-falls back to the standard 1-D pair-1 update (k=2 path).
+Theorem 7 of arXiv:2605.01446 v3: after WSS1+WSS3 select pair 1
+`(i_1, j_1)`, optionally select a sample-disjoint pair 2 `(i_2, j_2)`
+and apply a 2-D joint update governed by a descent-guaranteed
+decoupling test. Falls back to the standard 1-D update otherwise.
+Key correction vs the paper spec: the xi cross-curvature formula is
+**sign-free** under MAPE-SVR's α/α* dual (`xi = K_p[p_2] - K_p[q_2] -
+K_q[p_2] + K_q[q_2]`, no `s_i s_j` factors). Pair-2 selection uses
+`alpha_couple = 0.5` coupling-penalty default. Default-collapse via
+`block_k4_enabled = FALSE` is bit-identical to F4 on both engines.
+Iter reduction 38–48% on converging regimes. T5 × T7 do NOT compose
+multiplicatively in CV (paper TODO #10). Telemetry:
+`solver_meta$joint_updates`, `k2_fallbacks`, `decoupling_rate`,
+`early_phase_*`, `late_phase_*`.
 
-### Δβ invariant (drives the corrected xi formula)
-
-For all 4 cases of the SMO 1-D update (alpha-alpha, alpha-alpha*,
-alpha*-alpha, alpha*-alpha*), the change in `β = α − α*` is:
-
-```
-Δβ_{p_i} = +δ,  Δβ_{p_j} = −δ,  all other Δβ_k = 0
-```
-
-The slot (α vs α*) is absorbed by the equality constraint
-`sum(α − α*) = 0` and the four case branches; it does NOT appear in
-the β update. This is what makes the corrected sign-free xi formula
-valid and what makes the tau update use the same `diff_pq` vector
-for both `tau_alpha` and `tau_alphastar`.
-
-### xi formula (corrected, sign-free)
-
-```
-xi / (δ_1 δ_2) = Ω(p_1, p_2) − Ω(p_1, q_2) − Ω(q_1, p_2) + Ω(q_1, q_2)
-```
-
-No sign factors `s_i s_j`. They cancel under the α/α* dual. The
-formula is computable from the already-fetched K_p (column for
-sample p_1) and K_q (column for sample q_1) with **zero extra column
-fetches**: `xi = K_p[p_2] - K_p[q_2] - K_q[p_2] + K_q[q_2]`.
-
-The spec given to me used `s_{i1}*s_{i2}*Ω(...) − ...` with explicit
-sign factors; that form is the cross-curvature for a *different* dual
-structure (e.g., standard C-SVC), not MAPE-SVR's α/α* split.
-Implementation uses the simplified form; this is a paper-side
-clarification (paper TODO update).
-
-### Descent test (D1)
-
-```
-Δ_pq^2 · η_2 + Δ_2^2 · η_1 > 2 |xi · Δ_pq · Δ_2| · (1 + 1e-10)
-```
-
-Where `Δ_pq = τ_i − τ_q` is pair 1's WSS3 gap (the value used to
-compute `δ_1 = Δ_pq / η_1`), NOT the WSS1 convergence gap
-`τ_i − τ_{j_w1}`. The descent geometry of the joint update is
-defined by pair 1's actual update direction `(i, q)`, not the MVP
-convergence pair `(i_w1, j_w1)`.
-
-This is a necessary-and-sufficient criterion (in exact arithmetic)
-for the joint update to outperform the k=2 fallback. No tuning
-threshold required.
-
-### Pair-2 selection (D2)
-
-```
-i_2 = argmax τ over I_up \ {i_1}                       (sample-disjoint from i_1)
-j_2 = argmax score_j_aug over I_down filtered          (sample-disjoint from p, q, p2)
-  where score_j_aug = gain_j × (1 − alpha_couple × coupling_j)
-        gain_j      = (τ_{i_2} − τ_j)^2 / max(η_j, 1e-12)
-        coupling_j  = |Ω(p, j)| / sqrt(Ω(p,p) · Ω(j,j))  (1 if denom ≤ 0)
-```
-
-`alpha_couple` defaults to `0.5`; exposed as an internal parameter
-on `psvr()` for empirical tuning. The coupling proxy uses the K_p
-column already on hand — zero extra fetches for scoring.
-
-Sample-level disjointness (not slot-level) ensures `Δβ_1` and `Δβ_2`
-have disjoint support, keeping the xi formula clean.
-
-### Telemetry
-
-`psvr_fit$solver_meta` extends with:
-- `joint_updates` — number of iterations where the joint update was applied.
-- `k2_fallbacks` — iterations that fell back to k=2 after entering the
-  block-k=4 path.
-- `decoupling_rate` — `joint_updates / (joint_updates + k2_fallbacks)`.
-- `early_phase_decoupling_rate` — rate over the first ¼ of iterations
-  (floor 50).
-- `late_phase_decoupling_rate` — rate over the last ¼ (floor 50).
-
-The early/late split tests the paper's "clustered active set in the
-late phase" hypothesis. Empirical observation: late ≥ early by 5–15
-percentage points across all regimes — the asymmetry is real but
-modest, not the dramatic clustering the paper might predict.
-
-### Per-iter wall — the central F7-C-full finding
-
-The R implementation imposes a 2× per-iter wall overhead from the
-block-k=4 scaffolding (pool subsetting, `which.max` calls, `ifelse`
-coupling computation). The C++ port reduces this to 1.40×:
-
-| Regime | F4-R ms/iter | F4-Rcpp ms/iter | F7-R ms/iter | F7-Rcpp ms/iter | F7/F4 R | **F7/F4 Rcpp** |
-|--------|:----:|:----:|:----:|:----:|:----:|:----:|
-| R1 N=1000 RBF σ=1 (max_iter)| 0.104 | 0.045 | 0.223 | 0.063 | 2.14× | **1.40×** |
-| R2 N=1000 RBF σ=1 ρ_y=3.6   | 0.108 | 0.047 | 0.226 | 0.060 | 2.09× | **1.28×** |
-| R3 N=300 RBF σ=3            | 0.044 | 0.009 | 0.094 | 0.012 | 2.14× | **1.33×** |
-| R4 N=1000 RBF σ=0.3 (converges)| 0.157 | 0.098 | 0.300 | 0.155 | 1.91× | **1.58×** |
-
-Combined with 38–48% iter reduction on converging regimes, this gives
-+12.2% (R1) and +17.5% (R4) wall-positive translation. **Paper TODO
-#9 (T7 wall regression) is RESOLVED on converging regimes by the
-C++ port.**
-
-### Per-regime bench summary (engines × modes)
-
-| Regime | F4-R wall | F4-Rcpp wall | F7-R wall | F7-Rcpp wall | F4 R→Rcpp | F7 R→Rcpp | F7 vs F4 (Rcpp) |
-|--------|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| R1 N=1000 ρ_y=44k σ=1 | 10.37 s | 4.49 s | 13.88 s | 3.94 s | 2.31× | 3.52× | **+12.2%** wall |
-| R2 N=1000 ρ_y=3.6 σ=1 | 10.76 s | 4.65 s | 22.56 s | 6.00 s | 2.31× | 3.76× | -28.9% (both max_iter) |
-| R3 N=300 ρ_y=3702 σ=3 | 4.40 s | 0.94 s | 9.36 s | 1.21 s | 4.69× | 7.73× | -29.2% (both max_iter) |
-| R4 N=1000 ρ_y=13901 σ=0.3 | 0.232 s | 0.145 s | 0.232 s | 0.120 s | 1.60× | 1.94× | **+17.5%** wall |
-
-R2/R3 are dominated by the pre-existing SMO non-convergence pathology
-(both engines hit `max_iter = 100 000`; paper TODO #5). T7 cannot help
-when neither engine converges.
-
-### T5 × T7 stacking — B-suite at N=300, 10-fold CV (ρ_y=2388)
-
-| ID | engine | warm | bk4 | wall | iter_sum | speedup vs B1-r |
-|----|--------|------|-----|------|----------|:--:|
-| B1-r | r | TRUE | FALSE | 2.200 s | 37 740 | 1.00× (paper baseline) |
-| B1-rcpp | rcpp | TRUE | FALSE | 0.591 s | 37 740 | **3.72×** |
-| B2-r | r | FALSE | TRUE | 2.697 s | 23 363 | 0.82× |
-| B2-rcpp | rcpp | FALSE | TRUE | 0.508 s | 23 363 | **4.33×** |
-| B3-r | r | TRUE | TRUE | 2.489 s | 26 586 | 0.88× |
-| **B3-rcpp** | rcpp | TRUE | TRUE | **0.515 s** | 26 586 | **4.28×** |
-
-B3-rcpp is the current default (`psvr_cv()` with warm-start +
-block-k=4 + Rcpp). T5 × T7 non-multiplicative stacking is confirmed
-under both engines: B2 (T7 alone) is marginally faster wall AND has
-lower iter_sum than B3 (T7 + warm-start). The non-multiplicativity is
-algorithmic, not implementation-specific — paper TODO #10 has bi-
-engine evidence.
-
-### Default-collapse
-
-`block_k4_enabled = FALSE` reduces the SMO inner loop to F4 behaviour
-bit-identically. The path is preserved through the engine dispatcher
-on BOTH `engine = "r"` and `engine = "rcpp"`. The F4 baseline gate
-(`_snaps/block-k4.md`) protects this invariant.
-
-### Design decisions (paper-relevant)
-
-- **Sample-level disjointness** between pair 1 and pair 2 (stricter
-  than dual-variable level disjointness). User-resolved during
-  planning. Simpler and safer; keeps the xi formula clean (no
-  diagonal Ω(p, p) terms from sample collisions).
-- **`alpha_couple = 0.5` default** — empirically influences but does
-  not dominate the decoupling rate (which is 0.93–1.0 across regimes
-  regardless of `alpha_couple`).
+See [docs/archive/F7-block-k4.md](docs/archive/F7-block-k4.md) for the
+Δβ invariant derivation, the descent test (D1), pair-2 selection (D2),
+per-regime bench tables, and the T5 × T7 B-suite results.
 
 ---
 
 ## Portable C++ architecture (post-F7-C-full)
 
-### Motivation
+The SMO inner loop, block-k=4 logic, and F6 kernels are ported to a
+portable C++ core (`src/core_*.cpp`, std-library types only) with a
+thin Rcpp binding (`src/binding_*.cpp`). `psvr()` exposes
+`engine = c("rcpp", "r")` (default `"rcpp"`). The R path is preserved
+as the bit-identical reference under the engine selector. Per-iter
+overhead drops from 2.0× (R) to 1.40× (Rcpp), restoring T7 wall
+positivity (+12.2% R1, +17.5% R4 vs F4 baseline) — paper TODO #9
+resolved on converging regimes. CV B3-rcpp achieves 4.28× over the
+F4+F5-R baseline.
 
-The R-level F7 implementation had a 2× per-iter wall overhead from
-R-language scaffolding (vector subsetting, `which.max`, `setdiff`,
-`ifelse`). Iter reduction (38–48%) did not translate to wall
-positivity. A C++ port was undertaken to (a) eliminate the R
-scaffolding, restoring wall positivity for T7, and (b) demonstrate
-the paper's portability claim by architecting the SMO core such that
-a future Python binding (pybind11) wraps the same C++ without R-isms.
+Bit-identicality discipline (loop direction, `which.max` strict-`>`
+tie-break, long-double accumulators, separate-not-fused τ subtractions)
+is locked by `tests/testthat/test-engine-equivalence.R` (16-config
+canary). Conditional compile pattern (`PSVR_STANDALONE_BUILD` /
+`<R_ext/BLAS.h>`) demonstrates the portability claim (paper TODO #11).
 
-### Architecture overview
+**Build invariant — do not change:** `src/Makevars` and `Makevars.win`
+specify `PKG_LIBS = $(BLAS_LIBS) $(FLIBS)`. `core_smo_solve.cpp` calls
+`F77_CALL(dgemv)`; removing `$(BLAS_LIBS)` breaks linking. Do not add
+`$(LAPACK_LIBS)` (no LAPACK dependency); if ever needed, order must be
+`$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)` per *Writing R Extensions* §1.2.3.
 
-```
-src/
-  core_smo_types.h          types-only header (FitOptions, FitResult, Vec)
-  core_smo_solve.h/.cpp     SMO outer loop, WSS1/WSS3, bias recovery
-  core_block_k4.h/.cpp      Theorem 7 selection + descent test + 2-D update
-  core_kernel.h
-  core_kernel_rbf.cpp       extracted from F6 src/kernel_rbf.cpp
-  core_kernel_linear.cpp    extracted from F6 src/kernel_linear.cpp
-  core_kernel_poly.cpp      extracted from F6 src/kernel_poly.cpp
-  binding_smo.cpp           [[Rcpp::export]] psvr_smo_fit_rcpp
-  binding_kernel.cpp        [[Rcpp::export]] kernel_*_cpp
-  RcppExports.cpp           auto-generated
-  Makevars / Makevars.win   PKG_LIBS = $(BLAS_LIBS) $(FLIBS)
-```
-
-The `core_*.cpp` files use only `std::vector`, `std::ptrdiff_t`,
-`long double` accumulators, `std::pow`. No `Rcpp::*`, no `Rcout`, no
-`R_xlen_t`. The only R-API dependency in the core is `F77_CALL(dgemv)`
-(via `<R_ext/BLAS.h>` in the R-build path; via the `dgemv_` extern in
-the standalone path — see "Conditional compilation" below).
-
-### Memory layout
-
-`Omega` is column-major (matching R's matrix storage). For a sample
-index `p ∈ [0, N)`, the column `K_p` is the contiguous slice
-`Omega[p*N .. p*N + N - 1]`. `Omega(i, j)` is at `Omega[j*N + i]`.
-Zero-copy from R: `REAL(NumericMatrix)` returns the underlying
-column-major `double*`.
-
-### Memory ownership
-
-All `double*` and `Index*` arguments to core functions are
-**caller-owned**. The core never allocates output buffers; it writes
-into `std::vector`s declared in `FitResult` (which the binding then
-copies into Rcpp::NumericVectors for return to R).
-
-### BLAS access
-
-The matvec `Kbeta = Omega · β` runs three times per fit (warm-start
-init, unshrink-rebuild inside the loop, post-loop refresh).
-`core_smo_solve.cpp` calls `F77_CALL(dgemv)` with `FCONE` so R's BLAS
-is used directly — this matches `R/.smo_solve_r()`'s `Omega %*% v`
-bit-identically (the operation goes through the same BLAS impl).
-
-### Conditional compilation pattern (paper TODO #11)
-
-```cpp
-#ifdef PSVR_STANDALONE_BUILD
-extern "C" void dgemv_(...);
-#define F77_CALL(x) x ## _
-#define FCONE
-#else
-#include <R_ext/BLAS.h>
-#include <R_ext/RS.h>
-#endif
-```
-
-The R-build path uses R's BLAS via `<R_ext/BLAS.h>`. The standalone
-path (`-DPSVR_STANDALONE_BUILD`) is used by `dev/check_core.cpp` to
-verify the core compiles without R headers. Future pybind11 binding
-will add a third arm (`#elif defined(PSVR_PYTHON_BUILD)`) backed by
-numpy's BLAS — same pattern, demonstrating the portability claim.
-
-### Bit-identicality discipline
-
-Bit-equality with the R reference (`engine = "r"`) is the strict
-gate. Discipline in the C++ port:
-
-- **Loop direction** matches R's evaluation order (e.g.,
-  `down_alpha` is scanned before `down_astar` in WSS3 candidate
-  search; `R` does `c(down_alpha, down_astar)`).
-- **`which.max` tie-break**: R returns the FIRST index of the
-  maximum. C++ uses strict `>` (not `>=`) in the tracked-best loop
-  to preserve this semantic. Comments at scan sites document the
-  invariant.
-- **Long-double accumulators** where R uses LDOUBLE (e.g.,
-  `mean(y)`, kernel matrix inner reductions).
-- **Separate subtractions, not fused arithmetic** for the joint
-  τ update. R writes `tau - δ_1 * diff_1 - δ_2 * diff_2` (two left-
-  associative subtractions). Fused `tau -= (δ_1 * diff_1 + δ_2 *
-  diff_2)` would round differently (1 ulp). The C++ port uses two
-  separate `tau -= ...` statements. (This was caught during Phase 2
-  STOP 2: an 8.88e-16 drift triggered the escalation policy and was
-  fixed before merging.)
-
-`tests/testthat/test-engine-equivalence.R` is the 16-config canary
-that locks the invariants. The `.diagnose_engine_diff()` helper
-prints max diff + side-by-side values at full precision on failure
-to support the FP-tier escalation policy.
-
-### Build system notes
-
-`src/Makevars` and `src/Makevars.win` specify:
-
-```
-PKG_LIBS = $(BLAS_LIBS) $(FLIBS)
-```
-
-This is required because `core_smo_solve.cpp` calls
-`F77_CALL(dgemv)` for the matvec. Without `$(BLAS_LIBS)` the package
-fails to link with `undefined reference to dgemv_`.
-
-**Do not remove this line.** `$(FLIBS)` handles Fortran runtime
-linking on platforms where BLAS implementations need it.
-
-**Do not add `$(LAPACK_LIBS)`** unless a future revision actually
-uses LAPACK routines. R CMD check warns about
-"`$(LAPACK_LIBS)` without following `$(BLAS_LIBS)`" when LAPACK is
-included unnecessarily. Per *Writing R Extensions* §1.2.3, the
-correct order when both are needed is:
-
-```
-PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-```
-
-(LAPACK first, since the linker resolves dependencies right-to-left
-and LAPACK depends on BLAS.) The current code uses only BLAS dgemv;
-there is no LAPACK dependency.
+See [docs/archive/F7-C-full-portable.md](docs/archive/F7-C-full-portable.md)
+for the file-by-file architecture, memory layout & ownership rules,
+BLAS access pattern, full bit-identicality discipline notes, and the
+build-system rationale.
 
 ---
 
