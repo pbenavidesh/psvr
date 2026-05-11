@@ -22,7 +22,8 @@ test_that("mape_svr emits deprecation notice and returns legacy psvr_mape shape"
   expect_s3_class(fit, "psvr_mape")
   expect_named(fit, c("beta", "alpha", "alpha_star", "b",
                       "X_sv", "y_sv", "kernel", "C", "eps",
-                      "n_train", "p_train", "iterations", "converged"))
+                      "n_train", "p_train", "iterations", "converged",
+                      "block_k4"))
   expect_true(is.numeric(fit$beta))
   expect_true(is.numeric(fit$b) && length(fit$b) == 1L)
   expect_equal(ncol(fit$X_sv), ncol(X_tr))

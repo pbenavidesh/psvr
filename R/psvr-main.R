@@ -47,7 +47,26 @@
 #'   zero". Used internally by [psvr_cv()] for fold-to-fold carryover.
 #' @param reg Reserved for future phases (extended Lagrangian). Must be
 #'   `NULL`.
+#' @param block_k4_enabled Logical; if `TRUE` (default, `loss = "mape"`
+#'   only), enable the F7 block-k=4 SMO inner loop (Theorem 7 of
+#'   arXiv:2605.01446 v3). Each outer iteration may pick a second
+#'   working pair `(i_2, j_2)` and apply a 2-D joint update when the
+#'   descent-guaranteed decoupling criterion holds. Set to `FALSE` to
+#'   restore F4 (k=2 only) behaviour bit-identically. Ignored for
+#'   `loss = "rmspe"`.
+#' @param engine One of `"rcpp"` (default) or `"r"`. Selects the SMO
+#'   backend implementation: the C++ core in `src/core_smo_solve.cpp`
+#'   or the R reference implementation in `R/smo_solve.R`. Both
+#'   produce bit-identical results; `"r"` is preserved as the
+#'   reference for the Rcpp port and will be deprecated in v0.0.4.0
+#'   and removed in v0.1.0. Ignored for `loss = "rmspe"` (LS-SVR uses
+#'   `base::solve()` directly).
 #' @param ... Currently unused; reserved for future extension.
+#' @param alpha_couple Numeric between 0 and 1 (default `0.5`). Internal F7
+#'   coupling penalty in the pair-2 WSS3 score
+#'   `score = gain * (1 - alpha_couple * coupling)`. Exposed for
+#'   empirical tuning; rarely needs adjustment. Ignored for
+#'   `loss = "rmspe"` or `block_k4_enabled = FALSE`.
 #' @param precomputed_Omega,precomputed_Omega_s INTERNAL — used by
 #'   [psvr_cv()] to share a single full-dataset kernel matrix across
 #'   folds. Users should not set these directly. Default `NULL`
@@ -122,9 +141,13 @@ psvr <- function(X, y,
                  warm_start_check = TRUE,
                  new_mask         = NULL,
                  reg              = NULL,
+                 block_k4_enabled = TRUE,
+                 engine           = c("rcpp", "r"),
                  ...,
+                 alpha_couple        = 0.5,
                  precomputed_Omega   = NULL,
                  precomputed_Omega_s = NULL) {
+  engine <- match.arg(engine)
   # `precomputed_Omega` and `precomputed_Omega_s` are INTERNAL — populated by
   # psvr_cv() to share a single full-dataset kernel matrix across folds. Not
   # documented in @param; users should not set them. Ignored for loss =
@@ -164,14 +187,20 @@ psvr <- function(X, y,
                           alpha_star_init = alpha_star_init,
                           warm_start_check = warm_start_check,
                           new_mask = new_mask,
-                          precomputed_Omega = precomputed_Omega),
+                          precomputed_Omega = precomputed_Omega,
+                          block_k4_enabled = block_k4_enabled,
+                          alpha_couple = alpha_couple,
+                          engine = engine),
     mape_sym  = .fit_mape_sym(X, y, kernel = kernel, C = C, eps = eps,
                               a = a, solver = solver, tol = tol,
                               alpha_init = alpha_init,
                               alpha_star_init = alpha_star_init,
                               warm_start_check = warm_start_check,
                               new_mask = new_mask,
-                              precomputed_Omega_s = precomputed_Omega_s),
+                              precomputed_Omega_s = precomputed_Omega_s,
+                              block_k4_enabled = block_k4_enabled,
+                              alpha_couple = alpha_couple,
+                              engine = engine),
     rmspe_std = .fit_rmspe(X, y, kernel = kernel, gamma = gamma,
                            precondition = precondition),
     rmspe_sym = .fit_rmspe_sym(X, y, kernel = kernel, gamma = gamma,
@@ -204,20 +233,34 @@ psvr <- function(X, y,
   )
 
   solver_meta <- if (is_mape) {
-    list(backend              = solver,
-         iters                = fit$iterations,
-         converged            = fit$converged,
-         precondition_applied = NA,
+    bk4 <- fit$block_k4
+    list(backend                       = solver,
+         iters                         = fit$iterations,
+         converged                     = fit$converged,
+         precondition_applied          = NA,
          # spectral diagnostics (F3, Algorithm 2) populated for symmetric
          # MAPE only; NULL for the non-symmetric path where Ωs is not built
          # and the spectral guard does not run.
-         spectral             = if (!is.null(sym)) fit$spectral else NULL)
+         spectral                      = if (!is.null(sym)) fit$spectral else NULL,
+         # F7 — block-k=4 telemetry (Theorem 7 of arXiv:2605.01446 v3).
+         # Populated for solver = "smo"; NA for "osqp" (the QP backend
+         # does not iterate via SMO and is unaffected by block_k4_enabled).
+         joint_updates                 = if (!is.null(bk4)) bk4$joint_updates else 0L,
+         k2_fallbacks                  = if (!is.null(bk4)) bk4$k2_fallbacks  else 0L,
+         decoupling_rate               = if (!is.null(bk4)) bk4$decoupling_rate else NA_real_,
+         early_phase_decoupling_rate   = if (!is.null(bk4)) bk4$early_phase_decoupling_rate else NA_real_,
+         late_phase_decoupling_rate    = if (!is.null(bk4)) bk4$late_phase_decoupling_rate  else NA_real_)
   } else {
-    list(backend              = "linsolve",
-         iters                = 1L,
-         converged            = TRUE,
-         precondition_applied = isTRUE(fit$precondition_applied),
-         spectral             = NULL)
+    list(backend                       = "linsolve",
+         iters                         = 1L,
+         converged                     = TRUE,
+         precondition_applied          = isTRUE(fit$precondition_applied),
+         spectral                      = NULL,
+         joint_updates                 = 0L,
+         k2_fallbacks                  = 0L,
+         decoupling_rate               = NA_real_,
+         early_phase_decoupling_rate   = NA_real_,
+         late_phase_decoupling_rate    = NA_real_)
   }
 
   structure(

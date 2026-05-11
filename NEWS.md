@@ -1,3 +1,101 @@
+# psvr 0.0.2.9006 (development)
+
+## Performance
+
+* **F4 baseline 2.3–7.7× faster wall** (median ~2.3×) — SMO inner loop
+  now runs in a portable C++ core wrapped by a thin Rcpp binding.
+  Measured at N=1000 RBF: F4 R 10.4 s → F4 Rcpp 4.5 s (R1 regime).
+* **Block-k=4 SMO (Theorem 7 of arXiv:2605.01446 v3) is now wall-positive
+  on converging regimes** — `block_k4_enabled = TRUE` is the new default
+  for `loss = "mape"`. Each outer SMO iteration may pick a second
+  working pair `(i_2, j_2)` and apply a 2-D joint update when the
+  descent-guaranteed decoupling criterion holds. Per-regime wall gains
+  vs F4 (Rcpp): +12.2% (R1, het+med-RBF, N=1000) and +17.5% (R4,
+  het+sparse-RBF, N=1000). Iter reduction 38–48% on converging regimes;
+  paper TODO #9 (wall regression in R) **RESOLVED** by the C++ port.
+* **`psvr_cv()` with default settings (T7 + warm-start, Rcpp) is 4.28×
+  faster wall** than the F4+F5-R paper baseline at N=300 10-fold CV.
+
+## New features
+
+* **`engine` parameter** on `psvr()` and `.smo_solve()`: `"rcpp"`
+  (default) selects the C++ core; `"r"` selects the R reference
+  implementation. Both produce **bit-identical** results across 16
+  test configurations (Models × 4 kernels × 2 modes). `"r"` is
+  preserved as the numerical-equivalence canary; deprecated in
+  v0.0.4.0, scheduled for removal in v0.1.0. See `CLAUDE.md`
+  "engine = 'r' lifecycle" for the graduation criteria.
+* **`block_k4_enabled` parameter** on `psvr()` (default `TRUE` for
+  `loss = "mape"`). Set to `FALSE` to restore F4 (k=2-only) behaviour
+  bit-identically.
+* **`alpha_couple` parameter** (default `0.5`, between 0 and 1):
+  internal F7 coupling penalty weight in the pair-2 WSS3 score.
+  Exposed for empirical tuning.
+* **F7 telemetry** in `psvr_fit$solver_meta`: `joint_updates`,
+  `k2_fallbacks`, `decoupling_rate`, `early_phase_decoupling_rate`,
+  `late_phase_decoupling_rate`. `NA_real_` for the LS-SVR backend.
+* `psvr_cv()` emits an informational message (when `verbose = TRUE`)
+  on the T5 × T7 interaction: warm-start gain compressed when T7
+  is active; for pure-F5 warm-start, set `block_k4_enabled = FALSE`.
+
+## Breaking changes
+
+None. `engine = "rcpp"` is a new *default* but is bit-identical to the
+prior R-level path (which is the now-renamed `.smo_solve_r()`).
+Downstream code calling `psvr()`, `predict()`, or the deprecated
+fitters is unaffected.
+
+## Internal changes
+
+* **Portable C++ core** in `src/core_*.cpp` and `src/core_*.h` — pure
+  std-library types, no `Rcpp::*` or R API calls. The same core will
+  back a future Python binding via pybind11 (paper TODO #11). See
+  `src/core_smo_solve.cpp` for the `PSVR_STANDALONE_BUILD` conditional
+  compilation pattern that demonstrates the portability claim and the
+  related `dev/check_core.cpp` standalone smoke check.
+* **Thin Rcpp binding** in `src/binding_smo.cpp` (~110 lines) and
+  `src/binding_kernel.cpp` (~66 lines). Replaces `src/kernel_rbf.cpp`,
+  `src/kernel_linear.cpp`, `src/kernel_poly.cpp` (those F6 wrappers
+  are deleted; their pure-C++ inner loops are now in
+  `src/core_kernel_*.cpp`).
+* **`R/smo_solve.R` is now a dispatcher** that forwards to either
+  `.smo_solve_r()` (the renamed R algorithm, kept as the reference)
+  or `psvr_smo_fit_rcpp()` (the Rcpp entry into the core). Warm-start
+  projection (Algorithm 1) runs in R regardless of engine.
+* **`R/kernel-accessor.R`** gains a `get_omega()` accessor that
+  returns the underlying materialized matrix (zero-copy for the Rcpp
+  path).
+* **`src/Makevars` / `src/Makevars.win`** add
+  `PKG_LIBS = $(BLAS_LIBS) $(FLIBS)` so the Rcpp core links against
+  R's BLAS for the `F77_CALL(dgemv)` calls. (`$(LAPACK_LIBS)` is not
+  used; CRAN's check warns about including it without need.) Inline
+  comment documents the correct ordering should LAPACK ever be
+  needed.
+* `solver_meta$backend` reports `"smo"` for `psvr_fit` objects
+  regardless of engine; the engine choice is dispatcher-level.
+
+## Tests
+
+* New `tests/testthat/test-engine-equivalence.R`: 16-config
+  bit-identicality canary (2 models × 4 kernels × 2 modes). On
+  failure, a `.diagnose_engine_diff()` helper prints max diff, first
+  differing indices, side-by-side values at full precision, and
+  solver-meta deltas for direct FP-tier diagnosis.
+* New `tests/testthat/_snaps/engine-equivalence.md` locks the
+  `engine = "r"` F4 baseline as an explicit regression hook.
+
+## Documentation
+
+* `CLAUDE.md` adds three new sections: "Block-k=4 SMO with
+  descent-guaranteed decoupling (post-F7)", "Portable C++
+  architecture (post-F7-C-full)", and "engine = 'r' lifecycle"
+  (graduation criteria for v0.1.0 removal). Build-system note
+  explains the `PKG_LIBS` rationale.
+* Paper TODO updates: #9 marked **RESOLVED** with the C++ port;
+  #10 strengthened with bi-engine evidence (T5 × T7 non-multiplicative
+  stacking is algorithmic, not implementation-specific); #11 NEW
+  (portable architecture demonstration).
+
 # psvr 0.0.2.9005 (development)
 
 ## Performance

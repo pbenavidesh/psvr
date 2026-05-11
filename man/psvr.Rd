@@ -21,7 +21,10 @@ psvr(
   warm_start_check = TRUE,
   new_mask = NULL,
   reg = NULL,
+  block_k4_enabled = TRUE,
+  engine = c("rcpp", "r"),
   ...,
+  alpha_couple = 0.5,
   precomputed_Omega = NULL,
   precomputed_Omega_s = NULL
 )
@@ -74,7 +77,29 @@ zero". Used internally by \code{\link[=psvr_cv]{psvr_cv()}} for fold-to-fold car
 \item{reg}{Reserved for future phases (extended Lagrangian). Must be
 \code{NULL}.}
 
+\item{block_k4_enabled}{Logical; if \code{TRUE} (default, \code{loss = "mape"}
+only), enable the F7 block-k=4 SMO inner loop (Theorem 7 of
+arXiv:2605.01446 v3). Each outer iteration may pick a second
+working pair \verb{(i_2, j_2)} and apply a 2-D joint update when the
+descent-guaranteed decoupling criterion holds. Set to \code{FALSE} to
+restore F4 (k=2 only) behaviour bit-identically. Ignored for
+\code{loss = "rmspe"}.}
+
+\item{engine}{One of \code{"rcpp"} (default) or \code{"r"}. Selects the SMO
+backend implementation: the C++ core in \code{src/core_smo_solve.cpp}
+or the R reference implementation in \code{R/smo_solve.R}. Both
+produce bit-identical results; \code{"r"} is preserved as the
+reference for the Rcpp port and will be deprecated in v0.0.4.0
+and removed in v0.1.0. Ignored for \code{loss = "rmspe"} (LS-SVR uses
+\code{base::solve()} directly).}
+
 \item{...}{Currently unused; reserved for future extension.}
+
+\item{alpha_couple}{Numeric between 0 and 1 (default \code{0.5}). Internal F7
+coupling penalty in the pair-2 WSS3 score
+\code{score = gain * (1 - alpha_couple * coupling)}. Exposed for
+empirical tuning; rarely needs adjustment. Ignored for
+\code{loss = "rmspe"} or \code{block_k4_enabled = FALSE}.}
 
 \item{precomputed_Omega, precomputed_Omega_s}{INTERNAL — used by
 \code{\link[=psvr_cv]{psvr_cv()}} to share a single full-dataset kernel matrix across

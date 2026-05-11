@@ -17,7 +17,10 @@
   alpha_star_init = NULL,
   warm_start_check = TRUE,
   new_mask = NULL,
-  precomputed_Omega_s = NULL
+  precomputed_Omega_s = NULL,
+  block_k4_enabled = TRUE,
+  alpha_couple = 0.5,
+  engine = c("rcpp", "r")
 )
 }
 \arguments{

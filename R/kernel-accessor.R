@@ -30,6 +30,11 @@
 #'     \item{`get_matvec(v)`}{Returns the matrix-vector product
 #'       `as.numeric(Omega %*% v)` (length-`N`). Used for one-shot
 #'       gradient refreshes; preserves BLAS efficiency.}
+#'     \item{`get_omega()`}{Returns the underlying materialised `Omega`
+#'       matrix. Added in F7-C-full (engine = "rcpp" handoff) so the
+#'       Rcpp solver can take a raw `double*` view via `REAL(Omega)`
+#'       without re-materialising. Other consumers should prefer the
+#'       targeted accessors above.}
 #'     \item{`n`}{Integer, equal to `nrow(Omega)`.}
 #'   }
 #' @keywords internal
@@ -40,6 +45,7 @@
     get_diag   = function() diag_vals,
     get_entry  = function(p, q) Omega[p, q],
     get_matvec = function(v) as.numeric(Omega %*% v),
+    get_omega  = function() Omega,
     n          = nrow(Omega)
   )
 }

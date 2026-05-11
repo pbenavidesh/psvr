@@ -25,7 +25,11 @@
                           alpha_star_init = NULL,
                           warm_start_check = TRUE,
                           new_mask = NULL,
-                          precomputed_Omega_s = NULL) {
+                          precomputed_Omega_s = NULL,
+                          block_k4_enabled = TRUE,
+                          alpha_couple = 0.5,
+                          engine = c("rcpp", "r")) {
+  engine <- match.arg(engine)
   # `precomputed_Omega_s` is INTERNAL — used by psvr_cv() to share a single
   # full-dataset Ωs across folds. Pass the un-jittered subset
   # Omega_s_full[train_idx, train_idx]; this fitter adds the 0.5e-6 diagonal
@@ -70,6 +74,11 @@
 
   iterations <- NA_integer_
   converged  <- NA
+  block_k4   <- list(joint_updates               = 0L,
+                     k2_fallbacks                = 0L,
+                     decoupling_rate             = NA_real_,
+                     early_phase_decoupling_rate = NA_real_,
+                     late_phase_decoupling_rate  = NA_real_)
 
   if (solver == "smo") {
     # Pass Ωs directly; matches Model 1's SMO contract (the ½ from the
@@ -80,13 +89,21 @@
                              alpha_init = alpha_init,
                              alpha_star_init = alpha_star_init,
                              warm_start_check = warm_start_check,
-                             new_mask = new_mask)
+                             new_mask = new_mask,
+                             block_k4_enabled = block_k4_enabled,
+                             alpha_couple = alpha_couple,
+                             engine = engine)
     alpha      <- sol$alpha
     alpha_star <- sol$alpha_star
     beta       <- alpha - alpha_star
     b          <- sol$b
     iterations <- sol$iterations
     converged  <- sol$converged
+    block_k4   <- list(joint_updates               = sol$joint_updates,
+                       k2_fallbacks                = sol$k2_fallbacks,
+                       decoupling_rate             = sol$decoupling_rate,
+                       early_phase_decoupling_rate = sol$early_phase_decoupling_rate,
+                       late_phase_decoupling_rate  = sol$late_phase_decoupling_rate)
   } else {
     if (!requireNamespace("osqp", quietly = TRUE)) {
       stop('solver = "osqp" requires the osqp package. Install it with:\n',
@@ -178,7 +195,8 @@
       # mape_sym_svr() wrapper passes the legacy shape through unchanged,
       # so callers of the deprecated API can still inspect $spectral.
       spectral   = spec[c("mu", "lambda_min_hat", "lambda_max_hat",
-                          "branch_taken", "n_power_iterations")]
+                          "branch_taken", "n_power_iterations")],
+      block_k4   = block_k4       # F7 telemetry
     ),
     class = "psvr_mape_sym"
   )

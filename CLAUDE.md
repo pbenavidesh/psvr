@@ -221,8 +221,28 @@ Required for Models 2 and 4:
         unchanged). Paper Theorem 6 (LIBSVM column-on-demand cache) was
         skipped — architectural mismatch with psvr's full-matrix design.
         See paper TODO #8 below.
-15. [ ] **F7–F8** — Theorem 7 from arXiv:2605.01446 v3 + paper-side
-        errata fixes (#1–#8).
+15. [x] **F7** — Theorem 7 from arXiv:2605.01446 v3: block-k=4 SMO with
+        descent-guaranteed decoupling. Each outer SMO iteration may
+        select a second pair `(i_2, j_2)` and apply a 2-D joint update
+        when the descent criterion holds. Strict sample-level
+        disjointness; corrected sign-free xi formula. R-level
+        implementation reduces iter count 38–48% on converging
+        regimes but has 2× per-iter overhead → wall neutral-to-
+        negative in R. See sections "Block-k=4 SMO with descent-
+        guaranteed decoupling (post-F7)" and "Portable C++
+        architecture (post-F7-C-full)".
+16. [x] **F7 C-full portable** — port SMO inner loop + block-k=4 +
+        F6 kernels to a portable C++ core (`src/core_*.cpp`, pure
+        std-library types) with a thin Rcpp binding layer
+        (`src/binding_*.cpp`). New `engine = c("rcpp", "r")`
+        parameter on `psvr()`; default `"rcpp"`. `engine = "r"` is
+        the bit-identical reference, preserved through v0.0.3.x;
+        deprecated v0.0.4.0; removal v0.1.0. Bit-identical across
+        16 configs (Models × 4 kernels × 2 modes). F4 baseline
+        1.60–4.69× wall speedup; F7 path 1.94–7.73×. F7 vs F4 wall:
+        +12.2% R1, +17.5% R4 — paper TODO #9 RESOLVED on converging
+        regimes. CV B3-rcpp 4.28× over the F4+F5-R baseline.
+17. [ ] **F8** — Paper-side errata fixes (#1–#11).
 
 ---
 
@@ -794,6 +814,345 @@ for the recommended rewrite in the paper text.
 
 ---
 
+## Block-k=4 SMO with descent-guaranteed decoupling (post-F7)
+
+F7 implements Theorem 7 of arXiv:2605.01446 v3 ("strictly novel"
+theorem of the smo-v3 paper). After WSS1 + WSS3 pick pair 1
+`(i_1, j_1)`, the solver tries to find a second sample-disjoint pair
+`(i_2, j_2)` and apply a 2-D joint update governed by a descent-
+guaranteed decoupling criterion. When the test fails the iteration
+falls back to the standard 1-D pair-1 update (k=2 path).
+
+### Δβ invariant (drives the corrected xi formula)
+
+For all 4 cases of the SMO 1-D update (alpha-alpha, alpha-alpha*,
+alpha*-alpha, alpha*-alpha*), the change in `β = α − α*` is:
+
+```
+Δβ_{p_i} = +δ,  Δβ_{p_j} = −δ,  all other Δβ_k = 0
+```
+
+The slot (α vs α*) is absorbed by the equality constraint
+`sum(α − α*) = 0` and the four case branches; it does NOT appear in
+the β update. This is what makes the corrected sign-free xi formula
+valid and what makes the tau update use the same `diff_pq` vector
+for both `tau_alpha` and `tau_alphastar`.
+
+### xi formula (corrected, sign-free)
+
+```
+xi / (δ_1 δ_2) = Ω(p_1, p_2) − Ω(p_1, q_2) − Ω(q_1, p_2) + Ω(q_1, q_2)
+```
+
+No sign factors `s_i s_j`. They cancel under the α/α* dual. The
+formula is computable from the already-fetched K_p (column for
+sample p_1) and K_q (column for sample q_1) with **zero extra column
+fetches**: `xi = K_p[p_2] - K_p[q_2] - K_q[p_2] + K_q[q_2]`.
+
+The spec given to me used `s_{i1}*s_{i2}*Ω(...) − ...` with explicit
+sign factors; that form is the cross-curvature for a *different* dual
+structure (e.g., standard C-SVC), not MAPE-SVR's α/α* split.
+Implementation uses the simplified form; this is a paper-side
+clarification (paper TODO update).
+
+### Descent test (D1)
+
+```
+Δ_pq^2 · η_2 + Δ_2^2 · η_1 > 2 |xi · Δ_pq · Δ_2| · (1 + 1e-10)
+```
+
+Where `Δ_pq = τ_i − τ_q` is pair 1's WSS3 gap (the value used to
+compute `δ_1 = Δ_pq / η_1`), NOT the WSS1 convergence gap
+`τ_i − τ_{j_w1}`. The descent geometry of the joint update is
+defined by pair 1's actual update direction `(i, q)`, not the MVP
+convergence pair `(i_w1, j_w1)`.
+
+This is a necessary-and-sufficient criterion (in exact arithmetic)
+for the joint update to outperform the k=2 fallback. No tuning
+threshold required.
+
+### Pair-2 selection (D2)
+
+```
+i_2 = argmax τ over I_up \ {i_1}                       (sample-disjoint from i_1)
+j_2 = argmax score_j_aug over I_down filtered          (sample-disjoint from p, q, p2)
+  where score_j_aug = gain_j × (1 − alpha_couple × coupling_j)
+        gain_j      = (τ_{i_2} − τ_j)^2 / max(η_j, 1e-12)
+        coupling_j  = |Ω(p, j)| / sqrt(Ω(p,p) · Ω(j,j))  (1 if denom ≤ 0)
+```
+
+`alpha_couple` defaults to `0.5`; exposed as an internal parameter
+on `psvr()` for empirical tuning. The coupling proxy uses the K_p
+column already on hand — zero extra fetches for scoring.
+
+Sample-level disjointness (not slot-level) ensures `Δβ_1` and `Δβ_2`
+have disjoint support, keeping the xi formula clean.
+
+### Telemetry
+
+`psvr_fit$solver_meta` extends with:
+- `joint_updates` — number of iterations where the joint update was applied.
+- `k2_fallbacks` — iterations that fell back to k=2 after entering the
+  block-k=4 path.
+- `decoupling_rate` — `joint_updates / (joint_updates + k2_fallbacks)`.
+- `early_phase_decoupling_rate` — rate over the first ¼ of iterations
+  (floor 50).
+- `late_phase_decoupling_rate` — rate over the last ¼ (floor 50).
+
+The early/late split tests the paper's "clustered active set in the
+late phase" hypothesis. Empirical observation: late ≥ early by 5–15
+percentage points across all regimes — the asymmetry is real but
+modest, not the dramatic clustering the paper might predict.
+
+### Per-iter wall — the central F7-C-full finding
+
+The R implementation imposes a 2× per-iter wall overhead from the
+block-k=4 scaffolding (pool subsetting, `which.max` calls, `ifelse`
+coupling computation). The C++ port reduces this to 1.40×:
+
+| Regime | F4-R ms/iter | F4-Rcpp ms/iter | F7-R ms/iter | F7-Rcpp ms/iter | F7/F4 R | **F7/F4 Rcpp** |
+|--------|:----:|:----:|:----:|:----:|:----:|:----:|
+| R1 N=1000 RBF σ=1 (max_iter)| 0.104 | 0.045 | 0.223 | 0.063 | 2.14× | **1.40×** |
+| R2 N=1000 RBF σ=1 ρ_y=3.6   | 0.108 | 0.047 | 0.226 | 0.060 | 2.09× | **1.28×** |
+| R3 N=300 RBF σ=3            | 0.044 | 0.009 | 0.094 | 0.012 | 2.14× | **1.33×** |
+| R4 N=1000 RBF σ=0.3 (converges)| 0.157 | 0.098 | 0.300 | 0.155 | 1.91× | **1.58×** |
+
+Combined with 38–48% iter reduction on converging regimes, this gives
++12.2% (R1) and +17.5% (R4) wall-positive translation. **Paper TODO
+#9 (T7 wall regression) is RESOLVED on converging regimes by the
+C++ port.**
+
+### Per-regime bench summary (engines × modes)
+
+| Regime | F4-R wall | F4-Rcpp wall | F7-R wall | F7-Rcpp wall | F4 R→Rcpp | F7 R→Rcpp | F7 vs F4 (Rcpp) |
+|--------|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| R1 N=1000 ρ_y=44k σ=1 | 10.37 s | 4.49 s | 13.88 s | 3.94 s | 2.31× | 3.52× | **+12.2%** wall |
+| R2 N=1000 ρ_y=3.6 σ=1 | 10.76 s | 4.65 s | 22.56 s | 6.00 s | 2.31× | 3.76× | -28.9% (both max_iter) |
+| R3 N=300 ρ_y=3702 σ=3 | 4.40 s | 0.94 s | 9.36 s | 1.21 s | 4.69× | 7.73× | -29.2% (both max_iter) |
+| R4 N=1000 ρ_y=13901 σ=0.3 | 0.232 s | 0.145 s | 0.232 s | 0.120 s | 1.60× | 1.94× | **+17.5%** wall |
+
+R2/R3 are dominated by the pre-existing SMO non-convergence pathology
+(both engines hit `max_iter = 100 000`; paper TODO #5). T7 cannot help
+when neither engine converges.
+
+### T5 × T7 stacking — B-suite at N=300, 10-fold CV (ρ_y=2388)
+
+| ID | engine | warm | bk4 | wall | iter_sum | speedup vs B1-r |
+|----|--------|------|-----|------|----------|:--:|
+| B1-r | r | TRUE | FALSE | 2.200 s | 37 740 | 1.00× (paper baseline) |
+| B1-rcpp | rcpp | TRUE | FALSE | 0.591 s | 37 740 | **3.72×** |
+| B2-r | r | FALSE | TRUE | 2.697 s | 23 363 | 0.82× |
+| B2-rcpp | rcpp | FALSE | TRUE | 0.508 s | 23 363 | **4.33×** |
+| B3-r | r | TRUE | TRUE | 2.489 s | 26 586 | 0.88× |
+| **B3-rcpp** | rcpp | TRUE | TRUE | **0.515 s** | 26 586 | **4.28×** |
+
+B3-rcpp is the current default (`psvr_cv()` with warm-start +
+block-k=4 + Rcpp). T5 × T7 non-multiplicative stacking is confirmed
+under both engines: B2 (T7 alone) is marginally faster wall AND has
+lower iter_sum than B3 (T7 + warm-start). The non-multiplicativity is
+algorithmic, not implementation-specific — paper TODO #10 has bi-
+engine evidence.
+
+### Default-collapse
+
+`block_k4_enabled = FALSE` reduces the SMO inner loop to F4 behaviour
+bit-identically. The path is preserved through the engine dispatcher
+on BOTH `engine = "r"` and `engine = "rcpp"`. The F4 baseline gate
+(`_snaps/block-k4.md`) protects this invariant.
+
+### Design decisions (paper-relevant)
+
+- **Sample-level disjointness** between pair 1 and pair 2 (stricter
+  than dual-variable level disjointness). User-resolved during
+  planning. Simpler and safer; keeps the xi formula clean (no
+  diagonal Ω(p, p) terms from sample collisions).
+- **`alpha_couple = 0.5` default** — empirically influences but does
+  not dominate the decoupling rate (which is 0.93–1.0 across regimes
+  regardless of `alpha_couple`).
+
+---
+
+## Portable C++ architecture (post-F7-C-full)
+
+### Motivation
+
+The R-level F7 implementation had a 2× per-iter wall overhead from
+R-language scaffolding (vector subsetting, `which.max`, `setdiff`,
+`ifelse`). Iter reduction (38–48%) did not translate to wall
+positivity. A C++ port was undertaken to (a) eliminate the R
+scaffolding, restoring wall positivity for T7, and (b) demonstrate
+the paper's portability claim by architecting the SMO core such that
+a future Python binding (pybind11) wraps the same C++ without R-isms.
+
+### Architecture overview
+
+```
+src/
+  core_smo_types.h          types-only header (FitOptions, FitResult, Vec)
+  core_smo_solve.h/.cpp     SMO outer loop, WSS1/WSS3, bias recovery
+  core_block_k4.h/.cpp      Theorem 7 selection + descent test + 2-D update
+  core_kernel.h
+  core_kernel_rbf.cpp       extracted from F6 src/kernel_rbf.cpp
+  core_kernel_linear.cpp    extracted from F6 src/kernel_linear.cpp
+  core_kernel_poly.cpp      extracted from F6 src/kernel_poly.cpp
+  binding_smo.cpp           [[Rcpp::export]] psvr_smo_fit_rcpp
+  binding_kernel.cpp        [[Rcpp::export]] kernel_*_cpp
+  RcppExports.cpp           auto-generated
+  Makevars / Makevars.win   PKG_LIBS = $(BLAS_LIBS) $(FLIBS)
+```
+
+The `core_*.cpp` files use only `std::vector`, `std::ptrdiff_t`,
+`long double` accumulators, `std::pow`. No `Rcpp::*`, no `Rcout`, no
+`R_xlen_t`. The only R-API dependency in the core is `F77_CALL(dgemv)`
+(via `<R_ext/BLAS.h>` in the R-build path; via the `dgemv_` extern in
+the standalone path — see "Conditional compilation" below).
+
+### Memory layout
+
+`Omega` is column-major (matching R's matrix storage). For a sample
+index `p ∈ [0, N)`, the column `K_p` is the contiguous slice
+`Omega[p*N .. p*N + N - 1]`. `Omega(i, j)` is at `Omega[j*N + i]`.
+Zero-copy from R: `REAL(NumericMatrix)` returns the underlying
+column-major `double*`.
+
+### Memory ownership
+
+All `double*` and `Index*` arguments to core functions are
+**caller-owned**. The core never allocates output buffers; it writes
+into `std::vector`s declared in `FitResult` (which the binding then
+copies into Rcpp::NumericVectors for return to R).
+
+### BLAS access
+
+The matvec `Kbeta = Omega · β` runs three times per fit (warm-start
+init, unshrink-rebuild inside the loop, post-loop refresh).
+`core_smo_solve.cpp` calls `F77_CALL(dgemv)` with `FCONE` so R's BLAS
+is used directly — this matches `R/.smo_solve_r()`'s `Omega %*% v`
+bit-identically (the operation goes through the same BLAS impl).
+
+### Conditional compilation pattern (paper TODO #11)
+
+```cpp
+#ifdef PSVR_STANDALONE_BUILD
+extern "C" void dgemv_(...);
+#define F77_CALL(x) x ## _
+#define FCONE
+#else
+#include <R_ext/BLAS.h>
+#include <R_ext/RS.h>
+#endif
+```
+
+The R-build path uses R's BLAS via `<R_ext/BLAS.h>`. The standalone
+path (`-DPSVR_STANDALONE_BUILD`) is used by `dev/check_core.cpp` to
+verify the core compiles without R headers. Future pybind11 binding
+will add a third arm (`#elif defined(PSVR_PYTHON_BUILD)`) backed by
+numpy's BLAS — same pattern, demonstrating the portability claim.
+
+### Bit-identicality discipline
+
+Bit-equality with the R reference (`engine = "r"`) is the strict
+gate. Discipline in the C++ port:
+
+- **Loop direction** matches R's evaluation order (e.g.,
+  `down_alpha` is scanned before `down_astar` in WSS3 candidate
+  search; `R` does `c(down_alpha, down_astar)`).
+- **`which.max` tie-break**: R returns the FIRST index of the
+  maximum. C++ uses strict `>` (not `>=`) in the tracked-best loop
+  to preserve this semantic. Comments at scan sites document the
+  invariant.
+- **Long-double accumulators** where R uses LDOUBLE (e.g.,
+  `mean(y)`, kernel matrix inner reductions).
+- **Separate subtractions, not fused arithmetic** for the joint
+  τ update. R writes `tau - δ_1 * diff_1 - δ_2 * diff_2` (two left-
+  associative subtractions). Fused `tau -= (δ_1 * diff_1 + δ_2 *
+  diff_2)` would round differently (1 ulp). The C++ port uses two
+  separate `tau -= ...` statements. (This was caught during Phase 2
+  STOP 2: an 8.88e-16 drift triggered the escalation policy and was
+  fixed before merging.)
+
+`tests/testthat/test-engine-equivalence.R` is the 16-config canary
+that locks the invariants. The `.diagnose_engine_diff()` helper
+prints max diff + side-by-side values at full precision on failure
+to support the FP-tier escalation policy.
+
+### Build system notes
+
+`src/Makevars` and `src/Makevars.win` specify:
+
+```
+PKG_LIBS = $(BLAS_LIBS) $(FLIBS)
+```
+
+This is required because `core_smo_solve.cpp` calls
+`F77_CALL(dgemv)` for the matvec. Without `$(BLAS_LIBS)` the package
+fails to link with `undefined reference to dgemv_`.
+
+**Do not remove this line.** `$(FLIBS)` handles Fortran runtime
+linking on platforms where BLAS implementations need it.
+
+**Do not add `$(LAPACK_LIBS)`** unless a future revision actually
+uses LAPACK routines. R CMD check warns about
+"`$(LAPACK_LIBS)` without following `$(BLAS_LIBS)`" when LAPACK is
+included unnecessarily. Per *Writing R Extensions* §1.2.3, the
+correct order when both are needed is:
+
+```
+PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+```
+
+(LAPACK first, since the linker resolves dependencies right-to-left
+and LAPACK depends on BLAS.) The current code uses only BLAS dgemv;
+there is no LAPACK dependency.
+
+---
+
+## engine = "r" lifecycle
+
+`engine = c("rcpp", "r")` is the engine selector on `psvr()` and
+`.smo_solve()`. `"rcpp"` is the default; `"r"` dispatches to
+`.smo_solve_r()` (the original R algorithm, renamed in F7-C-full
+and preserved as the bit-identical reference).
+
+### Graduation timeline
+
+- **v0.0.2.9006 – v0.0.3.x** (CURRENT): both engines live and
+  numerically equivalent. `engine = "rcpp"` default; `engine = "r"`
+  available for debugging / teaching / canary comparison. All
+  equivalence tests cover both engines.
+- **v0.0.4.0**: emit `lifecycle::deprecate_soft("0.0.4.0",
+  ".smo_solve(engine = 'r')")` on `engine = "r"` invocations.
+- **v0.1.0**: remove `engine = "r"` entirely. Delete
+  `.smo_solve_r()`; `R/smo_solve.R` becomes pure dispatch (or is
+  inlined into the binding layer).
+
+### Graduation criteria for v0.1.0 removal
+
+All three must hold:
+
+1. v0.1.0 prep is underway (concrete release branch open).
+2. Snapshot tests pass with `engine = "rcpp"` for **at least 2
+   release cycles** without bugs caught by the R-equivalence canary
+   (`test-engine-equivalence.R`).
+3. Bench suite (`dev/bench-F7.R`) covers all paper regimes under
+   `engine = "rcpp"` (currently: R1-R4 plus T5 × T7 stacking).
+
+The 2-release-cycle requirement is the load-bearing one: it ensures
+the C++ port has accumulated enough field exposure to surface any
+hidden bugs that the synthetic test fixtures missed.
+
+### Why we kept the dual engine instead of removing R immediately
+
+Risk mitigation. The C++ port is mechanical (~1200 lines) but
+intricate (bit-identicality requires loop-order discipline, tie-
+break preservation, FP-associativity in the fused τ update). The R
+reference catches algorithmic differences that snapshot tests alone
+might miss — e.g., the Phase 2 STOP 2 8.88e-16 drift would have
+shipped silently if the canary tests didn't compare engine-vs-
+engine on every model × kernel × mode combination.
+
+---
+
 ## Known issues
 
 ### TODO #5 — Pre-existing SMO convergence pathology on linear / polynomial kernels
@@ -833,6 +1192,9 @@ does not exhibit this pathology, when accuracy is critical.
 | 6 | smo-v3.tex Algorithm 1 Step 2 | Replace uniform shift over `N` with new-samples-only projection. Rationale: violation arises entirely from removed samples; retained samples were at the equality-constraint manifold at the previous fold's optimum. Mathematically valid (post-Step-2 violation = 0, convergence preserved); empirically gains 0.17× cumulative speedup on 10-fold CV (0.97× → 1.14×). | Paper-text deviation with positive empirical impact |
 | 7 | smo-v3.tex Theorem 5 speedup prediction | Predicted 3–7× cumulative on 10-fold CV is over-optimistic. Empirical observation at N=300 (ρ_y=2388) and N=1000 (ρ_y=16265): both ~1.12–1.14× cumulative (N-independent). Per-fold `T_warm / T_cold ≈ 0.88`, not 0.2. Cumulative speedup is approximately linear in fold count, not exponential. Recalibrate the prediction or restrict applicable regime. | Empirical calibration |
 | 8 | smo-v3.tex Theorem 6 (LIBSVM column cache) | Architectural mismatch with psvr's full-matrix design. The proposed column-on-demand LRU cache is designed for an SMO that synthesizes columns of Ω per iteration; psvr's `.make_kernel_accessor()` (F2) is a thin read-only closure over an already-materialised matrix, so T6 saves no memory in the dominant `kernel_matrix(K, X)` pre-construction path. F6 instead Rcpp-accelerates the `O(N²·p)` construction step (~12× wall) and adds cross-fold reuse in `psvr_cv()`. Either drop T6 from the paper or restructure the paper architecture description to match the implementation (full-matrix, no LRU cache). | Architectural mismatch; substituted by negative finding and Rcpp acceleration |
+| 9 | smo-v3.tex Theorem 7 wall-time claim | **RESOLVED via C++ port (F7-C-full)**. T7's per-iteration overhead is *implementation-dependent*. R-level: 2.0× per-iter overhead → net wall regression (−25.6% R1, +2.4% R4). C++ binding: 1.40× per-iter overhead → net wall positive (+12.2% R1, +17.5% R4). The paper's "2× more progress per iteration" claim is correct theoretically and implementation-independent; wall translation requires accounting for language-level scaffolding overhead. **Recommendation**: paper should report iter speedup (theoretically validated, language-agnostic) and wall speedup (implementation-dependent) SEPARATELY. The C++ implementation restores wall positivity, validating Theorem 7's practical utility on converging regimes. Also flag: T7 cannot help on regimes where the baseline does not converge (R2/R3 hit max_iter; paper TODO #5). | Implementation-dependent; resolved via portable C++ core |
+| 10 | smo-v3.tex Corollary 6 (T5 × T7 cumulative speedup) | T5 (warm-start) and T7 (block-k=4) **do not compose multiplicatively** in CV. B2 (T7 alone) achieves 23 363 iters and 0.508 s wall in 10-fold CV at N=300, ρ_y=2388; B3 (T7+warm-start) achieves 26 586 iters (+13.8%) and 0.515 s. Confirmed under both engines: B2-r 2.697 s vs B3-r 2.489 s; B2-rcpp 0.508 s vs B3-rcpp 0.515 s. The non-multiplicativity is **algorithmic** (T5 perturbation cost on top of T7's shortened trajectory), not implementation-specific. **Recommendation**: paper should restructure Corollary 6 cumulative speedup as `max(T5, T7)` in CV regimes, not `T5 × T7`. The warm-start projection step (Algorithm 1) takes constant overhead per fold; T7 dominates the per-fold iter reduction; combined they sit at T7's level with a small projection overhead. | Algorithmic finding; both engines validate |
+| 11 | smo-v3.tex Section on implementation / language portability | **NEW.** The C++ core (`src/core_*.cpp`) is independent of R types (no `Rcpp::*`, no R API calls outside the optional `<R_ext/BLAS.h>` for dgemv). The R binding (`src/binding_*.cpp`, ~180 lines total) is thin and uses Rcpp idiomatically. Future pybind11 binding for Python would follow the same pattern, wrapping the same core with `PSVR_PYTHON_BUILD` define for numpy-backed BLAS hookup. The conditional compilation pattern is demonstrated in `core_smo_solve.cpp` (PSVR_STANDALONE_BUILD path used by `dev/check_core.cpp`). **Recommendation**: paper should add a brief "Implementation portability" subsection citing the architecture as evidence that SVR algorithms with intricate FP-discipline requirements (bit-identicality, tie-break preservation, FP-associativity ordering) can be cleanly separated from host-language idioms via a flat-buffer C++ API. This validates the paper's portability claim with a concrete demonstrated implementation. | New finding; concrete implementation demonstration |
 
 ---
 

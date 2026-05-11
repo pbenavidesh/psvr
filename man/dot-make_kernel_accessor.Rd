@@ -21,6 +21,11 @@ vector). Cached at construction.}
 \item{\code{get_matvec(v)}}{Returns the matrix-vector product
 \code{as.numeric(Omega \%*\% v)} (length-\code{N}). Used for one-shot
 gradient refreshes; preserves BLAS efficiency.}
+\item{\code{get_omega()}}{Returns the underlying materialised \code{Omega}
+matrix. Added in F7-C-full (engine = "rcpp" handoff) so the
+Rcpp solver can take a raw \verb{double*} view via \code{REAL(Omega)}
+without re-materialising. Other consumers should prefer the
+targeted accessors above.}
 \item{\code{n}}{Integer, equal to \code{nrow(Omega)}.}
 }
 }

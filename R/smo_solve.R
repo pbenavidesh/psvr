@@ -38,13 +38,96 @@
 # as inactive; restored from scratch (recomputing tau via
 # K_acc$get_matvec(beta)) when the active-set gap drops to tol.
 
+#' Dispatcher: SMO solver with engine choice (R reference vs Rcpp core).
+#'
+#' Forwards to the F7-C-full Rcpp core (`engine = "rcpp"`, default) or
+#' the R reference implementation (`engine = "r"`). The R path is the
+#' canonical algorithm and remains the bit-identical reference for the
+#' Rcpp port; it will be deprecated in v0.0.4.0 and removed in v0.1.0
+#' once the Rcpp path has cleared its graduation criteria (see CLAUDE.md
+#' "engine = 'r' lifecycle").
+#'
+#' Warm-start projection (Algorithm 1) runs in R via `.warm_start_init()`
+#' BEFORE the core call, regardless of engine, so both paths see
+#' already-feasible alpha/alpha* on entry.
+#'
+#' @keywords internal
 .smo_solve <- function(K_acc, y, C, eps,
                        tol = 1e-3, max_iter = 100000L,
                        n_check = NULL, n_freeze = 5L,
                        alpha_init = NULL,
                        alpha_star_init = NULL,
                        warm_start_check = TRUE,
-                       new_mask = NULL) {
+                       new_mask = NULL,
+                       block_k4_enabled = TRUE,
+                       alpha_couple = 0.5,
+                       engine = c("rcpp", "r")) {
+  engine <- match.arg(engine)
+
+  if (engine == "r") {
+    return(.smo_solve_r(K_acc, y, C, eps,
+                        tol = tol, max_iter = max_iter,
+                        n_check = n_check, n_freeze = n_freeze,
+                        alpha_init = alpha_init,
+                        alpha_star_init = alpha_star_init,
+                        warm_start_check = warm_start_check,
+                        new_mask = new_mask,
+                        block_k4_enabled = block_k4_enabled,
+                        alpha_couple = alpha_couple))
+  }
+
+  # engine = "rcpp": project warm-start in R, then call core.
+  alpha_init_p      <- NULL
+  alpha_star_init_p <- NULL
+  if (!is.null(alpha_init) || !is.null(alpha_star_init)) {
+    N_y <- length(y)
+    C_k <- 100 * C / y
+    ws  <- .warm_start_init(alpha_init, alpha_star_init, N_y, C_k,
+                            new_mask        = new_mask,
+                            warm_start_check = warm_start_check)
+    alpha_init_p      <- ws$alpha
+    alpha_star_init_p <- ws$alpha_star
+  }
+
+  Omega <- K_acc$get_omega()
+  opts <- list(
+    C                 = as.numeric(C),
+    eps               = as.numeric(eps),
+    tol               = as.numeric(tol),
+    max_iter          = as.integer(max_iter),
+    n_check           = if (is.null(n_check)) -1L else as.integer(n_check),
+    n_freeze          = as.integer(n_freeze),
+    block_k4_enabled  = isTRUE(block_k4_enabled),
+    alpha_couple      = as.numeric(alpha_couple),
+    warm_start_check  = isTRUE(warm_start_check),
+    alpha_init        = alpha_init_p,
+    alpha_star_init   = alpha_star_init_p,
+    new_mask          = new_mask
+  )
+  sol <- psvr_smo_fit_rcpp(Omega, y, opts)
+  if (!isTRUE(sol$converged)) {
+    warning(sprintf("SMO solver did not converge within max_iter = %d (final iter = %d)",
+                    as.integer(max_iter), as.integer(sol$iterations)))
+  }
+  sol
+}
+
+#' SMO solver — R reference implementation (engine = "r").
+#'
+#' Canonical R-level algorithm. Bit-identical reference for the Rcpp
+#' core in src/core_smo_solve.cpp. Will be deprecated in v0.0.4.0 and
+#' removed in v0.1.0. Do NOT call directly; go through `.smo_solve()`.
+#'
+#' @keywords internal
+.smo_solve_r <- function(K_acc, y, C, eps,
+                       tol = 1e-3, max_iter = 100000L,
+                       n_check = NULL, n_freeze = 5L,
+                       alpha_init = NULL,
+                       alpha_star_init = NULL,
+                       warm_start_check = TRUE,
+                       new_mask = NULL,
+                       block_k4_enabled = TRUE,
+                       alpha_couple = 0.5) {
   N     <- length(y)
   scale <- eps / 100
   C_k   <- 100 * C / y
@@ -97,6 +180,16 @@
   tol_bound <- 1e-10
   iter      <- 0L
   converged <- FALSE
+
+  # F7 — Block-k=4 SMO (Theorem 7 of arXiv:2605.01446 v3). When enabled,
+  # each outer iteration may select a second working pair (i_2, j_2) and
+  # apply a 2-D joint update; gated by the descent-guaranteed decoupling
+  # criterion (D1 of the F7 spec). Pre-allocate the per-iteration log so
+  # the post-loop early/late phase rates can be computed without a second
+  # pass.
+  joint_updates <- 0L
+  k2_fallbacks  <- 0L
+  joint_log     <- if (block_k4_enabled) logical(max_iter) else NULL
 
   while (iter < max_iter) {
     iter <- iter + 1L
@@ -188,7 +281,12 @@
     j_is_alpha <- low_is_alpha[pos_j]
     tau_j      <- low_tau_pool[pos_j]
 
-    # ---- 1-D step size ----
+    # F7: fetch K_q early so the block-k=4 xi-formula can read entries
+    # from it without a second column fetch. Same call as the F4 location
+    # (line ~213); just moved up. Bit-identical when block_k4_enabled = FALSE.
+    K_q <- K_acc$get_column(q)
+
+    # ---- 1-D step size (pair 1) ----
     eta       <- K_p[p] - 2 * K_p[q] + diag_Omega[q]
     R_i       <- if (i_is_alpha) C_k[p] - alpha[p] else alpha_star[p]
     R_j       <- if (j_is_alpha) alpha[q]          else C_k[q] - alpha_star[q]
@@ -197,7 +295,148 @@
     Delta_pq  <- tau_i - tau_j
     delta     <- if (eta > 0) min(Delta_pq / eta, delta_max) else delta_max
 
-    # ---- Apply update (one of 4 cases) ----
+    # ---- F7: Block-k=4 candidate selection + decoupling test ----
+    # See "Phase 1 — Implementation design" in plans/frolicking-booping-forest.md
+    # and Theorem 7 of arXiv:2605.01446 v3. The descent-guaranteed criterion
+    # of D1 is necessary-and-sufficient (in exact arithmetic) for the joint
+    # update to outperform the k=2 fallback; the literal "sufficiently small"
+    # cross-coupling condition of the paper is made precise here.
+    did_joint_update <- FALSE
+    p2          <- NA_integer_
+    q2          <- NA_integer_
+    delta_2     <- 0
+    K_p2        <- NULL
+    i2_is_alpha <- FALSE
+    j2_is_alpha <- FALSE
+
+    if (block_k4_enabled) {
+      # Step 1 — Find i_2: argmax tau over I_up \ {i_1} (sample-level
+      # exclusion). i_1 = (p, i_is_alpha), so remove sample p from the
+      # matching slot pool only.
+      if (i_is_alpha) {
+        rem_up_alpha <- up_alpha[up_alpha != p]
+        if (length(rem_up_alpha) > 0L) {
+          ix2_a <- rem_up_alpha[which.max(tau_alpha[rem_up_alpha])]
+          tau_a2 <- tau_alpha[ix2_a]
+        } else { ix2_a <- 0L; tau_a2 <- -Inf }
+        if (length(up_astar) > 0L) {
+          ix2_s <- up_astar[which.max(tau_alphastar[up_astar])]
+          tau_s2 <- tau_alphastar[ix2_s]
+        } else { ix2_s <- 0L; tau_s2 <- -Inf }
+      } else {
+        if (length(up_alpha) > 0L) {
+          ix2_a <- up_alpha[which.max(tau_alpha[up_alpha])]
+          tau_a2 <- tau_alpha[ix2_a]
+        } else { ix2_a <- 0L; tau_a2 <- -Inf }
+        rem_up_astar <- up_astar[up_astar != p]
+        if (length(rem_up_astar) > 0L) {
+          ix2_s <- rem_up_astar[which.max(tau_alphastar[rem_up_astar])]
+          tau_s2 <- tau_alphastar[ix2_s]
+        } else { ix2_s <- 0L; tau_s2 <- -Inf }
+      }
+
+      if (tau_a2 >= tau_s2 && tau_a2 > -Inf) {
+        p2_cand <- ix2_a; i2_is_alpha_cand <- TRUE;  tau_i2 <- tau_a2
+      } else if (tau_s2 > -Inf) {
+        p2_cand <- ix2_s; i2_is_alpha_cand <- FALSE; tau_i2 <- tau_s2
+      } else {
+        p2_cand <- 0L; i2_is_alpha_cand <- FALSE; tau_i2 <- -Inf
+      }
+
+      # Sample-level disjointness from pair 1: require p2 != p and p2 != q.
+      if (tau_i2 > -Inf && p2_cand != p && p2_cand != q &&
+          tau_i2 > tol_eff) {
+        # Step 2 — Find j_2 over I_down \ {sample p, q, p2_cand}, filtered
+        # by tau_j < tau_i2 - tol_eff. WSS3 scored with decoupling
+        # co-optimization (D2 of the F7 spec).
+        sample_excl <- c(p, q, p2_cand)
+        ca_mask <- !(down_alpha %in% sample_excl) &
+                   (tau_alpha[down_alpha] < tau_i2 - tol_eff)
+        cs_mask <- !(down_astar %in% sample_excl) &
+                   (tau_alphastar[down_astar] < tau_i2 - tol_eff)
+        cand_alpha_idx <- down_alpha[ca_mask]
+        cand_astar_idx <- down_astar[cs_mask]
+
+        if (length(cand_alpha_idx) + length(cand_astar_idx) > 0L) {
+          # One extra column fetch: K_p2 needed for eta_2 and (later) the
+          # fused tau update. Coupling proxy reads K_p (already in hand)
+          # so no further fetch for scoring.
+          K_p2 <- K_acc$get_column(p2_cand)
+          diag_p <- diag_Omega[p]
+
+          cand_idx_all <- c(cand_alpha_idx, cand_astar_idx)
+          cand_tau_all <- c(tau_alpha[cand_alpha_idx],
+                            tau_alphastar[cand_astar_idx])
+          cand_is_alpha <- c(rep(TRUE,  length(cand_alpha_idx)),
+                             rep(FALSE, length(cand_astar_idx)))
+
+          # eta_j = Omega(p2,p2) - 2 Omega(p2, j) + Omega(j, j)
+          eta_j  <- K_p2[p2_cand] - 2 * K_p2[cand_idx_all] +
+                    diag_Omega[cand_idx_all]
+          eta_j  <- pmax(eta_j, 1e-12)
+          gain_j <- (tau_i2 - cand_tau_all)^2 / eta_j
+
+          # Coupling proxy: |Omega(p, j)| / sqrt(Omega(p,p) * Omega(j,j)),
+          # normalized correlation between pair 1's i_1-sample and the
+          # candidate. Capped at 1 for Mercer kernels (Cauchy-Schwarz).
+          denom <- sqrt(diag_p * diag_Omega[cand_idx_all])
+          coupling_j <- ifelse(denom > 0,
+                               abs(K_p[cand_idx_all]) / denom,
+                               1)
+
+          score_j_aug <- gain_j * (1 - alpha_couple * coupling_j)
+          best <- which.max(score_j_aug)
+
+          if (length(best) == 1L && score_j_aug[best] > 0) {
+            q2_cand          <- cand_idx_all[best]
+            tau_j2           <- cand_tau_all[best]
+            j2_is_alpha_cand <- cand_is_alpha[best]
+
+            Delta_2 <- tau_i2 - tau_j2
+            eta_2   <- K_p2[p2_cand] - 2 * K_p2[q2_cand] +
+                       diag_Omega[q2_cand]
+
+            if (Delta_2 > 0 && eta_2 > 0) {
+              # Step 3 — xi (corrected sign-free formula; see plan).
+              # Computed from already-fetched K_p, K_q with zero extra
+              # column fetches. Sign factors s_i cancel under MAPE-SVR's
+              # alpha/alpha* dual because the Delta-beta update has
+              # invariant +-delta sign across all 4 case branches.
+              xi <- K_p[p2_cand] - K_p[q2_cand] -
+                    K_q[p2_cand] + K_q[q2_cand]
+
+              # Step 4 — Decoupling test. Delta_pq is the WSS3 gap
+              # (tau_i - tau_q), the same value used at line ~198 to
+              # compute pair 1's analytic delta. The descent geometry
+              # of the joint update is defined by the direction pair
+              # (i, q) -- pair 1's actual update direction -- not the
+              # MVP convergence pair (i_w1, j_w1) from line ~136.
+              lhs <- Delta_pq^2 * eta_2 + Delta_2^2 * eta
+              rhs <- 2 * abs(xi * Delta_pq * Delta_2) * (1 + 1e-10)
+
+              if (lhs > rhs) {
+                # Step 5 — Compute delta_2 with pair-2 box clipping.
+                R_i2 <- if (i2_is_alpha_cand) C_k[p2_cand] - alpha[p2_cand]
+                        else                  alpha_star[p2_cand]
+                R_j2 <- if (j2_is_alpha_cand) alpha[q2_cand]
+                        else                  C_k[q2_cand] - alpha_star[q2_cand]
+                delta2_max <- min(R_i2, R_j2)
+                if (delta2_max > 0) {
+                  did_joint_update <- TRUE
+                  p2          <- p2_cand
+                  q2          <- q2_cand
+                  i2_is_alpha <- i2_is_alpha_cand
+                  j2_is_alpha <- j2_is_alpha_cand
+                  delta_2     <- min(Delta_2 / eta_2, delta2_max)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    # ---- Apply pair 1 update (one of 4 cases) ----
     if      ( i_is_alpha &&  j_is_alpha) { alpha[p]      <- alpha[p]      + delta; alpha[q]      <- alpha[q]      - delta }
     else if ( i_is_alpha && !j_is_alpha) { alpha[p]      <- alpha[p]      + delta; alpha_star[q] <- alpha_star[q] + delta }
     else if (!i_is_alpha &&  j_is_alpha) { alpha_star[p] <- alpha_star[p] - delta; alpha[q]      <- alpha[q]      - delta }
@@ -209,11 +448,37 @@
     alpha_star[p] <- max(0, min(alpha_star[p], C_k[p]))
     alpha_star[q] <- max(0, min(alpha_star[q], C_k[q]))
 
+    if (did_joint_update) {
+      # ---- Apply pair 2 update (one of 4 cases, sample-disjoint from pair 1) ----
+      if      ( i2_is_alpha &&  j2_is_alpha) { alpha[p2]      <- alpha[p2]      + delta_2; alpha[q2]      <- alpha[q2]      - delta_2 }
+      else if ( i2_is_alpha && !j2_is_alpha) { alpha[p2]      <- alpha[p2]      + delta_2; alpha_star[q2] <- alpha_star[q2] + delta_2 }
+      else if (!i2_is_alpha &&  j2_is_alpha) { alpha_star[p2] <- alpha_star[p2] - delta_2; alpha[q2]      <- alpha[q2]      - delta_2 }
+      else                                    { alpha_star[p2] <- alpha_star[p2] - delta_2; alpha_star[q2] <- alpha_star[q2] + delta_2 }
+
+      alpha[p2]      <- max(0, min(alpha[p2],      C_k[p2]))
+      alpha[q2]      <- max(0, min(alpha[q2],      C_k[q2]))
+      alpha_star[p2] <- max(0, min(alpha_star[p2], C_k[p2]))
+      alpha_star[q2] <- max(0, min(alpha_star[q2], C_k[q2]))
+
+      joint_updates    <- joint_updates + 1L
+      joint_log[iter]  <- TRUE
+    } else if (block_k4_enabled) {
+      k2_fallbacks <- k2_fallbacks + 1L
+      # joint_log[iter] stays FALSE
+    }
+
     # ---- Gradient (tau) update over the active set ----
-    K_q     <- K_acc$get_column(q)
+    # Pair 1 always contributes; pair 2 contributes only when joint.
     diff_pq <- K_p - K_q
-    if (length(aa)  > 0L) tau_alpha[aa]      <- tau_alpha[aa]      - delta * diff_pq[aa]
-    if (length(ast) > 0L) tau_alphastar[ast] <- tau_alphastar[ast] - delta * diff_pq[ast]
+    if (did_joint_update) {
+      K_q2      <- K_acc$get_column(q2)
+      diff_pq_2 <- K_p2 - K_q2
+      if (length(aa)  > 0L) tau_alpha[aa]      <- tau_alpha[aa]      - delta * diff_pq[aa]  - delta_2 * diff_pq_2[aa]
+      if (length(ast) > 0L) tau_alphastar[ast] <- tau_alphastar[ast] - delta * diff_pq[ast] - delta_2 * diff_pq_2[ast]
+    } else {
+      if (length(aa)  > 0L) tau_alpha[aa]      <- tau_alpha[aa]      - delta * diff_pq[aa]
+      if (length(ast) > 0L) tau_alphastar[ast] <- tau_alphastar[ast] - delta * diff_pq[ast]
+    }
 
     # ---- Shrinking (every n_check iterations) ----
     if (iter %% n_check == 0L) {
@@ -277,11 +542,41 @@
          else 0
   }
 
+  # F7 telemetry: overall and early/late phase decoupling rates. The
+  # early/late split tests the paper's claim that "shrinking-asymmetry
+  # produces a clustered active set" -- if true, late-phase decoupling
+  # rate should be substantially higher than early. Similar rates would
+  # be a paper-relevant empirical finding.
+  total_events <- joint_updates + k2_fallbacks
+  if (block_k4_enabled && total_events > 0L) {
+    decoupling_rate <- joint_updates / total_events
+    iter_total      <- iter
+    early_bound     <- max(50L, as.integer(ceiling(iter_total / 4)))
+    late_bound      <- max(50L, as.integer(ceiling(3 * iter_total / 4)))
+    early_phase_decoupling_rate <-
+      if (iter_total >= 1L)
+        mean(joint_log[seq_len(min(early_bound, iter_total))])
+      else NA_real_
+    late_phase_decoupling_rate <-
+      if (iter_total >= late_bound)
+        mean(joint_log[late_bound:iter_total])
+      else NA_real_
+  } else {
+    decoupling_rate             <- NA_real_
+    early_phase_decoupling_rate <- NA_real_
+    late_phase_decoupling_rate  <- NA_real_
+  }
+
   list(
-    alpha      = alpha,
-    alpha_star = alpha_star,
-    b          = b,
-    converged  = converged,
-    iterations = iter
+    alpha                        = alpha,
+    alpha_star                   = alpha_star,
+    b                            = b,
+    converged                    = converged,
+    iterations                   = iter,
+    joint_updates                = joint_updates,
+    k2_fallbacks                 = k2_fallbacks,
+    decoupling_rate              = decoupling_rate,
+    early_phase_decoupling_rate  = early_phase_decoupling_rate,
+    late_phase_decoupling_rate   = late_phase_decoupling_rate
   )
 }
