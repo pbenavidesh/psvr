@@ -154,3 +154,42 @@ test_that("T3 + T8 reduce to default behavior on homogeneous targets", {
   rel_err <- abs(preds - y_h) / y_h
   expect_lt(median(rel_err), 0.10)
 })
+
+# ---- 7. SMO converges to a valid KKT optimum on RBF (smoke) ----------------
+
+test_that("SMO fit converges to a valid KKT optimum on RBF", {
+  set.seed(2026)
+  X_e <- matrix(rnorm(40 * 4), 40L, 4L)
+  y_e <- abs(rnorm(40L)) + 1
+  K_e <- make_kernel("rbf", sigma = 1)
+  fit <- psvr(X_e, y_e, loss = "mape", kernel = K_e, C = 10, eps = 5)
+  expect_true(isTRUE(fit$solver_meta$converged))
+  preds <- predict(fit, X_e)
+  expect_true(all(is.finite(preds)))
+})
+
+# ---- 8. SMO preserves the equality constraint at convergence --------------
+#
+# After convergence the dual must satisfy sum(alpha - alpha_star) = 0 to
+# within numerical tolerance.
+
+test_that("SMO fit satisfies sum(alpha - alpha_star) = 0", {
+  set.seed(2026)
+  X_b <- matrix(rnorm(40 * 4), 40L, 4L)
+  y_b <- abs(rnorm(40L)) + 1
+  K_b <- make_kernel("rbf", sigma = 1)
+  fit <- psvr(X_b, y_b, loss = "mape", kernel = K_b, C = 10, eps = 5)
+  expect_lt(abs(sum(fit$alpha - fit$alpha_star)), 1e-8 * max(100 * 10 / y_b))
+})
+
+# ---- 9. SMO converges in finite iterations on the snapshot fixture --------
+
+test_that("SMO converges in finite iterations on the snapshot fixture", {
+  set.seed(2026)
+  X_g <- matrix(rnorm(50 * 5), 50, 5)
+  y_g <- stats::rlnorm(50, meanlog = 0, sdlog = 0.5)
+  K_g <- make_kernel("rbf", sigma = 1)
+  fit <- psvr(X_g, y_g, loss = "mape", kernel = K_g, C = 10, eps = 5)
+  expect_true(isTRUE(fit$solver_meta$converged))
+  expect_lt(fit$solver_meta$iters, 100000L)
+})
