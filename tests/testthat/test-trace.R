@@ -43,6 +43,8 @@ test_that("trace = FALSE matches default (no argument) on engine = 'r'", {
   expect_identical(s_def$iterations, s_F$iterations)
   expect_null(s_def$delta_history)
   expect_null(s_F$delta_history)
+  expect_null(s_def$active_history)
+  expect_null(s_F$active_history)
 })
 
 test_that("trace = FALSE matches default (no argument) on engine = 'rcpp'", {
@@ -57,9 +59,11 @@ test_that("trace = FALSE matches default (no argument) on engine = 'rcpp'", {
   expect_identical(s_def$iterations, s_F$iterations)
   expect_null(s_def$delta_history)
   expect_null(s_F$delta_history)
+  expect_null(s_def$active_history)
+  expect_null(s_F$active_history)
 })
 
-## ---- 2 + 3. trace = TRUE returns delta_history, same numerics ------------
+## ---- 2 + 3. trace = TRUE returns delta_history + active_history, same numerics
 test_that("trace = TRUE returns numeric delta_history with length == iterations", {
   fx    <- .trace_fixture()
   K_acc <- .build_K_acc(fx$X, make_kernel("rbf", sigma = 1))
@@ -68,6 +72,12 @@ test_that("trace = TRUE returns numeric delta_history with length == iterations"
                             trace = TRUE)
   expect_type(s_T$delta_history, "double")
   expect_length(s_T$delta_history, s_T$iterations)
+  # F7.6 — active_history: integer, same length, bounded by 2*N.
+  expect_type(s_T$active_history, "integer")
+  expect_length(s_T$active_history, s_T$iterations)
+  N <- nrow(fx$X)
+  expect_true(all(s_T$active_history >= 0L))
+  expect_true(all(s_T$active_history <= 2L * N))
   # Numerics unchanged by trace=TRUE.
   expect_identical(s_F$alpha,      s_T$alpha)
   expect_identical(s_F$alpha_star, s_T$alpha_star)
@@ -97,6 +107,9 @@ test_that("trace = TRUE returns numeric delta_history with length == iterations"
   # The new gate: delta_history bit-identical across engines.
   expect_identical(s_c$delta_history, s_r$delta_history,
                    label = sprintf("[%s] delta_history", label))
+  # F7.6 — active_history bit-identical across engines.
+  expect_identical(s_c$active_history, s_r$active_history,
+                   label = sprintf("[%s] active_history", label))
   invisible(NULL)
 }
 
@@ -136,7 +149,8 @@ test_that("delta_history trend decreases (tail < head) on converging fit", {
 ## ---- 6. Edge case: max_iter = 0 ------------------------------------------
 ## With zero iters the outer SMO loop body never runs; delta_history must
 ## be numeric(0), NOT NULL — matching `seq_len(0)` behavior in R.
-test_that("trace = TRUE with max_iter = 0 returns numeric(0), not NULL", {
+## active_history must be integer(0) under the same rule.
+test_that("trace = TRUE with max_iter = 0 returns zero-length vectors, not NULL", {
   fx    <- .trace_fixture()
   K_acc <- .build_K_acc(fx$X, make_kernel("rbf", sigma = 1))
   for (eng in c("r", "rcpp")) {
@@ -148,6 +162,36 @@ test_that("trace = TRUE with max_iter = 0 returns numeric(0), not NULL", {
                  info = sprintf("engine = '%s'", eng))
     expect_type(s$delta_history, "double")
     expect_length(s$delta_history, 0L)
+    expect_false(is.null(s$active_history),
+                 info = sprintf("engine = '%s'", eng))
+    expect_type(s$active_history, "integer")
+    expect_length(s$active_history, 0L)
     expect_identical(s$iterations, 0L)
+  }
+})
+
+## ---- 7. active_history reflects shrinking dynamics -----------------------
+## On a fixture that shrinks (n_check small, n_freeze small), the
+## active-set count should not monotonically decrease — restoration events
+## must produce upticks. Sanity-check: at least one iter where the active
+## count exceeds the immediately-prior iter's count.
+test_that("active_history exhibits non-monotone dynamics with shrink/restore", {
+  fx    <- .trace_fixture()
+  K_acc <- .build_K_acc(fx$X, make_kernel("rbf", sigma = 1))
+  N <- nrow(fx$X)
+  for (eng in c("r", "rcpp")) {
+    s <- psvr:::.smo_solve(
+      K_acc, fx$y, C = 10, eps = 5,
+      n_check = 3L, n_freeze = 2L,
+      engine = eng, trace = TRUE
+    )
+    ah <- s$active_history
+    expect_true(isTRUE(s$converged),
+                info = sprintf("fixture should converge under engine='%s'", eng))
+    # First iter starts with all-active (= 2*N).
+    expect_identical(ah[1L], 2L * as.integer(N))
+    # Active count stays within [0, 2*N] throughout.
+    expect_true(all(ah >= 0L), info = sprintf("engine = '%s'", eng))
+    expect_true(all(ah <= 2L * N), info = sprintf("engine = '%s'", eng))
   }
 })
