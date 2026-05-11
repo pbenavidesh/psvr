@@ -48,6 +48,10 @@
 #' @param reg Reserved for future phases (extended Lagrangian). Must be
 #'   `NULL`.
 #' @param ... Currently unused; reserved for future extension.
+#' @param precomputed_Omega,precomputed_Omega_s INTERNAL — used by
+#'   [psvr_cv()] to share a single full-dataset kernel matrix across
+#'   folds. Users should not set these directly. Default `NULL`
+#'   (per-fold construction). Ignored for `loss = "rmspe"`.
 #'
 #' @return An object of class `"psvr_fit"`, a list with components:
 #'   \describe{

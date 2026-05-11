@@ -21,7 +21,9 @@ psvr(
   warm_start_check = TRUE,
   new_mask = NULL,
   reg = NULL,
-  ...
+  ...,
+  precomputed_Omega = NULL,
+  precomputed_Omega_s = NULL
 )
 }
 \arguments{
@@ -73,6 +75,11 @@ zero". Used internally by \code{\link[=psvr_cv]{psvr_cv()}} for fold-to-fold car
 \code{NULL}.}
 
 \item{...}{Currently unused; reserved for future extension.}
+
+\item{precomputed_Omega, precomputed_Omega_s}{INTERNAL — used by
+\code{\link[=psvr_cv]{psvr_cv()}} to share a single full-dataset kernel matrix across
+folds. Users should not set these directly. Default \code{NULL}
+(per-fold construction). Ignored for \code{loss = "rmspe"}.}
 }
 \value{
 An object of class \code{"psvr_fit"}, a list with components:

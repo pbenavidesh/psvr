@@ -1,1 +1,3 @@
-PKG_CXXFLAGS = -O3
+# Intentionally empty: rely on R's default optimization flags from
+# ${R_HOME}/etc/Makeconf. CRAN policy prohibits package-set -O3 in
+# Makevars (non-portable); R already builds with -O2 by default.

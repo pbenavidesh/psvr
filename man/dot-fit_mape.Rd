@@ -15,7 +15,8 @@
   alpha_init = NULL,
   alpha_star_init = NULL,
   warm_start_check = TRUE,
-  new_mask = NULL
+  new_mask = NULL,
+  precomputed_Omega = NULL
 )
 }
 \arguments{
