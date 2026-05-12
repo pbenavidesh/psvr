@@ -99,6 +99,7 @@
     if (isTRUE(passed$eps) && !is.null(eps)) warning('`eps` is ignored when `loss = "rmspe"`')
     if (isTRUE(passed$solver))               warning('`solver` is ignored when `loss = "rmspe"`')
     if (isTRUE(passed$tol))                  warning('`tol` is ignored when `loss = "rmspe"`')
+    if (isTRUE(passed$max_iter))             warning('`max_iter` is ignored when `loss = "rmspe"`')
   }
 
   invisible(NULL)

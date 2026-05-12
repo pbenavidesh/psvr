@@ -20,7 +20,8 @@
 #'
 #' @keywords internal
 .fit_mape_sym <- function(X, y, kernel, C, eps, a = 1,
-                          solver = c("smo", "osqp"), tol = 1e-5,
+                          solver = c("smo", "osqp"),
+                          tol = 1e-3, max_iter = 100000L,
                           alpha_init = NULL,
                           alpha_star_init = NULL,
                           warm_start_check = TRUE,
@@ -86,6 +87,7 @@
     # Model 1.
     K_acc      <- .make_kernel_accessor(Omega_s)
     sol        <- .smo_solve(K_acc, y, C, eps,
+                             tol = tol, max_iter = max_iter,
                              alpha_init = alpha_init,
                              alpha_star_init = alpha_star_init,
                              warm_start_check = warm_start_check,

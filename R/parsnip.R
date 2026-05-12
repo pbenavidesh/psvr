@@ -39,7 +39,10 @@ utils::globalVariables(c("object", "new_data"))
 #' @param scale_factor Polynomial constant term (coef₀).
 #' @param sym_type Symmetry type (`"even"` or `"odd"`) for symmetric models;
 #'   translated to `a = 1L` or `a = -1L` before calling the solver.
-#' @param tol Solver zero-threshold.
+#' @param tol Solver convergence tolerance for the SMO loop. Default `1e-3`.
+#' @param max_iter Maximum SMO iterations. Default `100000L`. The solver
+#'   emits a `warning()` and returns `solver_meta$converged = FALSE` if it
+#'   does not converge within `max_iter`.
 #' @param precondition Optional symmetric rescaling preconditioner for the
 #'   RMSPE LS-SVR fitters. See [rmspe_lssvr()] for accepted values and
 #'   semantics.
@@ -50,61 +53,72 @@ NULL
 #' @rdname psvr-fit-wrappers
 #' @keywords internal
 #' @export
-psvr_mape_rbf_fit <- function(x, y, C, eps, rbf_sigma = 1, tol = 1e-5) {
+psvr_mape_rbf_fit <- function(x, y, C, eps, rbf_sigma = 1,
+                              tol = 1e-3, max_iter = 100000L) {
   .fit_mape(X = x, y = y,
             kernel = make_kernel("rbf", sigma = rbf_sigma),
-            C = C, eps = eps, tol = tol)
+            C = C, eps = eps,
+            tol = tol, max_iter = max_iter)
 }
 
 #' @rdname psvr-fit-wrappers
 #' @keywords internal
 #' @export
 psvr_mape_poly_fit <- function(x, y, C, eps, degree = 3L, scale_factor = 1,
-                               tol = 1e-5) {
+                               tol = 1e-3, max_iter = 100000L) {
   .fit_mape(X = x, y = y,
             kernel = make_kernel("polynomial", degree = degree,
                                  coef0 = scale_factor),
-            C = C, eps = eps, tol = tol)
+            C = C, eps = eps,
+            tol = tol, max_iter = max_iter)
 }
 
 #' @rdname psvr-fit-wrappers
 #' @keywords internal
 #' @export
-psvr_mape_linear_fit <- function(x, y, C, eps, tol = 1e-5) {
+psvr_mape_linear_fit <- function(x, y, C, eps,
+                                 tol = 1e-3, max_iter = 100000L) {
   .fit_mape(X = x, y = y,
             kernel = make_kernel("linear"),
-            C = C, eps = eps, tol = tol)
+            C = C, eps = eps,
+            tol = tol, max_iter = max_iter)
 }
 
 #' @rdname psvr-fit-wrappers
 #' @keywords internal
 #' @export
 psvr_mape_sym_rbf_fit <- function(x, y, C, eps, rbf_sigma = 1,
-                                  sym_type = "even", tol = 1e-5) {
+                                  sym_type = "even",
+                                  tol = 1e-3, max_iter = 100000L) {
   a <- if (sym_type == "even") 1L else -1L
   .fit_mape_sym(X = x, y = y,
                 kernel = make_kernel("rbf", sigma = rbf_sigma),
-                C = C, eps = eps, a = a, tol = tol)
+                C = C, eps = eps, a = a,
+                tol = tol, max_iter = max_iter)
 }
 
 #' @rdname psvr-fit-wrappers
 #' @keywords internal
 #' @export
 psvr_mape_sym_poly_fit <- function(x, y, C, eps, degree = 3L,
-                                   scale_factor = 1, a = 1L, tol = 1e-5) {
+                                   scale_factor = 1, a = 1L,
+                                   tol = 1e-3, max_iter = 100000L) {
   .fit_mape_sym(X = x, y = y,
                 kernel = make_kernel("polynomial", degree = degree,
                                      coef0 = scale_factor),
-                C = C, eps = eps, a = a, tol = tol)
+                C = C, eps = eps, a = a,
+                tol = tol, max_iter = max_iter)
 }
 
 #' @rdname psvr-fit-wrappers
 #' @keywords internal
 #' @export
-psvr_mape_sym_linear_fit <- function(x, y, C, eps, a = 1L, tol = 1e-5) {
+psvr_mape_sym_linear_fit <- function(x, y, C, eps, a = 1L,
+                                     tol = 1e-3, max_iter = 100000L) {
   .fit_mape_sym(X = x, y = y,
                 kernel = make_kernel("linear"),
-                C = C, eps = eps, a = a, tol = tol)
+                C = C, eps = eps, a = a,
+                tol = tol, max_iter = max_iter)
 }
 
 #' @rdname psvr-fit-wrappers

@@ -168,3 +168,78 @@ test_that("psvr_rmspe_rbf default precondition='auto' activates at rho > 10", {
                      set_engine("psvr"))
   expect_true(fit_obj$fit$precondition_applied)
 })
+
+# ---- tol / max_iter engine-arg forwarding (MAPE specs) -------------------
+# Verifies the v0.0.2.9009 fix: `tol` actually reaches the SMO solver
+# (previously silently dropped) and `max_iter` is now exposed through
+# `set_engine("psvr", ...)`. Parsnip layer always uses the default
+# `.smo_solve` engine (rcpp); cross-engine equivalence on the underlying
+# plumbing is verified by direct `.fit_mape` calls below.
+
+set.seed(11)
+n_t  <- 25
+X_t  <- matrix(runif(n_t * 2, 1, 5), ncol = 2,
+               dimnames = list(NULL, c("V1", "V2")))
+y_t  <- 2 + X_t[, 1] + X_t[, 2] + rnorm(n_t, sd = 0.1)
+stopifnot(all(y_t > 0))
+
+test_that("tol forwarded through parsnip set_engine", {
+  spec_loose <- psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1) |>
+    set_engine("psvr", tol = 1e-1)
+  spec_tight <- psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1) |>
+    set_engine("psvr", tol = 1e-6)
+  fit_loose <- parsnip::fit_xy(spec_loose, x = X_t, y = y_t)
+  fit_tight <- parsnip::fit_xy(spec_tight, x = X_t, y = y_t)
+  expect_true(isTRUE(fit_loose$fit$converged))
+  expect_true(isTRUE(fit_tight$fit$converged))
+  expect_lt(fit_loose$fit$iterations, fit_tight$fit$iterations)
+})
+
+test_that("max_iter caps SMO iterations via parsnip set_engine", {
+  spec_cap <- psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1) |>
+    set_engine("psvr", max_iter = 5L)
+  expect_warning(
+    fit_cap <- parsnip::fit_xy(spec_cap, x = X_t, y = y_t),
+    "did not converge"
+  )
+  expect_equal(fit_cap$fit$iterations, 5L)
+  expect_false(isTRUE(fit_cap$fit$converged))
+})
+
+# Cross-engine forwarding (rcpp vs r) — exercised at the .fit_mape level,
+# since the parsnip fit wrappers always use the default rcpp engine.
+for (eng in c("rcpp", "r")) {
+  local({
+    eng_local <- eng
+
+    test_that(sprintf(".fit_mape forwards tol to .smo_solve (engine=%s)",
+                      eng_local), {
+      K <- make_kernel("rbf", sigma = 1)
+      fit_loose <- psvr:::.fit_mape(
+        X_t, y_t, kernel = K, C = 10, eps = 1,
+        tol = 1e-1, engine = eng_local
+      )
+      fit_tight <- psvr:::.fit_mape(
+        X_t, y_t, kernel = K, C = 10, eps = 1,
+        tol = 1e-6, engine = eng_local
+      )
+      expect_true(isTRUE(fit_loose$converged))
+      expect_true(isTRUE(fit_tight$converged))
+      expect_lt(fit_loose$iterations, fit_tight$iterations)
+    })
+
+    test_that(sprintf(".fit_mape forwards max_iter to .smo_solve (engine=%s)",
+                      eng_local), {
+      K <- make_kernel("rbf", sigma = 1)
+      expect_warning(
+        fit_cap <- psvr:::.fit_mape(
+          X_t, y_t, kernel = K, C = 10, eps = 1,
+          max_iter = 5L, engine = eng_local
+        ),
+        "did not converge"
+      )
+      expect_equal(fit_cap$iterations, 5L)
+      expect_false(isTRUE(fit_cap$converged))
+    })
+  })
+}

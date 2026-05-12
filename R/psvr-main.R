@@ -11,9 +11,9 @@
 #' @section Cross-loss arguments:
 #' Some arguments apply only to one family. When `loss = "mape"`, `gamma`
 #' and `precondition` are ignored (with a warning if supplied non-`NULL`).
-#' When `loss = "rmspe"`, `C`, `eps`, `solver`, and `tol` are ignored
-#' (same warning rule). Default values do not trigger warnings — only
-#' user-supplied values do, detected via `missing()`.
+#' When `loss = "rmspe"`, `C`, `eps`, `solver`, `tol`, and `max_iter` are
+#' ignored (same warning rule). Default values do not trigger warnings —
+#' only user-supplied values do, detected via `missing()`.
 #'
 #' @param X Numeric matrix of training inputs, one observation per row (N × p).
 #' @param y Numeric vector of training targets (length N). Must satisfy `y > 0`.
@@ -30,7 +30,12 @@
 #' @param gamma Regularization parameter `Γ > 0` (`loss = "rmspe"` only).
 #' @param solver Backend for the dual QP, `"smo"` (default) or `"osqp"`
 #'   (`loss = "mape"` only).
-#' @param tol Solver zero-threshold (`loss = "mape"` only).
+#' @param tol Solver convergence tolerance for the SMO loop (`loss = "mape"`
+#'   only). Default `1e-3`. Tighter values produce more iterations.
+#' @param max_iter Maximum SMO iterations (`loss = "mape"` only). Default
+#'   `100000L`. The solver emits a `warning()` and returns
+#'   `solver_meta$converged = FALSE` if it does not converge within
+#'   `max_iter`.
 #' @param precondition One of `"auto"` (default), `"always"`, `"never"`, or
 #'   a positive numeric threshold; controls Remark-17 symmetric rescaling
 #'   (`loss = "rmspe"` only). See [rmspe_lssvr()] for semantics.
@@ -133,8 +138,9 @@ psvr <- function(X, y,
                  C     = NULL,
                  eps   = NULL,
                  gamma = NULL,
-                 solver = c("smo", "osqp"),
-                 tol    = 1e-5,
+                 solver   = c("smo", "osqp"),
+                 tol      = 1e-3,
+                 max_iter = 100000L,
                  precondition = "auto",
                  alpha_init       = NULL,
                  alpha_star_init  = NULL,
@@ -161,6 +167,7 @@ psvr <- function(X, y,
     gamma        = !missing(gamma),
     solver       = !missing(solver),
     tol          = !missing(tol),
+    max_iter     = !missing(max_iter),
     precondition = !missing(precondition)
   )
 
@@ -182,7 +189,7 @@ psvr <- function(X, y,
   # Route to one of the four internal fitters.
   fit <- switch(paste(loss, ifelse(is.null(sym), "std", "sym"), sep = "_"),
     mape_std  = .fit_mape(X, y, kernel = kernel, C = C, eps = eps,
-                          solver = solver, tol = tol,
+                          solver = solver, tol = tol, max_iter = max_iter,
                           alpha_init = alpha_init,
                           alpha_star_init = alpha_star_init,
                           warm_start_check = warm_start_check,
@@ -192,7 +199,8 @@ psvr <- function(X, y,
                           alpha_couple = alpha_couple,
                           engine = engine),
     mape_sym  = .fit_mape_sym(X, y, kernel = kernel, C = C, eps = eps,
-                              a = a, solver = solver, tol = tol,
+                              a = a, solver = solver,
+                              tol = tol, max_iter = max_iter,
                               alpha_init = alpha_init,
                               alpha_star_init = alpha_star_init,
                               warm_start_check = warm_start_check,

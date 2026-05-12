@@ -1,3 +1,35 @@
+# psvr 0.0.2.9009 (development)
+
+## Bug fixes
+
+* **`tol` is now correctly forwarded to the SMO solver.** Previously,
+  `psvr(tol = ...)`, `.fit_mape(tol = ...)`, `.fit_mape_sym(tol = ...)`,
+  the deprecated wrappers (`mape_svr`, `mape_sym_svr`), and the MAPE
+  parsnip fit wrappers (`psvr_mape_*_fit`) accepted `tol` but silently
+  dropped it on the way to `.smo_solve()`, so the solver always ran at
+  its own default of `1e-3`. The documented `tol = 1e-5` default never
+  actually reached the solver. The upstream defaults are now aligned
+  with the solver default (`tol = 1e-3`) at every layer to preserve
+  bit-identicality of existing fits; users who explicitly pass a
+  non-default `tol` now actually receive the requested tolerance.
+  Snapshot gates unchanged from v0.0.2.9008.
+
+## New features
+
+* **`max_iter` is now exposed** through every MAPE entry path:
+  `psvr(..., max_iter = ...)`, `.fit_mape()`, `.fit_mape_sym()`, and
+  the six MAPE parsnip fit wrappers (`psvr_mape_rbf_fit`,
+  `psvr_mape_poly_fit`, `psvr_mape_linear_fit`,
+  `psvr_mape_sym_rbf_fit`, `psvr_mape_sym_poly_fit`,
+  `psvr_mape_sym_linear_fit`). Default `100000L` matches the
+  previously hardcoded `.smo_solve()` cap, so default fits are
+  numerically unchanged. Pass through parsnip via
+  `set_engine("psvr", tol = ..., max_iter = ...)`. Forwarded
+  identically by both `engine = "rcpp"` and `engine = "r"`.
+  Ignored for `loss = "rmspe"` (LS-SVR uses `base::solve()`); a
+  warning fires under `psvr(..., loss = "rmspe", max_iter = ...)`,
+  paralleling the existing `tol` cross-loss warning.
+
 # psvr 0.0.2.9008 (development)
 
 ## New features

@@ -19,7 +19,8 @@
 #' @param C Regularization parameter `C > 0`.
 #' @param eps Insensitivity tube half-width (% units), `eps >= 0`.
 #' @param solver Backend: `"smo"` (default) or `"osqp"`.
-#' @param tol Solver zero-threshold.
+#' @param tol SMO convergence tolerance. Default `1e-3`.
+#' @param max_iter Maximum SMO iterations. Default `100000L`.
 #'
 #' @return A list of class `"psvr_mape"`.
 #'
@@ -33,10 +34,12 @@
 #' @keywords internal
 #' @export
 mape_svr <- function(X, y, kernel, C, eps,
-                     solver = c("smo", "osqp"), tol = 1e-5) {
+                     solver = c("smo", "osqp"),
+                     tol = 1e-3, max_iter = 100000L) {
   .Deprecated("psvr")
   .fit_mape(X = X, y = y, kernel = kernel, C = C, eps = eps,
-            solver = match.arg(solver), tol = tol)
+            solver = match.arg(solver),
+            tol = tol, max_iter = max_iter)
 }
 
 #' Fit symmetric epsilon-SVR with MAPE loss (deprecated)
@@ -59,10 +62,12 @@ mape_svr <- function(X, y, kernel, C, eps,
 #' @keywords internal
 #' @export
 mape_sym_svr <- function(X, y, kernel, C, eps, a = 1,
-                         solver = c("smo", "osqp"), tol = 1e-5) {
+                         solver = c("smo", "osqp"),
+                         tol = 1e-3, max_iter = 100000L) {
   .Deprecated("psvr")
   .fit_mape_sym(X = X, y = y, kernel = kernel, C = C, eps = eps, a = a,
-                solver = match.arg(solver), tol = tol)
+                solver = match.arg(solver),
+                tol = tol, max_iter = max_iter)
 }
 
 #' Fit LS-SVR with RMSPE loss (deprecated)
