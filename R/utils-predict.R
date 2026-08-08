@@ -18,22 +18,17 @@
     stop(sprintf("newdata has %d column%s but model was trained on %d",
                  p, if (p == 1L) "" else "s", object$p_train))
 
-  M     <- nrow(newdata)
-  preds <- numeric(M)
   is_sym <- !is.null(object$sym)
   a      <- if (is_sym) as.integer(object$sym) else NA_integer_
   # MAPE prediction uses the pruned β (post-pruning); RMSPE uses the full α.
   coef_vec <- if (object$loss == "mape") object$beta else object$alpha
 
-  for (i in seq_len(M)) {
-    if (is_sym) {
-      kv <- sym_kernel_vector(object$kernel, object$support_data,
-                              newdata[i, ], a)
-    } else {
-      kv <- kernel_matrix(object$kernel, object$support_data,
-                          newdata[i, , drop = FALSE])
-    }
-    preds[i] <- sum(coef_vec * kv) + object$b
+  # One n_sv × M kernel block, not M per-row builds. sym_kernel_block()
+  # already carries the representer-theorem ½ (see sym_kernel_vector()).
+  Kb <- if (is_sym) {
+    sym_kernel_block(object$kernel, object$support_data, newdata, a)
+  } else {
+    kernel_matrix(object$kernel, object$support_data, newdata)
   }
-  as.numeric(preds)
+  as.numeric(colSums(coef_vec * Kb) + object$b)
 }

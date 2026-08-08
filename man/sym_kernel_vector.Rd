@@ -21,6 +21,6 @@ Numeric vector of length N.
 \description{
 For a new point \code{x}, returns the N-vector with entry \code{k} equal to
 \verb{½ * Ks(X[k, ], x)} where \code{Ks(xi, xj) = K(xi, xj) + a * K(xi, -xj)}.
-Used by \code{predict.psvr_mape_sym()} and \code{predict.psvr_rmspe_sym()}.
+Thin wrapper over the single-column case of \code{\link[=sym_kernel_block]{sym_kernel_block()}}.
 }
 \keyword{internal}

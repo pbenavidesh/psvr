@@ -142,11 +142,37 @@ sym_kernel_matrix <- function(K, X, a) {
   0.5 * (Omega + a * Omega_neg)
 }
 
+#' Compute a symmetric kernel block for prediction
+#'
+#' Block form of [sym_kernel_vector()]: entry `[k, i]` equals
+#' `½ * Ks(X[k, ], Xnew[i, ])` where `Ks(xi, xj) = K(xi, xj) + a * K(xi, -xj)`.
+#' Used by the `predict()` methods of the symmetric models (Models 2 and 4).
+#'
+#' Built from two [kernel_matrix()] calls rather than a nested R loop, so
+#' built-in kernels reach the Rcpp implementations; user-defined closures
+#' still fall through to `.legacy_kernel_matrix()`. Element-wise this is the
+#' same `0.5 * (K + a * K_neg)` arithmetic in the same order as the per-row
+#' loop it replaces, so predictions are bit-identical.
+#'
+#' @param K A kernel function from [make_kernel()].
+#' @param X Numeric training matrix (N × p).
+#' @param Xnew Numeric matrix of new points (M × p).
+#' @param a Symmetry parameter: `1` (even) or `-1` (odd).
+#'
+#' @return Numeric N × M matrix.
+#'
+#' @keywords internal
+sym_kernel_block <- function(K, X, Xnew, a) {
+  Omega     <- kernel_matrix(K, X,  Xnew)
+  Omega_neg <- kernel_matrix(K, X, -Xnew)
+  0.5 * (Omega + a * Omega_neg)
+}
+
 #' Compute a symmetric kernel vector for prediction
 #'
 #' For a new point `x`, returns the N-vector with entry `k` equal to
 #' `½ * Ks(X[k, ], x)` where `Ks(xi, xj) = K(xi, xj) + a * K(xi, -xj)`.
-#' Used by `predict.psvr_mape_sym()` and `predict.psvr_rmspe_sym()`.
+#' Thin wrapper over the single-column case of [sym_kernel_block()].
 #'
 #' @param K A kernel function from [make_kernel()].
 #' @param X Numeric training matrix (N × p).
@@ -157,10 +183,5 @@ sym_kernel_matrix <- function(K, X, a) {
 #'
 #' @keywords internal
 sym_kernel_vector <- function(K, X, x, a) {
-  n <- nrow(X)
-  v <- numeric(n)
-  for (k in seq_len(n)) {
-    v[k] <- 0.5 * (K(X[k, ], x) + a * K(X[k, ], -x))
-  }
-  v
+  as.numeric(sym_kernel_block(K, X, matrix(x, nrow = 1L), a))
 }

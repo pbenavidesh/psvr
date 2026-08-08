@@ -82,13 +82,8 @@ predict.psvr_rmspe <- function(object, newdata, ...) {
   if (p != object$p_train)
     stop(sprintf("newdata has %d column%s but model was trained on %d",
                  p, if (p == 1L) "" else "s", object$p_train))
-  M <- nrow(newdata)
-  preds <- numeric(M)
-  for (i in seq_len(M)) {
-    kv <- kernel_matrix(object$kernel, object$X_train, newdata[i, , drop = FALSE])
-    preds[i] <- sum(object$alpha * kv) + object$b
-  }
-  as.numeric(preds)
+  Kb <- kernel_matrix(object$kernel, object$X_train, newdata)
+  as.numeric(colSums(object$alpha * Kb) + object$b)
 }
 
 #' Print method for psvr_rmspe objects
