@@ -18,11 +18,13 @@ test_that("mape_sym_svr emits deprecation notice and returns legacy psvr_mape_sy
     regexp = "deprecated|psvr"
   )
   expect_s3_class(fit, "psvr_mape_sym")
-  expect_named(fit, c("beta", "alpha", "alpha_star", "b",
-                      "X_sv", "y_sv", "kernel", "C", "eps", "a",
-                      "n_train", "p_train",
-                      "iterations", "converged", "spectral",
-                      "block_k4"))
+  # Subset, not exact equality — see test-mape-svr.R for the rationale.
+  expect_in(c("beta", "alpha", "alpha_star", "b",
+              "X_sv", "y_sv", "kernel", "C", "eps", "a",
+              "n_train", "p_train",
+              "iterations", "converged", "spectral",
+              "block_k4"),
+            names(fit))
   expect_true(is.numeric(fit$beta))
   expect_true(is.numeric(fit$b) && length(fit$b) == 1L)
   expect_equal(ncol(fit$X_sv), ncol(X_tr))

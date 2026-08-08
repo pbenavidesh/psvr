@@ -18,9 +18,11 @@ test_that("rmspe_lssvr emits deprecation notice and returns legacy psvr_rmspe sh
     regexp = "deprecated|psvr"
   )
   expect_s3_class(fit, "psvr_rmspe")
-  expect_named(fit, c("alpha", "b", "X_train", "kernel",
-                      "gamma", "n_train", "p_train",
-                      "precondition_applied"))
+  # Subset, not exact equality — see test-mape-svr.R for the rationale.
+  expect_in(c("alpha", "b", "X_train", "kernel",
+              "gamma", "n_train", "p_train",
+              "precondition_applied"),
+            names(fit))
   expect_length(fit$alpha, nrow(X_tr))
   expect_true(is.numeric(fit$b) && length(fit$b) == 1L)
   expect_equal(fit$gamma, 1)

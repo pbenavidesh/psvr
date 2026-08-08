@@ -20,10 +20,16 @@ test_that("mape_svr emits deprecation notice and returns legacy psvr_mape shape"
     regexp = "deprecated|psvr"
   )
   expect_s3_class(fit, "psvr_mape")
-  expect_named(fit, c("beta", "alpha", "alpha_star", "b",
-                      "X_sv", "y_sv", "kernel", "C", "eps",
-                      "n_train", "p_train", "iterations", "converged",
-                      "block_k4"))
+  # Subset, not exact equality: this pins a DEPRECATED shape, so the contract
+  # worth guarding is "nothing that existed was removed". Fields have been
+  # added since (y_train / fitted_values in 0.0.2.9010, for fitted() and
+  # residuals()), and an exact name vector turns every such additive change
+  # into a false failure. Removals still fail here.
+  expect_in(c("beta", "alpha", "alpha_star", "b",
+              "X_sv", "y_sv", "kernel", "C", "eps",
+              "n_train", "p_train", "iterations", "converged",
+              "block_k4"),
+            names(fit))
   expect_true(is.numeric(fit$beta))
   expect_true(is.numeric(fit$b) && length(fit$b) == 1L)
   expect_equal(ncol(fit$X_sv), ncol(X_tr))
