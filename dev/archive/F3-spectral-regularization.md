@@ -1,6 +1,6 @@
 # F3 — Adaptive Spectral Regularization
 
-**Status:** Archived implementation notes — current state lives in `CLAUDE.md`.
+**Status:** Archived implementation notes — current state lives in `.claude/CLAUDE.md`.
 
 ## Adaptive Spectral Regularization (post-F3)
 

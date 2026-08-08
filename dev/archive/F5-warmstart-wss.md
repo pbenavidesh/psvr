@@ -1,6 +1,6 @@
 # F5 — Warm-start API + Working Set Selection Evaluation
 
-**Status:** Archived implementation notes — current state lives in `CLAUDE.md`.
+**Status:** Archived implementation notes — current state lives in `.claude/CLAUDE.md`.
 
 ## Warm-start API + Working Set Selection Evaluation (post-F5)
 

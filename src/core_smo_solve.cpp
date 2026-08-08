@@ -5,7 +5,7 @@
 // Strict bit-identicality with the R reference is the Phase 3 gate.
 // Operation order, loop direction, and tie-break behavior all mirror
 // R's behavior. See plans/frolicking-booping-forest.md and
-// CLAUDE.md "Bit-identicality policy (post-F7)" for the discipline.
+// .claude/CLAUDE.md "Bit-identicality policy (post-F7)" for the discipline.
 
 #include <algorithm>
 #include <cmath>

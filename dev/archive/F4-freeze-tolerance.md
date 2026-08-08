@@ -1,6 +1,6 @@
 # F4 — Asymmetric Freeze + Per-pair Tolerance
 
-**Status:** Archived implementation notes — current state lives in `CLAUDE.md`.
+**Status:** Archived implementation notes — current state lives in `.claude/CLAUDE.md`.
 
 ## Asymmetric Freeze + Per-pair Tolerance (post-F4)
 

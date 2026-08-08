@@ -1,6 +1,6 @@
 # F7-C-full — Portable C++ architecture
 
-**Status:** Archived implementation notes — current state lives in `CLAUDE.md`.
+**Status:** Archived implementation notes — current state lives in `.claude/CLAUDE.md`.
 
 ## Portable C++ architecture (post-F7-C-full)
 

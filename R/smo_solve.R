@@ -17,7 +17,7 @@
 # Diagonal entries come from K_acc$get_diag() (cached at construction);
 # the two full matvecs (shrink rebuild and post-loop refresh) go through
 # K_acc$get_matvec() so BLAS is preserved on the materialised path.  See
-# the F2 design note in CLAUDE.md ("Kernel Accessor (post-F2)").
+# the F2 design note in .claude/CLAUDE.md ("Kernel Accessor (post-F2)").
 #
 # The solver follows libsvm-style working-set selection on the gradient
 # projection
@@ -44,8 +44,8 @@
 #' the R reference implementation (`engine = "r"`). The R path is the
 #' canonical algorithm and remains the bit-identical reference for the
 #' Rcpp port; it will be deprecated in v0.0.4.0 and removed in v0.1.0
-#' once the Rcpp path has cleared its graduation criteria (see CLAUDE.md
-#' "engine = 'r' lifecycle").
+#' once the Rcpp path has passed the snapshot and engine-equivalence
+#' tests for at least two release cycles.
 #'
 #' Warm-start projection (Algorithm 1) runs in R via `.warm_start_init()`
 #' BEFORE the core call, regardless of engine, so both paths see

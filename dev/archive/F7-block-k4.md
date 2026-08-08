@@ -1,6 +1,6 @@
 # F7 — Block-k=4 SMO with descent-guaranteed decoupling
 
-**Status:** Archived implementation notes — current state lives in `CLAUDE.md`.
+**Status:** Archived implementation notes — current state lives in `.claude/CLAUDE.md`.
 
 ## Block-k=4 SMO with descent-guaranteed decoupling (post-F7)
 

@@ -1,6 +1,6 @@
 # F6 — Rcpp-accelerated kernel construction
 
-**Status:** Archived implementation notes — current state lives in `CLAUDE.md`.
+**Status:** Archived implementation notes — current state lives in `.claude/CLAUDE.md`.
 
 ## Rcpp-accelerated kernel construction (post-F6)
 

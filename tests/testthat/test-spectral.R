@@ -9,7 +9,7 @@
 ##                       make_kernel() (RBF / linear / polynomial) all yield
 ##                       PSD Omega_s by Aronszajn closure / Schur product,
 ##                       so the shifted branch is a dormant defensive guard
-##                       in production. See CLAUDE.md "Adaptive Spectral
+##                       in production. See .claude/CLAUDE.md "Adaptive Spectral
 ##                       Regularization" for details.
 ##   - psvr() integration: solver_meta$spectral populated for Model 2 (all
 ##                       branches will be no_shift in production); NULL for
@@ -41,7 +41,7 @@ test_that(".adaptive_spectral_shift activates shifted branch for indefinite matr
 
   # T_pi = 20 to keep the eigenvalue estimate accurate enough that
   # Omega_use clears the delta_stab floor; with T_pi = 5 the under-shift
-  # bias on Wigner-style spectra is documented in CLAUDE.md.
+  # bias on Wigner-style spectra is documented in .claude/CLAUDE.md.
   spec <- psvr:::.adaptive_spectral_shift(M, T_pi = 20L)
 
   expect_equal(spec$branch_taken, "shifted")

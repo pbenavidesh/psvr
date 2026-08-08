@@ -167,7 +167,7 @@ A `2000 × 2000` warning is emitted in every fitter (`mape_svr.R:69`, `mape_sym_
   - **Model 2 (`mape_sym_svr.R:88–91`)** builds `Ks = Ω + a·Ω*` *inline*, **without** the `½`. The SMO path then passes `0.5 * Ks` to `.smo_solve()` (so the solver's `Omega` argument is `Ωs = ½·Ks` again), while the osqp path absorbs the `½` into `P = ½ [Ks,-Ks;-Ks,Ks]` so that osqp's internal `½ uᵀPu` evaluates to `¼ βᵀKsβ`.
 - **`Ω*` storage:** computed on the fly via `kernel_matrix(K, X, -X)` and *immediately fused* into the symmetric matrix. The unsymmetrized `Ω*` is never stored on the model object — only `Ks` (Model 2) or `Ωs` (Model 4), and even those are only kept inside the fit closure; the returned object retains just `kernel`, `X_sv`/`X_train`, and `a`. Predictions reconstruct `½ Ks(x_k, x_new)` per query point via `sym_kernel_vector()` (`kernel.R:124–131`), again without caching.
 
-This split convention (`Ks` no-½ in Model 2, `Ωs` with-½ in Model 4) is documented in `CLAUDE.md` and in `mape_sym_svr.R:14–18`, but it is exactly the kind of asymmetry a unified `psvr()` API would have to either preserve or normalise.
+This split convention (`Ks` no-½ in Model 2, `Ωs` with-½ in Model 4) is documented in `.claude/CLAUDE.md` and in `mape_sym_svr.R:14–18`, but it is exactly the kind of asymmetry a unified `psvr()` API would have to either preserve or normalise.
 
 ---
 
