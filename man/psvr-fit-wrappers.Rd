@@ -16,11 +16,20 @@
 \alias{psvr_rmspe_sym_linear_fit}
 \title{Fit wrappers for parsnip engine dispatch}
 \usage{
-psvr_mape_rbf_fit(x, y, C, eps, rbf_sigma = 1, tol = 1e-05)
+psvr_mape_rbf_fit(x, y, C, eps, rbf_sigma = 1, tol = 0.001, max_iter = 100000L)
 
-psvr_mape_poly_fit(x, y, C, eps, degree = 3L, scale_factor = 1, tol = 1e-05)
+psvr_mape_poly_fit(
+  x,
+  y,
+  C,
+  eps,
+  degree = 3L,
+  scale_factor = 1,
+  tol = 0.001,
+  max_iter = 100000L
+)
 
-psvr_mape_linear_fit(x, y, C, eps, tol = 1e-05)
+psvr_mape_linear_fit(x, y, C, eps, tol = 0.001, max_iter = 100000L)
 
 psvr_mape_sym_rbf_fit(
   x,
@@ -29,7 +38,8 @@ psvr_mape_sym_rbf_fit(
   eps,
   rbf_sigma = 1,
   sym_type = "even",
-  tol = 1e-05
+  tol = 0.001,
+  max_iter = 100000L
 )
 
 psvr_mape_sym_poly_fit(
@@ -40,10 +50,11 @@ psvr_mape_sym_poly_fit(
   degree = 3L,
   scale_factor = 1,
   a = 1L,
-  tol = 1e-05
+  tol = 0.001,
+  max_iter = 100000L
 )
 
-psvr_mape_sym_linear_fit(x, y, C, eps, a = 1L, tol = 1e-05)
+psvr_mape_sym_linear_fit(x, y, C, eps, a = 1L, tol = 0.001, max_iter = 100000L)
 
 psvr_rmspe_rbf_fit(x, y, gamma, rbf_sigma = 1, precondition = "auto")
 
@@ -90,7 +101,11 @@ psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L, precondition = "auto")
 
 \item{rbf_sigma}{RBF bandwidth σ > 0.}
 
-\item{tol}{Solver zero-threshold.}
+\item{tol}{Solver convergence tolerance for the SMO loop. Default \code{1e-3}.}
+
+\item{max_iter}{Maximum SMO iterations. Default \code{100000L}. The solver
+emits a \code{warning()} and returns \code{solver_meta$converged = FALSE} if it
+does not converge within \code{max_iter}.}
 
 \item{degree}{Polynomial degree ≥ 1.}
 

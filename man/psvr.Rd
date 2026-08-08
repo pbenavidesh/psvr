@@ -14,7 +14,8 @@ psvr(
   eps = NULL,
   gamma = NULL,
   solver = c("smo", "osqp"),
-  tol = 1e-05,
+  tol = 0.001,
+  max_iter = 100000L,
   precondition = "auto",
   alpha_init = NULL,
   alpha_star_init = NULL,
@@ -54,7 +55,13 @@ paper) must hold; see \code{\link[=make_kernel]{make_kernel()}}.}
 \item{solver}{Backend for the dual QP, \code{"smo"} (default) or \code{"osqp"}
 (\code{loss = "mape"} only).}
 
-\item{tol}{Solver zero-threshold (\code{loss = "mape"} only).}
+\item{tol}{Solver convergence tolerance for the SMO loop (\code{loss = "mape"}
+only). Default \code{1e-3}. Tighter values produce more iterations.}
+
+\item{max_iter}{Maximum SMO iterations (\code{loss = "mape"} only). Default
+\code{100000L}. The solver emits a \code{warning()} and returns
+\code{solver_meta$converged = FALSE} if it does not converge within
+\code{max_iter}.}
 
 \item{precondition}{One of \code{"auto"} (default), \code{"always"}, \code{"never"}, or
 a positive numeric threshold; controls Remark-17 symmetric rescaling
@@ -149,9 +156,9 @@ remain available but are slated for deprecation.
 
 Some arguments apply only to one family. When \code{loss = "mape"}, \code{gamma}
 and \code{precondition} are ignored (with a warning if supplied non-\code{NULL}).
-When \code{loss = "rmspe"}, \code{C}, \code{eps}, \code{solver}, and \code{tol} are ignored
-(same warning rule). Default values do not trigger warnings — only
-user-supplied values do, detected via \code{missing()}.
+When \code{loss = "rmspe"}, \code{C}, \code{eps}, \code{solver}, \code{tol}, and \code{max_iter} are
+ignored (same warning rule). Default values do not trigger warnings —
+only user-supplied values do, detected via \code{missing()}.
 }
 
 \section{Breaking change (psvr 0.0.2.9004)}{

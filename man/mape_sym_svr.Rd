@@ -12,7 +12,8 @@ mape_sym_svr(
   eps,
   a = 1,
   solver = c("smo", "osqp"),
-  tol = 1e-05
+  tol = 0.001,
+  max_iter = 100000L
 )
 }
 \arguments{
@@ -28,7 +29,9 @@ mape_sym_svr(
 
 \item{solver}{Backend: \code{"smo"} (default) or \code{"osqp"}.}
 
-\item{tol}{Solver zero-threshold.}
+\item{tol}{SMO convergence tolerance. Default \code{1e-3}.}
+
+\item{max_iter}{Maximum SMO iterations. Default \code{100000L}.}
 }
 \value{
 A list of class \code{"psvr_mape_sym"}.

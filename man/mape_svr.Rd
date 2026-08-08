@@ -4,7 +4,16 @@
 \alias{mape_svr}
 \title{Fit epsilon-SVR with MAPE loss (deprecated)}
 \usage{
-mape_svr(X, y, kernel, C, eps, solver = c("smo", "osqp"), tol = 1e-05)
+mape_svr(
+  X,
+  y,
+  kernel,
+  C,
+  eps,
+  solver = c("smo", "osqp"),
+  tol = 0.001,
+  max_iter = 100000L
+)
 }
 \arguments{
 \item{X, y}{Training matrix and strictly-positive target vector.}
@@ -17,7 +26,9 @@ mape_svr(X, y, kernel, C, eps, solver = c("smo", "osqp"), tol = 1e-05)
 
 \item{solver}{Backend: \code{"smo"} (default) or \code{"osqp"}.}
 
-\item{tol}{Solver zero-threshold.}
+\item{tol}{SMO convergence tolerance. Default \code{1e-3}.}
+
+\item{max_iter}{Maximum SMO iterations. Default \code{100000L}.}
 }
 \value{
 A list of class \code{"psvr_mape"}.
