@@ -28,3 +28,16 @@ kernel_matrix(K, X1, X2 = X1)
 ## Value
 
 Numeric matrix of size n1 × n2.
+
+## Details
+
+If `K` was produced by
+[`make_kernel()`](https://pbenavidesh.github.io/psvr/reference/make_kernel.md),
+dispatch reads the `kernel_info` attribute and calls the Rcpp
+implementation for the three built-in types (`"rbf"`, `"linear"`,
+`"polynomial"`). For user-defined closures (no `kernel_info` attribute)
+the dispatch falls through to
+[`.legacy_kernel_matrix()`](https://pbenavidesh.github.io/psvr/reference/dot-legacy_kernel_matrix.md),
+the original pure-R nested loop. Predictions are bit-identical to the
+R-only path on Windows/Rtools45; see `src/kernel_*.cpp` for the
+operation-order rationale.

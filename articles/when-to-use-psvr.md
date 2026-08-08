@@ -563,7 +563,7 @@ sessioninfo::session_info()
 
     ─ Session info ───────────────────────────────────────────────────────────────
      setting  value
-     version  R version 4.6.0 (2026-04-24)
+     version  R version 4.6.1 (2026-06-24)
      os       Ubuntu 24.04.4 LTS
      system   x86_64, linux-gnu
      ui       X11
@@ -571,21 +571,21 @@ sessioninfo::session_info()
      collate  C.UTF-8
      ctype    C.UTF-8
      tz       UTC
-     date     2026-05-10
+     date     2026-08-08
      pandoc   3.8.3 @ /opt/hostedtoolcache/pandoc/3.8.3/x64/ (via rmarkdown)
-     quarto   1.9.37 @ /usr/local/bin/quarto
+     quarto   1.10.18 @ /usr/local/bin/quarto
 
     ─ Packages ───────────────────────────────────────────────────────────────────
      package      * version    date (UTC) lib source
      backports      1.5.1      2026-04-03 [1] RSPM
-     broom        * 1.0.12     2026-01-27 [1] RSPM
+     broom        * 1.0.13     2026-05-14 [1] RSPM
      cachem         1.1.0      2024-05-16 [1] RSPM
-     class          7.3-23     2025-01-01 [3] CRAN (R 4.6.0)
+     class          7.3-23     2025-01-01 [3] CRAN (R 4.6.1)
      cli            3.6.6      2026-04-09 [1] RSPM
-     codetools      0.2-20     2024-03-31 [3] CRAN (R 4.6.0)
+     codetools      0.2-20     2024-03-31 [3] CRAN (R 4.6.1)
      conflicted     1.2.0      2023-02-01 [1] RSPM
      data.table     1.18.4     2026-05-06 [1] RSPM
-     dials        * 1.4.3      2026-04-11 [1] RSPM
+     dials        * 1.4.4      2026-06-22 [1] RSPM
      DiceDesign     1.10       2023-12-07 [1] RSPM
      digest         0.6.39     2025-11-19 [1] RSPM
      dplyr        * 1.2.1      2026-04-03 [1] RSPM
@@ -594,7 +594,7 @@ sessioninfo::session_info()
      fastmap        1.2.0      2024-05-15 [1] RSPM
      forcats      * 1.0.1      2025-09-25 [1] RSPM
      furrr          0.4.0      2026-03-31 [1] RSPM
-     future       * 1.70.0     2026-03-14 [1] RSPM
+     future       * 1.75.0     2026-07-20 [1] RSPM
      future.apply   1.20.2     2026-02-20 [1] RSPM
      generics       0.1.4      2025-05-09 [1] RSPM
      ggplot2      * 4.0.3      2026-04-22 [1] RSPM
@@ -611,42 +611,42 @@ sessioninfo::session_info()
      jsonlite       2.0.0      2025-03-27 [1] RSPM
      knitr          1.51       2025-12-20 [1] RSPM
      labeling       0.4.3      2023-08-29 [1] RSPM
-     lattice        0.22-9     2026-02-09 [3] CRAN (R 4.6.0)
-     lava           1.9.0      2026-04-05 [1] RSPM
+     lattice        0.22-9     2026-02-09 [3] CRAN (R 4.6.1)
+     lava           1.9.2      2026-06-30 [1] RSPM
      lifecycle      1.0.5      2026-01-08 [1] RSPM
-     listenv        0.10.1     2026-03-10 [1] RSPM
+     listenv        1.0.0      2026-06-22 [1] RSPM
      lubridate    * 1.9.5      2026-02-04 [1] RSPM
      magrittr       2.0.5      2026-04-04 [1] RSPM
-     MASS           7.3-65     2025-02-28 [3] CRAN (R 4.6.0)
-     Matrix         1.7-5      2026-03-21 [3] CRAN (R 4.6.0)
+     MASS           7.3-65     2025-02-28 [3] CRAN (R 4.6.1)
+     Matrix         1.7-5      2026-03-21 [3] CRAN (R 4.6.1)
      memoise        2.0.1      2021-11-26 [1] RSPM
      modeldata    * 1.5.1      2025-08-22 [1] RSPM
-     nnet           7.3-20     2025-01-01 [3] CRAN (R 4.6.0)
+     nnet           7.3-20     2025-01-01 [3] CRAN (R 4.6.1)
      otel           0.2.0      2025-08-29 [1] RSPM
-     parallelly     1.47.0     2026-04-17 [1] RSPM
-     parsnip      * 1.5.0      2026-04-09 [1] RSPM
+     parallelly     1.48.0     2026-06-29 [1] RSPM
+     parsnip      * 1.6.0      2026-05-14 [1] RSPM
      pillar         1.11.1     2025-09-17 [1] RSPM
      pkgconfig      2.0.3      2019-09-22 [1] RSPM
      prodlim        2026.03.11 2026-03-11 [1] RSPM
-     psvr         * 0.0.2.9003 2026-05-10 [1] local
+     psvr         * 0.0.2.9009 2026-08-08 [1] local
      purrr        * 1.2.2      2026-04-10 [1] RSPM
      R6             2.6.1      2025-02-15 [1] RSPM
      RColorBrewer   1.1-3      2022-04-03 [1] RSPM
-     Rcpp           1.1.1-1.1  2026-04-24 [1] RSPM
+     Rcpp           1.1.2      2026-07-05 [1] RSPM
      readr        * 2.2.0      2026-02-19 [1] RSPM
-     recipes      * 1.3.2      2026-04-02 [1] RSPM
-     rlang          1.2.0      2026-04-06 [1] RSPM
+     recipes      * 1.3.3      2026-05-30 [1] RSPM
+     rlang          1.3.0      2026-07-05 [1] RSPM
      rmarkdown      2.31       2026-03-26 [1] RSPM
-     rpart          4.1.27     2026-03-27 [3] CRAN (R 4.6.0)
+     rpart          4.1.27     2026-03-27 [3] CRAN (R 4.6.1)
      rsample      * 1.3.2      2026-01-30 [1] RSPM
-     rstudioapi     0.18.0     2026-01-16 [1] RSPM
+     rstudioapi     0.19.0     2026-06-11 [1] RSPM
      S7             0.2.2      2026-04-22 [1] RSPM
      scales       * 1.4.0      2025-04-24 [1] RSPM
-     sessioninfo    1.2.3      2025-02-05 [1] RSPM
+     sessioninfo    1.2.4      2026-06-04 [1] RSPM
      sparsevctrs    0.3.6      2026-01-27 [1] RSPM
-     stringi        1.8.7      2025-03-27 [1] RSPM
+     stringi        1.8.9      2026-08-04 [1] RSPM
      stringr      * 1.6.0      2025-11-04 [1] RSPM
-     survival       3.8-6      2026-01-16 [3] CRAN (R 4.6.0)
+     survival       3.8-6      2026-01-16 [3] CRAN (R 4.6.1)
      tailor       * 0.1.0      2025-08-25 [1] RSPM
      tibble       * 3.3.1      2026-01-11 [1] RSPM
      tidymodels   * 1.5.0      2026-04-23 [1] RSPM
@@ -659,17 +659,17 @@ sessioninfo::session_info()
      tzdb           0.5.0      2025-03-15 [1] RSPM
      utf8           1.2.6      2025-06-08 [1] RSPM
      vctrs          0.7.3      2026-04-11 [1] RSPM
-     withr          3.0.2      2024-10-28 [1] RSPM
+     withr          3.0.3      2026-06-19 [1] RSPM
      workflows    * 1.3.0      2025-08-27 [1] RSPM
      workflowsets * 1.1.1      2025-05-27 [1] RSPM
-     xfun           0.57       2026-03-20 [1] RSPM
+     xfun           0.60       2026-07-09 [1] RSPM
      xgboost        3.2.1.1    2026-03-18 [1] RSPM
      yaml           2.3.12     2025-12-10 [1] RSPM
      yardstick    * 1.4.0      2026-04-07 [1] RSPM
 
      [1] /home/runner/work/_temp/Library
-     [2] /opt/R/4.6.0/lib/R/site-library
-     [3] /opt/R/4.6.0/lib/R/library
+     [2] /opt/R/4.6.1/lib/R/site-library
+     [3] /opt/R/4.6.1/lib/R/library
      * ── Packages attached to the search path.
 
     ──────────────────────────────────────────────────────────────────────────────

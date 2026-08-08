@@ -1,11 +1,310 @@
 # Changelog
 
+## psvr 0.0.2.9009 (development)
+
+### Bug fixes
+
+- **`tol` is now correctly forwarded to the SMO solver.** Previously,
+  `psvr(tol = ...)`, `.fit_mape(tol = ...)`, `.fit_mape_sym(tol = ...)`,
+  the deprecated wrappers (`mape_svr`, `mape_sym_svr`), and the MAPE
+  parsnip fit wrappers (`psvr_mape_*_fit`) accepted `tol` but silently
+  dropped it on the way to
+  [`.smo_solve()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve.md),
+  so the solver always ran at its own default of `1e-3`. The documented
+  `tol = 1e-5` default never actually reached the solver. The upstream
+  defaults are now aligned with the solver default (`tol = 1e-3`) at
+  every layer to preserve bit-identicality of existing fits; users who
+  explicitly pass a non-default `tol` now actually receive the requested
+  tolerance. Snapshot gates unchanged from v0.0.2.9008.
+
+### New features
+
+- **`max_iter` is now exposed** through every MAPE entry path:
+  `psvr(..., max_iter = ...)`,
+  [`.fit_mape()`](https://pbenavidesh.github.io/psvr/reference/dot-fit_mape.md),
+  [`.fit_mape_sym()`](https://pbenavidesh.github.io/psvr/reference/dot-fit_mape_sym.md),
+  and the six MAPE parsnip fit wrappers (`psvr_mape_rbf_fit`,
+  `psvr_mape_poly_fit`, `psvr_mape_linear_fit`, `psvr_mape_sym_rbf_fit`,
+  `psvr_mape_sym_poly_fit`, `psvr_mape_sym_linear_fit`). Default
+  `100000L` matches the previously hardcoded
+  [`.smo_solve()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve.md)
+  cap, so default fits are numerically unchanged. Pass through parsnip
+  via `set_engine("psvr", tol = ..., max_iter = ...)`. Forwarded
+  identically by both `engine = "rcpp"` and `engine = "r"`. Ignored for
+  `loss = "rmspe"` (LS-SVR uses
+  [`base::solve()`](https://rdrr.io/r/base/solve.html)); a warning fires
+  under `psvr(..., loss = "rmspe", max_iter = ...)`, paralleling the
+  existing `tol` cross-loss warning.
+
+## psvr 0.0.2.9008 (development)
+
+### New features
+
+- **`active_history` field** in
+  [`.smo_solve()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve.md)
+  /
+  [`.smo_solve_r()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve_r.md)
+  return when `trace = TRUE` (developer interface; not exposed in
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md)).
+  Integer vector of length `iterations` containing the per-iteration
+  active-set count, `sum(active_alpha) + sum(active_astar)`, captured at
+  the same loop site as `delta_history`. Used by the smo-paper Figure 1
+  active-set fraction panel (bottom row) to visualize shrinking +
+  unshrinking dynamics. Bit-identical across engines (`r` and `rcpp`);
+  snapshot gates unchanged from v0.0.2.9007 on the default
+  `trace = FALSE` path. Engine equivalence on `active_history` is
+  enforced by `tests/testthat/test-trace.R` (4 configs: Models 1 + 2 ×
+  `block_k4_enabled` ∈ {FALSE, TRUE} on RBF), alongside the existing
+  `delta_history` equivalence gate.
+
+## psvr 0.0.2.9007 (development)
+
+### New features
+
+- **`trace` parameter** on
+  [`.smo_solve()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve.md)
+  and
+  [`.smo_solve_r()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve_r.md)
+  (developer interface; not exposed in
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md)).
+  When `TRUE`, the returned list carries a `delta_history` numeric
+  vector of length `iterations` containing the per-iteration WSS1 KKT
+  optimality gap (`Delta = tau_i - tau_j_w1`) — used by the smo-paper
+  convergence diagnostic plot. Default `FALSE` produces bit-identical
+  results to v0.0.2.9006 across both engines (snapshot gates
+  `_snaps/bit-identical.md`, `_snaps/block-k4.md`,
+  `_snaps/engine-equivalence.md`, `_snaps/psvr-direct.md` unchanged).
+  Engine equivalence on `delta_history` is enforced by
+  `tests/testthat/test-trace.R` (4 configs: Models 1 + 2 ×
+  `block_k4_enabled` ∈ {FALSE, TRUE} on RBF).
+
+## psvr 0.0.2.9006 (development)
+
+### Performance
+
+- **F4 baseline 2.3–7.7× faster wall** (median ~2.3×) — SMO inner loop
+  now runs in a portable C++ core wrapped by a thin Rcpp binding.
+  Measured at N=1000 RBF: F4 R 10.4 s → F4 Rcpp 4.5 s (R1 regime).
+- **Block-k=4 SMO (Theorem 7 of arXiv:2605.01446 v3) is now
+  wall-positive on converging regimes** — `block_k4_enabled = TRUE` is
+  the new default for `loss = "mape"`. Each outer SMO iteration may pick
+  a second working pair `(i_2, j_2)` and apply a 2-D joint update when
+  the descent-guaranteed decoupling criterion holds. Per-regime wall
+  gains vs F4 (Rcpp): +12.2% (R1, het+med-RBF, N=1000) and +17.5% (R4,
+  het+sparse-RBF, N=1000). Iter reduction 38–48% on converging regimes;
+  paper TODO \#9 (wall regression in R) **RESOLVED** by the C++ port.
+- **[`psvr_cv()`](https://pbenavidesh.github.io/psvr/reference/psvr_cv.md)
+  with default settings (T7 + warm-start, Rcpp) is 4.28× faster wall**
+  than the F4+F5-R paper baseline at N=300 10-fold CV.
+
+### New features
+
+- **`engine` parameter** on
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) and
+  [`.smo_solve()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve.md):
+  `"rcpp"` (default) selects the C++ core; `"r"` selects the R reference
+  implementation. Both produce **bit-identical** results across 16 test
+  configurations (Models × 4 kernels × 2 modes). `"r"` is preserved as
+  the numerical-equivalence canary; deprecated in v0.0.4.0, scheduled
+  for removal in v0.1.0. See `CLAUDE.md` “engine = ‘r’ lifecycle” for
+  the graduation criteria.
+- **`block_k4_enabled` parameter** on
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md)
+  (default `TRUE` for `loss = "mape"`). Set to `FALSE` to restore F4
+  (k=2-only) behaviour bit-identically.
+- **`alpha_couple` parameter** (default `0.5`, between 0 and 1):
+  internal F7 coupling penalty weight in the pair-2 WSS3 score. Exposed
+  for empirical tuning.
+- **F7 telemetry** in `psvr_fit$solver_meta`: `joint_updates`,
+  `k2_fallbacks`, `decoupling_rate`, `early_phase_decoupling_rate`,
+  `late_phase_decoupling_rate`. `NA_real_` for the LS-SVR backend.
+- [`psvr_cv()`](https://pbenavidesh.github.io/psvr/reference/psvr_cv.md)
+  emits an informational message (when `verbose = TRUE`) on the T5 × T7
+  interaction: warm-start gain compressed when T7 is active; for pure-F5
+  warm-start, set `block_k4_enabled = FALSE`.
+
+### Breaking changes
+
+None. `engine = "rcpp"` is a new *default* but is bit-identical to the
+prior R-level path (which is the now-renamed
+[`.smo_solve_r()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve_r.md)).
+Downstream code calling
+[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md),
+[`predict()`](https://rdrr.io/r/stats/predict.html), or the deprecated
+fitters is unaffected.
+
+### Internal changes
+
+- **Portable C++ core** in `src/core_*.cpp` and `src/core_*.h` — pure
+  std-library types, no `Rcpp::*` or R API calls. The same core will
+  back a future Python binding via pybind11 (paper TODO \#11). See
+  `src/core_smo_solve.cpp` for the `PSVR_STANDALONE_BUILD` conditional
+  compilation pattern that demonstrates the portability claim and the
+  related `dev/check_core.cpp` standalone smoke check.
+- **Thin Rcpp binding** in `src/binding_smo.cpp` (~110 lines) and
+  `src/binding_kernel.cpp` (~66 lines). Replaces `src/kernel_rbf.cpp`,
+  `src/kernel_linear.cpp`, `src/kernel_poly.cpp` (those F6 wrappers are
+  deleted; their pure-C++ inner loops are now in
+  `src/core_kernel_*.cpp`).
+- **`R/smo_solve.R` is now a dispatcher** that forwards to either
+  [`.smo_solve_r()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve_r.md)
+  (the renamed R algorithm, kept as the reference) or
+  `psvr_smo_fit_rcpp()` (the Rcpp entry into the core). Warm-start
+  projection (Algorithm 1) runs in R regardless of engine.
+- **`R/kernel-accessor.R`** gains a `get_omega()` accessor that returns
+  the underlying materialized matrix (zero-copy for the Rcpp path).
+- **`src/Makevars` / `src/Makevars.win`** add
+  `PKG_LIBS = $(BLAS_LIBS) $(FLIBS)` so the Rcpp core links against R’s
+  BLAS for the `F77_CALL(dgemv)` calls. (`$(LAPACK_LIBS)` is not used;
+  CRAN’s check warns about including it without need.) Inline comment
+  documents the correct ordering should LAPACK ever be needed.
+- `solver_meta$backend` reports `"smo"` for `psvr_fit` objects
+  regardless of engine; the engine choice is dispatcher-level.
+
+### Tests
+
+- New `tests/testthat/test-engine-equivalence.R`: 16-config
+  bit-identicality canary (2 models × 4 kernels × 2 modes). On failure,
+  a `.diagnose_engine_diff()` helper prints max diff, first differing
+  indices, side-by-side values at full precision, and solver-meta deltas
+  for direct FP-tier diagnosis.
+- New `tests/testthat/_snaps/engine-equivalence.md` locks the
+  `engine = "r"` F4 baseline as an explicit regression hook.
+
+### Documentation
+
+- `CLAUDE.md` adds three new sections: “Block-k=4 SMO with
+  descent-guaranteed decoupling (post-F7)”, “Portable C++ architecture
+  (post-F7-C-full)”, and “engine = ‘r’ lifecycle” (graduation criteria
+  for v0.1.0 removal). Build-system note explains the `PKG_LIBS`
+  rationale.
+- Paper TODO updates: \#9 marked **RESOLVED** with the C++ port; \#10
+  strengthened with bi-engine evidence (T5 × T7 non-multiplicative
+  stacking is algorithmic, not implementation-specific); \#11 NEW
+  (portable architecture demonstration).
+
+## psvr 0.0.2.9005 (development)
+
+### Performance
+
+- **[`kernel_matrix()`](https://pbenavidesh.github.io/psvr/reference/kernel_matrix.md)
+  now dispatches to Rcpp C++** for the three
+  [`make_kernel()`](https://pbenavidesh.github.io/psvr/reference/make_kernel.md)
+  types (`"rbf"`, `"linear"`, `"polynomial"`). Bit-identical to the
+  previous R nested loop on Windows / Rtools45 (snapshot tests
+  unchanged). At N=1000 RBF: ~12× wall reduction (pre-F6 ~2.4 s →
+  post-F6 ~0.2 s in `dev/bench-F6.R`). The same dispatch incidentally
+  accelerates the predict path.
+
+- **Cross-fold kernel reuse in
+  [`psvr_cv()`](https://pbenavidesh.github.io/psvr/reference/psvr_cv.md)**.
+  For `rsample::rset` inputs, the full-dataset Omega (or `Omega_s` for
+  `sym != NULL`) is built once and sliced per fold via the new internal
+  `precomputed_Omega` / `precomputed_Omega_s` channel on
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md).
+  List-of-tuples inputs fall back to per-fold construction (still
+  benefits from the per-call Rcpp dispatch).
+
+### New features
+
+- User-defined kernel closures without an `attr(K, "kernel_info")`
+  attribute continue to work via the R-only
+  [`.legacy_kernel_matrix()`](https://pbenavidesh.github.io/psvr/reference/dot-legacy_kernel_matrix.md)
+  fallback path; the dispatch in
+  [`kernel_matrix()`](https://pbenavidesh.github.io/psvr/reference/kernel_matrix.md)
+  is transparent.
+
+### Dependencies
+
+- New Imports: `Rcpp (>= 1.0.10)`. LinkingTo: `Rcpp`.
+- New `SystemRequirements: GNU make` (Rtools on Windows; standard `gcc`
+  / `clang` on Linux/macOS — the same toolchain users already need to
+  install most CRAN packages with compiled code).
+
+### Internal changes
+
+- `src/` directory containing the three C++ kernels plus
+  `RcppExports.cpp`.
+- New internal helper
+  [`.legacy_kernel_matrix()`](https://pbenavidesh.github.io/psvr/reference/dot-legacy_kernel_matrix.md)
+  in `R/kernel.R` for user-defined closure fallback and as the reference
+  for Rcpp-vs-R parity tests.
+- [`.fit_mape()`](https://pbenavidesh.github.io/psvr/reference/dot-fit_mape.md)
+  gains `precomputed_Omega`;
+  [`.fit_mape_sym()`](https://pbenavidesh.github.io/psvr/reference/dot-fit_mape_sym.md)
+  gains `precomputed_Omega_s`. Both default to `NULL` (cold-start path).
+  Forwarded transparently through
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md).
+- Paper TODO \#8 added (Theorem 6 architectural mismatch — see
+  CLAUDE.md).
+
+## psvr 0.0.2.9004 (development)
+
+### Breaking changes
+
+- `psvr_fit$alpha` for MAPE models is renamed to `psvr_fit$beta` to
+  reflect its mathematical role (β = α − α*, length `n_sv`,
+  post-pruning). The new `psvr_fit$alpha` and `psvr_fit$alpha_star`
+  (length `N`, pre-pruning) expose the true SMO dual variables α and α*,
+  required for the warm-start API of Theorem 5 (arXiv:2605.01446 v3).
+  LS-SVR models (`loss = "rmspe"`) retain previous semantics:
+  `fit$alpha` is the linear-system solution, `fit$alpha_star = NULL`,
+  `fit$beta = NULL`. User code reading `fit$alpha` from MAPE fits must
+  be updated to `fit$beta` for the post-pruned coefficient vector.
+
+### New features
+
+- [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) now
+  accepts `alpha_init`, `alpha_star_init`, and `warm_start_check` for
+  SMO warm-start (`loss = "mape"` only). Validation: length-`N` vectors,
+  strictly positive `C_k`; Algorithm 1 projection applied to ensure
+  feasibility regardless of input.
+
+- New
+  [`psvr_cv()`](https://pbenavidesh.github.io/psvr/reference/psvr_cv.md)
+  helper for cross-validation with automatic warm-start across folds.
+  Accepts an `rsample::rset` (`vfold_cv`, `mc_cv`, etc.) or a list of
+  split tuples. Returns a tibble with per-fold fits, predictions,
+  metrics, iter counts, and elapsed times.
+
+### Internal changes
+
+- `psvr_fit$solver_meta` now propagates `iters` and `converged` from the
+  SMO solver (previously hard-coded to `NA`).
+
+- `R/warm_start.R` implements Algorithm 1 of arXiv:2605.01446 v3 with a
+  paper-text deviation in Step 2: distribute the equality-constraint
+  violation over the new-sample subset (`S_new \ S_prev`) rather than
+  uniformly over all `N`. Preserves retained-sample values to `1e-12`.
+  See CLAUDE.md “Warm-start API” for rationale; paper TODO \#6 for
+  incorporation into smo-v3.tex Algorithm 1.
+
+### Empirical findings
+
+- **T5 warm-start cumulative speedup is approximately linear in fold
+  count, not exponential.** On 10-fold CV: 1.12× at N=300 (ρ_y=2388),
+  1.14× at N=1000 (ρ_y=16265). Per-fold `T_warm / T_cold ≈ 0.88`, not
+  the 0.2 implicit in the paper’s linear-convergence model. Paper TODO
+  \#7 flags this for recalibration of the smo-v3.tex Theorem 5
+  prediction.
+
+- **Working set selection evaluation: Fan-Chen-Lin WSS3 (libsvm-style)
+  is sufficient for MAPE-SVR.** During F5 development we evaluated two
+  alternatives — the saturation-distance multiplier from
+  arXiv:2605.01446 v3 Theorem 4 and the Glasmachers-Igel (2006)
+  maximum-gain WSS — and found neither provides empirical benefit on
+  MAPE-SVR’s heterogeneous-`C_k` regime. The “saturation problem” both
+  were targeting is a phantom: WSS3’s analytic step `δ_unc` typically
+  fits the per-sample box without clipping. Paper TODO \#5 flags this
+  for restructure of smo-v3.tex Section 6 / Theorem 4 (drop entirely).
+
 ## psvr 0.0.2.9003 (development)
 
 ### Internal changes
 
-- `.smo_solve()` (`R/smo_solve.R`) now implements Theorems 3 and 8 of
-  arXiv:2605.01446 v3:
+- [`.smo_solve()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve.md)
+  (`R/smo_solve.R`) now implements Theorems 3 and 8 of arXiv:2605.01446
+  v3:
 
   - **Theorem 3 (asymmetric freeze):** the uniform freeze-counter
     threshold `n_freeze = 5L` is replaced by per-sample,

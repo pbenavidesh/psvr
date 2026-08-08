@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Python Replication: Numerical Equivalence Check">
 </head>
@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9003</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9009</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -279,7 +279,7 @@ al. (2026):</strong></p>
 <span>  <span class="st">"Model 1 (R) — MAPE: %.4f%%  RMSPE: %.4f%%  R²: %.6f  MSE: %.6f\n"</span>,</span>
 <span>  <span class="va">m1_mape</span>, <span class="va">m1_rmspe</span>, <span class="va">m1_r2</span>, <span class="va">m1_mse</span></span>
 <span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Model 1 (R) — MAPE: 10.6878%  RMSPE: 18.5432%  R²: 0.810768  MSE: 14.817930</span></span>
+<span><span class="co">#&gt; Model 1 (R) — MAPE: 10.6887%  RMSPE: 18.5525%  R²: 0.810685  MSE: 14.824426</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Support vectors: %d / %d training points\n"</span>,</span>
 <span>            <span class="va">fit_m1</span><span class="op">$</span><span class="va">n_sv</span>, <span class="va">fit_m1</span><span class="op">$</span><span class="va">n_train</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Support vectors: 214 / 354 training points</span></span>
@@ -295,14 +295,16 @@ al. (2026):</strong></p>
 <p><img src="python-replication_files/figure-html/model1-plot-1.png" class="r-plt" alt="" width="576"></p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cf_m1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_m1</span><span class="op">)</span></span>
-<span><span class="co"># alpha:        beta_k = alpha_k - alpha_k* for each support vector;</span></span>
-<span><span class="co">#               non-zero for points outside the percentage-error ε-tube</span></span>
-<span><span class="co">#               (sparse)</span></span>
+<span><span class="co"># alpha, alpha_star: length-N dual variables (paired); the pre-pruning</span></span>
+<span><span class="co">#               solution.  Useful as a warm-start in cross-validation; for</span></span>
+<span><span class="co">#               prediction use `beta` instead.</span></span>
+<span><span class="co"># beta:         beta_k = alpha_k - alpha_k* for each SUPPORT VECTOR only</span></span>
+<span><span class="co">#               (i.e. each k with non-zero contribution to f(x); sparse)</span></span>
 <span><span class="co"># b:            bias / intercept term</span></span>
 <span><span class="co"># support_data: training rows for support vectors only</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"b = %.4f  |  alpha range: [%.4f, %.4f]\n"</span>,</span>
-<span>            <span class="va">cf_m1</span><span class="op">$</span><span class="va">b</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">cf_m1</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">cf_m1</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; b = 25.4649  |  alpha range: [-248.1156, 163.2763]</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"b = %.4f  |  beta range: [%.4f, %.4f]\n"</span>,</span>
+<span>            <span class="va">cf_m1</span><span class="op">$</span><span class="va">b</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">cf_m1</span><span class="op">$</span><span class="va">beta</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">cf_m1</span><span class="op">$</span><span class="va">beta</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; b = 25.4629  |  beta range: [-248.1156, 164.2330]</span></span></code></pre></div>
 <hr>
 </div>
 <div class="section level2">
@@ -393,10 +395,10 @@ reported in the paper.</caption>
 </tr>
 <tr class="odd">
 <td align="left">Model 1 — ε-SVR MAPE (R)</td>
-<td align="right">10.6878</td>
-<td align="right">18.5432</td>
-<td align="right">0.810768</td>
-<td align="right">14.81793</td>
+<td align="right">10.6887</td>
+<td align="right">18.5525</td>
+<td align="right">0.810685</td>
+<td align="right">14.82443</td>
 </tr>
 <tr class="even">
 <td align="left">Model 1 — ε-SVR MAPE (Python, Table 2)</td>
@@ -463,7 +465,7 @@ Management</em>, <strong>5</strong>(1), 81–102.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>

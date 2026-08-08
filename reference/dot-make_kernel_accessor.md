@@ -42,6 +42,13 @@ A list with components:
   (length-`N`). Used for one-shot gradient refreshes; preserves BLAS
   efficiency.
 
+- `get_omega()`:
+
+  Returns the underlying materialised `Omega` matrix. Added in F7-C-full
+  (engine = "rcpp" handoff) so the Rcpp solver can take a raw `double*`
+  view via `REAL(Omega)` without re-materialising. Other consumers
+  should prefer the targeted accessors above.
+
 - `n`:
 
   Integer, equal to `nrow(Omega)`.

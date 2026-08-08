@@ -12,8 +12,8 @@
 <link rel="icon" sizes="any" href="../favicon.ico">
 <link rel="manifest" href="../site.webmanifest">
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Getting Started with psvr">
 </head>
@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9003</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9009</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -264,9 +264,9 @@ low-magnitude observations.</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"ε-SVR MAPE    — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n"</span>,</span>
 <span>            <span class="fu">mape</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ep</span><span class="op">)</span>, <span class="fu">rmspe</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ep</span><span class="op">)</span>, <span class="fu">r2</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ep</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ε-SVR MAPE    — MAPE: 15.76%  RMSPE: 27.54%  R²: 0.7617</span></span>
+<span><span class="co">#&gt; ε-SVR MAPE    — MAPE: 15.76%  RMSPE: 27.55%  R²: 0.7617</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Support vectors: %d / %d\n"</span>, <span class="va">fit_ep</span><span class="op">$</span><span class="va">n_sv</span>, <span class="va">fit_ep</span><span class="op">$</span><span class="va">n_train</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Support vectors: 326 / 354</span></span>
+<span><span class="co">#&gt; Support vectors: 327 / 354</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_ep</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; epsilon-SVR with MAPE loss  [psvr_fit]</span></span>
@@ -275,18 +275,21 @@ low-magnitude observations.</p>
 <span><span class="co">#&gt;   C:               10</span></span>
 <span><span class="co">#&gt;   eps:             1</span></span>
 <span><span class="co">#&gt;   Training obs.:   354</span></span>
-<span><span class="co">#&gt;   Support vectors: 326 (92.1%)</span></span></code></pre></div>
+<span><span class="co">#&gt;   Support vectors: 327 (92.4%)</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/mape-plot-1.png" class="r-plt" alt="" width="576"></p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cf_ep</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_ep</span><span class="op">)</span></span>
-<span><span class="co"># alpha:        beta_k = alpha_k - alpha_k* for each support vector;</span></span>
-<span><span class="co">#               non-zero only for training points outside the</span></span>
-<span><span class="co">#               percentage-error ε-tube (sparse)</span></span>
+<span><span class="co"># alpha, alpha_star: length-N dual variables (paired); the pre-pruning</span></span>
+<span><span class="co">#               solution.  Useful as a warm-start across CV folds; for</span></span>
+<span><span class="co">#               prediction use `beta` instead.</span></span>
+<span><span class="co"># beta:         beta_k = alpha_k - alpha_k* for each SUPPORT VECTOR only</span></span>
+<span><span class="co">#               (non-zero only for training points outside the</span></span>
+<span><span class="co">#               percentage-error ε-tube — sparse)</span></span>
 <span><span class="co"># b:            bias / intercept term</span></span>
 <span><span class="co"># support_data: training rows corresponding to support vectors only</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"b = %.4f  |  alpha range: [%.4f, %.4f]\n"</span>,</span>
-<span>            <span class="va">cf_ep</span><span class="op">$</span><span class="va">b</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">cf_ep</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">cf_ep</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; b = 23.1110  |  alpha range: [-110.4651, 82.6446]</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"b = %.4f  |  beta range: [%.4f, %.4f]\n"</span>,</span>
+<span>            <span class="va">cf_ep</span><span class="op">$</span><span class="va">b</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">cf_ep</span><span class="op">$</span><span class="va">beta</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">cf_ep</span><span class="op">$</span><span class="va">beta</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; b = 23.1105  |  beta range: [-110.8025, 82.6446]</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="comparing-objectives">Comparing objectives<a class="anchor" aria-label="anchor" href="#comparing-objectives"></a>
@@ -335,7 +338,7 @@ kernel, single run).</caption>
 <tr class="odd">
 <td align="left">ε-SVR MAPE (Model 1)</td>
 <td align="right">15.76</td>
-<td align="right">27.54</td>
+<td align="right">27.55</td>
 <td align="right">0.76</td>
 </tr>
 </tbody>
@@ -386,7 +389,7 @@ support vector regression models with symmetric kernel extensions.
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer>
