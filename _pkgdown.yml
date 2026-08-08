@@ -41,6 +41,13 @@ reference:
     contents:
       - make_kernel
 
+  - title: "Cross-validation"
+    desc: >
+      Fold-wise fitting for `loss = "mape"`, carrying the converged SMO
+      dual variables from one fold into the next as a warm start.
+    contents:
+      - psvr_cv
+
   - title: "tidymodels / parsnip interface — ε-SVR with MAPE (Model 1)"
     desc: "Parsnip model specifications for Model 1 (one per kernel type)."
     contents:
