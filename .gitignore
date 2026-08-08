@@ -5,8 +5,7 @@
 *.pdf
 inst/doc
 .claude/
-docs/*
-!docs/archive/
+docs/
 *_files
 vignettes/figure/
 # Diagnostic and cross-language validation artifacts (not part of package)
