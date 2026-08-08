@@ -57,7 +57,16 @@ object shape; the legacy <code><a href="predict.psvr_mape.html">predict.psvr_map
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">mape_svr</span><span class="op">(</span><span class="va">X</span>, <span class="va">y</span>, <span class="va">kernel</span>, <span class="va">C</span>, <span class="va">eps</span>, solver <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"smo"</span>, <span class="st">"osqp"</span><span class="op">)</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">mape_svr</span><span class="op">(</span></span>
+<span>  <span class="va">X</span>,</span>
+<span>  <span class="va">y</span>,</span>
+<span>  <span class="va">kernel</span>,</span>
+<span>  <span class="va">C</span>,</span>
+<span>  <span class="va">eps</span>,</span>
+<span>  solver <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"smo"</span>, <span class="st">"osqp"</span><span class="op">)</span>,</span>
+<span>  tol <span class="op">=</span> <span class="fl">0.001</span>,</span>
+<span>  max_iter <span class="op">=</span> <span class="fl">100000L</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -85,7 +94,11 @@ object shape; the legacy <code><a href="predict.psvr_mape.html">predict.psvr_map
 
 
 <dt id="arg-tol">tol<a class="anchor" aria-label="anchor" href="#arg-tol"></a></dt>
-<dd><p>Solver zero-threshold.</p></dd>
+<dd><p>SMO convergence tolerance. Default <code>1e-3</code>.</p></dd>
+
+
+<dt id="arg-max-iter">max_iter<a class="anchor" aria-label="anchor" href="#arg-max-iter"></a></dt>
+<dd><p>Maximum SMO iterations. Default <code>100000L</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

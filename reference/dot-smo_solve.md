@@ -4,8 +4,8 @@ Forwards to the F7-C-full Rcpp core (`engine = "rcpp"`, default) or the
 R reference implementation (`engine = "r"`). The R path is the canonical
 algorithm and remains the bit-identical reference for the Rcpp port; it
 will be deprecated in v0.0.4.0 and removed in v0.1.0 once the Rcpp path
-has cleared its graduation criteria (see CLAUDE.md "engine = 'r'
-lifecycle").
+has passed the snapshot and engine-equivalence tests for at least two
+release cycles.
 
 ## Usage
 

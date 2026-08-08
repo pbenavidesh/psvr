@@ -76,7 +76,8 @@ remain available but are slated for deprecation.</p>
 <span>  eps <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  gamma <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  solver <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"smo"</span>, <span class="st">"osqp"</span><span class="op">)</span>,</span>
-<span>  tol <span class="op">=</span> <span class="fl">1e-05</span>,</span>
+<span>  tol <span class="op">=</span> <span class="fl">0.001</span>,</span>
+<span>  max_iter <span class="op">=</span> <span class="fl">100000L</span>,</span>
 <span>  precondition <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  alpha_init <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  alpha_star_init <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -139,7 +140,15 @@ paper) must hold; see <code><a href="make_kernel.html">make_kernel()</a></code>.
 
 
 <dt id="arg-tol">tol<a class="anchor" aria-label="anchor" href="#arg-tol"></a></dt>
-<dd><p>Solver zero-threshold (<code>loss = "mape"</code> only).</p></dd>
+<dd><p>Solver convergence tolerance for the SMO loop (<code>loss = "mape"</code>
+only). Default <code>1e-3</code>. Tighter values produce more iterations.</p></dd>
+
+
+<dt id="arg-max-iter">max_iter<a class="anchor" aria-label="anchor" href="#arg-max-iter"></a></dt>
+<dd><p>Maximum SMO iterations (<code>loss = "mape"</code> only). Default
+<code>100000L</code>. The solver emits a <code><a href="https://rdrr.io/r/base/warning.html" class="external-link">warning()</a></code> and returns
+<code>solver_meta$converged = FALSE</code> if it does not converge within
+<code>max_iter</code>.</p></dd>
 
 
 <dt id="arg-precondition">precondition<a class="anchor" aria-label="anchor" href="#arg-precondition"></a></dt>
@@ -271,9 +280,9 @@ diagnostics (<code>mu</code>, <code>lambda_min_hat</code>, <code>lambda_max_hat<
 
 <p>Some arguments apply only to one family. When <code>loss = "mape"</code>, <code>gamma</code>
 and <code>precondition</code> are ignored (with a warning if supplied non-<code>NULL</code>).
-When <code>loss = "rmspe"</code>, <code>C</code>, <code>eps</code>, <code>solver</code>, and <code>tol</code> are ignored
-(same warning rule). Default values do not trigger warnings — only
-user-supplied values do, detected via <code><a href="https://rdrr.io/r/base/missing.html" class="external-link">missing()</a></code>.</p>
+When <code>loss = "rmspe"</code>, <code>C</code>, <code>eps</code>, <code>solver</code>, <code>tol</code>, and <code>max_iter</code> are
+ignored (same warning rule). Default values do not trigger warnings —
+only user-supplied values do, detected via <code><a href="https://rdrr.io/r/base/missing.html" class="external-link">missing()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="breaking-change-psvr-">Breaking change (psvr 0.0.2.9004)<a class="anchor" aria-label="anchor" href="#breaking-change-psvr-"></a></h2>

@@ -24,7 +24,8 @@ psvr(
   eps = NULL,
   gamma = NULL,
   solver = c("smo", "osqp"),
-  tol = 1e-05,
+  tol = 0.001,
+  max_iter = 100000L,
   precondition = "auto",
   alpha_init = NULL,
   alpha_star_init = NULL,
@@ -88,7 +89,15 @@ psvr(
 
 - tol:
 
-  Solver zero-threshold (`loss = "mape"` only).
+  Solver convergence tolerance for the SMO loop (`loss = "mape"` only).
+  Default `1e-3`. Tighter values produce more iterations.
+
+- max_iter:
+
+  Maximum SMO iterations (`loss = "mape"` only). Default `100000L`. The
+  solver emits a [`warning()`](https://rdrr.io/r/base/warning.html) and
+  returns `solver_meta$converged = FALSE` if it does not converge within
+  `max_iter`.
 
 - precondition:
 
@@ -232,9 +241,9 @@ An object of class `"psvr_fit"`, a list with components:
 
 Some arguments apply only to one family. When `loss = "mape"`, `gamma`
 and `precondition` are ignored (with a warning if supplied non-`NULL`).
-When `loss = "rmspe"`, `C`, `eps`, `solver`, and `tol` are ignored (same
-warning rule). Default values do not trigger warnings — only
-user-supplied values do, detected via
+When `loss = "rmspe"`, `C`, `eps`, `solver`, `tol`, and `max_iter` are
+ignored (same warning rule). Default values do not trigger warnings —
+only user-supplied values do, detected via
 [`missing()`](https://rdrr.io/r/base/missing.html).
 
 ## Breaking change (psvr 0.0.2.9004)

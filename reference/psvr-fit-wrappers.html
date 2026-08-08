@@ -54,11 +54,20 @@ for direct use. Call <code><a href="psvr.html">psvr()</a></code> instead for dir
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">psvr_mape_rbf_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, rbf_sigma <span class="op">=</span> <span class="fl">1</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">psvr_mape_rbf_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, rbf_sigma <span class="op">=</span> <span class="fl">1</span>, tol <span class="op">=</span> <span class="fl">0.001</span>, max_iter <span class="op">=</span> <span class="fl">100000L</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">psvr_mape_poly_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, degree <span class="op">=</span> <span class="fl">3L</span>, scale_factor <span class="op">=</span> <span class="fl">1</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span>
+<span><span class="fu">psvr_mape_poly_fit</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  <span class="va">y</span>,</span>
+<span>  <span class="va">C</span>,</span>
+<span>  <span class="va">eps</span>,</span>
+<span>  degree <span class="op">=</span> <span class="fl">3L</span>,</span>
+<span>  scale_factor <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  tol <span class="op">=</span> <span class="fl">0.001</span>,</span>
+<span>  max_iter <span class="op">=</span> <span class="fl">100000L</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">psvr_mape_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span>
+<span><span class="fu">psvr_mape_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, tol <span class="op">=</span> <span class="fl">0.001</span>, max_iter <span class="op">=</span> <span class="fl">100000L</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">psvr_mape_sym_rbf_fit</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
@@ -67,7 +76,8 @@ for direct use. Call <code><a href="psvr.html">psvr()</a></code> instead for dir
 <span>  <span class="va">eps</span>,</span>
 <span>  rbf_sigma <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  sym_type <span class="op">=</span> <span class="st">"even"</span>,</span>
-<span>  tol <span class="op">=</span> <span class="fl">1e-05</span></span>
+<span>  tol <span class="op">=</span> <span class="fl">0.001</span>,</span>
+<span>  max_iter <span class="op">=</span> <span class="fl">100000L</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">psvr_mape_sym_poly_fit</span><span class="op">(</span></span>
@@ -78,10 +88,11 @@ for direct use. Call <code><a href="psvr.html">psvr()</a></code> instead for dir
 <span>  degree <span class="op">=</span> <span class="fl">3L</span>,</span>
 <span>  scale_factor <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  a <span class="op">=</span> <span class="fl">1L</span>,</span>
-<span>  tol <span class="op">=</span> <span class="fl">1e-05</span></span>
+<span>  tol <span class="op">=</span> <span class="fl">0.001</span>,</span>
+<span>  max_iter <span class="op">=</span> <span class="fl">100000L</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">psvr_mape_sym_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, a <span class="op">=</span> <span class="fl">1L</span>, tol <span class="op">=</span> <span class="fl">1e-05</span><span class="op">)</span></span>
+<span><span class="fu">psvr_mape_sym_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, a <span class="op">=</span> <span class="fl">1L</span>, tol <span class="op">=</span> <span class="fl">0.001</span>, max_iter <span class="op">=</span> <span class="fl">100000L</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">psvr_rmspe_rbf_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, rbf_sigma <span class="op">=</span> <span class="fl">1</span>, precondition <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
 <span></span>
@@ -143,7 +154,13 @@ for direct use. Call <code><a href="psvr.html">psvr()</a></code> instead for dir
 
 
 <dt id="arg-tol">tol<a class="anchor" aria-label="anchor" href="#arg-tol"></a></dt>
-<dd><p>Solver zero-threshold.</p></dd>
+<dd><p>Solver convergence tolerance for the SMO loop. Default <code>1e-3</code>.</p></dd>
+
+
+<dt id="arg-max-iter">max_iter<a class="anchor" aria-label="anchor" href="#arg-max-iter"></a></dt>
+<dd><p>Maximum SMO iterations. Default <code>100000L</code>. The solver
+emits a <code><a href="https://rdrr.io/r/base/warning.html" class="external-link">warning()</a></code> and returns <code>solver_meta$converged = FALSE</code> if it
+does not converge within <code>max_iter</code>.</p></dd>
 
 
 <dt id="arg-degree">degree<a class="anchor" aria-label="anchor" href="#arg-degree"></a></dt>

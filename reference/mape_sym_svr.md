@@ -15,7 +15,8 @@ mape_sym_svr(
   eps,
   a = 1,
   solver = c("smo", "osqp"),
-  tol = 1e-05
+  tol = 0.001,
+  max_iter = 100000L
 )
 ```
 
@@ -48,7 +49,11 @@ mape_sym_svr(
 
 - tol:
 
-  Solver zero-threshold.
+  SMO convergence tolerance. Default `1e-3`.
+
+- max_iter:
+
+  Maximum SMO iterations. Default `100000L`.
 
 ## Value
 

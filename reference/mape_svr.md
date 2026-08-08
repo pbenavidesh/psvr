@@ -13,7 +13,16 @@ methods continue to dispatch correctly.
 ## Usage
 
 ``` r
-mape_svr(X, y, kernel, C, eps, solver = c("smo", "osqp"), tol = 1e-05)
+mape_svr(
+  X,
+  y,
+  kernel,
+  C,
+  eps,
+  solver = c("smo", "osqp"),
+  tol = 0.001,
+  max_iter = 100000L
+)
 ```
 
 ## Arguments
@@ -41,7 +50,11 @@ mape_svr(X, y, kernel, C, eps, solver = c("smo", "osqp"), tol = 1e-05)
 
 - tol:
 
-  Solver zero-threshold.
+  SMO convergence tolerance. Default `1e-3`.
+
+- max_iter:
+
+  Maximum SMO iterations. Default `100000L`.
 
 ## Value
 
