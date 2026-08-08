@@ -133,6 +133,13 @@ length \code{N}; \code{NULL} for \code{loss = "rmspe"}.}
 \code{loss = "rmspe"}.}
 \item{\code{support_targets}}{Support-vector targets for \code{loss = "mape"};
 \code{NULL} for \code{loss = "rmspe"}.}
+\item{\code{y_train}}{The length-\code{N} training targets, retained so that
+\code{\link[=fitted.psvr_fit]{fitted.psvr_fit()}} and \code{\link[=residuals.psvr_fit]{residuals.psvr_fit()}} need no refit.}
+\item{\code{fitted_values}}{The length-\code{N} in-sample predictions
+\code{f(x_k)}, computed during the fit. Equal to
+\code{predict(object, X_train)} to machine precision, but recovered
+from state the solver already holds rather than by rebuilding the
+\verb{N × N} kernel matrix.}
 \item{\code{n_train}, \code{n_sv}, \code{p_train}}{Training counts.}
 \item{\code{hyperparameters}}{Named list \verb{(C, eps, gamma, a)} with \code{NULL}
 entries for the family that doesn't apply.}

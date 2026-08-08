@@ -53,11 +53,20 @@
   alpha <- sol[2L:(N + 1L)]
   if (use_precond) alpha <- alpha / y          # recover α = ᾱ / y
 
+  # ---- Training fitted values ----
+  # Same KKT identity as Model 3 with Ωs in place of Ω: the solved system is
+  # (Ωs + 1e-6·I + YΓ)α + b·1 = y, so f(xk) = (Ωs α)[k] + b
+  # = yk - (1e-6 + yk²/Γ)·αk. O(N); `Omega_s` has been destructively modified
+  # above and is no longer the matrix predict() uses.
+  fitted_values <- y - (1e-6 + y^2 / gamma) * alpha
+
   structure(
     list(
       alpha                = alpha,
       b                    = sol[1L],
       X_train              = X,
+      y_train              = y,              # length N — for fitted()/residuals()
+      fitted_values        = fitted_values,  # length N
       kernel               = kernel,
       gamma                = gamma,
       a                    = a,

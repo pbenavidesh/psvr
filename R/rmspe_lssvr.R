@@ -49,11 +49,22 @@
   alpha <- sol[2L:(N + 1L)]
   if (use_precond) alpha <- alpha / y         # recover α = ᾱ / y
 
+  # ---- Training fitted values ----
+  # The solved system is (Ω + 1e-6·I + YΓ)α + b·1 = y, so
+  #   f(xk) = (Ωα)[k] + b = yk - (1e-6 + yk²/Γ)·αk
+  # by KKT stationarity. O(N), and no matvec: `Omega` has been destructively
+  # modified above (jitter, YΓ, and the PΩP rescaling under preconditioning),
+  # so it is no longer the raw kernel matrix predict() uses. The identity
+  # holds unchanged in the preconditioned branch — see .fit_rmspe docs.
+  fitted_values <- y - (1e-6 + y^2 / gamma) * alpha
+
   structure(
     list(
       alpha                = alpha,
       b                    = sol[1L],
       X_train              = X,
+      y_train              = y,              # length N — for fitted()/residuals()
+      fitted_values        = fitted_values,  # length N
       kernel               = kernel,
       gamma                = gamma,
       n_train              = N,

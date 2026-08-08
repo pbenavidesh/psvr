@@ -176,6 +176,18 @@
   # ---- Retain support vectors only ----
   sv_idx <- which(abs(beta) > tol)
 
+  # ---- Training fitted values ----
+  # f(xk) = ½ Σ_{i ∈ SV} βi Ks(xi, xk) + b = (Ωs β_sv)[k] + b, i.e. exactly
+  # what predict() computes via sym_kernel_block(). One matvec against the
+  # already-built Ωs; the subtracted term removes the diagonal perturbations
+  # predict() does not see: the 0.5e-6 jitter (line 66) plus any F3 spectral
+  # shift mu (0 on the no-shift branch, which is the production case for
+  # Mercer kernels).
+  beta_sv         <- numeric(N)
+  beta_sv[sv_idx] <- beta[sv_idx]
+  fitted_values   <- as.numeric(Omega_s %*% beta_sv) -
+                       (0.5e-6 + spec$mu) * beta_sv + b
+
   structure(
     list(
       beta       = beta[sv_idx],
@@ -184,6 +196,8 @@
       b          = b,
       X_sv       = X[sv_idx, , drop = FALSE],
       y_sv       = y[sv_idx],
+      y_train       = y,              # length N — for fitted()/residuals()
+      fitted_values = fitted_values,  # length N
       kernel     = kernel,
       C          = C,
       eps        = eps,

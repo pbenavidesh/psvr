@@ -1,6 +1,6 @@
 Package: psvr
 Title: Percentage-Error Support Vector Regression
-Version: 0.0.2.9009
+Version: 0.0.2.9010
 Date: 2026-05-12
 Authors@R:
     person("Pablo", "Benavides-Herrera", email = "pbenavides@iteso.mx",

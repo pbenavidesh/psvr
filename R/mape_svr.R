@@ -157,6 +157,17 @@
   # ---- Retain support vectors only ----
   sv_idx <- which(abs(beta) > tol)
 
+  # ---- Training fitted values ----
+  # f(xk) = Σ_{i ∈ SV} βi K(xi, xk) + b, i.e. exactly what predict() computes.
+  # One matvec against the already-built Omega (no kernel rebuild); the
+  # `- 1e-6 * beta_sv` term removes the diagonal jitter added at line 57, which
+  # predict() does not see. beta_sv zeroes the pruned-away entries so this
+  # matches the post-pruning decision function rather than the solver's
+  # pre-pruning F.
+  beta_sv         <- numeric(N)
+  beta_sv[sv_idx] <- beta[sv_idx]
+  fitted_values   <- as.numeric(Omega %*% beta_sv) - 1e-6 * beta_sv + b
+
   structure(
     list(
       beta       = beta[sv_idx],
@@ -165,6 +176,8 @@
       b          = b,
       X_sv       = X[sv_idx, , drop = FALSE],
       y_sv       = y[sv_idx],
+      y_train       = y,              # length N — for fitted()/residuals()
+      fitted_values = fitted_values,  # length N
       kernel     = kernel,
       C          = C,
       eps        = eps,
