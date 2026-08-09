@@ -8,6 +8,7 @@
 ##
 ## Part B — T5 (warm-start) x T7 (block-k=4) stacking × 2 engines at N=300,
 ## 10-fold CV (paper TODO #10 scope):
+##   B0  no warm, no block-k4  (block_k4 = FALSE, warm_start = FALSE)
 ##   B1  cold + F5 warm        (block_k4 = FALSE, warm_start = TRUE)
 ##   B2  F7  + no warm         (block_k4 = TRUE,  warm_start = FALSE)
 ##   B3  F7  + F5 warm         (block_k4 = TRUE,  warm_start = TRUE; default)
@@ -168,22 +169,11 @@ for (rn in names(REGIMES)) {
   )
 }
 
-## ---- Part B: T5 x T7 stacking × 2 engines, N=300, 10-fold CV ---------------
-
-cat("\n=== Part B: T5 x T7 stacking × 2 engines, N=300, 10-fold CV ===\n")
-
-set.seed(2026)
-N_B  <- 300L
-sdlB <- 1.5
-d_B  <- data.frame(
-  y = rlnorm(N_B, sdlog = sdlB),
-  matrix(rnorm(N_B * 5), N_B, 5,
-         dimnames = list(NULL, paste0("x", 1:5)))
-)
-cat(sprintf("  N=%d  rho_y=%.2f  v=10\n", N_B, max(d_B$y) / min(d_B$y)))
-
-folds_B <- vfold_cv(d_B, v = 10L)
-K_B     <- make_kernel("rbf", sigma = 1)
+## ---- Part B: T5 x T7 stacking × 2 engines, 10-fold CV ---------------------
+##
+## Run at two scales: N=300 (canonical) and N=1000 (calibration), both
+## sdlog = 1.5.  Each scale re-seeds with 2026 before building its fixture,
+## so a scale's data and folds do not depend on which scales ran before it.
 
 time_cv <- function(folds, kernel, warm_start, block_k4_enabled, engine,
                     reps = 3L) {
@@ -208,8 +198,12 @@ time_cv <- function(folds, kernel, warm_start, block_k4_enabled, engine,
   )
 }
 
-# 6 configs
+# 8 configs
 B_specs <- list(
+  list(id = "B0-r",    eng = "r",    warm = FALSE, bk4 = FALSE,
+       label = "F4 cold + no warm  (2x2 reference cell, R)"),
+  list(id = "B0-rcpp", eng = "rcpp", warm = FALSE, bk4 = FALSE,
+       label = "F4 cold + no warm  (2x2 reference cell, Rcpp)"),
   list(id = "B1-r",    eng = "r",    warm = TRUE,  bk4 = FALSE,
        label = "F4 cold + F5 warm  (paper baseline)"),
   list(id = "B1-rcpp", eng = "rcpp", warm = TRUE,  bk4 = FALSE,
@@ -224,26 +218,61 @@ B_specs <- list(
        label = "F7 + F5 warm       (stacked, Rcpp; default)")
 )
 
-B_res <- list()
-for (s in B_specs) {
-  cat(sprintf("\n  %-8s %-50s\n", s$id, s$label))
-  r <- time_cv(folds_B, K_B, warm_start = s$warm,
-               block_k4_enabled = s$bk4, engine = s$eng)
-  cat(sprintf("    wall %6.3f s   iter_sum=%6d   per-fold=%s\n",
-              r$wall_med, r$iter_sum, paste(r$iter_count, collapse = " ")))
-  B_res[[s$id]] <- c(s, r)
+B_SCALES <- list(
+  list(tag = "N300",  N = 300L,  sdlog = 1.5),
+  list(tag = "N1000", N = 1000L, sdlog = 1.5)
+)
+
+make_cv_fixture <- function(N, sdlog, seed = 2026) {
+  set.seed(seed)
+  d <- data.frame(
+    y = rlnorm(N, sdlog = sdlog),
+    matrix(rnorm(N * 5), N, 5,
+           dimnames = list(NULL, paste0("x", 1:5)))
+  )
+  list(d = d, folds = vfold_cv(d, v = 10L), rho_y = max(d$y) / min(d$y))
 }
 
-baseline <- B_res[["B1-r"]]
-cat(sprintf("\n  Speedup vs B1-r (F4+F5 warm, R baseline = paper claim) [wall_med = %.3f s]:\n",
-            baseline$wall_med))
-for (s in B_specs) {
-  br <- B_res[[s$id]]
-  sp <- baseline$wall_med / br$wall_med
-  itr <- 1 - br$iter_sum / baseline$iter_sum
-  cat(sprintf("    %-8s wall=%6.3fs   speedup=%5.2fx   iter_sum %+6.1f%%\n",
-              s$id, br$wall_med, sp, 100 * itr))
+run_B_suite <- function(folds, kernel) {
+  res <- list()
+  for (s in B_specs) {
+    cat(sprintf("\n  %-8s %-50s\n", s$id, s$label))
+    r <- time_cv(folds, kernel, warm_start = s$warm,
+                 block_k4_enabled = s$bk4, engine = s$eng)
+    cat(sprintf("    wall %6.3f s   iter_sum=%6d   per-fold=%s\n",
+                r$wall_med, r$iter_sum, paste(r$iter_count, collapse = " ")))
+    res[[s$id]] <- c(s, r)
+  }
+  bl <- res[["B1-r"]]
+  cat(sprintf("\n  Speedup vs B1-r (F4+F5 warm, R baseline = paper claim) [wall_med = %.3f s]:\n",
+              bl$wall_med))
+  for (s in B_specs) {
+    br <- res[[s$id]]
+    cat(sprintf("    %-8s wall=%6.3fs   speedup=%5.2fx   iter_sum %+6.1f%%\n",
+                s$id, br$wall_med, bl$wall_med / br$wall_med,
+                100 * (1 - br$iter_sum / bl$iter_sum)))
+  }
+  res
 }
+
+K_B        <- make_kernel("rbf", sigma = 1)
+B_fixtures <- list()
+B_res_all  <- list()
+for (sc in B_SCALES) {
+  cat(sprintf("\n=== Part B: T5 x T7 stacking × 2 engines, N=%d, 10-fold CV ===\n",
+              sc$N))
+  fx <- make_cv_fixture(sc$N, sc$sdlog)
+  cat(sprintf("  N=%d  rho_y=%.2f  v=10\n", sc$N, fx$rho_y))
+  B_fixtures[[sc$tag]] <- fx
+  B_res_all[[sc$tag]]  <- run_B_suite(fx$folds, K_B)
+}
+
+## Back-compat aliases so results$stacking and meta keep the N=300 schema.
+B_res    <- B_res_all[["N300"]]
+baseline <- B_res[["B1-r"]]
+N_B      <- B_SCALES[[1L]]$N
+d_B      <- B_fixtures[["N300"]]$d
+rho_y_B  <- B_fixtures[["N300"]]$rho_y
 
 ## ---- Final summary tables -------------------------------------------------
 
@@ -279,26 +308,33 @@ for (rn in names(regime_res)) {
               rr$verdict))
 }
 
-cat("\n=== Summary B: T5 x T7 stacking (CV at N=300) ===\n")
-cat(sprintf("%-8s | %-6s | %5s | %5s | %8s | %8s | %s\n",
-            "id", "engine", "warm", "bk4", "wall_s", "iter_sum", "speedup vs B1-r"))
-cat(strrep("-", 78), "\n", sep = "")
-for (s in B_specs) {
-  br <- B_res[[s$id]]
-  cat(sprintf("%-8s | %-6s | %5s | %5s | %8.3f | %8d | %5.2fx\n",
-              s$id, s$eng, s$warm, s$bk4,
-              br$wall_med, br$iter_sum,
-              baseline$wall_med / br$wall_med))
+for (sc in B_SCALES) {
+  cat(sprintf("\n=== Summary B: T5 x T7 stacking (CV at N=%d) ===\n", sc$N))
+  cat(sprintf("%-8s | %-6s | %5s | %5s | %8s | %8s | %s\n",
+              "id", "engine", "warm", "bk4", "wall_s", "iter_sum", "speedup vs B1-r"))
+  cat(strrep("-", 78), "\n", sep = "")
+  br_all <- B_res_all[[sc$tag]]
+  base_w <- br_all[["B1-r"]]$wall_med
+  for (s in B_specs) {
+    br <- br_all[[s$id]]
+    cat(sprintf("%-8s | %-6s | %5s | %5s | %8.3f | %8d | %5.2fx\n",
+                s$id, s$eng, s$warm, s$bk4,
+                br$wall_med, br$iter_sum,
+                base_w / br$wall_med))
+  }
 }
 
 results <- list(
   regimes = regime_res,
-  stacking = B_res,
+  stacking = B_res,             # N=300 suite; schema unchanged
+  stacking_by_N = B_res_all,    # all scales, keyed by B_SCALES tag
   meta = list(
     date     = Sys.time(),
     reps     = REPS,
     N_B      = N_B,
-    rho_y_B  = max(d_B$y) / min(d_B$y),
+    rho_y_B  = rho_y_B,
+    scales   = B_SCALES,
+    rho_y_by_N = vapply(B_fixtures, `[[`, numeric(1), "rho_y"),
     git_head = tryCatch(system("git rev-parse HEAD", intern = TRUE),
                         error = function(e) NA_character_)
   )
