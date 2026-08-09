@@ -119,7 +119,6 @@ articles:
   - title: "Technical Notes"
     navbar: "Technical Notes"
     contents:
-      - python-replication
       - articles/when-to-use-psvr
 
 news:

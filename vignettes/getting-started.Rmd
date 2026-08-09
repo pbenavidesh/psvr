@@ -45,16 +45,6 @@ will be removed in a future release.
 All models require **strictly positive targets** (`y > 0`), which is the
 condition under which percentage residuals are well-defined.
 
-## Installation
-
-```{r install, eval = FALSE}
-# CRAN (once released)
-install.packages("psvr")
-
-# Development version from GitHub
-remotes::install_github("pbenavidesh/psvr")
-```
-
 ## Boston Housing data
 
 We reproduce the experiments reported in Tables 1–2 of the paper using

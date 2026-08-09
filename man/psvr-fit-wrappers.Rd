@@ -120,6 +120,32 @@ translated to \code{a = 1L} or \code{a = -1L} before calling the solver.}
 RMSPE LS-SVR fitters. See \code{\link[=rmspe_lssvr]{rmspe_lssvr()}} for accepted values and
 semantics.}
 }
+\value{
+A fitted model object of the legacy S3 class matching the wrapper's
+model family. These are the pre-\code{\link[=psvr]{psvr()}} object shapes, returned
+unmodified from the internal fitter; they are \strong{not} \code{psvr_fit} objects.
+
+The MAPE wrappers (\code{psvr_mape_rbf_fit()}, \code{psvr_mape_poly_fit()},
+\code{psvr_mape_linear_fit()}) return an object of class \code{"psvr_mape"}: a list
+with \code{beta} (support-vector dual differences), \code{alpha} and \code{alpha_star}
+(length-\code{N} pre-pruning duals, retained for warm starts), \code{b}, \code{X_sv},
+\code{y_sv}, \code{y_train}, \code{fitted_values}, \code{kernel}, \code{C}, \code{eps}, \code{n_train},
+\code{p_train}, \code{iterations}, \code{converged}, and \code{block_k4}.
+
+The symmetric MAPE wrappers (\code{psvr_mape_sym_rbf_fit()},
+\code{psvr_mape_sym_poly_fit()}, \code{psvr_mape_sym_linear_fit()}) return class
+\code{"psvr_mape_sym"}: the same components plus \code{a} (the symmetry type) and
+\code{spectral} (Algorithm 2 diagnostics).
+
+The RMSPE wrappers (\code{psvr_rmspe_rbf_fit()}, \code{psvr_rmspe_poly_fit()},
+\code{psvr_rmspe_linear_fit()}) return class \code{"psvr_rmspe"}: a list with
+\code{alpha}, \code{b}, \code{X_train}, \code{y_train}, \code{fitted_values}, \code{kernel}, \code{gamma},
+\code{n_train}, \code{p_train}, and \code{precondition_applied}.
+
+The symmetric RMSPE wrappers (\code{psvr_rmspe_sym_rbf_fit()},
+\code{psvr_rmspe_sym_poly_fit()}, \code{psvr_rmspe_sym_linear_fit()}) return class
+\code{"psvr_rmspe_sym"}: the same components plus \code{a}.
+}
 \description{
 Bridge functions called by parsnip when fitting psvr model specs.
 Exported only because parsnip's resolver requires it; not intended

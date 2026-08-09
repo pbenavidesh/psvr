@@ -46,6 +46,30 @@ utils::globalVariables(c("object", "new_data"))
 #' @param precondition Optional symmetric rescaling preconditioner for the
 #'   RMSPE LS-SVR fitters. See [rmspe_lssvr()] for accepted values and
 #'   semantics.
+#' @return A fitted model object of the legacy S3 class matching the wrapper's
+#'   model family. These are the pre-[psvr()] object shapes, returned
+#'   unmodified from the internal fitter; they are **not** `psvr_fit` objects.
+#'
+#'   The MAPE wrappers (`psvr_mape_rbf_fit()`, `psvr_mape_poly_fit()`,
+#'   `psvr_mape_linear_fit()`) return an object of class `"psvr_mape"`: a list
+#'   with `beta` (support-vector dual differences), `alpha` and `alpha_star`
+#'   (length-`N` pre-pruning duals, retained for warm starts), `b`, `X_sv`,
+#'   `y_sv`, `y_train`, `fitted_values`, `kernel`, `C`, `eps`, `n_train`,
+#'   `p_train`, `iterations`, `converged`, and `block_k4`.
+#'
+#'   The symmetric MAPE wrappers (`psvr_mape_sym_rbf_fit()`,
+#'   `psvr_mape_sym_poly_fit()`, `psvr_mape_sym_linear_fit()`) return class
+#'   `"psvr_mape_sym"`: the same components plus `a` (the symmetry type) and
+#'   `spectral` (Algorithm 2 diagnostics).
+#'
+#'   The RMSPE wrappers (`psvr_rmspe_rbf_fit()`, `psvr_rmspe_poly_fit()`,
+#'   `psvr_rmspe_linear_fit()`) return class `"psvr_rmspe"`: a list with
+#'   `alpha`, `b`, `X_train`, `y_train`, `fitted_values`, `kernel`, `gamma`,
+#'   `n_train`, `p_train`, and `precondition_applied`.
+#'
+#'   The symmetric RMSPE wrappers (`psvr_rmspe_sym_rbf_fit()`,
+#'   `psvr_rmspe_sym_poly_fit()`, `psvr_rmspe_sym_linear_fit()`) return class
+#'   `"psvr_rmspe_sym"`: the same components plus `a`.
 #' @name psvr-fit-wrappers
 #' @keywords internal
 NULL

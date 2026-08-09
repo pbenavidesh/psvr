@@ -23,8 +23,11 @@ All models require **strictly positive targets** (`y > 0`).
 ## Installation
 
 ```r
+# CRAN
+install.packages("psvr")
+
 # Development version from GitHub
-remotes::install_github("pbenavidesh/psvr")
+pak::pak("pbenavidesh/psvr")
 ```
 
 ## Quick start
