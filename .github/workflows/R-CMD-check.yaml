@@ -65,4 +65,8 @@ jobs:
           NOT_CRAN: 'false'
         with:
           upload-snapshots: true
+          # Pinned explicitly rather than relying on the action's default, so
+          # that "this repo checks with --as-cran" is a fact readable from the
+          # repo itself and cannot change under us if the action's default does.
+          args: 'c("--no-manual", "--as-cran")'
           build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'
