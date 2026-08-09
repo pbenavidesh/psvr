@@ -21,9 +21,9 @@ test_that(".warm_start_init() projects to the feasible region", {
   expect_true(all(ws$alpha_star >= 0 & ws$alpha_star <= C_k))
 })
 
-# Round 2: new-samples-only projection preserves retained-sample alpha values
-# exactly (rather than perturbing them with a uniform shift).
-test_that(".warm_start_init() new-samples-only projection preserves retained values", {
+# A zero-violation input is already feasible, so the projection must be the
+# identity on it (lambda = 0) -- nothing moves, in either direction.
+test_that(".warm_start_init() leaves an already-feasible input untouched", {
   C_k <- rep(10, 6L)
   # Retained samples (1, 2, 3): converged from previous fold (sum balanced).
   # New samples (4, 5, 6): zero-filled (no info).
@@ -32,13 +32,12 @@ test_that(".warm_start_init() new-samples-only projection preserves retained val
   ws <- psvr:::.warm_start_init(
     alpha_init      = alpha,
     alpha_star_init = alpha_star,
-    N = 6L, C_k = C_k,
-    new_mask = c(FALSE, FALSE, FALSE, TRUE, TRUE, TRUE)
+    N = 6L, C_k = C_k
   )
-  # Retained samples preserved exactly.
+  # Previously-converged samples preserved exactly.
   expect_equal(ws$alpha[1:3],      alpha[1:3])
   expect_equal(ws$alpha_star[1:3], alpha_star[1:3])
-  # New samples remain at zero (no violation to absorb).
+  # Zero-filled samples remain at zero (no violation to absorb).
   expect_equal(ws$alpha[4:6],      numeric(3L))
   expect_equal(ws$alpha_star[4:6], numeric(3L))
 })
@@ -58,8 +57,7 @@ test_that(".warm_start_init() absorbs a violation by minimum-norm projection", {
   ws <- psvr:::.warm_start_init(
     alpha_init      = alpha,
     alpha_star_init = alpha_star,
-    N = 5L, C_k = C_k,
-    new_mask = c(FALSE, FALSE, TRUE, TRUE, TRUE)
+    N = 5L, C_k = C_k
   )
   # With lambda < 0 nothing hits a bound, so g(lambda) = -2 - 6*lambda and
   # lambda = -1/3: alpha_k = alpha0_k + 1/3, alpha*_k = alpha*0_k - 1/3.
@@ -84,8 +82,7 @@ test_that(".warm_start_init() kills a POSITIVE violation (the pre-fix defect)", 
   ws <- psvr:::.warm_start_init(
     alpha_init      = alpha,
     alpha_star_init = alpha_star,
-    N = 5L, C_k = C_k,
-    new_mask = c(FALSE, FALSE, TRUE, TRUE, TRUE)
+    N = 5L, C_k = C_k
   )
   expect_lt(abs(sum(ws$alpha - ws$alpha_star)), 1e-12)
   expect_true(all(ws$alpha >= 0 & ws$alpha <= C_k))
@@ -103,7 +100,7 @@ test_that(".warm_start_init() is exact when new samples alone cannot absorb it",
   # n_new = 1, capacity of the new block = C_k = 10 < 20.
   ws <- psvr:::.warm_start_init(
     alpha_init = alpha, alpha_star_init = alpha_star,
-    N = 4L, C_k = C_k, new_mask = c(FALSE, FALSE, FALSE, TRUE)
+    N = 4L, C_k = C_k
   )
   expect_lt(abs(sum(ws$alpha - ws$alpha_star)), 1e-12)
 
@@ -111,7 +108,7 @@ test_that(".warm_start_init() is exact when new samples alone cannot absorb it",
   # projection needs no special case.
   ws0 <- psvr:::.warm_start_init(
     alpha_init = alpha, alpha_star_init = alpha_star,
-    N = 4L, C_k = C_k, new_mask = rep(FALSE, 4L)
+    N = 4L, C_k = C_k
   )
   expect_lt(abs(sum(ws0$alpha - ws0$alpha_star)), 1e-12)
 })
@@ -139,14 +136,12 @@ test_that(".warm_start_init() zero input is feasible", {
 test_that("psvr(alpha_init = converged α) matches cold-start within tol", {
   fit_cold <- psvr(X_tr, y_tr, loss = "mape", kernel = K_rbf,
                    C = 10, eps = 5)
-  # Mark all samples as RETAINED (none new) so the new-samples-only Step 2
-  # falls back to paper-uniform shift; the converged input should give
-  # violation = 0 anyway.
+  # A converged input already satisfies the equality constraint, so the
+  # projection is the identity and the solver restarts at its own optimum.
   fit_warm <- psvr(X_tr, y_tr, loss = "mape", kernel = K_rbf,
                    C = 10, eps = 5,
                    alpha_init      = fit_cold$alpha,
-                   alpha_star_init = fit_cold$alpha_star,
-                   new_mask        = rep(FALSE, N))
+                   alpha_star_init = fit_cold$alpha_star)
 
   p_cold <- predict(fit_cold, X_tr)
   p_warm <- predict(fit_warm, X_tr)

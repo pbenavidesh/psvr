@@ -36,7 +36,6 @@ for (i in seq_len(nrow(folds))) {
     common <- intersect(row_ids_prev, row_ids_i)
     alpha_init      <- numeric(nrow(X_i))
     alpha_star_init <- numeric(nrow(X_i))
-    new_mask        <- !(row_ids_i %in% row_ids_prev)
     if (length(common) > 0L) {
       pos_in_new <- match(common, row_ids_i)
       pos_in_old <- match(common, row_ids_prev)
@@ -44,13 +43,12 @@ for (i in seq_len(nrow(folds))) {
       alpha_star_init[pos_in_new] <- fit_prev$alpha_star[pos_in_old]
     }
   } else {
-    alpha_init <- NULL; alpha_star_init <- NULL; new_mask <- NULL
+    alpha_init <- NULL; alpha_star_init <- NULL
   }
 
   fit_i <- psvr(X_i, y_i, loss = "mape", kernel = K, C = 10, eps = 5,
                 alpha_init = alpha_init,
-                alpha_star_init = alpha_star_init,
-                new_mask = new_mask)
+                alpha_star_init = alpha_star_init)
   results_manual[[i]] <- fit_i
   fit_prev     <- fit_i
   row_ids_prev <- row_ids_i
@@ -88,7 +86,6 @@ for (i in seq_len(nrow(folds))) {
     common <- intersect(row_ids_prev, row_ids_i)
     alpha_init      <- numeric(nrow(X_i))
     alpha_star_init <- numeric(nrow(X_i))
-    new_mask        <- !(row_ids_i %in% row_ids_prev)
     if (length(common) > 0L) {
       pos_in_new <- match(common, row_ids_i)
       pos_in_old <- match(common, row_ids_prev)
@@ -96,12 +93,11 @@ for (i in seq_len(nrow(folds))) {
       alpha_star_init[pos_in_new] <- fit_prev$alpha_star[pos_in_old]
     }
   } else {
-    alpha_init <- NULL; alpha_star_init <- NULL; new_mask <- NULL
+    alpha_init <- NULL; alpha_star_init <- NULL
   }
   fit_i <- psvr(X_i, y_i, loss = "mape", sym = +1L, kernel = K, C = 10, eps = 5,
                 alpha_init = alpha_init,
-                alpha_star_init = alpha_star_init,
-                new_mask = new_mask)
+                alpha_star_init = alpha_star_init)
   results_manual_sym[[i]] <- fit_i
   fit_prev <- fit_i; row_ids_prev <- row_ids_i
 }

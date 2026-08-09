@@ -58,7 +58,6 @@
                        alpha_init = NULL,
                        alpha_star_init = NULL,
                        warm_start_check = TRUE,
-                       new_mask = NULL,
                        block_k4_enabled = TRUE,
                        alpha_couple = 0.5,
                        trace = FALSE,
@@ -72,7 +71,6 @@
                         alpha_init = alpha_init,
                         alpha_star_init = alpha_star_init,
                         warm_start_check = warm_start_check,
-                        new_mask = new_mask,
                         block_k4_enabled = block_k4_enabled,
                         alpha_couple = alpha_couple,
                         trace = trace))
@@ -85,7 +83,6 @@
     N_y <- length(y)
     C_k <- 100 * C / y
     ws  <- .warm_start_init(alpha_init, alpha_star_init, N_y, C_k,
-                            new_mask        = new_mask,
                             warm_start_check = warm_start_check)
     alpha_init_p      <- ws$alpha
     alpha_star_init_p <- ws$alpha_star
@@ -104,7 +101,6 @@
     warm_start_check  = isTRUE(warm_start_check),
     alpha_init        = alpha_init_p,
     alpha_star_init   = alpha_star_init_p,
-    new_mask          = new_mask,
     trace             = isTRUE(trace)
   )
   sol <- psvr_smo_fit_rcpp(Omega, y, opts)
@@ -128,7 +124,6 @@
                        alpha_init = NULL,
                        alpha_star_init = NULL,
                        warm_start_check = TRUE,
-                       new_mask = NULL,
                        block_k4_enabled = TRUE,
                        alpha_couple = 0.5,
                        trace = FALSE) {
@@ -167,7 +162,6 @@
     tau_alphastar <- y * (1 + scale)
   } else {
     ws         <- .warm_start_init(alpha_init, alpha_star_init, N, C_k,
-                                   new_mask        = new_mask,
                                    warm_start_check = warm_start_check)
     alpha      <- ws$alpha
     alpha_star <- ws$alpha_star

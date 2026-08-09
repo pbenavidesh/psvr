@@ -59,7 +59,6 @@ struct FitOptions {
   // Empty vectors = cold start.
   Vec      alpha_init;
   Vec      alpha_star_init;
-  BoolVec  new_mask;               // empty = infer from alpha_init == 0
 
   // F7.5 — record WSS1 Delta per iter into FitResult::delta_history.
   bool   trace            = false;

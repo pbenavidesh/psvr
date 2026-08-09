@@ -1,5 +1,19 @@
 # psvr 0.0.2.9010 (development)
 
+## Breaking changes
+
+* **`new_mask` is removed** from `psvr()`, `psvr_cv()`, `.smo_solve()`,
+  `.smo_solve_r()`, `.fit_mape()`, `.fit_mape_sym()`, and
+  `.warm_start_init()`. It existed to partition samples for the old
+  new-samples-only equality shift; the exact minimum-norm projection (see
+  Bug fixes) ranges over all `2N` dual variables and has no use for the
+  partition, so the argument had become a validated no-op. The package has
+  never had a released version, so nothing depended on it. Code that passed
+  `new_mask` should simply drop the argument — the projection result is
+  unaffected. The dead `new_mask` field is also dropped from the C++
+  `FitOptions` struct and its Rcpp binding, along with the now-orphaned
+  `get_vec_bool()` helper.
+
 ## Bug fixes
 
 * **Warm-start now projects onto the feasible set exactly.** The previous

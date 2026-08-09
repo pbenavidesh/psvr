@@ -79,12 +79,11 @@
 #     feasible set, by contrast, is never empty: x = 0 always satisfies both
 #     the equality and the box.
 #
-# The `new_mask` argument is retained for API compatibility (it is part of the
-# psvr() / .smo_solve() signatures and is passed by psvr_cv()) but no longer
-# influences the projection.
+# The `new_mask` argument that carried the old scheme's partition was removed
+# at 0.0.2.9010: the exact projection has no use for it, and the package has
+# no released version to keep compatibility with.
 
 .warm_start_init <- function(alpha_init, alpha_star_init, N, C_k,
-                             new_mask = NULL,
                              warm_start_check = TRUE) {
   if (is.null(alpha_init))      alpha_init      <- numeric(N)
   if (is.null(alpha_star_init)) alpha_star_init <- numeric(N)
@@ -95,10 +94,6 @@
   if (length(alpha_star_init) != N)
     stop(sprintf("`alpha_star_init` has length %d but training set has N = %d.",
                  length(alpha_star_init), N))
-  if (!is.null(new_mask)) {
-    if (!is.logical(new_mask) || length(new_mask) != N)
-      stop(sprintf("`new_mask` must be a logical vector of length %d.", N))
-  }
 
   alpha0      <- as.numeric(alpha_init)
   alpha_star0 <- as.numeric(alpha_star_init)

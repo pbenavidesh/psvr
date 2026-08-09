@@ -21,7 +21,6 @@ manual_cv <- function(folds, X_var, y_var, ...) {
       common <- intersect(row_ids_prev, row_ids_i)
       alpha_init      <- numeric(nrow(X_i))
       alpha_star_init <- numeric(nrow(X_i))
-      new_mask        <- !(row_ids_i %in% row_ids_prev)
       if (length(common) > 0L) {
         pos_in_new <- match(common, row_ids_i)
         pos_in_old <- match(common, row_ids_prev)
@@ -29,13 +28,12 @@ manual_cv <- function(folds, X_var, y_var, ...) {
         alpha_star_init[pos_in_new] <- fit_prev$alpha_star[pos_in_old]
       }
     } else {
-      alpha_init <- NULL; alpha_star_init <- NULL; new_mask <- NULL
+      alpha_init <- NULL; alpha_star_init <- NULL
     }
     fit_i <- do.call(psvr, c(
       list(X = X_i, y = y_i,
            alpha_init = alpha_init,
-           alpha_star_init = alpha_star_init,
-           new_mask = new_mask),
+           alpha_star_init = alpha_star_init),
       args
     ))
     results[[i]]   <- fit_i

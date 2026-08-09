@@ -9,10 +9,6 @@
 #'   vectors (Theorem 5); `NULL` cold-starts.
 #' @param warm_start_check Logical; if `TRUE`, validate the post-projection
 #'   feasibility of the warm-start vectors. Default `TRUE`.
-#' @param new_mask Optional logical vector (length N) flagging samples that
-#'   are NEW relative to the previous fit. Retained for API compatibility;
-#'   since 0.0.2.9010 the projection is the exact minimum-norm projection
-#'   over all `2N` dual variables and does not consult this mask.
 #'
 #' @return A list of class `"psvr_mape"` (legacy shape).
 #'
@@ -23,7 +19,6 @@
                       alpha_init = NULL,
                       alpha_star_init = NULL,
                       warm_start_check = TRUE,
-                      new_mask = NULL,
                       precomputed_Omega = NULL,
                       block_k4_enabled = TRUE,
                       alpha_couple = 0.5,
@@ -71,7 +66,6 @@
                              alpha_init = alpha_init,
                              alpha_star_init = alpha_star_init,
                              warm_start_check = warm_start_check,
-                             new_mask = new_mask,
                              block_k4_enabled = block_k4_enabled,
                              alpha_couple = alpha_couple,
                              engine = engine)

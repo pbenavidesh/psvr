@@ -20,7 +20,6 @@ psvr(
   alpha_init = NULL,
   alpha_star_init = NULL,
   warm_start_check = TRUE,
-  new_mask = NULL,
   reg = NULL,
   block_k4_enabled = TRUE,
   engine = c("rcpp", "r"),
@@ -78,13 +77,6 @@ post-projection feasibility of the warm-start vectors and \code{stop()} on
 violation. A surviving equality residual is fatal rather than cosmetic:
 SMO conserves \code{sum(alpha - alpha_star)}, so an infeasible start is
 carried through to the returned solution. Set \code{FALSE} to override.}
-
-\item{new_mask}{Optional length-\code{N} logical vector flagging which samples
-are NEW relative to the previous fit. Retained for API compatibility and
-still passed by \code{\link[=psvr_cv]{psvr_cv()}}, but as of 0.0.2.9009 it no longer influences
-the warm-start projection: Algorithm 1 now computes the exact
-minimum-norm projection over all \verb{2N} dual variables rather than a shift
-restricted to new samples. Validated for type and length when supplied.}
 
 \item{reg}{Reserved for future phases (extended Lagrangian). Must be
 \code{NULL}.}

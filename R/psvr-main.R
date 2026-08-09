@@ -49,12 +49,6 @@
 #'   violation. A surviving equality residual is fatal rather than cosmetic:
 #'   SMO conserves `sum(alpha - alpha_star)`, so an infeasible start is
 #'   carried through to the returned solution. Set `FALSE` to override.
-#' @param new_mask Optional length-`N` logical vector flagging which samples
-#'   are NEW relative to the previous fit. Retained for API compatibility and
-#'   still passed by [psvr_cv()], but as of 0.0.2.9010 it no longer influences
-#'   the warm-start projection: Algorithm 1 now computes the exact
-#'   minimum-norm projection over all `2N` dual variables rather than a shift
-#'   restricted to new samples. Validated for type and length when supplied.
 #' @param reg Reserved for future phases (extended Lagrangian). Must be
 #'   `NULL`.
 #' @param block_k4_enabled Logical; if `TRUE` (default, `loss = "mape"`
@@ -157,7 +151,6 @@ psvr <- function(X, y,
                  alpha_init       = NULL,
                  alpha_star_init  = NULL,
                  warm_start_check = TRUE,
-                 new_mask         = NULL,
                  reg              = NULL,
                  block_k4_enabled = TRUE,
                  engine           = c("rcpp", "r"),
@@ -205,7 +198,6 @@ psvr <- function(X, y,
                           alpha_init = alpha_init,
                           alpha_star_init = alpha_star_init,
                           warm_start_check = warm_start_check,
-                          new_mask = new_mask,
                           precomputed_Omega = precomputed_Omega,
                           block_k4_enabled = block_k4_enabled,
                           alpha_couple = alpha_couple,
@@ -216,7 +208,6 @@ psvr <- function(X, y,
                               alpha_init = alpha_init,
                               alpha_star_init = alpha_star_init,
                               warm_start_check = warm_start_check,
-                              new_mask = new_mask,
                               precomputed_Omega_s = precomputed_Omega_s,
                               block_k4_enabled = block_k4_enabled,
                               alpha_couple = alpha_couple,

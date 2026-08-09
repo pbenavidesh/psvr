@@ -51,16 +51,6 @@ inline psvr::Vec get_vec_double(const List& opts, const char* name) {
   return psvr::Vec(v.begin(), v.end());
 }
 
-inline psvr::BoolVec get_vec_bool(const List& opts, const char* name) {
-  if (!has(opts, name)) return psvr::BoolVec{};
-  LogicalVector v = opts[name];
-  psvr::BoolVec out(v.size());
-  for (R_xlen_t k = 0; k < v.size(); ++k) {
-    out[k] = (v[k] == TRUE) ? 1u : 0u;
-  }
-  return out;
-}
-
 psvr::FitOptions parse_fit_options(const List& opts) {
   psvr::FitOptions fo;
   fo.C                 = get_scalar_double(opts, "C",                 1.0);
@@ -74,7 +64,6 @@ psvr::FitOptions parse_fit_options(const List& opts) {
   fo.warm_start_check  = get_scalar_bool  (opts, "warm_start_check",  false);
   fo.alpha_init        = get_vec_double   (opts, "alpha_init");
   fo.alpha_star_init   = get_vec_double   (opts, "alpha_star_init");
-  fo.new_mask          = get_vec_bool     (opts, "new_mask");
   fo.trace             = get_scalar_bool  (opts, "trace",             false);
   return fo;
 }
