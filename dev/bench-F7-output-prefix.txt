@@ -1,0 +1,102 @@
+=== Part A: R1-R4 regime suite (reps = 5, 4 configs per regime) ===
+
+[R1] heterogeneous + medium-RBF (T3+T7 vs T3)
+  N=1000  rho_y=44378.04  sigma=1  target>=5% iter reduction
+  F4 R   :  iters=100000  wall= 10.372s   converged=FALSE
+  F4 Rcpp:  iters=100000  wall=  4.487s   converged=FALSE   F4 speedup R->Rcpp: 2.31x
+  F7 R   :  iters= 62282  wall= 13.881s   converged=TRUE   joint=60615  dr=0.973 (e 0.939 / l 0.998)
+  F7 Rcpp:  iters= 62282  wall=  3.939s   converged=TRUE   joint=60615   F7 speedup R->Rcpp: 3.52x
+  F7-Rcpp vs F4-Rcpp:  iter +37.7%   wall +12.2%   ->  PASS
+
+[R2] homogeneous + medium-RBF (T7 standalone)
+  N=1000  rho_y=3.64  sigma=1  target>=15% iter reduction
+  F4 R   :  iters=100000  wall= 10.763s   converged=FALSE
+  F4 Rcpp:  iters=100000  wall=  4.651s   converged=FALSE   F4 speedup R->Rcpp: 2.31x
+  F7 R   :  iters=100000  wall= 22.560s   converged=FALSE   joint=99995  dr=1.000 (e 1.000 / l 1.000)
+  F7 Rcpp:  iters=100000  wall=  5.996s   converged=FALSE   joint=99995   F7 speedup R->Rcpp: 3.76x
+  F7-Rcpp vs F4-Rcpp:  iter +0.0%   wall -28.9%   ->  FAIL
+
+[R3] heterogeneous + dense-RBF (T7 dense)
+  N=300  rho_y=3701.53  sigma=3  target>=20% iter reduction
+  F4 R   :  iters=100000  wall=  4.395s   converged=FALSE
+  F4 Rcpp:  iters=100000  wall=  0.938s   converged=FALSE   F4 speedup R->Rcpp: 4.69x
+  F7 R   :  iters=100000  wall=  9.361s   converged=FALSE   joint=94514  dr=0.945 (e 0.883 / l 0.993)
+  F7 Rcpp:  iters=100000  wall=  1.212s   converged=FALSE   joint=94514   F7 speedup R->Rcpp: 7.73x
+  F7-Rcpp vs F4-Rcpp:  iter +0.0%   wall -29.2%   ->  FAIL
+
+[R4] heterogeneous + sparse-RBF (T7 sparse)
+  N=1000  rho_y=13901.46  sigma=0.3  target>=5% iter reduction
+  F4 R   :  iters=  1477  wall=  0.232s   converged=TRUE
+  F4 Rcpp:  iters=  1477  wall=  0.145s   converged=TRUE   F4 speedup R->Rcpp: 1.60x
+  F7 R   :  iters=   774  wall=  0.232s   converged=TRUE   joint=719  dr=0.930 (e 0.845 / l 0.990)
+  F7 Rcpp:  iters=   774  wall=  0.120s   converged=TRUE   joint=719   F7 speedup R->Rcpp: 1.94x
+  F7-Rcpp vs F4-Rcpp:  iter +47.6%   wall +17.5%   ->  PASS
+
+=== Part B: T5 x T7 stacking × 2 engines, N=300, 10-fold CV ===
+  N=300  rho_y=2388.41  v=10
+
+  B1-r     F4 cold + F5 warm  (paper baseline)               
+    wall  2.200 s   iter_sum= 37740   per-fold=4252 3704 3841 4046 3275 3648 3665 3831 3681 3797
+
+  B1-rcpp  F4 cold + F5 warm  (Rcpp)                         
+    wall  0.591 s   iter_sum= 37740   per-fold=4252 3704 3841 4046 3275 3648 3665 3831 3681 3797
+
+  B2-r     F7 + no warm       (T7 alone, R)                  
+    wall  2.697 s   iter_sum= 23363   per-fold=2270 2039 2364 2817 2643 2424 2387 2526 1606 2287
+
+  B2-rcpp  F7 + no warm       (T7 alone, Rcpp)               
+    wall  0.508 s   iter_sum= 23363   per-fold=2270 2039 2364 2817 2643 2424 2387 2526 1606 2287
+
+  B3-r     F7 + F5 warm       (stacked, R)                   
+    wall  2.489 s   iter_sum= 26586   per-fold=2270 2056 3733 2228 1864 3743 2099 3727 2128 2738
+
+  B3-rcpp  F7 + F5 warm       (stacked, Rcpp; default)       
+    wall  0.515 s   iter_sum= 26586   per-fold=2270 2056 3733 2228 1864 3743 2099 3727 2128 2738
+
+  Speedup vs B1-r (F4+F5 warm, R baseline = paper claim) [wall_med = 2.200 s]:
+    B1-r     wall= 2.200s   speedup= 1.00x   iter_sum   +0.0%
+    B1-rcpp  wall= 0.591s   speedup= 3.72x   iter_sum   +0.0%
+    B2-r     wall= 2.697s   speedup= 0.82x   iter_sum  +38.1%
+    B2-rcpp  wall= 0.508s   speedup= 4.33x   iter_sum  +38.1%
+    B3-r     wall= 2.489s   speedup= 0.88x   iter_sum  +29.6%
+    B3-rcpp  wall= 0.515s   speedup= 4.28x   iter_sum  +29.6%
+
+=== Summary A: R1-R4 (engine × mode) ===
+rgme |     N |    rho_y |   sig | engine  | mode  |   iters |   wall_s | dr
+------------------------------------------------------------------------------
+R1   |  1000 |  44378.0 |  1.00 | r       | F4    |  100000 |   10.372 | -
+R1   |  1000 |  44378.0 |  1.00 | r       | F7    |   62282 |   13.881 | 0.973
+R1   |  1000 |  44378.0 |  1.00 | rcpp    | F4    |  100000 |    4.487 | -
+R1   |  1000 |  44378.0 |  1.00 | rcpp    | F7    |   62282 |    3.939 | 0.973
+R2   |  1000 |      3.6 |  1.00 | r       | F4    |  100000 |   10.763 | -
+R2   |  1000 |      3.6 |  1.00 | r       | F7    |  100000 |   22.560 | 1.000
+R2   |  1000 |      3.6 |  1.00 | rcpp    | F4    |  100000 |    4.651 | -
+R2   |  1000 |      3.6 |  1.00 | rcpp    | F7    |  100000 |    5.996 | 1.000
+R3   |   300 |   3701.5 |  3.00 | r       | F4    |  100000 |    4.395 | -
+R3   |   300 |   3701.5 |  3.00 | r       | F7    |  100000 |    9.361 | 0.945
+R3   |   300 |   3701.5 |  3.00 | rcpp    | F4    |  100000 |    0.938 | -
+R3   |   300 |   3701.5 |  3.00 | rcpp    | F7    |  100000 |    1.212 | 0.945
+R4   |  1000 |  13901.5 |  0.30 | r       | F4    |    1477 |    0.232 | -
+R4   |  1000 |  13901.5 |  0.30 | r       | F7    |     774 |    0.232 | 0.930
+R4   |  1000 |  13901.5 |  0.30 | rcpp    | F4    |    1477 |    0.145 | -
+R4   |  1000 |  13901.5 |  0.30 | rcpp    | F7    |     774 |    0.120 | 0.930
+
+=== Summary A reduction table (Rcpp speedups + F7 vs F4 wall) ===
+rgme | F4 R->C | F7 R->C |   F7 iter Δ |   F7 wall Δ | verdict
+----------------------------------------------------------------------
+R1   |  2.31x  |  3.52x  |    +37.7%   |    +12.2%   | PASS
+R2   |  2.31x  |  3.76x  |     +0.0%   |    -28.9%   | FAIL
+R3   |  4.69x  |  7.73x  |     +0.0%   |    -29.2%   | FAIL
+R4   |  1.60x  |  1.94x  |    +47.6%   |    +17.5%   | PASS
+
+=== Summary B: T5 x T7 stacking (CV at N=300) ===
+id       | engine |  warm |   bk4 |   wall_s | iter_sum | speedup vs B1-r
+------------------------------------------------------------------------------
+B1-r     | r      |  TRUE | FALSE |    2.200 |    37740 |  1.00x
+B1-rcpp  | rcpp   |  TRUE | FALSE |    0.591 |    37740 |  3.72x
+B2-r     | r      | FALSE |  TRUE |    2.697 |    23363 |  0.82x
+B2-rcpp  | rcpp   | FALSE |  TRUE |    0.508 |    23363 |  4.33x
+B3-r     | r      |  TRUE |  TRUE |    2.489 |    26586 |  0.88x
+B3-rcpp  | rcpp   |  TRUE |  TRUE |    0.515 |    26586 |  4.28x
+
+Saved to: dev/bench_F7.rds
