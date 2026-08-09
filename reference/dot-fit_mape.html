@@ -66,7 +66,6 @@ deprecation wrapper <code><a href="mape_svr.html">mape_svr()</a></code> forwards
 <span>  alpha_init <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  alpha_star_init <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  warm_start_check <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  new_mask <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  precomputed_Omega <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  block_k4_enabled <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  alpha_couple <span class="op">=</span> <span class="fl">0.5</span>,</span>
@@ -90,13 +89,6 @@ vectors (Theorem 5); <code>NULL</code> cold-starts.</p></dd>
 <dt id="arg-warm-start-check">warm_start_check<a class="anchor" aria-label="anchor" href="#arg-warm-start-check"></a></dt>
 <dd><p>Logical; if <code>TRUE</code>, validate the post-projection
 feasibility of the warm-start vectors. Default <code>TRUE</code>.</p></dd>
-
-
-<dt id="arg-new-mask">new_mask<a class="anchor" aria-label="anchor" href="#arg-new-mask"></a></dt>
-<dd><p>Optional logical vector (length N) flagging samples that
-are NEW relative to the previous fit (used to distribute the equality-
-constraint projection over new samples only). <code>NULL</code> infers
-"new = both alpha and alpha_star are exactly zero".</p></dd>
 
 </dl></div>
     <div class="section level2">

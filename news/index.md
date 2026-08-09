@@ -2,6 +2,78 @@
 
 ## psvr 0.0.2.9010 (development)
 
+### Breaking changes
+
+- **`new_mask` is removed** from
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md),
+  [`psvr_cv()`](https://pbenavidesh.github.io/psvr/reference/psvr_cv.md),
+  [`.smo_solve()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve.md),
+  [`.smo_solve_r()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve_r.md),
+  [`.fit_mape()`](https://pbenavidesh.github.io/psvr/reference/dot-fit_mape.md),
+  [`.fit_mape_sym()`](https://pbenavidesh.github.io/psvr/reference/dot-fit_mape_sym.md),
+  and `.warm_start_init()`. It existed to partition samples for the old
+  new-samples-only equality shift; the exact minimum-norm projection
+  (see Bug fixes) ranges over all `2N` dual variables and has no use for
+  the partition, so the argument had become a validated no-op. The
+  package has never had a released version, so nothing depended on it.
+  Code that passed `new_mask` should simply drop the argument — the
+  projection result is unaffected. The dead `new_mask` field is also
+  dropped from the C++ `FitOptions` struct and its Rcpp binding, along
+  with the now-orphaned `get_vec_bool()` helper.
+
+### Bug fixes
+
+- **Warm-start now projects onto the feasible set exactly.** The
+  previous Algorithm 1 Step 2 routed the entire equality violation into
+  `alpha` on the NEW samples, which carry `alpha = 0` by definition, so
+  a **positive** violation produced a shift that the Step 3 box clip
+  annihilated in full — deterministically, not occasionally. This was
+  not a lost speedup: SMO’s pairwise updates conserve
+  `sum(alpha - alpha_star)` exactly, so the infeasible start was carried
+  through to the returned solution and `warm_start = TRUE` returned the
+  optimum of a *different* problem. On a 5-fold reference fixture the
+  surviving residual reached `5.8e+02` and warm-start predictions
+  diverged from cold-start by over 1000% of `mean(|y|)` (fold-4 MAPE
+  480.66 warm vs 286.22 cold).
+
+  The projection is now the exact minimum-norm (Euclidean) projection
+  onto the intersection of the equality hyperplane
+  `sum(alpha - alpha_star) = 0` and the per-sample box `[0, 100C/y_k]`,
+  computed from the single scalar multiplier `lambda` in
+  `alpha_k(lambda) = clip(alpha_k - lambda, 0, C_k)`,
+  `alpha*_k(lambda) = clip(alpha*_k + lambda, 0, C_k)`, found by
+  bisection on the monotone residual `g(lambda)` plus a closed-form
+  polish on the frozen active set. Post-projection residuals are at
+  rounding level (`1.7e-14` to `4.6e-13` on the reference fixture,
+  versus a `1e-9 * max(C_k)` gate), and warm/cold prediction agreement
+  now scales linearly with the solver tolerance (`3e-3` at `tol = 1e-3`,
+  `2e-5` at `1e-5`, `4e-7` at `1e-7`), confirming the remaining gap is
+  the SMO tolerance band rather than a residual defect.
+
+  Two consequences worth noting for anyone re-deriving benchmark
+  numbers: the projection now ranges over **all** `2N` dual variables
+  rather than new samples only, so retained samples move slightly; and
+  the Step 3b uniform recovery pass is **removed** (it existed only to
+  claw back part of what the clip destroyed, and was subject to the same
+  lower-bound loss).
+
+- **The warm-start equality check is now an error, not a warning.**
+  Because SMO conserves the equality residual, a surviving violation
+  guarantees a wrong answer rather than a degraded speedup.
+  `warm_start_check = TRUE` (the default) now
+  [`stop()`](https://rdrr.io/r/base/stop.html)s, matching how per-sample
+  box violations were already treated, and the tolerance tightened from
+  `1e-6 * max(C_k)` to `1e-9 * max(C_k)`. Pass
+  `warm_start_check = FALSE` to override.
+
+- **`dev/bench-F5.R` no longer wraps
+  [`psvr_cv()`](https://pbenavidesh.github.io/psvr/reference/psvr_cv.md)
+  in a blanket
+  [`suppressWarnings()`](https://rdrr.io/r/base/warning.html).** It now
+  muffles only the known linear/polynomial “did not converge” warning.
+  The blanket form is why the equality-residual warning went unobserved
+  through the F5 benchmark run.
+
 ### New features
 
 - **[`fitted()`](https://rdrr.io/r/stats/fitted.values.html) and

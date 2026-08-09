@@ -82,7 +82,6 @@ remain available but are slated for deprecation.</p>
 <span>  alpha_init <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  alpha_star_init <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  warm_start_check <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  new_mask <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  reg <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  block_k4_enabled <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  engine <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rcpp"</span>, <span class="st">"r"</span><span class="op">)</span>,</span>
@@ -159,22 +158,18 @@ a positive numeric threshold; controls Remark-17 symmetric rescaling
 
 <dt id="arg-alpha-init-alpha-star-init">alpha_init, alpha_star_init<a class="anchor" aria-label="anchor" href="#arg-alpha-init-alpha-star-init"></a></dt>
 <dd><p>Optional length-<code>N</code> numeric warm-start
-vectors for the SMO solver (Theorem 5; <code>loss = "mape"</code> only).
-Projected via Algorithm 1 (new-samples-only shift + box clip) before
-the solve. <code>NULL</code> cold-starts. Defaults <code>NULL</code>.</p></dd>
+vectors for the SMO solver (Theorem 5; <code>loss = "mape"</code> only). Projected
+via Algorithm 1 — the exact minimum-norm (Euclidean) projection onto
+<code>sum(alpha - alpha_star) = 0</code> intersected with the per-sample box
+<code>[0, 100C/y_k]</code> — before the solve. <code>NULL</code> cold-starts. Defaults <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-warm-start-check">warm_start_check<a class="anchor" aria-label="anchor" href="#arg-warm-start-check"></a></dt>
-<dd><p>Logical; if <code>TRUE</code>, validate post-projection
-feasibility of the warm-start vectors. Default <code>TRUE</code>.</p></dd>
-
-
-<dt id="arg-new-mask">new_mask<a class="anchor" aria-label="anchor" href="#arg-new-mask"></a></dt>
-<dd><p>Optional length-<code>N</code> logical vector flagging which samples
-are NEW relative to the previous fit (used by Algorithm 1 Step 2 to
-distribute the equality-constraint projection over new samples only).
-<code>NULL</code> infers "new = both alpha_init and alpha_star_init are exactly
-zero". Used internally by <code><a href="psvr_cv.html">psvr_cv()</a></code> for fold-to-fold carryover.</p></dd>
+<dd><p>Logical; if <code>TRUE</code> (default), validate
+post-projection feasibility of the warm-start vectors and <code><a href="https://rdrr.io/r/base/stop.html" class="external-link">stop()</a></code> on
+violation. A surviving equality residual is fatal rather than cosmetic:
+SMO conserves <code>sum(alpha - alpha_star)</code>, so an infeasible start is
+carried through to the returned solution. Set <code>FALSE</code> to override.</p></dd>
 
 
 <dt id="arg-reg">reg<a class="anchor" aria-label="anchor" href="#arg-reg"></a></dt>

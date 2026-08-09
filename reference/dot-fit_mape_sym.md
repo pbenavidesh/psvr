@@ -25,7 +25,6 @@ of the paper; see
   alpha_init = NULL,
   alpha_star_init = NULL,
   warm_start_check = TRUE,
-  new_mask = NULL,
   precomputed_Omega_s = NULL,
   block_k4_enabled = TRUE,
   alpha_couple = 0.5,
@@ -49,13 +48,6 @@ of the paper; see
 
   Logical; if `TRUE`, validate the post-projection feasibility of the
   warm-start vectors. Default `TRUE`.
-
-- new_mask:
-
-  Optional logical vector (length N) flagging samples that are NEW
-  relative to the previous fit (used to distribute the equality-
-  constraint projection over new samples only). `NULL` infers "new =
-  both alpha and alpha_star are exactly zero".
 
 ## Value
 

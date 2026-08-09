@@ -22,7 +22,6 @@ release cycles.
   alpha_init = NULL,
   alpha_star_init = NULL,
   warm_start_check = TRUE,
-  new_mask = NULL,
   block_k4_enabled = TRUE,
   alpha_couple = 0.5,
   trace = FALSE,
