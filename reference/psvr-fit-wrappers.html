@@ -29,7 +29,6 @@ for direct use. Call psvr() instead for direct fitting."><meta property="og:imag
     <li><a class="dropdown-item" href="../articles/tidymodels-workflow.html">tidymodels workflow with psvr</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Technical Notes</h6></li>
-    <li><a class="dropdown-item" href="../articles/python-replication.html">Python Replication: Numerical Equivalence Check</a></li>
     <li><a class="dropdown-item" href="../articles/when-to-use-psvr.html">When to Use Percentage-Error SVR</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -186,6 +185,29 @@ RMSPE LS-SVR fitters. See <code><a href="rmspe_lssvr.html">rmspe_lssvr()</a></co
 semantics.</p></dd>
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
+    <p>A fitted model object of the legacy S3 class matching the wrapper's
+model family. These are the pre-<code><a href="psvr.html">psvr()</a></code> object shapes, returned
+unmodified from the internal fitter; they are <strong>not</strong> <code>psvr_fit</code> objects.</p>
+<p>The MAPE wrappers (<code>psvr_mape_rbf_fit()</code>, <code>psvr_mape_poly_fit()</code>,
+<code>psvr_mape_linear_fit()</code>) return an object of class <code>"psvr_mape"</code>: a list
+with <code>beta</code> (support-vector dual differences), <code>alpha</code> and <code>alpha_star</code>
+(length-<code>N</code> pre-pruning duals, retained for warm starts), <code>b</code>, <code>X_sv</code>,
+<code>y_sv</code>, <code>y_train</code>, <code>fitted_values</code>, <code>kernel</code>, <code>C</code>, <code>eps</code>, <code>n_train</code>,
+<code>p_train</code>, <code>iterations</code>, <code>converged</code>, and <code>block_k4</code>.</p>
+<p>The symmetric MAPE wrappers (<code>psvr_mape_sym_rbf_fit()</code>,
+<code>psvr_mape_sym_poly_fit()</code>, <code>psvr_mape_sym_linear_fit()</code>) return class
+<code>"psvr_mape_sym"</code>: the same components plus <code>a</code> (the symmetry type) and
+<code>spectral</code> (Algorithm 2 diagnostics).</p>
+<p>The RMSPE wrappers (<code>psvr_rmspe_rbf_fit()</code>, <code>psvr_rmspe_poly_fit()</code>,
+<code>psvr_rmspe_linear_fit()</code>) return class <code>"psvr_rmspe"</code>: a list with
+<code>alpha</code>, <code>b</code>, <code>X_train</code>, <code>y_train</code>, <code>fitted_values</code>, <code>kernel</code>, <code>gamma</code>,
+<code>n_train</code>, <code>p_train</code>, and <code>precondition_applied</code>.</p>
+<p>The symmetric RMSPE wrappers (<code>psvr_rmspe_sym_rbf_fit()</code>,
+<code>psvr_rmspe_sym_poly_fit()</code>, <code>psvr_rmspe_sym_linear_fit()</code>) return class
+<code>"psvr_rmspe_sym"</code>: the same components plus <code>a</code>.</p>
+    </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

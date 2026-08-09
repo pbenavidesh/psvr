@@ -642,7 +642,7 @@ sessioninfo::session_info()
      rstudioapi     0.19.0     2026-06-11 [1] RSPM
      S7             0.2.2      2026-04-22 [1] RSPM
      scales       * 1.4.0      2025-04-24 [1] RSPM
-     sessioninfo    1.2.4      2026-06-04 [1] RSPM
+     sessioninfo    1.2.4      2026-06-04 [1] any (@1.2.4)
      sparsevctrs    0.3.6      2026-01-27 [1] RSPM
      stringi        1.8.9      2026-08-04 [1] RSPM
      stringr      * 1.6.0      2025-11-04 [1] RSPM

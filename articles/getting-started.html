@@ -45,7 +45,6 @@
     <li><a class="dropdown-item" href="../articles/tidymodels-workflow.html">tidymodels workflow with psvr</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Technical Notes</h6></li>
-    <li><a class="dropdown-item" href="../articles/python-replication.html">Python Replication: Numerical Equivalence Check</a></li>
     <li><a class="dropdown-item" href="../articles/when-to-use-psvr.html">When to Use Percentage-Error SVR</a></li>
   </ul>
 </li>
@@ -135,23 +134,13 @@ wrappers and will be removed in a future release.</p>
 residuals are well-defined.</p>
 </div>
 <div class="section level2">
-<h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
-</h2>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># CRAN (once released)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"psvr"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Development version from GitHub</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"pbenavidesh/psvr"</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
 <h2 id="boston-housing-data">Boston Housing data<a class="anchor" aria-label="anchor" href="#boston-housing-data"></a>
 </h2>
 <p>We reproduce the experiments reported in Tables 1–2 of the paper
 using the Boston Housing dataset (Harrison &amp; Rubinfeld, 1978). All
 506 observations have strictly positive median home values (MEDV, in
 thousands of USD), making MAPE well-defined throughout.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pbenavidesh.github.io/psvr/">psvr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span></span>
@@ -171,7 +160,7 @@ thousands of USD), making MAPE well-defined throughout.</p>
 </h3>
 <p>Features are standardised using training-set statistics so that the
 RBF kernel operates on a comparable scale across all 13 predictors.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">n</span>      <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">X_raw</span><span class="op">)</span></span>
 <span><span class="va">tr_idx</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sample.html" class="external-link">sample</a></span><span class="op">(</span><span class="va">n</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">floor</a></span><span class="op">(</span><span class="fl">0.7</span> <span class="op">*</span> <span class="va">n</span><span class="op">)</span><span class="op">)</span></span>
@@ -188,7 +177,7 @@ RBF kernel operates on a comparable scale across all 13 predictors.</p>
 <div class="section level3">
 <h3 id="helper-metrics">Helper metrics<a class="anchor" aria-label="anchor" href="#helper-metrics"></a>
 </h3>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mape</span>  <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">y</span>, <span class="va">yhat</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">y</span> <span class="op">-</span> <span class="va">yhat</span><span class="op">)</span> <span class="op">/</span> <span class="va">y</span><span class="op">)</span> <span class="op">*</span> <span class="fl">100</span></span>
 <span><span class="va">rmspe</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">y</span>, <span class="va">yhat</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="op">(</span><span class="op">(</span><span class="va">y</span> <span class="op">-</span> <span class="va">yhat</span><span class="op">)</span> <span class="op">/</span> <span class="va">y</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span> <span class="op">*</span> <span class="fl">100</span></span>
 <span><span class="va">r2</span>    <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">y</span>, <span class="va">yhat</span><span class="op">)</span> <span class="fl">1</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="op">(</span><span class="va">y</span> <span class="op">-</span> <span class="va">yhat</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="op">(</span><span class="va">y</span> <span class="op">-</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">y</span><span class="op">)</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span></span></code></pre></div>
@@ -196,7 +185,7 @@ RBF kernel operates on a comparable scale across all 13 predictors.</p>
 <div class="section level3">
 <h3 id="baseline-linear-regression">Baseline: linear regression<a class="anchor" aria-label="anchor" href="#baseline-linear-regression"></a>
 </h3>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">lm_df_tr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">X_tr</span><span class="op">)</span></span>
 <span><span class="va">lm_df_te</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">X_te</span><span class="op">)</span></span>
 <span><span class="va">lm_fit</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/lm.html" class="external-link">lm</a></span><span class="op">(</span><span class="va">y_tr</span> <span class="op">~</span> <span class="va">.</span>, data <span class="op">=</span> <span class="va">lm_df_tr</span><span class="op">)</span></span>
@@ -219,7 +208,7 @@ a quadratic penalty on percentage residuals. The dual reduces to:</p>
 </annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mi mathvariant="normal">Γ</mi></msub><mo>=</mo><mrow><mi mathvariant="normal">diag</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msubsup><mi>y</mi><mn>1</mn><mn>2</mn></msubsup><mi>/</mi><mi mathvariant="normal">Γ</mi><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mi>y</mi><mi>N</mi><mn>2</mn></msubsup><mi>/</mi><mi mathvariant="normal">Γ</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">Y_\Gamma = \operatorname{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)</annotation></semantics></math>.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># make_kernel() returns a closure K(xi, xj) = exp(-||xi - xj||^2 / (2 sigma^2))</span></span>
 <span><span class="va">K</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/make_kernel.html">make_kernel</a></span><span class="op">(</span><span class="st">"rbf"</span>, sigma <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
@@ -238,7 +227,7 @@ a quadratic penalty on percentage residuals. The dual reduces to:</p>
 <span><span class="co">#&gt;   Gamma:           5000</span></span>
 <span><span class="co">#&gt;   Training obs.:   354</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/rmspe-plot-1.png" class="r-plt" alt="" width="576"></p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cf_ls</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_ls</span><span class="op">)</span></span>
 <span><span class="co"># alpha:        N dual variables; weight each training point's kernel</span></span>
 <span><span class="co">#               contribution in f(x) = sum_k alpha_k K(x_k, x) + b</span></span>
@@ -257,7 +246,7 @@ box constraints</strong>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><msub><mi>β</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mn>100</mn><mi>C</mi><mi>/</mi><msub><mi>y</mi><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">|\beta_k| \le 100C/y_k</annotation></semantics></math>:
 tighter bounds for small targets, concentrating model capacity on
 low-magnitude observations.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># C = 10: per-sample box bound |beta_k| &lt;= 100*C/y_k; eps = 1: tube width (% of y_k)</span></span>
 <span><span class="va">fit_ep</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr.html">psvr</a></span><span class="op">(</span><span class="va">X_tr</span>, <span class="va">y_tr</span>, loss <span class="op">=</span> <span class="st">"mape"</span>, kernel <span class="op">=</span> <span class="va">K</span>, C <span class="op">=</span> <span class="fl">10</span>, eps <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">pred_ep</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_ep</span>, <span class="va">X_te</span><span class="op">)</span></span>
@@ -277,7 +266,7 @@ low-magnitude observations.</p>
 <span><span class="co">#&gt;   Training obs.:   354</span></span>
 <span><span class="co">#&gt;   Support vectors: 327 (92.4%)</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/mape-plot-1.png" class="r-plt" alt="" width="576"></p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cf_ep</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_ep</span><span class="op">)</span></span>
 <span><span class="co"># alpha, alpha_star: length-N dual variables (paired); the pre-pruning</span></span>
 <span><span class="co">#               solution.  Useful as a warm-start across CV folds; for</span></span>
@@ -294,7 +283,7 @@ low-magnitude observations.</p>
 <div class="section level2">
 <h2 id="comparing-objectives">Comparing objectives<a class="anchor" aria-label="anchor" href="#comparing-objectives"></a>
 </h2>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  Model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Linear regression"</span>, <span class="st">"LS-SVR RMSPE (Model 3)"</span>,</span>
 <span>            <span class="st">"\u03b5-SVR MAPE (Model 1)"</span><span class="op">)</span>,</span>
@@ -373,10 +362,10 @@ models against standard baselines.</p>
 <p>Harrison, D. &amp; Rubinfeld, D. L. (1978). Hedonic prices and the
 demand for clean air. <em>Journal of Environmental Economics and
 Management</em>, <strong>5</strong>(1), 81–102.</p>
-<p>Benavides-Herrera, P., Álvarez-Álvarez, G., Ruiz-Cruz, R., &amp;
+<p>Benavides-Herrera, P., Álvarez, G., Ruiz-Cruz, R., &amp;
 Sánchez-Torres, J. D. (2026). A unified family of percentage-error
 support vector regression models with symmetric kernel extensions.
-<em>Mathematics</em>, MDPI. (under review)</p>
+<em>Mathematics</em>, 14(10), 1679. <a href="https://doi.org/10.3390/math14101679" class="external-link uri">https://doi.org/10.3390/math14101679</a></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

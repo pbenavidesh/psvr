@@ -34,17 +34,6 @@ future release.
 All models require **strictly positive targets** (`y > 0`), which is the
 condition under which percentage residuals are well-defined.
 
-## Installation
-
-``` r
-
-# CRAN (once released)
-install.packages("psvr")
-
-# Development version from GitHub
-remotes::install_github("pbenavidesh/psvr")
-```
-
 ## Boston Housing data
 
 We reproduce the experiments reported in Tables 1–2 of the paper using
@@ -276,7 +265,7 @@ Harrison, D. & Rubinfeld, D. L. (1978). Hedonic prices and the demand
 for clean air. *Journal of Environmental Economics and Management*,
 **5**(1), 81–102.
 
-Benavides-Herrera, P., Álvarez-Álvarez, G., Ruiz-Cruz, R., &
-Sánchez-Torres, J. D. (2026). A unified family of percentage-error
-support vector regression models with symmetric kernel extensions.
-*Mathematics*, MDPI. (under review)
+Benavides-Herrera, P., Álvarez, G., Ruiz-Cruz, R., & Sánchez-Torres, J.
+D. (2026). A unified family of percentage-error support vector
+regression models with symmetric kernel extensions. *Mathematics*,
+14(10), 1679. <https://doi.org/10.3390/math14101679>

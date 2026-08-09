@@ -50,7 +50,6 @@
     <li><a class="dropdown-item" href="articles/tidymodels-workflow.html">tidymodels workflow with psvr</a></li>
     <li><hr class="dropdown-divider"></li>
     <li><h6 class="dropdown-header" data-toc-skip>Technical Notes</h6></li>
-    <li><a class="dropdown-item" href="articles/python-replication.html">Python Replication: Numerical Equivalence Check</a></li>
     <li><a class="dropdown-item" href="articles/when-to-use-psvr.html">When to Use Percentage-Error SVR</a></li>
   </ul>
 </li>
@@ -115,8 +114,11 @@
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Development version from GitHub</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"pbenavidesh/psvr"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="co"># CRAN</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"psvr"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Development version from GitHub</span></span>
+<span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pak.html" class="external-link">pak</a></span><span class="op">(</span><span class="st">"pbenavidesh/psvr"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
@@ -172,7 +174,7 @@
 <div class="section level2">
 <h2 id="reference">Reference<a class="anchor" aria-label="anchor" href="#reference"></a>
 </h2>
-<p>Benavides-Herrera, P., Álvarez-Álvarez, G., Ruiz-Cruz, R., &amp; Sánchez-Torres, J. D. (2026). A unified family of percentage-error support vector regression models with symmetric kernel extensions. <em>Mathematics</em>, MDPI. (under review)</p>
+<p>Benavides-Herrera, P., Álvarez, G., Ruiz-Cruz, R., &amp; Sánchez-Torres, J. D. (2026). A unified family of percentage-error support vector regression models with symmetric kernel extensions. <em>Mathematics</em>, 14(10), 1679. <a href="https://doi.org/10.3390/math14101679" class="external-link uri">https://doi.org/10.3390/math14101679</a></p>
 </div>
 </div>
 

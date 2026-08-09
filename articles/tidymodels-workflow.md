@@ -17,6 +17,7 @@ library(workflows)
 library(tune)
 library(dials)
 library(yardstick)
+library(dplyr)
 ```
 
 ## Data
