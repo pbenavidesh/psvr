@@ -31,6 +31,7 @@ HP <- list(
 # (matches the analogous behavior in test-bit-identical.R).
 
 test_that("psvr mape / no sym / RBF — direct golden", {
+  skip_on_cran()
   fx <- make_fixture()
   K  <- make_kernel("rbf", sigma = HP$rbf_sigma)
   fit <- psvr(fx$X, fx$y, loss = "mape", kernel = K, C = HP$C, eps = HP$eps)
@@ -39,6 +40,7 @@ test_that("psvr mape / no sym / RBF — direct golden", {
 })
 
 test_that("psvr mape / no sym / poly — direct golden", {
+  skip_on_cran()
   fx <- make_fixture()
   K  <- make_kernel("polynomial", degree = HP$degree, coef0 = HP$scale_factor)
   fit <- psvr(fx$X, fx$y, loss = "mape", kernel = K, C = HP$C, eps = HP$eps)
@@ -47,6 +49,7 @@ test_that("psvr mape / no sym / poly — direct golden", {
 })
 
 test_that("psvr mape / no sym / linear — direct golden", {
+  skip_on_cran()
   fx <- make_fixture()
   K  <- make_kernel("linear")
   fit <- psvr(fx$X, fx$y, loss = "mape", kernel = K, C = HP$C, eps = HP$eps)
@@ -55,6 +58,7 @@ test_that("psvr mape / no sym / linear — direct golden", {
 })
 
 test_that("psvr mape / sym=+1 / RBF — direct golden", {
+  skip_on_cran()
   fx <- make_fixture()
   K  <- make_kernel("rbf", sigma = HP$rbf_sigma)
   fit <- psvr(fx$X, fx$y, loss = "mape", sym = HP$a,
@@ -64,6 +68,7 @@ test_that("psvr mape / sym=+1 / RBF — direct golden", {
 })
 
 test_that("psvr mape / sym=+1 / poly — direct golden", {
+  skip_on_cran()
   fx <- make_fixture()
   K  <- make_kernel("polynomial", degree = HP$degree, coef0 = HP$scale_factor)
   fit <- psvr(fx$X, fx$y, loss = "mape", sym = HP$a,
@@ -73,6 +78,7 @@ test_that("psvr mape / sym=+1 / poly — direct golden", {
 })
 
 test_that("psvr mape / sym=+1 / linear — direct golden", {
+  skip_on_cran()
   fx <- make_fixture()
   K  <- make_kernel("linear")
   fit <- psvr(fx$X, fx$y, loss = "mape", sym = HP$a,
@@ -82,6 +88,7 @@ test_that("psvr mape / sym=+1 / linear — direct golden", {
 })
 
 test_that("psvr rmspe / no sym / RBF — direct golden", {
+  skip_on_cran()
   fx <- make_fixture()
   K  <- make_kernel("rbf", sigma = HP$rbf_sigma)
   fit <- psvr(fx$X, fx$y, loss = "rmspe", kernel = K, gamma = HP$gamma)
@@ -90,6 +97,7 @@ test_that("psvr rmspe / no sym / RBF — direct golden", {
 })
 
 test_that("psvr rmspe / no sym / poly — direct golden", {
+  skip_on_cran()
   fx <- make_fixture()
   K  <- make_kernel("polynomial", degree = HP$degree, coef0 = HP$scale_factor)
   fit <- psvr(fx$X, fx$y, loss = "rmspe", kernel = K, gamma = HP$gamma)
@@ -98,6 +106,7 @@ test_that("psvr rmspe / no sym / poly — direct golden", {
 })
 
 test_that("psvr rmspe / no sym / linear — direct golden", {
+  skip_on_cran()
   fx <- make_fixture()
   K  <- make_kernel("linear")
   fit <- psvr(fx$X, fx$y, loss = "rmspe", kernel = K, gamma = HP$gamma)
@@ -106,6 +115,7 @@ test_that("psvr rmspe / no sym / linear — direct golden", {
 })
 
 test_that("psvr rmspe / sym=+1 / RBF — direct golden", {
+  skip_on_cran()
   fx <- make_fixture()
   K  <- make_kernel("rbf", sigma = HP$rbf_sigma)
   fit <- psvr(fx$X, fx$y, loss = "rmspe", sym = HP$a,
@@ -115,6 +125,7 @@ test_that("psvr rmspe / sym=+1 / RBF — direct golden", {
 })
 
 test_that("psvr rmspe / sym=+1 / poly — direct golden", {
+  skip_on_cran()
   fx <- make_fixture()
   K  <- make_kernel("polynomial", degree = HP$degree, coef0 = HP$scale_factor)
   fit <- psvr(fx$X, fx$y, loss = "rmspe", sym = HP$a,
@@ -124,6 +135,7 @@ test_that("psvr rmspe / sym=+1 / poly — direct golden", {
 })
 
 test_that("psvr rmspe / sym=+1 / linear — direct golden", {
+  skip_on_cran()
   fx <- make_fixture()
   K  <- make_kernel("linear")
   fit <- psvr(fx$X, fx$y, loss = "rmspe", sym = HP$a,

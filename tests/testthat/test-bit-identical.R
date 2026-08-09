@@ -38,12 +38,18 @@ HP <- list(
 
 
 # ---- 4 direct-fitter golden tests (RBF kernel) ---------------------------
+# Every test in this file is a golden snapshot gate: the reference is a value
+# recorded on one x86_64 toolchain, not a second computation, so there is no
+# meaningful cross-platform counterpart to add alongside it. They run under
+# skip_on_cran() and are pinned in CI by the one job that sets NOT_CRAN=true.
+# See helper-fp-tiers.R for the policy and the measured deviations.
 # These tests intentionally call the deprecated wrappers to lock in the
 # pre-refactor numerics. The .Deprecated() notice is asserted in the
 # dedicated contract tests of test-mape-svr.R / test-rmspe-lssvr.R / etc.;
 # here it is suppressed to keep snapshot-test output focused.
 
 test_that("Model 1 mape_svr (RBF) — direct golden", {
+  skip_on_cran()
   fx  <- make_fixture()
   K   <- make_kernel("rbf", sigma = HP$rbf_sigma)
   fit <- suppressWarnings(
@@ -54,6 +60,7 @@ test_that("Model 1 mape_svr (RBF) — direct golden", {
 })
 
 test_that("Model 2 mape_sym_svr (RBF) — direct golden", {
+  skip_on_cran()
   fx  <- make_fixture()
   K   <- make_kernel("rbf", sigma = HP$rbf_sigma)
   fit <- suppressWarnings(
@@ -65,6 +72,7 @@ test_that("Model 2 mape_sym_svr (RBF) — direct golden", {
 })
 
 test_that("Model 3 rmspe_lssvr (RBF) — direct golden", {
+  skip_on_cran()
   fx  <- make_fixture()
   K   <- make_kernel("rbf", sigma = HP$rbf_sigma)
   fit <- suppressWarnings(
@@ -75,6 +83,7 @@ test_that("Model 3 rmspe_lssvr (RBF) — direct golden", {
 })
 
 test_that("Model 4 rmspe_sym_lssvr (RBF) — direct golden", {
+  skip_on_cran()
   fx  <- make_fixture()
   K   <- make_kernel("rbf", sigma = HP$rbf_sigma)
   fit <- suppressWarnings(
@@ -97,6 +106,7 @@ fit_and_predict <- function(spec, fx) {
 # Model 1: MAPE (no sym) ---------------------------------------------------
 
 test_that("psvr_mape_rbf — parsnip golden", {
+  skip_on_cran()
   fx   <- make_fixture()
   spec <- psvr_mape_rbf(cost = HP$C, svm_margin = HP$eps,
                         rbf_sigma = HP$rbf_sigma) |>
@@ -106,6 +116,7 @@ test_that("psvr_mape_rbf — parsnip golden", {
 })
 
 test_that("psvr_mape_poly — parsnip golden", {
+  skip_on_cran()
   fx   <- make_fixture()
   spec <- psvr_mape_poly(cost = HP$C, svm_margin = HP$eps,
                          degree = HP$degree,
@@ -116,6 +127,7 @@ test_that("psvr_mape_poly — parsnip golden", {
 })
 
 test_that("psvr_mape_linear — parsnip golden", {
+  skip_on_cran()
   fx   <- make_fixture()
   spec <- psvr_mape_linear(cost = HP$C, svm_margin = HP$eps) |>
             set_engine("psvr")
@@ -128,6 +140,7 @@ test_that("psvr_mape_linear — parsnip golden", {
 # as an engine arg (matches existing test-parsnip.R smoke tests).
 
 test_that("psvr_mape_sym_rbf — parsnip golden", {
+  skip_on_cran()
   fx   <- make_fixture()
   spec <- psvr_mape_sym_rbf(cost = HP$C, svm_margin = HP$eps,
                             rbf_sigma = HP$rbf_sigma,
@@ -138,6 +151,7 @@ test_that("psvr_mape_sym_rbf — parsnip golden", {
 })
 
 test_that("psvr_mape_sym_poly — parsnip golden", {
+  skip_on_cran()
   fx   <- make_fixture()
   spec <- psvr_mape_sym_poly(cost = HP$C, svm_margin = HP$eps,
                              degree = HP$degree,
@@ -148,6 +162,7 @@ test_that("psvr_mape_sym_poly — parsnip golden", {
 })
 
 test_that("psvr_mape_sym_linear — parsnip golden", {
+  skip_on_cran()
   fx   <- make_fixture()
   spec <- psvr_mape_sym_linear(cost = HP$C, svm_margin = HP$eps) |>
             set_engine("psvr", a = HP$a)
@@ -158,6 +173,7 @@ test_that("psvr_mape_sym_linear — parsnip golden", {
 # Model 3: RMSPE (no sym) --------------------------------------------------
 
 test_that("psvr_rmspe_rbf — parsnip golden", {
+  skip_on_cran()
   fx   <- make_fixture()
   spec <- psvr_rmspe_rbf(cost = HP$gamma, rbf_sigma = HP$rbf_sigma) |>
             set_engine("psvr")
@@ -166,6 +182,7 @@ test_that("psvr_rmspe_rbf — parsnip golden", {
 })
 
 test_that("psvr_rmspe_poly — parsnip golden", {
+  skip_on_cran()
   fx   <- make_fixture()
   spec <- psvr_rmspe_poly(cost = HP$gamma, degree = HP$degree,
                           scale_factor = HP$scale_factor) |>
@@ -175,6 +192,7 @@ test_that("psvr_rmspe_poly — parsnip golden", {
 })
 
 test_that("psvr_rmspe_linear — parsnip golden", {
+  skip_on_cran()
   fx   <- make_fixture()
   spec <- psvr_rmspe_linear(cost = HP$gamma) |>
             set_engine("psvr")
@@ -185,6 +203,7 @@ test_that("psvr_rmspe_linear — parsnip golden", {
 # Model 4: RMSPE sym -------------------------------------------------------
 
 test_that("psvr_rmspe_sym_rbf — parsnip golden", {
+  skip_on_cran()
   fx   <- make_fixture()
   spec <- psvr_rmspe_sym_rbf(cost = HP$gamma,
                              rbf_sigma = HP$rbf_sigma,
@@ -195,6 +214,7 @@ test_that("psvr_rmspe_sym_rbf — parsnip golden", {
 })
 
 test_that("psvr_rmspe_sym_poly — parsnip golden", {
+  skip_on_cran()
   fx   <- make_fixture()
   spec <- psvr_rmspe_sym_poly(cost = HP$gamma, degree = HP$degree,
                               scale_factor = HP$scale_factor) |>
@@ -204,6 +224,7 @@ test_that("psvr_rmspe_sym_poly — parsnip golden", {
 })
 
 test_that("psvr_rmspe_sym_linear — parsnip golden", {
+  skip_on_cran()
   fx   <- make_fixture()
   spec <- psvr_rmspe_sym_linear(cost = HP$gamma) |>
             set_engine("psvr", a = HP$a)

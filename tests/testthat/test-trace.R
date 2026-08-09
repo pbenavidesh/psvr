@@ -86,42 +86,73 @@ test_that("trace = TRUE returns numeric delta_history with length == iterations"
 })
 
 ## ---- 4. Engine equivalence on delta_history (4 configs) ------------------
-.check_delta_history_engines <- function(label, X, y, kernel_fun, sym, bk4) {
-  K_acc <- .build_K_acc(X, kernel_fun, sym = sym)
-  s_r <- suppressWarnings(psvr:::.smo_solve(
-    K_acc, y, C = 10, eps = 5,
-    block_k4_enabled = bk4, engine = "r",    trace = TRUE
-  ))
-  s_c <- suppressWarnings(psvr:::.smo_solve(
-    K_acc, y, C = 10, eps = 5,
-    block_k4_enabled = bk4, engine = "rcpp", trace = TRUE
-  ))
-  expect_identical(s_c$alpha,      s_r$alpha,
-                   label = sprintf("[%s] alpha", label))
-  expect_identical(s_c$alpha_star, s_r$alpha_star,
-                   label = sprintf("[%s] alpha_star", label))
-  expect_identical(s_c$b,          s_r$b,
-                   label = sprintf("[%s] b", label))
-  expect_identical(s_c$iterations, s_r$iterations,
-                   label = sprintf("[%s] iterations", label))
-  # The new gate: delta_history bit-identical across engines.
-  expect_identical(s_c$delta_history, s_r$delta_history,
-                   label = sprintf("[%s] delta_history", label))
-  # F7.6 — active_history bit-identical across engines.
-  expect_identical(s_c$active_history, s_r$active_history,
-                   label = sprintf("[%s] active_history", label))
-  invisible(NULL)
+## All four configs are RBF and converge on every platform tested, so the
+## only cross-platform effect here is FP noise (max 5.151e-14 observed on
+## macOS aarch64). Two tiers per helper-fp-tiers.R.
+
+.trace_engine_pair <- function(label, kernel_fun, sym, bk4) {
+  psvr_memo(paste0("trace::", label), {
+    fx <- .trace_fixture()
+    K_acc <- .build_K_acc(fx$X, kernel_fun, sym = sym)
+    list(
+      s_r = suppressWarnings(psvr:::.smo_solve(
+        K_acc, fx$y, C = 10, eps = 5,
+        block_k4_enabled = bk4, engine = "r",    trace = TRUE
+      )),
+      s_c = suppressWarnings(psvr:::.smo_solve(
+        K_acc, fx$y, C = 10, eps = 5,
+        block_k4_enabled = bk4, engine = "rcpp", trace = TRUE
+      ))
+    )
+  })
 }
 
 for (sym_label in c("Model 1 MAPE", "Model 2 MAPE-sym")) {
   sym_val <- if (sym_label == "Model 2 MAPE-sym") 1L else NULL
   for (bk4 in c(FALSE, TRUE)) {
-    label <- sprintf("%s / RBF / bk4=%s / trace=TRUE", sym_label, bk4)
-    test_that(sprintf("engine equivalence on delta_history: %s", label), {
-      fx <- .trace_fixture()
-      .check_delta_history_engines(label, fx$X, fx$y,
-                                    kernel_fun = make_kernel("rbf", sigma = 1),
-                                    sym = sym_val, bk4 = bk4)
+    local({
+      label   <- sprintf("%s / RBF / bk4=%s / trace=TRUE", sym_label, bk4)
+      sym_l   <- sym_val
+      bk4_l   <- bk4
+      kern    <- make_kernel("rbf", sigma = 1)
+
+      test_that(sprintf("engine equivalence [strict] on delta_history: %s", label), {
+        skip_on_cran()
+        p <- .trace_engine_pair(label, kern, sym_l, bk4_l)
+        expect_identical(p$s_c$alpha,      p$s_r$alpha,
+                         label = sprintf("[%s] alpha", label))
+        expect_identical(p$s_c$alpha_star, p$s_r$alpha_star,
+                         label = sprintf("[%s] alpha_star", label))
+        expect_identical(p$s_c$b,          p$s_r$b,
+                         label = sprintf("[%s] b", label))
+        expect_identical(p$s_c$iterations, p$s_r$iterations,
+                         label = sprintf("[%s] iterations", label))
+        # The F7.5 gate: delta_history bit-identical across engines.
+        expect_identical(p$s_c$delta_history, p$s_r$delta_history,
+                         label = sprintf("[%s] delta_history", label))
+        # F7.6 — active_history bit-identical across engines.
+        expect_identical(p$s_c$active_history, p$s_r$active_history,
+                         label = sprintf("[%s] active_history", label))
+      })
+
+      test_that(sprintf("engine equivalence [tolerance] on delta_history: %s", label), {
+        p <- .trace_engine_pair(label, kern, sym_l, bk4_l)
+        expect_equal(p$s_c$alpha,      p$s_r$alpha,      tolerance = PSVR_FP_TOL,
+                     label = sprintf("[%s] alpha", label))
+        expect_equal(p$s_c$alpha_star, p$s_r$alpha_star, tolerance = PSVR_FP_TOL,
+                     label = sprintf("[%s] alpha_star", label))
+        expect_equal(p$s_c$b,          p$s_r$b,          tolerance = PSVR_FP_TOL,
+                     label = sprintf("[%s] b", label))
+        expect_equal(p$s_c$delta_history, p$s_r$delta_history,
+                     tolerance = PSVR_FP_TOL,
+                     label = sprintf("[%s] delta_history", label))
+        # Trajectory length and the active-set counts are integers: if the
+        # engines agree at all they agree exactly, so no tolerance applies.
+        expect_identical(p$s_c$iterations,     p$s_r$iterations,
+                         label = sprintf("[%s] iterations", label))
+        expect_identical(p$s_c$active_history, p$s_r$active_history,
+                         label = sprintf("[%s] active_history", label))
+      })
     })
   }
 }

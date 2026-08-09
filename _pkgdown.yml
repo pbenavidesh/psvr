@@ -35,6 +35,8 @@ reference:
       - print.psvr_fit
       - coef.psvr_fit
       - summary.psvr_fit
+      - fitted.psvr_fit
+      - residuals.psvr_fit
 
   - title: "Kernel factory"
     desc: "Shared kernel interface used by all four models."

@@ -27,6 +27,8 @@ K_rbf <- make_kernel("rbf", sigma = 1)
 # direct golden" entry); the FALSE-path is the backward-compat hard gate.
 
 test_that("block_k4_enabled = FALSE: Model 1 MAPE reproduces F4 baseline", {
+  # Golden baseline recorded on one x86_64 toolchain; see helper-fp-tiers.R.
+  skip_on_cran()
   fx  <- make_f7_fixture()
   fit <- psvr(fx$X, fx$y, loss = "mape", kernel = K_rbf,
               C = 10, eps = 5, block_k4_enabled = FALSE)
@@ -42,6 +44,8 @@ test_that("block_k4_enabled = FALSE: Model 1 MAPE reproduces F4 baseline", {
 })
 
 test_that("block_k4_enabled = FALSE: Model 2 MAPE-sym reproduces F4 baseline", {
+  # Golden baseline recorded on one x86_64 toolchain; see helper-fp-tiers.R.
+  skip_on_cran()
   fx  <- make_f7_fixture()
   fit <- psvr(fx$X, fx$y, loss = "mape", sym = 1L, kernel = K_rbf,
               C = 10, eps = 5, block_k4_enabled = FALSE)

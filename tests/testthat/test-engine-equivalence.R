@@ -69,39 +69,44 @@ make_eq_fixture <- function() {
   cat("--- end diagnostic ---\n")
 }
 
-## ---- Equivalence helper ----------------------------------------------------
-## Does the actual equivalence assertion + diagnostic.
-.check_engine_equivalence <- function(label, X, y, X_test, kernel, sym,
-                                       block_k4) {
-  fit_r <- suppressWarnings(psvr(
-    X, y, loss = "mape", sym = sym, kernel = kernel,
-    C = 10, eps = 5,
-    engine = "r", block_k4_enabled = block_k4
-  ))
-  fit_rcpp <- suppressWarnings(psvr(
-    X, y, loss = "mape", sym = sym, kernel = kernel,
-    C = 10, eps = 5,
-    engine = "rcpp", block_k4_enabled = block_k4
-  ))
-  preds_r    <- predict(fit_r,    X_test)
-  preds_rcpp <- predict(fit_rcpp, X_test)
-  if (!identical(preds_rcpp, preds_r)) {
-    .diagnose_engine_diff(fit_r, fit_rcpp, preds_r, preds_rcpp,
+## ---- Memoised fit pair -----------------------------------------------------
+## One fit per engine per config, shared by the strict and tolerance tiers.
+.eq_fits <- function(label, kernel, sym, block_k4) {
+  psvr_memo(paste0("eqfit::", label), {
+    fx <- make_eq_fixture()
+    fit_r <- suppressWarnings(psvr(
+      fx$X, fx$y, loss = "mape", sym = sym, kernel = kernel,
+      C = 10, eps = 5,
+      engine = "r", block_k4_enabled = block_k4
+    ))
+    fit_rcpp <- suppressWarnings(psvr(
+      fx$X, fx$y, loss = "mape", sym = sym, kernel = kernel,
+      C = 10, eps = 5,
+      engine = "rcpp", block_k4_enabled = block_k4
+    ))
+    list(fit_r = fit_r, fit_rcpp = fit_rcpp,
+         preds_r    = predict(fit_r,    fx$X_test),
+         preds_rcpp = predict(fit_rcpp, fx$X_test))
+  })
+}
+
+## ---- Strict tier -----------------------------------------------------------
+## Bit-equality across engines, with the full diagnostic on failure.
+.assert_engine_strict <- function(label, r) {
+  if (!identical(r$preds_rcpp, r$preds_r)) {
+    .diagnose_engine_diff(r$fit_r, r$fit_rcpp, r$preds_r, r$preds_rcpp,
                           label = label)
   }
-  # Predictions must be bit-identical.
-  expect_identical(preds_rcpp, preds_r,
+  expect_identical(r$preds_rcpp, r$preds_r,
                    label = sprintf("[%s] predictions", label))
-  # Top-level fit fields.
-  expect_identical(fit_rcpp$alpha,      fit_r$alpha,
+  expect_identical(r$fit_rcpp$alpha,      r$fit_r$alpha,
                    label = sprintf("[%s] alpha",      label))
-  expect_identical(fit_rcpp$alpha_star, fit_r$alpha_star,
+  expect_identical(r$fit_rcpp$alpha_star, r$fit_r$alpha_star,
                    label = sprintf("[%s] alpha_star", label))
-  expect_identical(fit_rcpp$b,          fit_r$b,
+  expect_identical(r$fit_rcpp$b,          r$fit_r$b,
                    label = sprintf("[%s] b",          label))
-  # solver_meta fields.
-  m_r <- fit_r$solver_meta
-  m_c <- fit_rcpp$solver_meta
+  m_r <- r$fit_r$solver_meta
+  m_c <- r$fit_rcpp$solver_meta
   expect_identical(m_c$iters,                       m_r$iters,
                    label = sprintf("[%s] iters",                  label))
   expect_identical(m_c$converged,                   m_r$converged,
@@ -119,12 +124,85 @@ make_eq_fixture <- function() {
   invisible(NULL)
 }
 
+## ---- Tolerance tier --------------------------------------------------------
+## Runs everywhere. Three regimes, in order:
+##
+##   1. Convergence-status pin (always asserted). The set of configs that
+##      exhaust max_iter must equal PSVR_MAXITER_CONFIGS exactly. This is
+##      what stops regime 2's skip from hiding a regression: a newly
+##      non-converging config fails here instead of silently skipping, and a
+##      config that starts converging also fails, forcing the pin to be
+##      updated rather than the skip to widen.
+##   2. Both engines at max_iter -> skip the value comparison. Two solvers
+##      that both failed to converge agree on nothing meaningful.
+##   3. Otherwise -> assert to PSVR_FP_TOL, or PSVR_MARGINAL_TOL for the
+##      configs pinned in PSVR_MARGINAL_CONFIGS.
+.assert_engine_tolerance <- function(label, r) {
+  m_r <- r$fit_r$solver_meta
+  m_c <- r$fit_rcpp$solver_meta
+
+  # (1) Engines must always agree on whether they converged.
+  expect_identical(m_c$converged, m_r$converged,
+                   label = sprintf("[%s] converged", label))
+
+  at_cap <- !isTRUE(m_r$converged) && !isTRUE(m_c$converged)
+  expect_identical(
+    at_cap, label %in% PSVR_MAXITER_CONFIGS,
+    label = sprintf(
+      paste0("[%s] max_iter status vs PSVR_MAXITER_CONFIGS pin ",
+             "(at_cap=%s, pinned=%s; iters r=%s rcpp=%s). Update the pin in ",
+             "helper-fp-tiers.R only after establishing why convergence changed"),
+      label, at_cap, label %in% PSVR_MAXITER_CONFIGS,
+      m_r$iters, m_c$iters)
+  )
+
+  # (2) Known non-convergence pathology: nothing meaningful to compare.
+  if (at_cap) {
+    skip(sprintf(
+      paste0("[%s] both engines exhausted max_iter (%s) — documented ",
+             "linear/polynomial MAPE-SVR non-convergence pathology ",
+             "(CLAUDE.md 'Known issues', paper TODO #5). Value comparison ",
+             "is not meaningful between two non-converged solutions; the ",
+             "strict tier still gates this config on x86_64."),
+      label, m_r$iters))
+  }
+
+  # (3) Converged on both engines.
+  tol <- if (label %in% PSVR_MARGINAL_CONFIGS) PSVR_MARGINAL_TOL else PSVR_FP_TOL
+  expect_equal(r$preds_rcpp, r$preds_r, tolerance = tol,
+               label = sprintf("[%s] predictions", label))
+  expect_equal(r$fit_rcpp$b, r$fit_r$b, tolerance = tol,
+               label = sprintf("[%s] b", label))
+
+  if (label %in% PSVR_MARGINAL_CONFIGS) {
+    # Trajectory length is platform-dependent here (6431 on x86_64 both
+    # engines; 6435 R / 7795 Rcpp on aarch64), so iters and the duals are
+    # not comparable. Predictions and b above are the meaningful check.
+    return(invisible(NULL))
+  }
+
+  expect_equal(r$fit_rcpp$alpha,      r$fit_r$alpha,      tolerance = tol,
+               label = sprintf("[%s] alpha", label))
+  expect_equal(r$fit_rcpp$alpha_star, r$fit_r$alpha_star, tolerance = tol,
+               label = sprintf("[%s] alpha_star", label))
+  expect_identical(m_c$iters, m_r$iters,
+                   label = sprintf("[%s] iters", label))
+  expect_identical(m_c$joint_updates, m_r$joint_updates,
+                   label = sprintf("[%s] joint_updates", label))
+  expect_identical(m_c$k2_fallbacks,  m_r$k2_fallbacks,
+                   label = sprintf("[%s] k2_fallbacks", label))
+  invisible(NULL)
+}
+
 ## ---- 16-config matrix: Models × Kernels × block_k4 ------------------------
 ## Pre-existing pathology note (paper TODO #5): linear/polynomial kernels
-## with MAPE-SVR hit max_iter without converging in some regimes. Both
-## engines stall at the same trajectory state, so equivalence still
-## holds — we just observe `iter == max_iter && !converged` identically
-## under both engines.
+## with MAPE-SVR hit max_iter without converging in some regimes.
+##
+## On x86_64 both engines stall at the SAME trajectory state, so strict
+## equivalence still holds there. On macOS aarch64 it does not: the two
+## engines reach the cap at different non-converged points, diverging by up
+## to 2.3e+00 in prediction space. See helper-fp-tiers.R for the tiering
+## policy and PSVR_MAXITER_CONFIGS for the pinned set.
 
 KERNELS_EQ <- list(
   rbf      = make_kernel("rbf",        sigma = 1),
@@ -137,13 +215,24 @@ for (model_label in c("Model 1 MAPE", "Model 2 MAPE-sym")) {
   sym_val <- if (model_label == "Model 2 MAPE-sym") 1L else NULL
   for (k_name in names(KERNELS_EQ)) {
     for (bk4 in c(FALSE, TRUE)) {
-      label <- sprintf("%s / %s / bk4=%s", model_label, k_name, bk4)
-      test_that(sprintf("engine equivalence: %s", label), {
-        fx <- make_eq_fixture()
-        .check_engine_equivalence(label, fx$X, fx$y, fx$X_test,
-                                  kernel = KERNELS_EQ[[k_name]],
-                                  sym    = sym_val,
-                                  block_k4 = bk4)
+      local({
+        label   <- sprintf("%s / %s / bk4=%s", model_label, k_name, bk4)
+        kern    <- KERNELS_EQ[[k_name]]
+        sym_l   <- sym_val
+        bk4_l   <- bk4
+
+        ## Strict tier — bit-equality. Intra-platform regression gate.
+        test_that(sprintf("engine equivalence [strict]: %s", label), {
+          skip_on_cran()
+          r <- .eq_fits(label, kern, sym_l, bk4_l)
+          .assert_engine_strict(label, r)
+        })
+
+        ## Tolerance tier — runs on every platform, including CRAN.
+        test_that(sprintf("engine equivalence [tolerance]: %s", label), {
+          r <- .eq_fits(label, kern, sym_l, bk4_l)
+          .assert_engine_tolerance(label, r)
+        })
       })
     }
   }
@@ -180,6 +269,8 @@ test_that("engine='rcpp' returns the full solver_meta schema", {
 ## dispatcher ever bypasses the .smo_solve_r() path incorrectly.
 
 test_that("engine='r' preserves the F4 baseline (snapshot match)", {
+  # Golden baseline recorded on one x86_64 toolchain; see helper-fp-tiers.R.
+  skip_on_cran()
   fx <- make_eq_fixture()
   K  <- make_kernel("rbf", sigma = 1)
   fit <- psvr(fx$X, fx$y, loss = "mape", kernel = K, C = 10, eps = 5,

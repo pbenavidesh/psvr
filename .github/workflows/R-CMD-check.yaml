@@ -22,12 +22,23 @@ jobs:
           - {os: macos-latest,   r: 'release'}
           - {os: windows-latest, r: 'release'}
           - {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
-          - {os: ubuntu-latest,   r: 'release'}
+          # The one job that runs the strict bit-identicality gates. Those
+          # assert exact FP equality between the R and C++ paths, which holds
+          # only within a single toolchain (macOS aarch64 has a 64-bit long
+          # double; the polynomial kernel differs 1-2 ULP everywhere). They
+          # sit behind skip_on_cran(), so NOT_CRAN=true is what turns them on
+          # here and leaves them skipped on the other four jobs. See
+          # tests/testthat/helper-fp-tiers.R.
+          - {os: ubuntu-latest,   r: 'release', not-cran: 'true'}
           - {os: ubuntu-latest,   r: 'oldrel-1'}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
+      # Empty on every job except ubuntu-latest (release). testthat's
+      # on_cran() treats an unset NOT_CRAN as "on CRAN" under R CMD check
+      # (it falls back to !interactive()), so the strict gates skip there.
+      NOT_CRAN: ${{ matrix.config.not-cran }}
 
     steps:
       - uses: actions/checkout@v6
