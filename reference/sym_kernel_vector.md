@@ -2,10 +2,8 @@
 
 For a new point `x`, returns the N-vector with entry `k` equal to
 `½ * Ks(X[k, ], x)` where `Ks(xi, xj) = K(xi, xj) + a * K(xi, -xj)`.
-Used by
-[`predict.psvr_mape_sym()`](https://pbenavidesh.github.io/psvr/reference/predict.psvr_mape_sym.md)
-and
-[`predict.psvr_rmspe_sym()`](https://pbenavidesh.github.io/psvr/reference/predict.psvr_rmspe_sym.md).
+Thin wrapper over the single-column case of
+[`sym_kernel_block()`](https://pbenavidesh.github.io/psvr/reference/sym_kernel_block.md).
 
 ## Usage
 

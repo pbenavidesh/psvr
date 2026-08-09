@@ -115,6 +115,7 @@ if (requireNamespace("rsample", quietly = TRUE) &&
 }
 #> Warning: warm-start equality residual 1.94e+03 exceeds tolerance 1.28e-02 after projection. SMO will still converge but the speedup is reduced.
 #> Warning: warm-start equality residual 2.16e+03 exceeds tolerance 1.28e-02 after projection. SMO will still converge but the speedup is reduced.
-#> Warning: warm-start equality residual 5.56e+02 exceeds tolerance 1.24e-02 after projection. SMO will still converge but the speedup is reduced.
-#> [1] 269.828
+#> Warning: warm-start equality residual 5.61e+02 exceeds tolerance 1.24e-02 after projection. SMO will still converge but the speedup is reduced.
+#> Warning: SMO solver did not converge within max_iter = 100000 (final iter = 100000)
+#> [1] 270.5025
 ```

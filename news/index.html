@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9009</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9010</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,6 +41,33 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.2.9010" id="psvr-0029010-development">psvr 0.0.2.9010 (development)<a class="anchor" aria-label="anchor" href="#psvr-0029010-development"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-0-2-9010">New features<a class="anchor" aria-label="anchor" href="#new-features-0-0-2-9010"></a></h3>
+<ul><li><p><strong><code><a href="https://rdrr.io/r/stats/fitted.values.html" class="external-link">fitted()</a></code> and <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code></strong> for <code>psvr_fit</code> and the four legacy classes (<code>psvr_mape</code>, <code>psvr_mape_sym</code>, <code>psvr_rmspe</code>, <code>psvr_rmspe_sym</code>). <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code> takes <code>type = c("response", "percentage", "multiplicative")</code>. The three are <strong>different quantities with different denominators</strong>, not rescalings of one another: <code>"response"</code> is <code>y - yhat</code>; <code>"percentage"</code> is <code>(y - yhat) / y</code>, dividing by the <strong>observed target</strong> because that is what the MAPE loss does, so <code>mean(abs(.)) * 100</code> is the training MAPE; <code>"multiplicative"</code> is <code>(y - yhat) / yhat</code>, dividing by the <strong>fitted value</strong> because the noise model is <code>Y = f(x)(1 + eta)</code>, under which <code>eta = (Y - f(x))/f(x)</code>.</p></li>
+<li><p><strong>Training targets and fitted values are stored on the fit object</strong> (<code>y_train</code>, <code>fitted_values</code>, both length <code>N</code>). The training inputs <code>X</code> are <strong>not</strong> retained, and no prediction is recomputed: an <code>N x N</code> kernel rebuild at predict time would be an <code>O(N^2)</code> cost to recover something the fit already holds. For the LS-SVR models the fitted values come from the KKT stationarity identity <code>f(x_k) = y_k - (1e-6 + y_k^2/Gamma) * alpha_k</code>, which is <code>O(N)</code>, needs no matvec, and is the same expression in both preconditioner branches. For the SMO path they come from one matvec against the already-built <code>Omega</code> using the post-pruning <code>beta</code>. Both agree with <code>predict(object, X_train)</code> to within <code>3e-12</code> relative. Object size grows by <code>16N</code> bytes.</p></li>
+<li><p><strong>Near-zero fitted values</strong> under <code>type = "multiplicative"</code> are reported, not removed. <code><a href="https://rdrr.io/r/stats/residuals.html" class="external-link">residuals()</a></code> always returns exactly <code>N</code> values in training-row order so the result stays aligned with the training rows; affected entries keep their raw value (possibly <code>Inf</code>/<code>NaN</code>) and a single warning names how many. For pooled diagnostics, exclude at the point of aggregation – see <code><a href="../reference/residuals.psvr_fit.html">?residuals.psvr_fit</a></code>.</p></li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-0-2-9010">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-0-2-9010"></a></h3>
+<ul><li>
+<code><a href="../reference/fitted.psvr_fit.html">?fitted.psvr_fit</a></code> and <code><a href="../reference/residuals.psvr_fit.html">?residuals.psvr_fit</a></code> document that parsnip registers neither <code>residuals.model_fit</code> nor <code>fitted.model_fit</code>, so both generics return <code>NULL</code> <strong>silently</strong> on a <code>model_fit</code>. Use <code><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">parsnip::extract_fit_engine()</a></code> to reach the psvr object first. psvr deliberately does not register S3 methods on parsnip’s class.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="performance-0-0-2-9010">Performance<a class="anchor" aria-label="anchor" href="#performance-0-0-2-9010"></a></h3>
+<ul><li>
+<strong>Vectorized predict path.</strong> Symmetric prediction previously ran a nested R loop – over prediction rows in <code>.psvr_predict_dispatch()</code>, and over training points inside <code><a href="../reference/sym_kernel_vector.html">sym_kernel_vector()</a></code> – costing <code>O(M*N)</code> R-level kernel closure calls and bypassing the Rcpp kernels entirely. It now builds the <code>n_sv x M</code> block with two <code><a href="../reference/kernel_matrix.html">kernel_matrix()</a></code> calls via the new internal <code><a href="../reference/sym_kernel_block.html">sym_kernel_block()</a></code>. The non-symmetric path built the kernel one prediction row at a time (<code>M</code> separate Rcpp calls) and now builds one block. Measured at <code>N = 400</code>, <code>M = 3000</code>, RBF: <strong>33x</strong> faster symmetric, <strong>1.4x</strong> non-symmetric. Predictions are <strong>bit-identical</strong> (<code><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical()</a></code>, max absolute deviation <code>0e+00</code>) across all four models, four kernel paths including user-defined closures, and both the <code>psvr_fit</code> and legacy classes.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="packaging-0-0-2-9010">Packaging<a class="anchor" aria-label="anchor" href="#packaging-0-0-2-9010"></a></h3>
+<ul><li>
+<code>Depends: R (&gt;= 4.1)</code> is now declared. The package already used the native pipe (<code>|&gt;</code>) in <code>R/params.R</code>, so this documents an existing requirement rather than imposing a new one.</li>
+<li>
+<code>PSVR_STATUS.md</code> added to <code>.Rbuildignore</code>; it was reaching the built tarball.</li>
+<li>Fixed a non-ASCII character in a string literal in <code>R/fitted-residuals.R</code> that produced an <code>R CMD check</code> WARNING. Mathematical notation in that file’s roxygen now uses Rd <code>\eqn{}</code> markup rather than Unicode, which renders reliably on all platforms.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.2.9009" id="psvr-0029009-development">psvr 0.0.2.9009 (development)<a class="anchor" aria-label="anchor" href="#psvr-0029009-development"></a></h2>
 <div class="section level3">

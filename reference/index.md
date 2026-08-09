@@ -16,6 +16,18 @@ single primary fitter for all four model families. Selects via
   : Extract coefficients from a psvr_fit model
 - [`summary(`*`<psvr_fit>`*`)`](https://pbenavidesh.github.io/psvr/reference/summary.psvr_fit.md)
   : Summary method for psvr_fit objects
+- [`fitted(`*`<psvr_fit>`*`)`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
+  [`fitted(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
+  [`fitted(`*`<psvr_mape_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
+  [`fitted(`*`<psvr_rmspe>`*`)`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
+  [`fitted(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
+  : Extract training fitted values from a psvr model
+- [`residuals(`*`<psvr_fit>`*`)`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
+  [`residuals(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
+  [`residuals(`*`<psvr_mape_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
+  [`residuals(`*`<psvr_rmspe>`*`)`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
+  [`residuals(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
+  : Extract training residuals from a psvr model
 
 ## Kernel factory
 

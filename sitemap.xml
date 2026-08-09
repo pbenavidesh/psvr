@@ -27,6 +27,7 @@
 <url><loc>https://pbenavidesh.github.io/psvr/reference/dot-make_kernel_accessor.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/dot-smo_solve.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/dot-smo_solve_r.html</loc></url>
+<url><loc>https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/index.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/kernel_matrix.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/make_kernel.html</loc></url>
@@ -55,10 +56,12 @@
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr_data.html</loc></url>
+<url><loc>https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/sigma_heuristic.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/summary.psvr_fit.html</loc></url>
+<url><loc>https://pbenavidesh.github.io/psvr/reference/sym_kernel_block.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/sym_kernel_matrix.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/sym_kernel_vector.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/sym_type_param.html</loc></url>

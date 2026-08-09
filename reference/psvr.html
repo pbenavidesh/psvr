@@ -19,7 +19,7 @@ remain available but are slated for deprecation.'><meta property="og:image" cont
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9009</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9010</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -257,6 +257,17 @@ length <code>N</code>; <code>NULL</code> for <code>loss = "rmspe"</code>.</p></d
 <dt><code>support_targets</code></dt>
 <dd><p>Support-vector targets for <code>loss = "mape"</code>;
 <code>NULL</code> for <code>loss = "rmspe"</code>.</p></dd>
+
+<dt><code>y_train</code></dt>
+<dd><p>The length-<code>N</code> training targets, retained so that
+<code><a href="fitted.psvr_fit.html">fitted.psvr_fit()</a></code> and <code><a href="residuals.psvr_fit.html">residuals.psvr_fit()</a></code> need no refit.</p></dd>
+
+<dt><code>fitted_values</code></dt>
+<dd><p>The length-<code>N</code> in-sample predictions
+<code>f(x_k)</code>, computed during the fit. Equal to
+<code>predict(object, X_train)</code> to machine precision, but recovered
+from state the solver already holds rather than by rebuilding the
+<code>N × N</code> kernel matrix.</p></dd>
 
 <dt><code>n_train</code>, <code>n_sv</code>, <code>p_train</code></dt>
 <dd><p>Training counts.</p></dd>

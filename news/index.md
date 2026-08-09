@@ -1,5 +1,88 @@
 # Changelog
 
+## psvr 0.0.2.9010 (development)
+
+### New features
+
+- **[`fitted()`](https://rdrr.io/r/stats/fitted.values.html) and
+  [`residuals()`](https://rdrr.io/r/stats/residuals.html)** for
+  `psvr_fit` and the four legacy classes (`psvr_mape`, `psvr_mape_sym`,
+  `psvr_rmspe`, `psvr_rmspe_sym`).
+  [`residuals()`](https://rdrr.io/r/stats/residuals.html) takes
+  `type = c("response", "percentage", "multiplicative")`. The three are
+  **different quantities with different denominators**, not rescalings
+  of one another: `"response"` is `y - yhat`; `"percentage"` is
+  `(y - yhat) / y`, dividing by the **observed target** because that is
+  what the MAPE loss does, so `mean(abs(.)) * 100` is the training MAPE;
+  `"multiplicative"` is `(y - yhat) / yhat`, dividing by the **fitted
+  value** because the noise model is `Y = f(x)(1 + eta)`, under which
+  `eta = (Y - f(x))/f(x)`.
+
+- **Training targets and fitted values are stored on the fit object**
+  (`y_train`, `fitted_values`, both length `N`). The training inputs `X`
+  are **not** retained, and no prediction is recomputed: an `N x N`
+  kernel rebuild at predict time would be an `O(N^2)` cost to recover
+  something the fit already holds. For the LS-SVR models the fitted
+  values come from the KKT stationarity identity
+  `f(x_k) = y_k - (1e-6 + y_k^2/Gamma) * alpha_k`, which is `O(N)`,
+  needs no matvec, and is the same expression in both preconditioner
+  branches. For the SMO path they come from one matvec against the
+  already-built `Omega` using the post-pruning `beta`. Both agree with
+  `predict(object, X_train)` to within `3e-12` relative. Object size
+  grows by `16N` bytes.
+
+- **Near-zero fitted values** under `type = "multiplicative"` are
+  reported, not removed.
+  [`residuals()`](https://rdrr.io/r/stats/residuals.html) always returns
+  exactly `N` values in training-row order so the result stays aligned
+  with the training rows; affected entries keep their raw value
+  (possibly `Inf`/`NaN`) and a single warning names how many. For pooled
+  diagnostics, exclude at the point of aggregation – see
+  [`?residuals.psvr_fit`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md).
+
+### Documentation
+
+- [`?fitted.psvr_fit`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
+  and
+  [`?residuals.psvr_fit`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
+  document that parsnip registers neither `residuals.model_fit` nor
+  `fitted.model_fit`, so both generics return `NULL` **silently** on a
+  `model_fit`. Use
+  [`parsnip::extract_fit_engine()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)
+  to reach the psvr object first. psvr deliberately does not register S3
+  methods on parsnip’s class.
+
+### Performance
+
+- **Vectorized predict path.** Symmetric prediction previously ran a
+  nested R loop – over prediction rows in `.psvr_predict_dispatch()`,
+  and over training points inside
+  [`sym_kernel_vector()`](https://pbenavidesh.github.io/psvr/reference/sym_kernel_vector.md)
+  – costing `O(M*N)` R-level kernel closure calls and bypassing the Rcpp
+  kernels entirely. It now builds the `n_sv x M` block with two
+  [`kernel_matrix()`](https://pbenavidesh.github.io/psvr/reference/kernel_matrix.md)
+  calls via the new internal
+  [`sym_kernel_block()`](https://pbenavidesh.github.io/psvr/reference/sym_kernel_block.md).
+  The non-symmetric path built the kernel one prediction row at a time
+  (`M` separate Rcpp calls) and now builds one block. Measured at
+  `N = 400`, `M = 3000`, RBF: **33x** faster symmetric, **1.4x**
+  non-symmetric. Predictions are **bit-identical**
+  ([`identical()`](https://rdrr.io/r/base/identical.html), max absolute
+  deviation `0e+00`) across all four models, four kernel paths including
+  user-defined closures, and both the `psvr_fit` and legacy classes.
+
+### Packaging
+
+- `Depends: R (>= 4.1)` is now declared. The package already used the
+  native pipe (`|>`) in `R/params.R`, so this documents an existing
+  requirement rather than imposing a new one.
+- `PSVR_STATUS.md` added to `.Rbuildignore`; it was reaching the built
+  tarball.
+- Fixed a non-ASCII character in a string literal in
+  `R/fitted-residuals.R` that produced an `R CMD check` WARNING.
+  Mathematical notation in that file’s roxygen now uses Rd `\eqn{}`
+  markup rather than Unicode, which renders reliably on all platforms.
+
 ## psvr 0.0.2.9009 (development)
 
 ### Bug fixes

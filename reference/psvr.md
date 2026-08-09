@@ -219,6 +219,21 @@ An object of class `"psvr_fit"`, a list with components:
   Support-vector targets for `loss = "mape"`; `NULL` for
   `loss = "rmspe"`.
 
+- `y_train`:
+
+  The length-`N` training targets, retained so that
+  [`fitted.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
+  and
+  [`residuals.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
+  need no refit.
+
+- `fitted_values`:
+
+  The length-`N` in-sample predictions `f(x_k)`, computed during the
+  fit. Equal to `predict(object, X_train)` to machine precision, but
+  recovered from state the solver already holds rather than by
+  rebuilding the `N × N` kernel matrix.
+
 - `n_train`, `n_sv`, `p_train`:
 
   Training counts.
