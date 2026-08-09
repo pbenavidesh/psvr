@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: >-
   If you use this software, please cite it using the metadata below.
-  The preferred citation is the accompanying paper (currently under review).
+  The preferred citation is the accompanying paper.
 title: "psvr: Percentage-Error Support Vector Regression"
 version: 0.0.0.9000
 date-released: "2026-04-18"
@@ -37,14 +37,20 @@ preferred-citation:
       given-names: Pablo
       email: pbenavides@iteso.mx
       orcid: "https://orcid.org/0000-0003-4926-4763"
-    - family-names: Álvarez-Álvarez
-      given-names: Gerardo
+    - family-names: Álvarez
+      given-names: Gregorio
+      orcid: "https://orcid.org/0000-0002-9069-0994"
     - family-names: Ruiz-Cruz
       given-names: Riemann
+      orcid: "https://orcid.org/0000-0002-7040-257X"
     - family-names: Sánchez-Torres
       given-names: Juan Diego
+      orcid: "https://orcid.org/0000-0001-6516-707X"
   journal: "Mathematics"
   publisher:
     name: MDPI
   year: 2026
-  notes: "Under review at MDPI Mathematics"
+  volume: 14
+  issue: 10
+  number: "1679"
+  doi: "10.3390/math14101679"

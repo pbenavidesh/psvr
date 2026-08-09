@@ -1,4 +1,4 @@
-citHeader("To cite psvr in publications, please use the accompanying paper (currently under review):")
+citHeader("To cite psvr in publications, please use the accompanying paper:")
 
 bibentry(
   bibtype = "Article",
@@ -10,14 +10,18 @@ bibentry(
     person("Pablo", "Benavides-Herrera",
            email = "pbenavides@iteso.mx",
            comment = c(ORCID = "0000-0003-4926-4763")),
-    person("Gerardo", "Álvarez-Álvarez"),
-    person("Riemann", "Ruiz-Cruz"),
-    person(c("Juan", "Diego"), "Sánchez-Torres")
+    person("Gregorio", "Álvarez",
+           comment = c(ORCID = "0000-0002-9069-0994")),
+    person("Riemann", "Ruiz-Cruz",
+           comment = c(ORCID = "0000-0002-7040-257X")),
+    person(c("Juan", "Diego"), "Sánchez-Torres",
+           comment = c(ORCID = "0000-0001-6516-707X"))
   ),
   journal   = "Mathematics",
   publisher = "MDPI",
   year      = "2026",
-  note      = "Under review at MDPI Mathematics",
-  url       = "https://github.com/pbenavidesh/psvr",
-  doi       = "10.5281/zenodo.19643526"
+  volume    = "14",
+  number    = "10",
+  pages     = "1679",
+  doi       = "10.3390/math14101679"
 )

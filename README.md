@@ -83,6 +83,7 @@ baseline — see `vignette("getting-started", package = "psvr")`.
 
 ## Reference
 
-Benavides-Herrera, P., Álvarez-Álvarez, G., Ruiz-Cruz, R., & Sánchez-Torres, J. D.
+Benavides-Herrera, P., Álvarez, G., Ruiz-Cruz, R., & Sánchez-Torres, J. D.
 (2026). A unified family of percentage-error support vector regression models with
-symmetric kernel extensions. *Mathematics*, MDPI. (under review)
+symmetric kernel extensions. *Mathematics*, 14(10), 1679.
+<https://doi.org/10.3390/math14101679>
