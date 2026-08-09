@@ -13,10 +13,14 @@
 ##
 ## Policy. The strict gates keep their original purpose — detecting
 ## intra-platform regressions across refactors — and are therefore run
-## under `skip_on_cran()`, plus one CI job (`ubuntu-latest (release)`,
-## which sets `NOT_CRAN: true`) that pins them on x86_64. Alongside each
-## strict gate sits a tolerance assertion that runs unconditionally, so
-## correctness is still verified on all five platforms.
+## under `skip_on_cran()`. They are a LOCAL gate: no CI job runs them.
+## An earlier configuration pinned `NOT_CRAN: true` on `ubuntu-latest
+## (release)` on the premise that x86_64 was the relevant axis. It is not:
+## the divergence tracks the libm and R version, not the architecture, and
+## that job failed the polynomial gates on x86_64 Linux while the same
+## assertions hold on x86_64 Windows R 4.5.3. Alongside each strict gate
+## sits a tolerance assertion that runs unconditionally, so correctness is
+## still verified on all five CI platforms.
 ##
 ## Cross-platform FP-noise tolerance.
 ## Chosen from the observed deviations in run 31291248498, not from a round
