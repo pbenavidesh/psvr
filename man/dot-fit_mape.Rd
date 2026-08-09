@@ -33,9 +33,9 @@ vectors (Theorem 5); \code{NULL} cold-starts.}
 feasibility of the warm-start vectors. Default \code{TRUE}.}
 
 \item{new_mask}{Optional logical vector (length N) flagging samples that
-are NEW relative to the previous fit (used to distribute the equality-
-constraint projection over new samples only). \code{NULL} infers
-"new = both alpha and alpha_star are exactly zero".}
+are NEW relative to the previous fit. Retained for API compatibility;
+since 0.0.2.9009 the projection is the exact minimum-norm projection
+over all \verb{2N} dual variables and does not consult this mask.}
 }
 \value{
 A list of class \code{"psvr_mape"} (legacy shape).

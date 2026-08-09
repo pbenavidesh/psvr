@@ -40,16 +40,21 @@
 #'   a positive numeric threshold; controls Remark-17 symmetric rescaling
 #'   (`loss = "rmspe"` only). See [rmspe_lssvr()] for semantics.
 #' @param alpha_init,alpha_star_init Optional length-`N` numeric warm-start
-#'   vectors for the SMO solver (Theorem 5; `loss = "mape"` only).
-#'   Projected via Algorithm 1 (new-samples-only shift + box clip) before
-#'   the solve. `NULL` cold-starts. Defaults `NULL`.
-#' @param warm_start_check Logical; if `TRUE`, validate post-projection
-#'   feasibility of the warm-start vectors. Default `TRUE`.
+#'   vectors for the SMO solver (Theorem 5; `loss = "mape"` only). Projected
+#'   via Algorithm 1 — the exact minimum-norm (Euclidean) projection onto
+#'   `sum(alpha - alpha_star) = 0` intersected with the per-sample box
+#'   `[0, 100C/y_k]` — before the solve. `NULL` cold-starts. Defaults `NULL`.
+#' @param warm_start_check Logical; if `TRUE` (default), validate
+#'   post-projection feasibility of the warm-start vectors and `stop()` on
+#'   violation. A surviving equality residual is fatal rather than cosmetic:
+#'   SMO conserves `sum(alpha - alpha_star)`, so an infeasible start is
+#'   carried through to the returned solution. Set `FALSE` to override.
 #' @param new_mask Optional length-`N` logical vector flagging which samples
-#'   are NEW relative to the previous fit (used by Algorithm 1 Step 2 to
-#'   distribute the equality-constraint projection over new samples only).
-#'   `NULL` infers "new = both alpha_init and alpha_star_init are exactly
-#'   zero". Used internally by [psvr_cv()] for fold-to-fold carryover.
+#'   are NEW relative to the previous fit. Retained for API compatibility and
+#'   still passed by [psvr_cv()], but as of 0.0.2.9010 it no longer influences
+#'   the warm-start projection: Algorithm 1 now computes the exact
+#'   minimum-norm projection over all `2N` dual variables rather than a shift
+#'   restricted to new samples. Validated for type and length when supplied.
 #' @param reg Reserved for future phases (extended Lagrangian). Must be
 #'   `NULL`.
 #' @param block_k4_enabled Logical; if `TRUE` (default, `loss = "mape"`

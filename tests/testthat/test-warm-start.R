@@ -43,12 +43,16 @@ test_that(".warm_start_init() new-samples-only projection preserves retained val
   expect_equal(ws$alpha_star[4:6], numeric(3L))
 })
 
-test_that(".warm_start_init() new-samples-only absorbs violation correctly", {
+test_that(".warm_start_init() absorbs a violation by minimum-norm projection", {
+  # Rewritten at 0.0.2.9010. This test previously asserted the
+  # new-samples-only shift (retained values untouched, the whole violation
+  # pushed onto samples 3:5). That scheme is gone -- it destroyed 100% of the
+  # correction whenever the violation was positive, because new samples sit at
+  # alpha = 0 and the box clip undid the shift. The projection now ranges over
+  # all 2N variables, so retained values move too; the assertions below pin
+  # the exact minimum-norm answer rather than the old shift.
   C_k <- rep(10, 5L)
-  # Retained samples (1, 2): alpha=3, alpha_star=5. Violation = 3 - 5 = -2.
-  # New samples (3, 4, 5): zero-filled.  With per_new = -2/3, the shift
-  # alpha[new] -= per_new = +0.667 lands inside [0, C_k] without clipping,
-  # so the residual safety net does NOT activate.
+  # Retained samples (1, 2): alpha = 3, alpha_star = 5. Violation = 3 - 5 = -2.
   alpha      <- c(3, 0, 0, 0, 0)
   alpha_star <- c(0, 5, 0, 0, 0)
   ws <- psvr:::.warm_start_init(
@@ -57,13 +61,59 @@ test_that(".warm_start_init() new-samples-only absorbs violation correctly", {
     N = 5L, C_k = C_k,
     new_mask = c(FALSE, FALSE, TRUE, TRUE, TRUE)
   )
-  # Retained sample values preserved exactly.
-  expect_equal(ws$alpha[1L],      3)
-  expect_equal(ws$alpha_star[2L], 5)
-  # New samples 3, 4, 5 each absorbed +2/3 of the violation gap.
-  expect_equal(ws$alpha[3:5], rep(2/3, 3L), tolerance = 1e-12)
-  # Equality constraint exactly satisfied.
+  # With lambda < 0 nothing hits a bound, so g(lambda) = -2 - 6*lambda and
+  # lambda = -1/3: alpha_k = alpha0_k + 1/3, alpha*_k = alpha*0_k - 1/3.
+  expect_equal(ws$alpha,      c(3 + 1/3, rep(1/3, 4L)), tolerance = 1e-12)
+  expect_equal(ws$alpha_star, c(0, 5 - 1/3, 0, 0, 0),   tolerance = 1e-12)
+  # Equality constraint satisfied at rounding level.
   expect_lt(abs(sum(ws$alpha - ws$alpha_star)), 1e-12)
+  # Minimum-norm: no feasible point is closer to the input than this one.
+  proj_dist <- sum((ws$alpha - alpha)^2) + sum((ws$alpha_star - alpha_star)^2)
+  expect_equal(proj_dist, 6 * (1/3)^2, tolerance = 1e-12)
+})
+
+test_that(".warm_start_init() kills a POSITIVE violation (the pre-fix defect)", {
+  # Regression guard for the bug fixed at 0.0.2.9010: a positive violation
+  # used to be shifted onto new samples whose alpha was 0, driving them
+  # negative so the box clip restored every one to 0 and the residual
+  # survived intact. SMO conserves sum(alpha - alpha*), so that infeasible
+  # start propagated into the returned solution.
+  C_k <- rep(10, 5L)
+  alpha      <- c(6, 4, 0, 0, 0)   # violation = +10, strictly positive
+  alpha_star <- c(0, 0, 0, 0, 0)
+  ws <- psvr:::.warm_start_init(
+    alpha_init      = alpha,
+    alpha_star_init = alpha_star,
+    N = 5L, C_k = C_k,
+    new_mask = c(FALSE, FALSE, TRUE, TRUE, TRUE)
+  )
+  expect_lt(abs(sum(ws$alpha - ws$alpha_star)), 1e-12)
+  expect_true(all(ws$alpha >= 0 & ws$alpha <= C_k))
+  expect_true(all(ws$alpha_star >= 0 & ws$alpha_star <= C_k))
+})
+
+test_that(".warm_start_init() is exact when new samples alone cannot absorb it", {
+  # Independent reason the new-samples-only restriction had to go: with
+  # retained values held fixed the new block must absorb the entire
+  # violation, which is infeasible when |violation| exceeds its capacity --
+  # and degenerately so when there are no new samples at all.
+  C_k <- rep(10, 4L)
+  alpha      <- c(10, 10, 0, 0)   # violation = +20
+  alpha_star <- c(0, 0, 0, 0)
+  # n_new = 1, capacity of the new block = C_k = 10 < 20.
+  ws <- psvr:::.warm_start_init(
+    alpha_init = alpha, alpha_star_init = alpha_star,
+    N = 4L, C_k = C_k, new_mask = c(FALSE, FALSE, FALSE, TRUE)
+  )
+  expect_lt(abs(sum(ws$alpha - ws$alpha_star)), 1e-12)
+
+  # n_new = 0: the old code fell back to a uniform shift over N; the exact
+  # projection needs no special case.
+  ws0 <- psvr:::.warm_start_init(
+    alpha_init = alpha, alpha_star_init = alpha_star,
+    N = 4L, C_k = C_k, new_mask = rep(FALSE, 4L)
+  )
+  expect_lt(abs(sum(ws0$alpha - ws0$alpha_star)), 1e-12)
 })
 
 test_that(".warm_start_init() clips infeasible inputs into the box", {
@@ -144,9 +194,11 @@ test_that("psvr() rejects warm-start vectors of wrong length", {
 # ---- 5. warm_start_check = FALSE skips post-projection assertions --------
 
 test_that("warm_start_check = FALSE bypasses the feasibility check", {
-  # Very-infeasible input that the projection cannot fix exactly; with
-  # warm_start_check = FALSE we want the fit to still run (the SMO solver
-  # will recover via its own iterations).
+  # Wildly out-of-box input. Since 0.0.2.9010 the exact projection handles
+  # this case too (the clip in x(lambda) enforces the box regardless of where
+  # x0 sits), so the fit would run either way; the test still pins that
+  # warm_start_check = FALSE is a working escape hatch now that the check
+  # raises an error rather than a warning.
   bad_init <- rep(1e3, N)
   expect_no_error(
     psvr(X_tr, y_tr, loss = "mape", kernel = K_rbf, C = 10, eps = 5,

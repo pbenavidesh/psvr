@@ -10,9 +10,9 @@
 #' @param warm_start_check Logical; if `TRUE`, validate the post-projection
 #'   feasibility of the warm-start vectors. Default `TRUE`.
 #' @param new_mask Optional logical vector (length N) flagging samples that
-#'   are NEW relative to the previous fit (used to distribute the equality-
-#'   constraint projection over new samples only). `NULL` infers
-#'   "new = both alpha and alpha_star are exactly zero".
+#'   are NEW relative to the previous fit. Retained for API compatibility;
+#'   since 0.0.2.9010 the projection is the exact minimum-norm projection
+#'   over all `2N` dual variables and does not consult this mask.
 #'
 #' @return A list of class `"psvr_mape"` (legacy shape).
 #'

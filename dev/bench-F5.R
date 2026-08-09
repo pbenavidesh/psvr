@@ -20,6 +20,22 @@ suppressPackageStartupMessages({
   library(rsample)
 })
 
+## Narrowed warning handling.  This script previously wrapped both psvr_cv()
+## calls in a blanket suppressWarnings(), which was aimed at the known
+## linear/polynomial SMO convergence warning but also swallowed the
+## warm-start equality-residual warning -- the reason the broken Algorithm 1
+## projection went unnoticed through the F5 numbers.  Muffle ONLY the
+## convergence warning; anything else propagates.
+suppress_convergence <- function(expr) {
+  withCallingHandlers(
+    expr,
+    warning = function(w) {
+      if (grepl("did not converge", conditionMessage(w), fixed = TRUE))
+        invokeRestart("muffleWarning")
+    }
+  )
+}
+
 run_cv_bench <- function(N, label) {
   set.seed(2026)
   d <- data.frame(
@@ -35,14 +51,14 @@ run_cv_bench <- function(N, label) {
               label, N, max(d$y) / min(d$y)))
 
   t_cold <- system.time(
-    res_cold <- suppressWarnings(
+    res_cold <- suppress_convergence(
       psvr_cv(folds, X_var = X_var, y_var = y_var,
               loss = "mape", kernel = K, C = 10, eps = 5,
               warm_start = FALSE)
     )
   )["elapsed"]
   t_warm <- system.time(
-    res_warm <- suppressWarnings(
+    res_warm <- suppress_convergence(
       psvr_cv(folds, X_var = X_var, y_var = y_var,
               loss = "mape", kernel = K, C = 10, eps = 5,
               warm_start = TRUE)

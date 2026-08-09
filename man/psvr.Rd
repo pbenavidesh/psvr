@@ -68,18 +68,23 @@ a positive numeric threshold; controls Remark-17 symmetric rescaling
 (\code{loss = "rmspe"} only). See \code{\link[=rmspe_lssvr]{rmspe_lssvr()}} for semantics.}
 
 \item{alpha_init, alpha_star_init}{Optional length-\code{N} numeric warm-start
-vectors for the SMO solver (Theorem 5; \code{loss = "mape"} only).
-Projected via Algorithm 1 (new-samples-only shift + box clip) before
-the solve. \code{NULL} cold-starts. Defaults \code{NULL}.}
+vectors for the SMO solver (Theorem 5; \code{loss = "mape"} only). Projected
+via Algorithm 1 — the exact minimum-norm (Euclidean) projection onto
+\code{sum(alpha - alpha_star) = 0} intersected with the per-sample box
+\verb{[0, 100C/y_k]} — before the solve. \code{NULL} cold-starts. Defaults \code{NULL}.}
 
-\item{warm_start_check}{Logical; if \code{TRUE}, validate post-projection
-feasibility of the warm-start vectors. Default \code{TRUE}.}
+\item{warm_start_check}{Logical; if \code{TRUE} (default), validate
+post-projection feasibility of the warm-start vectors and \code{stop()} on
+violation. A surviving equality residual is fatal rather than cosmetic:
+SMO conserves \code{sum(alpha - alpha_star)}, so an infeasible start is
+carried through to the returned solution. Set \code{FALSE} to override.}
 
 \item{new_mask}{Optional length-\code{N} logical vector flagging which samples
-are NEW relative to the previous fit (used by Algorithm 1 Step 2 to
-distribute the equality-constraint projection over new samples only).
-\code{NULL} infers "new = both alpha_init and alpha_star_init are exactly
-zero". Used internally by \code{\link[=psvr_cv]{psvr_cv()}} for fold-to-fold carryover.}
+are NEW relative to the previous fit. Retained for API compatibility and
+still passed by \code{\link[=psvr_cv]{psvr_cv()}}, but as of 0.0.2.9009 it no longer influences
+the warm-start projection: Algorithm 1 now computes the exact
+minimum-norm projection over all \verb{2N} dual variables rather than a shift
+restricted to new samples. Validated for type and length when supplied.}
 
 \item{reg}{Reserved for future phases (extended Lagrangian). Must be
 \code{NULL}.}

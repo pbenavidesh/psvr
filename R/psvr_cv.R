@@ -156,9 +156,11 @@ psvr_cv <- function(splits, ...,
       common <- intersect(row_ids_prev, row_ids_i)
       alpha_init      <- numeric(nrow(X_i))
       alpha_star_init <- numeric(nrow(X_i))
-      # new_mask: TRUE for samples NOT in the previous fold's training set,
-      # passed to Algorithm 1 Step 2 so the equality-projection shift is
-      # distributed over new samples only (preserving retained values).
+      # new_mask: TRUE for samples NOT in the previous fold's training set.
+      # Still supplied for API compatibility; since 0.0.2.9010 Algorithm 1
+      # computes the exact minimum-norm projection over all 2N dual variables
+      # and ignores the mask. See R/warm_start.R for why the previous
+      # new-samples-only shift was abandoned.
       new_mask <- !(row_ids_i %in% row_ids_prev)
       if (length(common) > 0L) {
         pos_in_new <- match(common, row_ids_i)
