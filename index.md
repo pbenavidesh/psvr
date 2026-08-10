@@ -1,7 +1,5 @@
 # psvr
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19643526.svg)](https://doi.org/10.5281/zenodo.19643526)
-
 `psvr` implements four support vector regression models derived from a
 unified mathematical framework for percentage-error loss functions.
 Classical SVR minimises absolute-error losses (MAE, MSE), which are
@@ -86,11 +84,11 @@ pred4 <- predict(fit4, X_te_s)
 
 mape <- function(y, yhat) mean(abs(y - yhat) / y) * 100
 
-cat(sprintf("Model 1 (MAPE e-SVR):       MAPE = %.2f%%\n", mape(y_te, pred1)))
-cat(sprintf("Model 2 (MAPE sym e-SVR):   MAPE = %.2f%%\n", mape(y_te, pred2)))
-cat(sprintf("Model 3 (RMSPE LS-SVR):     MAPE = %.2f%%\n", mape(y_te, pred3)))
-cat(sprintf("Model 4 (RMSPE sym LS-SVR): MAPE = %.2f%%\n", mape(y_te, pred4)))
-# Output last executed 2026-08-09 with psvr 0.0.2.9010
+cat(sprintf("Model 1 (MAPE e-SVR):       MAPE = %.2f%%", mape(y_te, pred1)),
+    sprintf("Model 2 (MAPE sym e-SVR):   MAPE = %.2f%%", mape(y_te, pred2)),
+    sprintf("Model 3 (RMSPE LS-SVR):     MAPE = %.2f%%", mape(y_te, pred3)),
+    sprintf("Model 4 (RMSPE sym LS-SVR): MAPE = %.2f%%", mape(y_te, pred4)),
+    sep = "\n")
 #> Model 1 (MAPE e-SVR):       MAPE = 3.57%
 #> Model 2 (MAPE sym e-SVR):   MAPE = 5.97%
 #> Model 3 (RMSPE LS-SVR):     MAPE = 3.76%
