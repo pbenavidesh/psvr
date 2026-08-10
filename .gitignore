@@ -53,10 +53,14 @@ dev/bench-F7-output.txt
 # Session audit output — dev/ is otherwise tracked, so ignore the subdir only.
 dev/audit/
 
-# Local-only package status / planning file. Contains unpublished research
-# direction (roadmap, parked research track, thesis cross-references) and is
-# deliberately not part of the public repo.
-PSVR_STATUS.md*
+# Local-only package status / planning files. Contain unpublished research
+# direction (roadmap, parked research track, thesis cross-references) and are
+# deliberately not part of the public repo. The pattern is deliberately wider
+# than `PSVR_STATUS.md*`: it must also cover PSVR_STATUS_ARCHIVE.md and every
+# PSVR_STATUS.md.bak-* backup. Do NOT narrow it, and do NOT relocate either
+# file under dev/ — dev/ is tracked apart from dev/audit/, so archiving there
+# would publish exactly the content these rules exist to keep private.
+PSVR_STATUS*
 
 # Rcpp compiled artefacts (regenerable from src/*.cpp + Rcpp::compileAttributes)
 src/*.o
