@@ -11,24 +11,27 @@ psvr_mape_rbf(
   mode = "regression",
   engine = "psvr",
   cost = NULL,
-  svm_margin = NULL,
-  rbf_sigma = NULL
+  margin = NULL,
+  rbf_sigma = NULL,
+  sym_type = NULL
 )
 
 psvr_mape_poly(
   mode = "regression",
   engine = "psvr",
   cost = NULL,
-  svm_margin = NULL,
+  margin = NULL,
   degree = NULL,
-  scale_factor = NULL
+  scale_factor = NULL,
+  sym_type = NULL
 )
 
 psvr_mape_linear(
   mode = "regression",
   engine = "psvr",
   cost = NULL,
-  svm_margin = NULL
+  margin = NULL,
+  sym_type = NULL
 )
 }
 \arguments{
@@ -40,14 +43,21 @@ psvr_mape_linear(
 Mapped to \code{\link[=cost_psvr]{cost_psvr()}} with range \verb{[-2, 10]} on the log2 scale — wider
 than \code{dials::cost()} to cover the larger values needed by LS-SVR models.}
 
-\item{svm_margin}{Epsilon tube half-width \verb{ε ≥ 0} expressed as a percentage
+\item{margin}{Epsilon tube half-width \verb{ε ≥ 0} expressed as a percentage
 of each target value.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.  Mapped to
-\code{\link[=margin_percentage]{margin_percentage()}} with default range \verb{[1, 20]} (percentage units).}
+\code{\link[=margin_percentage]{margin_percentage()}} with default range \verb{[1, 20]} (percentage units).
+Named to match \code{parsnip::svm_rbf()}; note the units differ from
+\code{dials::svm_margin()}, which is absolute rather than percentage.}
 
 \item{rbf_sigma}{RBF bandwidth σ > 0.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
 Mapped to \code{\link[=rbf_sigma_psvr]{rbf_sigma_psvr()}}; the search range auto-finalizes using the
 median-distance heuristic when training data are available.
 (RBF specs only.)}
+
+\item{sym_type}{Symmetry type: \code{"none"} (default) fits the non-symmetric
+ε-SVR of Model 1; \code{"even"} (a = 1) and \code{"odd"} (a = -1) fit the
+symmetric ε-SVR of Model 2.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimise over the levels
+during CV; see \code{\link[=sym_type_param]{sym_type_param()}} to restrict which levels are searched.}
 
 \item{degree}{Polynomial degree ≥ 1.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
 (Polynomial specs only.)}
@@ -59,7 +69,7 @@ optimize.  (Polynomial specs only.)}
 A parsnip \code{model_spec} object of the corresponding class.
 }
 \description{
-Create parsnip model specifications for \code{\link[=mape_svr]{mape_svr()}} with a fixed kernel
+Create parsnip model specifications for \code{\link[=psvr]{psvr()}} with a fixed kernel
 type.  Kernel parameters are tunable parsnip arguments; the symmetry
 parameter \code{a} and solver tolerance are engine arguments passed via
 \code{set_engine()}.
@@ -67,14 +77,19 @@ parameter \code{a} and solver tolerance are engine arguments passed via
 \examples{
 \dontrun{
 library(parsnip)
-spec <- psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1) |>
+spec <- psvr_mape_rbf(cost = 10, margin = 1, rbf_sigma = 1) |>
   set_engine("psvr")
 
-spec_poly <- psvr_mape_poly(cost = 10, svm_margin = 1, degree = 2,
+spec_poly <- psvr_mape_poly(cost = 10, margin = 1, degree = 2,
                             scale_factor = 1) |>
   set_engine("psvr")
 
-spec_lin <- psvr_mape_linear(cost = 10, svm_margin = 1) |>
+spec_lin <- psvr_mape_linear(cost = 10, margin = 1) |>
+  set_engine("psvr")
+
+# Symmetric epsilon-SVR (Model 2) via the sym_type argument:
+spec_sym <- psvr_mape_rbf(cost = 10, margin = 1, rbf_sigma = 1,
+                          sym_type = "even") |>
   set_engine("psvr")
 }
 

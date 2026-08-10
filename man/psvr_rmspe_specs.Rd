@@ -11,7 +11,8 @@ psvr_rmspe_rbf(
   mode = "regression",
   engine = "psvr",
   cost = NULL,
-  rbf_sigma = NULL
+  rbf_sigma = NULL,
+  sym_type = NULL
 )
 
 psvr_rmspe_poly(
@@ -19,10 +20,16 @@ psvr_rmspe_poly(
   engine = "psvr",
   cost = NULL,
   degree = NULL,
-  scale_factor = NULL
+  scale_factor = NULL,
+  sym_type = NULL
 )
 
-psvr_rmspe_linear(mode = "regression", engine = "psvr", cost = NULL)
+psvr_rmspe_linear(
+  mode = "regression",
+  engine = "psvr",
+  cost = NULL,
+  sym_type = NULL
+)
 }
 \arguments{
 \item{mode}{Only \code{"regression"} is supported.}
@@ -38,6 +45,11 @@ Mapped to \code{\link[=rbf_sigma_psvr]{rbf_sigma_psvr()}}; the search range auto
 median-distance heuristic when training data are available.
 (RBF specs only.)}
 
+\item{sym_type}{Symmetry type: \code{"none"} (default) fits the non-symmetric
+LS-SVR of Model 3; \code{"even"} (a = 1) and \code{"odd"} (a = -1) fit the
+symmetric LS-SVR of Model 4.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimise over the levels
+during CV; see \code{\link[=sym_type_param]{sym_type_param()}} to restrict which levels are searched.}
+
 \item{degree}{Polynomial degree ≥ 1.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
 (Polynomial specs only.)}
 
@@ -48,15 +60,15 @@ optimize.  (Polynomial specs only.)}
 A parsnip \code{model_spec} object of the corresponding class.
 }
 \description{
-Create parsnip model specifications for \code{\link[=rmspe_lssvr]{rmspe_lssvr()}} with a fixed kernel
+Create parsnip model specifications for \code{\link[=psvr]{psvr()}} with a fixed kernel
 type.  \code{cost} maps to the regularization parameter \code{Γ}.
 }
 \section{Engine arguments}{
 
-The \code{precondition} argument of \code{\link[=rmspe_lssvr]{rmspe_lssvr()}} is exposed as a non-tunable
+The \code{precondition} argument of \code{\link[=psvr]{psvr()}} is exposed as a non-tunable
 engine argument. Pass it via \code{\link[parsnip:set_engine]{parsnip::set_engine()}}, e.g.
 \code{set_engine("psvr", precondition = "always")}. Default is \code{"auto"}. See
-\code{\link[=rmspe_lssvr]{rmspe_lssvr()}} for accepted values and semantics.
+\code{\link[=psvr]{psvr()}} for accepted values and semantics.
 }
 
 \examples{
@@ -69,6 +81,11 @@ spec_poly <- psvr_rmspe_poly(cost = 1000, degree = 2, scale_factor = 1) |>
   set_engine("psvr")
 
 spec_lin <- psvr_rmspe_linear(cost = 1000) |>
+  set_engine("psvr")
+
+# Symmetric LS-SVR (Model 4) via the sym_type argument:
+spec_sym <- psvr_rmspe_rbf(cost = 1000, rbf_sigma = 1,
+                           sym_type = "even") |>
   set_engine("psvr")
 }
 

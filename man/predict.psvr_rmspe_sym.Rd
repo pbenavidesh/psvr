@@ -7,7 +7,10 @@
 \method{predict}{psvr_rmspe_sym}(object, newdata, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"psvr_rmspe_sym"} from \code{\link[=rmspe_sym_lssvr]{rmspe_sym_lssvr()}}.}
+\item{object}{An object of class \code{"psvr_rmspe_sym"}, as returned by the parsnip
+engine fit wrappers with \code{sym_type = "even"} or \code{"odd"} (see
+\link{psvr-fit-wrappers}; \code{sym_type = "none"} yields \code{"psvr_rmspe"} instead).
+Unwrap a parsnip fit with \code{\link[parsnip:reexports]{parsnip::extract_fit_engine()}} to obtain it.}
 
 \item{newdata}{Numeric matrix of new inputs, one observation per row (M × p).}
 
@@ -17,8 +20,8 @@
 Numeric vector of length M with predicted values.
 }
 \description{
-Method dispatched on the legacy \code{"psvr_rmspe_sym"} class returned by the
-deprecated \code{\link[=rmspe_sym_lssvr]{rmspe_sym_lssvr()}}. Uses the symmetric representer
-\verb{f(x) = Σₖ αₖ · ½(K(xₖ, x) + a·K(xₖ, -x)) + b}. New code should use
+Method dispatched on the legacy \code{"psvr_rmspe_sym"} class, which the parsnip
+engine fit wrappers return. Uses the symmetric representer
+\verb{f(x) = Σₖ αₖ · ½(K(xₖ, x) + a·K(xₖ, -x)) + b}. For direct fitting use
 \code{\link[=psvr]{psvr()}}.
 }

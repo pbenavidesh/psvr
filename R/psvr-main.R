@@ -4,9 +4,9 @@
 #' MAPE epsilon-SVR (Model 1), symmetric MAPE epsilon-SVR (Model 2),
 #' RMSPE LS-SVR (Model 3), and symmetric RMSPE LS-SVR (Model 4). Selection
 #' is driven by `loss` (`"mape"` or `"rmspe"`) and `sym` (`NULL`, `+1L`,
-#' or `-1L`). The four legacy public fitters
-#' ([mape_svr()], [mape_sym_svr()], [rmspe_lssvr()], [rmspe_sym_lssvr()])
-#' remain available but are slated for deprecation.
+#' or `-1L`). `psvr()` is the single direct entry point; the four legacy
+#' fitters it replaced (`mape_svr()`, `mape_sym_svr()`, `rmspe_lssvr()`,
+#' `rmspe_sym_lssvr()`) were removed in 0.0.2.9010.
 #'
 #' @section Cross-loss arguments:
 #' Some arguments apply only to one family. When `loss = "mape"`, `gamma`
@@ -38,7 +38,9 @@
 #'   `max_iter`.
 #' @param precondition One of `"auto"` (default), `"always"`, `"never"`, or
 #'   a positive numeric threshold; controls Remark-17 symmetric rescaling
-#'   (`loss = "rmspe"` only). See [rmspe_lssvr()] for semantics.
+#'   (`loss = "rmspe"` only). `"auto"` applies the rescaling when the target
+#'   ratio `max(y) / min(y)` exceeds 10; a numeric value sets that threshold
+#'   explicitly.
 #' @param alpha_init,alpha_star_init Optional length-`N` numeric warm-start
 #'   vectors for the SMO solver (Theorem 5; `loss = "mape"` only). Projected
 #'   via Algorithm 1 — the exact minimum-norm (Euclidean) projection onto

@@ -8,15 +8,14 @@ X_tr <- matrix(rnorm(30), 15, 2)
 y_tr <- abs(rnorm(15)) + 1
 K    <- make_kernel("rbf", sigma = 1)
 
-.q_mape_sym_svr <- function(...) suppressWarnings(mape_sym_svr(...))
+.q_mape_sym_svr <- function(...) psvr:::.fit_mape_sym(...)
 
 # ── shape, class, and deprecation contract ───────────────────────────────────
 
-test_that("mape_sym_svr emits deprecation notice and returns legacy psvr_mape_sym shape", {
-  expect_warning(
-    fit <- mape_sym_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5, a = 1),
-    regexp = "deprecated|psvr"
-  )
+test_that(".fit_mape_sym returns the legacy psvr_mape_sym shape", {
+  # Deprecation assertion removed with mape_sym_svr() in stage 3; every shape
+  # assertion below is UNCHANGED. See test-mape-svr.R for why they matter.
+  fit <- .q_mape_sym_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5, a = 1)
   expect_s3_class(fit, "psvr_mape_sym")
   # Subset, not exact equality — see test-mape-svr.R for the rationale.
   expect_in(c("beta", "alpha", "alpha_star", "b",
@@ -120,7 +119,7 @@ test_that("mape_sym_svr works with a = -1 (odd symmetry)", {
 # ── symmetry: Model 2 uses Ks = Ω + aΩ*, never ½Ω (distinct from Model 1) ──
 
 test_that("mape_sym_svr and mape_svr give different predictions (Ks != Ω)", {
-  fit1 <- suppressWarnings(mape_svr(    X_tr, y_tr, kernel = K, C = 10, eps = 5))
+  fit1 <- psvr:::.fit_mape(    X_tr, y_tr, kernel = K, C = 10, eps = 5)
   fit2 <- .q_mape_sym_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5, a = 1)
   p1   <- predict(fit1, X_tr)
   p2   <- predict(fit2, X_tr)

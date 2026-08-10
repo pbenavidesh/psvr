@@ -43,17 +43,28 @@ HP <- list(
 # meaningful cross-platform counterpart to add alongside it. They run under
 # skip_on_cran() and are pinned in CI by the one job that sets NOT_CRAN=true.
 # See helper-fp-tiers.R for the policy and the measured deviations.
-# These tests intentionally call the deprecated wrappers to lock in the
-# pre-refactor numerics. The .Deprecated() notice is asserted in the
-# dedicated contract tests of test-mape-svr.R / test-rmspe-lssvr.R / etc.;
-# here it is suppressed to keep snapshot-test output focused.
+# DO NOT RENAME OR DELETE THESE FOUR test_that() BLOCKS.
+# The names still say mape_svr / mape_sym_svr / rmspe_lssvr / rmspe_sym_lssvr,
+# removed in stage 3 of the shape-B redesign. That is DELIBERATE:
+# _snaps/bit-identical.md keys on test_that() names and is a protected F7.5
+# baseline (MD5 46a4fa24). Rewording a name regenerates it and destroys the
+# proof that the new API reproduces the pre-refactor numerics.
+#
+# These four are also byte-for-byte duplicates of test-psvr-direct.R's four RBF
+# tests -- same call, same fixture, same 244-char serialized payload. Also
+# DELIBERATE: they are the ONLY record tying the pre-refactor numerics to the
+# OLD API. test-psvr-direct.R proves psvr() matches a value; it does not prove
+# mape_svr() ever produced it. Deleting these as "redundant" throws that away.
+#
+# `sym = HP$a` (HP$a = 1L) reproduces what the deleted wrappers' `a = HP$a` did:
+# psvr() maps sym -> a via as.integer() (R/psvr-main.R:195).
 
 test_that("Model 1 mape_svr (RBF) — direct golden", {
   skip_on_cran()
   fx  <- make_fixture()
   K   <- make_kernel("rbf", sigma = HP$rbf_sigma)
   fit <- suppressWarnings(
-    mape_svr(fx$X, fx$y, kernel = K, C = HP$C, eps = HP$eps)
+    psvr(fx$X, fx$y, loss = "mape", kernel = K, C = HP$C, eps = HP$eps)
   )
   preds <- predict(fit, fx$X_test)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
@@ -64,8 +75,8 @@ test_that("Model 2 mape_sym_svr (RBF) — direct golden", {
   fx  <- make_fixture()
   K   <- make_kernel("rbf", sigma = HP$rbf_sigma)
   fit <- suppressWarnings(
-    mape_sym_svr(fx$X, fx$y, kernel = K,
-                 C = HP$C, eps = HP$eps, a = HP$a)
+    psvr(fx$X, fx$y, loss = "mape", sym = HP$a, kernel = K,
+         C = HP$C, eps = HP$eps)
   )
   preds <- predict(fit, fx$X_test)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
@@ -76,7 +87,7 @@ test_that("Model 3 rmspe_lssvr (RBF) — direct golden", {
   fx  <- make_fixture()
   K   <- make_kernel("rbf", sigma = HP$rbf_sigma)
   fit <- suppressWarnings(
-    rmspe_lssvr(fx$X, fx$y, kernel = K, gamma = HP$gamma)
+    psvr(fx$X, fx$y, loss = "rmspe", kernel = K, gamma = HP$gamma)
   )
   preds <- predict(fit, fx$X_test)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
@@ -87,8 +98,8 @@ test_that("Model 4 rmspe_sym_lssvr (RBF) — direct golden", {
   fx  <- make_fixture()
   K   <- make_kernel("rbf", sigma = HP$rbf_sigma)
   fit <- suppressWarnings(
-    rmspe_sym_lssvr(fx$X, fx$y, kernel = K,
-                    gamma = HP$gamma, a = HP$a)
+    psvr(fx$X, fx$y, loss = "rmspe", sym = HP$a, kernel = K,
+         gamma = HP$gamma)
   )
   preds <- predict(fit, fx$X_test)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
@@ -108,7 +119,7 @@ fit_and_predict <- function(spec, fx) {
 test_that("psvr_mape_rbf — parsnip golden", {
   skip_on_cran()
   fx   <- make_fixture()
-  spec <- psvr_mape_rbf(cost = HP$C, svm_margin = HP$eps,
+  spec <- psvr_mape_rbf(cost = HP$C, margin = HP$eps,
                         rbf_sigma = HP$rbf_sigma) |>
             set_engine("psvr")
   preds <- fit_and_predict(spec, fx)
@@ -118,7 +129,7 @@ test_that("psvr_mape_rbf — parsnip golden", {
 test_that("psvr_mape_poly — parsnip golden", {
   skip_on_cran()
   fx   <- make_fixture()
-  spec <- psvr_mape_poly(cost = HP$C, svm_margin = HP$eps,
+  spec <- psvr_mape_poly(cost = HP$C, margin = HP$eps,
                          degree = HP$degree,
                          scale_factor = HP$scale_factor) |>
             set_engine("psvr")
@@ -129,22 +140,30 @@ test_that("psvr_mape_poly — parsnip golden", {
 test_that("psvr_mape_linear — parsnip golden", {
   skip_on_cran()
   fx   <- make_fixture()
-  spec <- psvr_mape_linear(cost = HP$C, svm_margin = HP$eps) |>
+  spec <- psvr_mape_linear(cost = HP$C, margin = HP$eps) |>
             set_engine("psvr")
   preds <- fit_and_predict(spec, fx)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
 })
 
 # Model 2: MAPE sym --------------------------------------------------------
-# `sym_type` is a tunable arg only on the RBF spec; poly/linear take `a`
-# as an engine arg (matches existing test-parsnip.R smoke tests).
+# The test_that() NAMES below still say `psvr_mape_sym_*`. That is deliberate
+# and load-bearing: _snaps/bit-identical.md keys on test_that() names and is a
+# protected F7.5 baseline (MD5 46a4fa24). Rewording a name regenerates it and
+# destroys the proof that the new API reproduces the pre-refactor numerics.
+#
+# The BODIES were repointed in the shape-B redesign (stage 2): the six
+# `psvr_*_sym_*` specs were deleted and symmetry became the `sym_type` argument
+# of the corresponding non-symmetric spec. `sym_type = "even"` maps to a = 1L
+# via .sym_type_to_a(), reproducing what `a = HP$a` (HP$a = 1L) did before.
+# Stage-1 equivalence tests confirmed all six pairs identical at tolerance = 0.
 
 test_that("psvr_mape_sym_rbf — parsnip golden", {
   skip_on_cran()
   fx   <- make_fixture()
-  spec <- psvr_mape_sym_rbf(cost = HP$C, svm_margin = HP$eps,
-                            rbf_sigma = HP$rbf_sigma,
-                            sym_type = "even") |>
+  spec <- psvr_mape_rbf(cost = HP$C, margin = HP$eps,
+                        rbf_sigma = HP$rbf_sigma,
+                        sym_type = "even") |>
             set_engine("psvr")
   preds <- fit_and_predict(spec, fx)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
@@ -153,10 +172,11 @@ test_that("psvr_mape_sym_rbf — parsnip golden", {
 test_that("psvr_mape_sym_poly — parsnip golden", {
   skip_on_cran()
   fx   <- make_fixture()
-  spec <- psvr_mape_sym_poly(cost = HP$C, svm_margin = HP$eps,
-                             degree = HP$degree,
-                             scale_factor = HP$scale_factor) |>
-            set_engine("psvr", a = HP$a)
+  spec <- psvr_mape_poly(cost = HP$C, margin = HP$eps,
+                         degree = HP$degree,
+                         scale_factor = HP$scale_factor,
+                         sym_type = "even") |>
+            set_engine("psvr")
   preds <- fit_and_predict(spec, fx)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
 })
@@ -164,8 +184,9 @@ test_that("psvr_mape_sym_poly — parsnip golden", {
 test_that("psvr_mape_sym_linear — parsnip golden", {
   skip_on_cran()
   fx   <- make_fixture()
-  spec <- psvr_mape_sym_linear(cost = HP$C, svm_margin = HP$eps) |>
-            set_engine("psvr", a = HP$a)
+  spec <- psvr_mape_linear(cost = HP$C, margin = HP$eps,
+                           sym_type = "even") |>
+            set_engine("psvr")
   preds <- fit_and_predict(spec, fx)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
 })
@@ -201,13 +222,14 @@ test_that("psvr_rmspe_linear — parsnip golden", {
 })
 
 # Model 4: RMSPE sym -------------------------------------------------------
+# Names deliberately stale; bodies repointed. See the note above Model 2.
 
 test_that("psvr_rmspe_sym_rbf — parsnip golden", {
   skip_on_cran()
   fx   <- make_fixture()
-  spec <- psvr_rmspe_sym_rbf(cost = HP$gamma,
-                             rbf_sigma = HP$rbf_sigma,
-                             sym_type = "even") |>
+  spec <- psvr_rmspe_rbf(cost = HP$gamma,
+                         rbf_sigma = HP$rbf_sigma,
+                         sym_type = "even") |>
             set_engine("psvr")
   preds <- fit_and_predict(spec, fx)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
@@ -216,9 +238,10 @@ test_that("psvr_rmspe_sym_rbf — parsnip golden", {
 test_that("psvr_rmspe_sym_poly — parsnip golden", {
   skip_on_cran()
   fx   <- make_fixture()
-  spec <- psvr_rmspe_sym_poly(cost = HP$gamma, degree = HP$degree,
-                              scale_factor = HP$scale_factor) |>
-            set_engine("psvr", a = HP$a)
+  spec <- psvr_rmspe_poly(cost = HP$gamma, degree = HP$degree,
+                          scale_factor = HP$scale_factor,
+                          sym_type = "even") |>
+            set_engine("psvr")
   preds <- fit_and_predict(spec, fx)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
 })
@@ -226,8 +249,8 @@ test_that("psvr_rmspe_sym_poly — parsnip golden", {
 test_that("psvr_rmspe_sym_linear — parsnip golden", {
   skip_on_cran()
   fx   <- make_fixture()
-  spec <- psvr_rmspe_sym_linear(cost = HP$gamma) |>
-            set_engine("psvr", a = HP$a)
+  spec <- psvr_rmspe_linear(cost = HP$gamma, sym_type = "even") |>
+            set_engine("psvr")
   preds <- fit_and_predict(spec, fx)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
 })

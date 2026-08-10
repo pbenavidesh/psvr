@@ -5,18 +5,21 @@
 \alias{psvr_mape_rbf_fit}
 \alias{psvr_mape_poly_fit}
 \alias{psvr_mape_linear_fit}
-\alias{psvr_mape_sym_rbf_fit}
-\alias{psvr_mape_sym_poly_fit}
-\alias{psvr_mape_sym_linear_fit}
 \alias{psvr_rmspe_rbf_fit}
 \alias{psvr_rmspe_poly_fit}
 \alias{psvr_rmspe_linear_fit}
-\alias{psvr_rmspe_sym_rbf_fit}
-\alias{psvr_rmspe_sym_poly_fit}
-\alias{psvr_rmspe_sym_linear_fit}
 \title{Fit wrappers for parsnip engine dispatch}
 \usage{
-psvr_mape_rbf_fit(x, y, C, eps, rbf_sigma = 1, tol = 0.001, max_iter = 100000L)
+psvr_mape_rbf_fit(
+  x,
+  y,
+  C,
+  eps,
+  rbf_sigma = 1,
+  sym_type = "none",
+  tol = 0.001,
+  max_iter = 100000L
+)
 
 psvr_mape_poly_fit(
   x,
@@ -25,38 +28,29 @@ psvr_mape_poly_fit(
   eps,
   degree = 3L,
   scale_factor = 1,
+  sym_type = "none",
   tol = 0.001,
   max_iter = 100000L
 )
 
-psvr_mape_linear_fit(x, y, C, eps, tol = 0.001, max_iter = 100000L)
-
-psvr_mape_sym_rbf_fit(
+psvr_mape_linear_fit(
   x,
   y,
   C,
   eps,
+  sym_type = "none",
+  tol = 0.001,
+  max_iter = 100000L
+)
+
+psvr_rmspe_rbf_fit(
+  x,
+  y,
+  gamma,
   rbf_sigma = 1,
-  sym_type = "even",
-  tol = 0.001,
-  max_iter = 100000L
+  sym_type = "none",
+  precondition = "auto"
 )
-
-psvr_mape_sym_poly_fit(
-  x,
-  y,
-  C,
-  eps,
-  degree = 3L,
-  scale_factor = 1,
-  a = 1L,
-  tol = 0.001,
-  max_iter = 100000L
-)
-
-psvr_mape_sym_linear_fit(x, y, C, eps, a = 1L, tol = 0.001, max_iter = 100000L)
-
-psvr_rmspe_rbf_fit(x, y, gamma, rbf_sigma = 1, precondition = "auto")
 
 psvr_rmspe_poly_fit(
   x,
@@ -64,31 +58,11 @@ psvr_rmspe_poly_fit(
   gamma,
   degree = 3L,
   scale_factor = 1,
+  sym_type = "none",
   precondition = "auto"
 )
 
-psvr_rmspe_linear_fit(x, y, gamma, precondition = "auto")
-
-psvr_rmspe_sym_rbf_fit(
-  x,
-  y,
-  gamma,
-  rbf_sigma = 1,
-  sym_type = "even",
-  precondition = "auto"
-)
-
-psvr_rmspe_sym_poly_fit(
-  x,
-  y,
-  gamma,
-  degree = 3L,
-  scale_factor = 1,
-  a = 1L,
-  precondition = "auto"
-)
-
-psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L, precondition = "auto")
+psvr_rmspe_linear_fit(x, y, gamma, sym_type = "none", precondition = "auto")
 }
 \arguments{
 \item{x}{Numeric predictor matrix (parsnip matrix interface).}
@@ -101,6 +75,10 @@ psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L, precondition = "auto")
 
 \item{rbf_sigma}{RBF bandwidth σ > 0.}
 
+\item{sym_type}{Symmetry type. \code{"none"} (the default) dispatches to the
+non-symmetric fitter; \code{"even"} and \code{"odd"} dispatch to the symmetric
+fitter with \code{a = 1L} and \code{a = -1L} respectively.}
+
 \item{tol}{Solver convergence tolerance for the SMO loop. Default \code{1e-3}.}
 
 \item{max_iter}{Maximum SMO iterations. Default \code{100000L}. The solver
@@ -111,40 +89,34 @@ does not converge within \code{max_iter}.}
 
 \item{scale_factor}{Polynomial constant term (coef₀).}
 
-\item{sym_type}{Symmetry type (\code{"even"} or \code{"odd"}) for symmetric models;
-translated to \code{a = 1L} or \code{a = -1L} before calling the solver.}
-
 \item{gamma}{Regularization parameter for RMSPE models.}
 
 \item{precondition}{Optional symmetric rescaling preconditioner for the
-RMSPE LS-SVR fitters. See \code{\link[=rmspe_lssvr]{rmspe_lssvr()}} for accepted values and
-semantics.}
+RMSPE LS-SVR fitters. See \code{\link[=psvr]{psvr()}} for accepted values and semantics.}
 }
 \value{
 A fitted model object of the legacy S3 class matching the wrapper's
 model family. These are the pre-\code{\link[=psvr]{psvr()}} object shapes, returned
 unmodified from the internal fitter; they are \strong{not} \code{psvr_fit} objects.
+\strong{Which class is returned depends on \code{sym_type}}, since each wrapper
+dispatches to the symmetric or non-symmetric fitter.
 
 The MAPE wrappers (\code{psvr_mape_rbf_fit()}, \code{psvr_mape_poly_fit()},
-\code{psvr_mape_linear_fit()}) return an object of class \code{"psvr_mape"}: a list
-with \code{beta} (support-vector dual differences), \code{alpha} and \code{alpha_star}
-(length-\code{N} pre-pruning duals, retained for warm starts), \code{b}, \code{X_sv},
-\code{y_sv}, \code{y_train}, \code{fitted_values}, \code{kernel}, \code{C}, \code{eps}, \code{n_train},
-\code{p_train}, \code{iterations}, \code{converged}, and \code{block_k4}.
-
-The symmetric MAPE wrappers (\code{psvr_mape_sym_rbf_fit()},
-\code{psvr_mape_sym_poly_fit()}, \code{psvr_mape_sym_linear_fit()}) return class
-\code{"psvr_mape_sym"}: the same components plus \code{a} (the symmetry type) and
-\code{spectral} (Algorithm 2 diagnostics).
+\code{psvr_mape_linear_fit()}) with \code{sym_type = "none"} return an object of
+class \code{"psvr_mape"}: a list with \code{beta} (support-vector dual differences),
+\code{alpha} and \code{alpha_star} (length-\code{N} pre-pruning duals, retained for warm
+starts), \code{b}, \code{X_sv}, \code{y_sv}, \code{y_train}, \code{fitted_values}, \code{kernel}, \code{C},
+\code{eps}, \code{n_train}, \code{p_train}, \code{iterations}, \code{converged}, and \code{block_k4}.
+With \code{sym_type = "even"} or \code{"odd"} they return class \code{"psvr_mape_sym"}:
+the same components plus \code{a} (the symmetry type) and \code{spectral}
+(Algorithm 2 diagnostics).
 
 The RMSPE wrappers (\code{psvr_rmspe_rbf_fit()}, \code{psvr_rmspe_poly_fit()},
-\code{psvr_rmspe_linear_fit()}) return class \code{"psvr_rmspe"}: a list with
-\code{alpha}, \code{b}, \code{X_train}, \code{y_train}, \code{fitted_values}, \code{kernel}, \code{gamma},
-\code{n_train}, \code{p_train}, and \code{precondition_applied}.
-
-The symmetric RMSPE wrappers (\code{psvr_rmspe_sym_rbf_fit()},
-\code{psvr_rmspe_sym_poly_fit()}, \code{psvr_rmspe_sym_linear_fit()}) return class
-\code{"psvr_rmspe_sym"}: the same components plus \code{a}.
+\code{psvr_rmspe_linear_fit()}) with \code{sym_type = "none"} return class
+\code{"psvr_rmspe"}: a list with \code{alpha}, \code{b}, \code{X_train}, \code{y_train},
+\code{fitted_values}, \code{kernel}, \code{gamma}, \code{n_train}, \code{p_train}, and
+\code{precondition_applied}. With \code{sym_type = "even"} or \code{"odd"} they return
+class \code{"psvr_rmspe_sym"}: the same components plus \code{a}.
 }
 \description{
 Bridge functions called by parsnip when fitting psvr model specs.

@@ -1,10 +1,10 @@
 #' Fit epsilon-SVR with MAPE loss (Model 1) — internal
 #'
 #' Internal fitter for the MAPE epsilon-SVR family. Use [psvr()] with
-#' `loss = "mape"` instead. Returns the legacy `psvr_mape` shape; the
-#' deprecation wrapper [mape_svr()] forwards directly to this function.
+#' `loss = "mape"` instead. Returns the legacy `psvr_mape` shape, which is also
+#' what the parsnip engine fit wrappers return.
 #'
-#' @param X,y,kernel,C,eps,solver,tol See [mape_svr()].
+#' @param X,y,kernel,C,eps,solver,tol See [psvr()].
 #' @param alpha_init,alpha_star_init Optional length-N numeric warm-start
 #'   vectors (Theorem 5); `NULL` cold-starts.
 #' @param warm_start_check Logical; if `TRUE`, validate the post-projection
@@ -187,11 +187,14 @@
 
 #' Predict from a fitted epsilon-SVR with MAPE model
 #'
-#' Method dispatched on the legacy `"psvr_mape"` class returned by the
-#' deprecated [mape_svr()]. New code should use [psvr()] (which returns a
-#' `"psvr_fit"` object dispatched by [predict.psvr_fit()]).
+#' Method dispatched on the legacy `"psvr_mape"` class, which the parsnip engine
+#' fit wrappers return. For direct fitting use [psvr()], which returns a
+#' `"psvr_fit"` object dispatched by [predict.psvr_fit()].
 #'
-#' @param object An object of class `"psvr_mape"` from [mape_svr()].
+#' @param object An object of class `"psvr_mape"`, as returned by the parsnip
+#'   engine fit wrappers with `sym_type = "none"` (see [psvr-fit-wrappers];
+#'   `sym_type = "even"` or `"odd"` yields `"psvr_mape_sym"` instead). Unwrap a
+#'   parsnip fit with [parsnip::extract_fit_engine()] to obtain it.
 #' @param newdata Numeric matrix of new inputs, one observation per row (M × p).
 #' @param ... Ignored.
 #'

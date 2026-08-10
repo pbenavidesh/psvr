@@ -28,11 +28,6 @@ targets are strictly positive and relative accuracy is what matters.
 `sym = +1L` imposes an even-function prior (`f(-x) = f(x)`), `sym = -1L`
 an odd one. All models require **strictly positive targets** (`y > 0`).
 
-The four original fitters — `mape_svr()`, `mape_sym_svr()`,
-`rmspe_lssvr()` and `rmspe_sym_lssvr()` — still work, but are deprecated
-and scheduled for removal in v0.2.0 or later. See their help pages for
-the `psvr()` call that replaces each.
-
 ## Installation
 
 ``` r

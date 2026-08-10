@@ -13,12 +13,12 @@ skip_if_no_osqp <- function() {
   testthat::skip_if_not_installed("osqp")
 }
 
-# These tests exercise the deprecated mape_svr() / mape_sym_svr() wrappers;
-# quiet helpers swallow the .Deprecated() noise so the test output stays
-# focused on solver-parity behavior. The deprecation contract itself is
-# asserted in test-mape-svr.R / test-mape-sym-svr.R.
-.q_mape_svr     <- function(...) suppressWarnings(mape_svr(...))
-.q_mape_sym_svr <- function(...) suppressWarnings(mape_sym_svr(...))
+# These tests exercise the internal fitters directly. suppressWarnings() is
+# retained here -- unlike the other repointed helpers -- because these tests
+# deliberately drive the solver to non-convergence, and the "did not converge
+# within max_iter" warning is expected output rather than deprecation noise.
+.q_mape_svr     <- function(...) suppressWarnings(psvr:::.fit_mape(...))
+.q_mape_sym_svr <- function(...) suppressWarnings(psvr:::.fit_mape_sym(...))
 
 # ---- 1. Prediction parity, Model 1 -----------------------------------------
 
@@ -94,7 +94,7 @@ test_that("parsnip default fit (solver = 'smo') runs and predicts", {
   train_df <- as.data.frame(X_tr)
   train_df$y <- y_tr
 
-  spec <- psvr_mape_rbf(cost = 1, svm_margin = 5, rbf_sigma = 1) |>
+  spec <- psvr_mape_rbf(cost = 1, margin = 5, rbf_sigma = 1) |>
     parsnip::set_engine("psvr")
 
   fit_p <- parsnip::fit(spec, y ~ ., data = train_df)

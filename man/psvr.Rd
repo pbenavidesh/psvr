@@ -64,7 +64,9 @@ only). Default \code{1e-3}. Tighter values produce more iterations.}
 
 \item{precondition}{One of \code{"auto"} (default), \code{"always"}, \code{"never"}, or
 a positive numeric threshold; controls Remark-17 symmetric rescaling
-(\code{loss = "rmspe"} only). See \code{\link[=rmspe_lssvr]{rmspe_lssvr()}} for semantics.}
+(\code{loss = "rmspe"} only). \code{"auto"} applies the rescaling when the target
+ratio \code{max(y) / min(y)} exceeds 10; a numeric value sets that threshold
+explicitly.}
 
 \item{alpha_init, alpha_star_init}{Optional length-\code{N} numeric warm-start
 vectors for the SMO solver (Theorem 5; \code{loss = "mape"} only). Projected
@@ -155,9 +157,9 @@ Unified entry point for the four model families in the psvr package:
 MAPE epsilon-SVR (Model 1), symmetric MAPE epsilon-SVR (Model 2),
 RMSPE LS-SVR (Model 3), and symmetric RMSPE LS-SVR (Model 4). Selection
 is driven by \code{loss} (\code{"mape"} or \code{"rmspe"}) and \code{sym} (\code{NULL}, \code{+1L},
-or \code{-1L}). The four legacy public fitters
-(\code{\link[=mape_svr]{mape_svr()}}, \code{\link[=mape_sym_svr]{mape_sym_svr()}}, \code{\link[=rmspe_lssvr]{rmspe_lssvr()}}, \code{\link[=rmspe_sym_lssvr]{rmspe_sym_lssvr()}})
-remain available but are slated for deprecation.
+or \code{-1L}). \code{psvr()} is the single direct entry point; the four legacy
+fitters it replaced (\code{mape_svr()}, \code{mape_sym_svr()}, \code{rmspe_lssvr()},
+\code{rmspe_sym_lssvr()}) were removed in 0.0.2.9010.
 }
 \section{Cross-loss arguments}{
 

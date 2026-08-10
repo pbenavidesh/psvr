@@ -7,9 +7,12 @@
 .fit_rmspe_sym(X, y, kernel, gamma, a = 1, precondition = "auto")
 }
 \arguments{
-\item{X, y, kernel, gamma, a, precondition}{See \code{\link[=rmspe_sym_lssvr]{rmspe_sym_lssvr()}} for the
-full semantics of each argument (including the Remark-17
-preconditioner).}
+\item{X, y, kernel, gamma, precondition}{See \code{\link[=psvr]{psvr()}} for the full semantics of
+each argument (including the Remark-17 preconditioner).}
+
+\item{a}{Symmetry type: \code{1} (even) or \code{-1} (odd). Corresponds to
+\code{psvr(sym = +1L)} and \code{psvr(sym = -1L)} respectively; \code{psvr()} has no \code{a}
+argument of its own.}
 }
 \value{
 A list of class \code{"psvr_rmspe_sym"} (legacy shape).
@@ -17,8 +20,8 @@ A list of class \code{"psvr_rmspe_sym"} (legacy shape).
 \description{
 Internal fitter for the symmetric RMSPE LS-SVR family. Use \code{\link[=psvr]{psvr()}}
 with \code{loss = "rmspe"} and \code{sym = +1L} / \code{-1L} instead. Returns the
-legacy \code{psvr_rmspe_sym} shape; the deprecation wrapper
-\code{\link[=rmspe_sym_lssvr]{rmspe_sym_lssvr()}} forwards directly to this function. The kernel must
+legacy \code{psvr_rmspe_sym} shape, which is also what the parsnip engine fit
+wrappers return with \code{sym_type = "even"} / \code{"odd"}. The kernel must
 satisfy Assumption 3 of the paper (kernel symmetry); see \code{\link[=make_kernel]{make_kernel()}}.
 }
 \keyword{internal}

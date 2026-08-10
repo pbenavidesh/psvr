@@ -10,15 +10,16 @@ K    <- make_kernel("rbf", sigma = 1)
 
 # Quiet wrapper for behavior tests only — the dedicated contract test
 # below asserts the .Deprecated() notice explicitly.
-.q_mape_svr <- function(...) suppressWarnings(mape_svr(...))
+.q_mape_svr <- function(...) psvr:::.fit_mape(...)
 
 # ── shape, class, and deprecation contract ───────────────────────────────────
 
-test_that("mape_svr emits deprecation notice and returns legacy psvr_mape shape", {
-  expect_warning(
-    fit <- mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5),
-    regexp = "deprecated|psvr"
-  )
+test_that(".fit_mape returns the legacy psvr_mape shape", {
+  # The deprecation-notice assertion that used to open this block went with
+  # mape_svr() in stage 3. Every shape assertion below is UNCHANGED and is the
+  # only coverage of the psvr_mape shape -- which is what the parsnip engine fit
+  # wrappers return (test-psvr-fit-shape.R pins psvr_fit, a different class).
+  fit <- .q_mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5)
   expect_s3_class(fit, "psvr_mape")
   # Subset, not exact equality: this pins a DEPRECATED shape, so the contract
   # worth guarding is "nothing that existed was removed". Fields have been

@@ -24,7 +24,11 @@
 )
 }
 \arguments{
-\item{X, y, kernel, C, eps, a, solver, tol}{See \code{\link[=mape_sym_svr]{mape_sym_svr()}}.}
+\item{X, y, kernel, C, eps, solver, tol}{See \code{\link[=psvr]{psvr()}}.}
+
+\item{a}{Symmetry type: \code{1} (even) or \code{-1} (odd). Corresponds to
+\code{psvr(sym = +1L)} and \code{psvr(sym = -1L)} respectively; \code{psvr()} has no \code{a}
+argument of its own.}
 
 \item{alpha_init, alpha_star_init}{Optional length-N numeric warm-start
 vectors (Theorem 5); \code{NULL} cold-starts.}
@@ -38,8 +42,8 @@ A list of class \code{"psvr_mape_sym"} (legacy shape).
 \description{
 Internal fitter for the symmetric MAPE epsilon-SVR family. Use \code{\link[=psvr]{psvr()}}
 with \code{loss = "mape"} and \code{sym = +1L} / \code{-1L} instead. Returns the legacy
-\code{psvr_mape_sym} shape; the deprecation wrapper \code{\link[=mape_sym_svr]{mape_sym_svr()}} forwards
-directly to this function. The kernel must satisfy Assumption 3 of the
-paper; see \code{\link[=make_kernel]{make_kernel()}}.
+\code{psvr_mape_sym} shape, which is also what the parsnip engine fit wrappers
+return with \code{sym_type = "even"} / \code{"odd"}. The kernel must satisfy
+Assumption 3 of the paper; see \code{\link[=make_kernel]{make_kernel()}}.
 }
 \keyword{internal}

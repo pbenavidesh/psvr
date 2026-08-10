@@ -1,6 +1,99 @@
 # psvr 0.0.2.9010 (development)
 
+## New features
+
+* **The six non-symmetric parsnip specs gain a tunable `sym_type` argument.**
+  `psvr_mape_rbf()`, `psvr_mape_poly()`, `psvr_mape_linear()`,
+  `psvr_rmspe_rbf()`, `psvr_rmspe_poly()` and `psvr_rmspe_linear()` now accept
+  `sym_type`, taking `"none"` (the default), `"even"` (a = 1) or `"odd"`
+  (a = -1). Leaving it unset reproduces the previous behaviour exactly.
+  Symmetry is now settable **and tunable** on the polynomial and linear
+  kernels, which it was not before: the symmetric poly/linear specs exposed
+  symmetry only as the engine argument `a`, which `tune()` cannot reach, so
+  it could not be optimised during CV on four of the six symmetric specs.
+
 ## Breaking changes
+
+* **The ε-SVR margin argument is renamed `svm_margin` → `margin`**, matching
+  `parsnip::svm_rbf()` and `parsnip::svm_poly()`. Affects the three MAPE specs
+  (`psvr_mape_rbf()`, `psvr_mape_poly()`, `psvr_mape_linear()`) and their
+  `update()` methods:
+
+  ```r
+  psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1)
+  # becomes
+  psvr_mape_rbf(cost = 10, margin = 1, rbf_sigma = 1)
+  ```
+
+  The dials object behind it is **unchanged** — still `margin_percentage()`,
+  default range `[1, 20]` in percentage units. Note the units still differ from
+  `dials::svm_margin()`, which is absolute; only the argument *name* now matches
+  parsnip's. The engine-side name is also unchanged: it still maps to `eps`, so
+  `psvr()` and the internal fitters are unaffected.
+
+* **`mape_svr()`, `mape_sym_svr()`, `rmspe_lssvr()` and `rmspe_sym_lssvr()` are
+  REMOVED**, along with `R/deprecated.R`. They were soft-deprecated since
+  0.0.2.9000 and never shipped in a released version. Replace with `psvr()`:
+
+  ```r
+  mape_svr(X, y, kernel = K, C = 10, eps = 5)
+  # becomes
+  psvr(X, y, loss = "mape", kernel = K, C = 10, eps = 5)
+
+  mape_sym_svr(X, y, kernel = K, C = 10, eps = 5, a = 1)
+  # becomes
+  psvr(X, y, loss = "mape", sym = +1L, kernel = K, C = 10, eps = 5)
+  ```
+
+  `sym = +1L` is even symmetry, `sym = -1L` odd, `sym = NULL` (the default)
+  non-symmetric. Likewise `rmspe_lssvr(...)` → `psvr(loss = "rmspe", ...)` and
+  `rmspe_sym_lssvr(..., a = 1)` → `psvr(loss = "rmspe", sym = +1L, ...)`.
+
+  **The four legacy fit classes are UNAFFECTED.** `psvr_mape`, `psvr_mape_sym`,
+  `psvr_rmspe` and `psvr_rmspe_sym`, and all twenty of their `predict()` /
+  `print()` / `coef()` / `fitted()` / `residuals()` methods, remain exported and
+  documented — the parsnip engine fit wrappers still return them. Note that
+  `psvr()` itself returns the different `psvr_fit` class; unwrap a parsnip fit
+  with `parsnip::extract_fit_engine()` to reach a legacy object.
+
+* **The six symmetric parsnip specs are REMOVED** — `psvr_mape_sym_rbf()`,
+  `psvr_mape_sym_poly()`, `psvr_mape_sym_linear()`, `psvr_rmspe_sym_rbf()`,
+  `psvr_rmspe_sym_poly()`, `psvr_rmspe_sym_linear()` — along with their
+  `update()` methods and engine fit wrappers. Symmetry is now the `sym_type`
+  argument of the corresponding non-symmetric spec (added in this same
+  version):
+
+  ```r
+  psvr_mape_sym_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1)
+  # becomes
+  psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1, sym_type = "even")
+  ```
+
+  For the polynomial and linear symmetric specs the change is larger than a
+  rename: they took symmetry as the **engine** argument `a`, which `tune()`
+  could never reach. It is now a tunable **model** argument, so
+
+  ```r
+  psvr_mape_sym_poly(...) |> set_engine("psvr", a = 1L)
+  # becomes
+  psvr_mape_poly(..., sym_type = "even") |> set_engine("psvr")
+  ```
+
+  `set_engine("psvr", a = ...)` no longer works on any psvr spec, but note
+  **where** it fails: `set_engine()` still accepts it and `translate()` still
+  carries it, so the error arrives only at `fit()` time, as R's generic
+  `unused argument (a = ~1)` — which does not mention `sym_type`. Replace
+  `a = 1L` with `sym_type = "even"` and `a = -1L` with `sym_type = "odd"`.
+
+* **`sym_type_param()` now offers three levels** — `c("none", "even", "odd")` —
+  where it previously offered two. Code that tunes `sym_type` on
+  `psvr_mape_sym_rbf()` or `psvr_rmspe_sym_rbf()` will search the additional
+  `"none"` level, which fits a **non-symmetric** model; grid size and CV cost
+  change accordingly and a run may select `"none"`. No error is raised. To
+  keep the previous two-level grid, pass
+  `sym_type_param(values = c("even", "odd"))` — the function gains a `values`
+  argument for exactly this purpose, and now validates it via
+  `rlang::arg_match()` rather than accepting arbitrary strings.
 
 * **`new_mask` is removed** from `psvr()`, `psvr_cv()`, `.smo_solve()`,
   `.smo_solve_r()`, `.fit_mape()`, `.fit_mape_sym()`, and

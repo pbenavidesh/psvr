@@ -2,11 +2,14 @@
 #'
 #' Internal fitter for the symmetric MAPE epsilon-SVR family. Use [psvr()]
 #' with `loss = "mape"` and `sym = +1L` / `-1L` instead. Returns the legacy
-#' `psvr_mape_sym` shape; the deprecation wrapper [mape_sym_svr()] forwards
-#' directly to this function. The kernel must satisfy Assumption 3 of the
-#' paper; see [make_kernel()].
+#' `psvr_mape_sym` shape, which is also what the parsnip engine fit wrappers
+#' return with `sym_type = "even"` / `"odd"`. The kernel must satisfy
+#' Assumption 3 of the paper; see [make_kernel()].
 #'
-#' @param X,y,kernel,C,eps,a,solver,tol See [mape_sym_svr()].
+#' @param X,y,kernel,C,eps,solver,tol See [psvr()].
+#' @param a Symmetry type: `1` (even) or `-1` (odd). Corresponds to
+#'   `psvr(sym = +1L)` and `psvr(sym = -1L)` respectively; `psvr()` has no `a`
+#'   argument of its own.
 #' @param alpha_init,alpha_star_init Optional length-N numeric warm-start
 #'   vectors (Theorem 5); `NULL` cold-starts.
 #' @param warm_start_check Logical; if `TRUE`, validate the post-projection
@@ -214,12 +217,15 @@
 
 #' Predict from a fitted symmetric epsilon-SVR with MAPE model
 #'
-#' Method dispatched on the legacy `"psvr_mape_sym"` class returned by the
-#' deprecated [mape_sym_svr()]. Uses the symmetric representer theorem
+#' Method dispatched on the legacy `"psvr_mape_sym"` class, which the parsnip
+#' engine fit wrappers return. Uses the symmetric representer theorem
 #' `f(x) = ½ Σk βk Ks(xk, x) + b` with
-#' `Ks(xk, x) = K(xk, x) + a·K(xk, -x)`. New code should use [psvr()].
+#' `Ks(xk, x) = K(xk, x) + a·K(xk, -x)`. For direct fitting use [psvr()].
 #'
-#' @param object An object of class `"psvr_mape_sym"` from [mape_sym_svr()].
+#' @param object An object of class `"psvr_mape_sym"`, as returned by the parsnip
+#'   engine fit wrappers with `sym_type = "even"` or `"odd"` (see
+#'   [psvr-fit-wrappers]; `sym_type = "none"` yields `"psvr_mape"` instead).
+#'   Unwrap a parsnip fit with [parsnip::extract_fit_engine()] to obtain it.
 #' @param newdata Numeric matrix of new inputs, one observation per row (M × p).
 #' @param ... Ignored.
 #'

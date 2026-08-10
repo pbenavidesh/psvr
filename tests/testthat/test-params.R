@@ -172,7 +172,7 @@ test_that("psvr_option_add_cost_ls() updates cost for m3/m4 workflows only", {
   spec_m3 <- psvr_rmspe_rbf(cost = tune::tune(), rbf_sigma = tune::tune()) |>
     parsnip::set_engine("psvr")
   spec_m1 <- psvr_mape_rbf(cost = tune::tune(),
-                            svm_margin = tune::tune(),
+                            margin     = tune::tune(),
                             rbf_sigma  = tune::tune()) |>
     parsnip::set_engine("psvr")
 
