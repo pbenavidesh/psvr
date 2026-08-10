@@ -197,7 +197,10 @@ and removed in v0.1.0. Ignored for <code>loss = "rmspe"</code> (LS-SVR uses
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Currently unused; reserved for future extension.</p></dd>
+<dd><p>Must be empty. Present only so that <code>alpha_couple</code>,
+<code>precomputed_Omega</code>, and <code>precomputed_Omega_s</code> must be matched by their
+exact names rather than by position or partial matching. Passing anything
+here is an error, which is how a mistyped argument name is caught.</p></dd>
 
 
 <dt id="arg-alpha-couple">alpha_couple<a class="anchor" aria-label="anchor" href="#arg-alpha-couple"></a></dt>

@@ -149,7 +149,11 @@ psvr(
 
 - ...:
 
-  Currently unused; reserved for future extension.
+  Must be empty. Present only so that `alpha_couple`,
+  `precomputed_Omega`, and `precomputed_Omega_s` must be matched by
+  their exact names rather than by position or partial matching. Passing
+  anything here is an error, which is how a mistyped argument name is
+  caught.
 
 - alpha_couple:
 

@@ -78,7 +78,9 @@ Default <code>500L</code>.</p></dd>
 
 
 <dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
-<dd><p>Integer seed for the subsample. Default <code>NULL</code>.</p></dd>
+<dd><p>Integer seed for the subsample. Default <code>NULL</code>. The caller's
+RNG stream is restored on exit, so passing <code>seed</code> makes the subsample
+reproducible without affecting the caller's subsequent random draws.</p></dd>
 
 </dl></div>
     <div class="section level2">

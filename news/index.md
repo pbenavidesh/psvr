@@ -74,6 +74,43 @@
   The blanket form is why the equality-residual warning went unobserved
   through the F5 benchmark run.
 
+- **[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) no
+  longer silently discards unknown arguments.** `...` sat in the
+  signature with no consumer, so a mistyped hyperparameter —
+  `epsilon = 5`, `sigma = 2` — was swallowed and the fit ran on defaults
+  with no signal.
+  [`rlang::check_dots_empty()`](https://rlang.r-lib.org/reference/check_dots_empty.html)
+  now runs as the first statement of the body and names the offending
+  argument. `...` itself is retained deliberately: the three arguments
+  that follow it (`alpha_couple`, `precomputed_Omega`,
+  `precomputed_Omega_s`) are exact-match-only because of it, and
+  removing it would make `precomputed_Omega` a partial-match prefix of
+  `precomputed_Omega_s`.
+
+- **[`sigma_heuristic()`](https://pbenavidesh.github.io/psvr/reference/sigma_heuristic.md)
+  no longer hijacks the caller’s RNG stream.** When `seed` was supplied
+  it called [`set.seed()`](https://rdrr.io/r/base/Random.html) and never
+  restored `.Random.seed`, so every random draw after it was silently
+  re-anchored to that seed. Reachable from
+  [`sigma_heuristic()`](https://pbenavidesh.github.io/psvr/reference/sigma_heuristic.md),
+  [`rbf_sigma_psvr_data()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr_data.md),
+  and
+  [`psvr_option_add()`](https://pbenavidesh.github.io/psvr/reference/psvr_option_add.md).
+  The prior state is now saved and restored via
+  [`on.exit()`](https://rdrr.io/r/base/on.exit.html) (and removed again
+  if the session had not yet drawn). The subsample stays reproducible;
+  the caller’s stream is untouched. Behaviour is unchanged for the
+  default `seed = NULL`, which never set a seed to begin with.
+
+- **`psvr_cv(verbose = TRUE)` reports progress via
+  [`message()`](https://rdrr.io/r/base/message.html), not
+  [`cat()`](https://rdrr.io/r/base/cat.html).** The per-fold line went
+  to stdout, could not be muffled with
+  [`suppressMessages()`](https://rdrr.io/r/base/message.html), and
+  polluted captured output. It now matches the
+  [`message()`](https://rdrr.io/r/base/message.html) already used for
+  the Theorem 5 × Theorem 7 note in the same function.
+
 ### New features
 
 - **[`fitted()`](https://rdrr.io/r/stats/fitted.values.html) and

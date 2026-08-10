@@ -26,7 +26,9 @@ sigma_heuristic(X, sample_size = 500L, seed = NULL)
 
 - seed:
 
-  Integer seed for the subsample. Default `NULL`.
+  Integer seed for the subsample. Default `NULL`. The caller's RNG
+  stream is restored on exit, so passing `seed` makes the subsample
+  reproducible without affecting the caller's subsequent random draws.
 
 ## Value
 

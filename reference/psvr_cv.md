@@ -53,7 +53,9 @@ psvr_cv(
 
 - verbose:
 
-  Logical; if `TRUE`, print per-fold progress.
+  Logical; if `TRUE`, report per-fold progress via
+  [`message()`](https://rdrr.io/r/base/message.html) (suppressible with
+  [`suppressMessages()`](https://rdrr.io/r/base/message.html)).
 
 ## Value
 
