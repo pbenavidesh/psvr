@@ -50,10 +50,13 @@ dev/check_core
 dev/check_core.exe
 dev/bench-F7-output.txt
 
+# Session audit output — dev/ is otherwise tracked, so ignore the subdir only.
+dev/audit/
+
 # Local-only package status / planning file. Contains unpublished research
 # direction (roadmap, parked research track, thesis cross-references) and is
 # deliberately not part of the public repo.
-PSVR_STATUS.md
+PSVR_STATUS.md*
 
 # Rcpp compiled artefacts (regenerable from src/*.cpp + Rcpp::compileAttributes)
 src/*.o
