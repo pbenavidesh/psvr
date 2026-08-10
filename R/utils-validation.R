@@ -27,7 +27,42 @@
   invisible(NULL)
 }
 
+# Validate the warm-start vectors for psvr_mape().
+#
+# This is the whole of what the epsilon-SVR entry point adds over its fitters:
+# .fit_mape() / .fit_mape_sym() already check y > 0, C > 0, eps >= 0 and
+# a in {-1, 1} themselves, and duplicating those here would be drift.
+#
+# There is deliberately NO .validate_rmspe_inputs() sibling. The LS-SVR entry
+# point adds nothing its fitters do not already check except the presence of
+# `gamma` and `kernel` -- and presence is tested with missing(), which only
+# works in the frame that owns the formal and therefore cannot be delegated to
+# a helper at all. A one-line rmspe validator would have been a wrapper around
+# nothing.
+#
+# Message wording is load-bearing: test-warm-start.R matches on the substrings
+# "finite numeric" and "length nrow(X)".
+.validate_mape_inputs <- function(X, alpha_init = NULL, alpha_star_init = NULL) {
+  if (is.null(alpha_init) && is.null(alpha_star_init)) return(invisible(NULL))
+
+  N <- nrow(X)
+  chk <- function(v, nm) {
+    if (is.null(v)) return(invisible(NULL))
+    if (!is.numeric(v) || length(v) != N || any(!is.finite(v)))
+      stop(sprintf("`%s` must be a finite numeric vector of length nrow(X).", nm),
+           call. = FALSE)
+    invisible(NULL)
+  }
+  chk(alpha_init,      "alpha_init")
+  chk(alpha_star_init, "alpha_star_init")
+  invisible(NULL)
+}
+
 # Validate inputs for the unified psvr() entry point. Used in Step 4+.
+# SUPERSEDED by .validate_mape_inputs() above: psvr() is its only caller, and
+# both are deleted in the next commit. The cross-loss warning machinery has no
+# successor because psvr_mape() and psvr_rmspe() cannot receive each other's
+# arguments at all.
 #
 # `passed` is a named logical vector of `missing()` flags from psvr()'s frame:
 # TRUE means the user supplied that argument (so a cross-loss mismatch should

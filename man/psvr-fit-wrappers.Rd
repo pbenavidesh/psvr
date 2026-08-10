@@ -73,7 +73,7 @@ psvr_rmspe_linear_fit(x, y, gamma, sym_type = "none", precondition = "auto")
 
 \item{eps}{Epsilon tube half-width for MAPE models.}
 
-\item{rbf_sigma}{RBF bandwidth σ > 0.}
+\item{rbf_sigma}{RBF bandwidth \eqn{\sigma > 0}{sigma > 0}.}
 
 \item{sym_type}{Symmetry type. \code{"none"} (the default) dispatches to the
 non-symmetric fitter; \code{"even"} and \code{"odd"} dispatch to the symmetric
@@ -82,22 +82,26 @@ fitter with \code{a = 1L} and \code{a = -1L} respectively.}
 \item{tol}{Solver convergence tolerance for the SMO loop. Default \code{1e-3}.}
 
 \item{max_iter}{Maximum SMO iterations. Default \code{100000L}. The solver
-emits a \code{warning()} and returns \code{solver_meta$converged = FALSE} if it
+emits a \code{warning()} and returns \code{converged = FALSE} if it
 does not converge within \code{max_iter}.}
 
-\item{degree}{Polynomial degree ≥ 1.}
+\item{degree}{Polynomial degree \eqn{\ge 1}{>= 1}.}
 
-\item{scale_factor}{Polynomial constant term (coef₀).}
+\item{scale_factor}{Polynomial constant term
+(\eqn{\mathrm{coef}_0}{coef0}).}
 
 \item{gamma}{Regularization parameter for RMSPE models.}
 
 \item{precondition}{Optional symmetric rescaling preconditioner for the
-RMSPE LS-SVR fitters. See \code{\link[=psvr]{psvr()}} for accepted values and semantics.}
+RMSPE LS-SVR fitters. See \code{\link[=psvr_rmspe]{psvr_rmspe()}} for accepted values and
+semantics.}
 }
 \value{
-A fitted model object of the legacy S3 class matching the wrapper's
-model family. These are the pre-\code{\link[=psvr]{psvr()}} object shapes, returned
-unmodified from the internal fitter; they are \strong{not} \code{psvr_fit} objects.
+A fitted model object of the S3 class matching the wrapper's
+model family, returned unmodified from the internal fitter. These are the
+same classes \code{\link[=psvr_mape]{psvr_mape()}} and \code{\link[=psvr_rmspe]{psvr_rmspe()}} return, so a parsnip fit
+unwrapped with \code{\link[parsnip:reexports]{parsnip::extract_fit_engine()}} and a directly fitted
+object are interchangeable.
 \strong{Which class is returned depends on \code{sym_type}}, since each wrapper
 dispatches to the symmetric or non-symmetric fitter.
 
@@ -121,6 +125,7 @@ class \code{"psvr_rmspe_sym"}: the same components plus \code{a}.
 \description{
 Bridge functions called by parsnip when fitting psvr model specs.
 Exported only because parsnip's resolver requires it; not intended
-for direct use. Call \code{\link[=psvr]{psvr()}} instead for direct fitting.
+for direct use. Call \code{\link[=psvr_mape]{psvr_mape()}} or \code{\link[=psvr_rmspe]{psvr_rmspe()}} instead for direct
+fitting.
 }
 \keyword{internal}

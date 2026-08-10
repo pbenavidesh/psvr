@@ -7,12 +7,14 @@
 \method{predict}{psvr_rmspe_sym}(object, newdata, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"psvr_rmspe_sym"}, as returned by the parsnip
-engine fit wrappers with \code{sym_type = "even"} or \code{"odd"} (see
-\link{psvr-fit-wrappers}; \code{sym_type = "none"} yields \code{"psvr_rmspe"} instead).
-Unwrap a parsnip fit with \code{\link[parsnip:reexports]{parsnip::extract_fit_engine()}} to obtain it.}
+\item{object}{An object of class \code{"psvr_rmspe_sym"}, as returned by
+\code{\link[=psvr_rmspe]{psvr_rmspe()}} with \code{sym_type = "even"} or \code{"odd"}, or by the parsnip
+engine fit wrappers (see \link{psvr-fit-wrappers}; \code{sym_type = "none"} yields
+\code{"psvr_rmspe"} instead). Unwrap a parsnip fit with
+\code{\link[parsnip:reexports]{parsnip::extract_fit_engine()}} to obtain it.}
 
-\item{newdata}{Numeric matrix of new inputs, one observation per row (M × p).}
+\item{newdata}{Numeric matrix of new inputs, one observation per row
+(\eqn{M \times p}{M x p}).}
 
 \item{...}{Ignored.}
 }
@@ -20,8 +22,9 @@ Unwrap a parsnip fit with \code{\link[parsnip:reexports]{parsnip::extract_fit_en
 Numeric vector of length M with predicted values.
 }
 \description{
-Method dispatched on the legacy \code{"psvr_rmspe_sym"} class, which the parsnip
-engine fit wrappers return. Uses the symmetric representer
-\verb{f(x) = Σₖ αₖ · ½(K(xₖ, x) + a·K(xₖ, -x)) + b}. For direct fitting use
-\code{\link[=psvr]{psvr()}}.
+Method dispatched on the \code{"psvr_rmspe_sym"} class, which both \code{\link[=psvr_rmspe]{psvr_rmspe()}}
+and the parsnip engine fit wrappers return. Uses the symmetric representer
+\deqn{f(x) = \sum_k \alpha_k \cdot
+             \tfrac{1}{2}\left(K(x_k, x) + a K(x_k, -x)\right) + b}{%
+      f(x) = sum_k alpha_k * 0.5 * (K(x_k, x) + a * K(x_k, -x)) + b}
 }

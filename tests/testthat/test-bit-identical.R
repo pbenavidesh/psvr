@@ -53,18 +53,23 @@ HP <- list(
 # These four are also byte-for-byte duplicates of test-psvr-direct.R's four RBF
 # tests -- same call, same fixture, same 244-char serialized payload. Also
 # DELIBERATE: they are the ONLY record tying the pre-refactor numerics to the
-# OLD API. test-psvr-direct.R proves psvr() matches a value; it does not prove
-# mape_svr() ever produced it. Deleting these as "redundant" throws that away.
+# OLD API. test-psvr-direct.R proves the current entry point matches a value; it
+# does not prove mape_svr() ever produced it. Deleting these as "redundant"
+# throws that away.
 #
-# `sym = HP$a` (HP$a = 1L) reproduces what the deleted wrappers' `a = HP$a` did:
-# psvr() maps sym -> a via as.integer() (R/psvr-main.R:195).
+# Symmetry vocabulary, third and final spelling. The deleted wrappers took
+# `a = HP$a` (HP$a = 1L); psvr() took `sym = HP$a` and mapped it via
+# as.integer(); psvr_mape() / psvr_rmspe() take `sym_type = "even"` and map it
+# via .sym_type_to_a() (R/parsnip.R:27). All three reach a = 1L, which is why
+# the payloads below have never moved. The parsnip half of this file has said
+# `sym_type = "even"` since stage 1, so the two halves now agree.
 
 test_that("Model 1 mape_svr (RBF) — direct golden", {
   skip_on_cran()
   fx  <- make_fixture()
   K   <- make_kernel("rbf", sigma = HP$rbf_sigma)
   fit <- suppressWarnings(
-    psvr(fx$X, fx$y, loss = "mape", kernel = K, C = HP$C, eps = HP$eps)
+    psvr_mape(fx$X, fx$y, kernel = K, C = HP$C, eps = HP$eps)
   )
   preds <- predict(fit, fx$X_test)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
@@ -75,8 +80,8 @@ test_that("Model 2 mape_sym_svr (RBF) — direct golden", {
   fx  <- make_fixture()
   K   <- make_kernel("rbf", sigma = HP$rbf_sigma)
   fit <- suppressWarnings(
-    psvr(fx$X, fx$y, loss = "mape", sym = HP$a, kernel = K,
-         C = HP$C, eps = HP$eps)
+    psvr_mape(fx$X, fx$y, sym_type = "even", kernel = K,
+              C = HP$C, eps = HP$eps)
   )
   preds <- predict(fit, fx$X_test)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
@@ -87,7 +92,7 @@ test_that("Model 3 rmspe_lssvr (RBF) — direct golden", {
   fx  <- make_fixture()
   K   <- make_kernel("rbf", sigma = HP$rbf_sigma)
   fit <- suppressWarnings(
-    psvr(fx$X, fx$y, loss = "rmspe", kernel = K, gamma = HP$gamma)
+    psvr_rmspe(fx$X, fx$y, kernel = K, gamma = HP$gamma)
   )
   preds <- predict(fit, fx$X_test)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
@@ -98,8 +103,8 @@ test_that("Model 4 rmspe_sym_lssvr (RBF) — direct golden", {
   fx  <- make_fixture()
   K   <- make_kernel("rbf", sigma = HP$rbf_sigma)
   fit <- suppressWarnings(
-    psvr(fx$X, fx$y, loss = "rmspe", sym = HP$a, kernel = K,
-         gamma = HP$gamma)
+    psvr_rmspe(fx$X, fx$y, sym_type = "even", kernel = K,
+               gamma = HP$gamma)
   )
   preds <- predict(fit, fx$X_test)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)

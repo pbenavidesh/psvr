@@ -60,15 +60,15 @@ optimize.  (Polynomial specs only.)}
 A parsnip \code{model_spec} object of the corresponding class.
 }
 \description{
-Create parsnip model specifications for \code{\link[=psvr]{psvr()}} with a fixed kernel
-type.  \code{cost} maps to the regularization parameter \code{Γ}.
+Create parsnip model specifications for \code{\link[=psvr_rmspe]{psvr_rmspe()}} with a fixed kernel
+type.  \code{cost} maps to the regularization parameter \eqn{\Gamma}{Gamma}.
 }
 \section{Engine arguments}{
 
-The \code{precondition} argument of \code{\link[=psvr]{psvr()}} is exposed as a non-tunable
+The \code{precondition} argument of \code{\link[=psvr_rmspe]{psvr_rmspe()}} is exposed as a non-tunable
 engine argument. Pass it via \code{\link[parsnip:set_engine]{parsnip::set_engine()}}, e.g.
 \code{set_engine("psvr", precondition = "always")}. Default is \code{"auto"}. See
-\code{\link[=psvr]{psvr()}} for accepted values and semantics.
+\code{\link[=psvr_rmspe]{psvr_rmspe()}} for accepted values and semantics.
 }
 
 \examples{

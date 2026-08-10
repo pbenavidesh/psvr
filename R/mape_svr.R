@@ -1,10 +1,10 @@
 #' Fit epsilon-SVR with MAPE loss (Model 1) — internal
 #'
-#' Internal fitter for the MAPE epsilon-SVR family. Use [psvr()] with
-#' `loss = "mape"` instead. Returns the legacy `psvr_mape` shape, which is also
-#' what the parsnip engine fit wrappers return.
+#' Internal fitter for the MAPE epsilon-SVR family. Use [psvr_mape()] instead.
+#' Returns the `psvr_mape` shape, which is what [psvr_mape()] and the parsnip
+#' engine fit wrappers both return.
 #'
-#' @param X,y,kernel,C,eps,solver,tol See [psvr()].
+#' @param X,y,kernel,C,eps,solver,tol See [psvr_mape()].
 #' @param alpha_init,alpha_star_init Optional length-N numeric warm-start
 #'   vectors (Theorem 5); `NULL` cold-starts.
 #' @param warm_start_check Logical; if `TRUE`, validate the post-projection
@@ -187,15 +187,16 @@
 
 #' Predict from a fitted epsilon-SVR with MAPE model
 #'
-#' Method dispatched on the legacy `"psvr_mape"` class, which the parsnip engine
-#' fit wrappers return. For direct fitting use [psvr()], which returns a
-#' `"psvr_fit"` object dispatched by [predict.psvr_fit()].
+#' Method dispatched on the `"psvr_mape"` class, which both [psvr_mape()] and
+#' the parsnip engine fit wrappers return.
 #'
-#' @param object An object of class `"psvr_mape"`, as returned by the parsnip
-#'   engine fit wrappers with `sym_type = "none"` (see [psvr-fit-wrappers];
-#'   `sym_type = "even"` or `"odd"` yields `"psvr_mape_sym"` instead). Unwrap a
-#'   parsnip fit with [parsnip::extract_fit_engine()] to obtain it.
-#' @param newdata Numeric matrix of new inputs, one observation per row (M × p).
+#' @param object An object of class `"psvr_mape"`, as returned by [psvr_mape()]
+#'   with `sym_type = "none"` or by the parsnip engine fit wrappers (see
+#'   [psvr-fit-wrappers]; `sym_type = "even"` or `"odd"` yields
+#'   `"psvr_mape_sym"` instead). Unwrap a parsnip fit with
+#'   [parsnip::extract_fit_engine()] to obtain it.
+#' @param newdata Numeric matrix of new inputs, one observation per row
+#'   (\eqn{M \times p}{M x p}).
 #' @param ... Ignored.
 #'
 #' @return Numeric vector of length M with predicted values.
@@ -235,24 +236,33 @@ print.psvr_mape <- function(x, ...) {
 #' @param object An object of class `"psvr_mape"`.
 #' @param ... Ignored.
 #'
-#' @return A named list with the same component names and meanings as
-#'   [coef.psvr_fit()] on a `loss = "mape"` fit, so the two entry points agree:
+#' @return A named list with five components:
 #'   \describe{
 #'     \item{`alpha`, `alpha_star`}{The length-`N` pre-pruning dual variables
-#'       `αk` and `αk*`.}
-#'     \item{`beta`}{The pruned dual differences `βk = αk − αk*` over the
-#'       support-vector indices (length `n_sv`); this is what `predict()` uses.}
+#'       \eqn{\alpha_k}{alpha_k} and \eqn{\alpha^*_k}{alpha_star_k}.}
+#'     \item{`beta`}{The pruned dual differences
+#'       \eqn{\beta_k = \alpha_k - \alpha^*_k}{beta_k = alpha_k - alpha_star_k}
+#'       over the support-vector indices (length `n_sv`); this is what
+#'       `predict()` uses.}
 #'     \item{`b`}{Bias term.}
 #'     \item{`support_data`}{Support vector input matrix.}
 #'   }
 #'
+#'   The LS-SVR classes return **three** components rather than five, since
+#'   they have no `alpha_star` and no pruned `beta`; the absent components are
+#'   not materialised as `NULL`. So `names(coef(fit))` depends on the model
+#'   family. That is deliberate: each class is family-specific, and inventing
+#'   empty slots to make the two agree would add structure with nothing to
+#'   inherit it from.
+#'
 #' @section Renamed in 0.0.2.9011:
-#' `alpha` previously held the pruned `β` and `support_data` was named `X_sv`,
-#' which made `coef(fit)$alpha` mean the length-`n_sv` `β` here but the
-#' length-`N` dual `α` on a [psvr()] fit — the same generic returning two
-#' different vectors under one name, silently, depending on entry point. The
-#' `β`-under-`alpha` meaning is the one 0.0.2.9004 moved away from on the object
-#' itself; this aligns `coef()` with it.
+#' `alpha` previously held the pruned \eqn{\beta}{beta} and `support_data` was
+#' named `X_sv`, which made `coef(fit)$alpha` mean the length-`n_sv`
+#' \eqn{\beta}{beta} here but the length-`N` dual \eqn{\alpha}{alpha} on a fit
+#' from the superseded `psvr()`: one generic returning two different vectors under
+#' one name, silently, depending on entry point. The
+#' \eqn{\beta}{beta}-under-`alpha` meaning is the one 0.0.2.9004 moved away
+#' from on the object itself; this aligns `coef()` with it.
 #'
 #' @export
 coef.psvr_mape <- function(object, ...) {

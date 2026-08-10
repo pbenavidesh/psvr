@@ -20,7 +20,8 @@
       paste0("`%s()` needs the training targets and fitted values, which this ",
              "%s object\ndoes not carry: it was fitted with psvr < 0.0.2.9010, ",
              "before those fields were added.\nRefit the model with the current ",
-             "version to use %s(), e.g. `fit <- psvr(X, y, ...)`."),
+             "version to use %s(), e.g. `fit <- psvr_mape(X, y, ...)` or ",
+             "`psvr_rmspe(X, y, ...)`."),
       what, class(object)[1L], what),
       call. = FALSE)
   }
@@ -97,9 +98,10 @@
 #' parsnip's class. Note also that `parsnip::augment()` recomputes predictions
 #' on whatever `new_data` it is given and reports response residuals only.
 #'
-#' @param object A `"psvr_fit"` object from [psvr()], or one of the legacy
-#'   `"psvr_mape"`, `"psvr_mape_sym"`, `"psvr_rmspe"`, `"psvr_rmspe_sym"`
-#'   objects from the deprecated fitters.
+#' @param object A fitted object of class `"psvr_mape"`, `"psvr_mape_sym"`,
+#'   `"psvr_rmspe"` or `"psvr_rmspe_sym"`, from [psvr_mape()], [psvr_rmspe()],
+#'   or a parsnip fit unwrapped with [parsnip::extract_fit_engine()]. Also
+#'   accepts a `"psvr_fit"` object from the superseded [psvr()].
 #' @param ... Ignored.
 #'
 #' @return Numeric vector of length `N` (the number of training
@@ -111,7 +113,7 @@
 #' set.seed(1)
 #' X <- matrix(runif(40, 0.5, 3), 20, 2)
 #' y <- 2 + X[, 1]^2
-#' fit <- psvr(X, y, loss = "rmspe", kernel = make_kernel("rbf"), gamma = 100)
+#' fit <- psvr_rmspe(X, y, kernel = make_kernel("rbf"), gamma = 100)
 #' head(fitted(fit))
 #'
 #' # Through parsnip both generics return NULL on the model_fit wrapper;
@@ -191,9 +193,10 @@ fitted.psvr_fit <- function(object, ...) .psvr_fitted(object)
 #' on whatever `new_data` it is given and reports response residuals only, so
 #' it is not a substitute for the `"percentage"` and `"multiplicative"` types.
 #'
-#' @param object A `"psvr_fit"` object from [psvr()], or one of the legacy
-#'   `"psvr_mape"`, `"psvr_mape_sym"`, `"psvr_rmspe"`, `"psvr_rmspe_sym"`
-#'   objects from the deprecated fitters.
+#' @param object A fitted object of class `"psvr_mape"`, `"psvr_mape_sym"`,
+#'   `"psvr_rmspe"` or `"psvr_rmspe_sym"`, from [psvr_mape()], [psvr_rmspe()],
+#'   or a parsnip fit unwrapped with [parsnip::extract_fit_engine()]. Also
+#'   accepts a `"psvr_fit"` object from the superseded [psvr()].
 #' @param type One of `"response"` (default), `"percentage"`, or
 #'   `"multiplicative"`. See above; the denominators differ.
 #' @param ... Ignored.
@@ -207,7 +210,7 @@ fitted.psvr_fit <- function(object, ...) .psvr_fitted(object)
 #' set.seed(1)
 #' X <- matrix(runif(40, 0.5, 3), 20, 2)
 #' y <- 2 + X[, 1]^2
-#' fit <- psvr(X, y, loss = "rmspe", kernel = make_kernel("rbf"), gamma = 100)
+#' fit <- psvr_rmspe(X, y, kernel = make_kernel("rbf"), gamma = 100)
 #' head(residuals(fit))
 #' mean(abs(residuals(fit, type = "percentage"))) * 100   # training MAPE
 #'

@@ -18,7 +18,9 @@ A named list with components:
 \item{\code{b}}{Bias term.}
 \item{\code{support_data}}{Training input matrix (all N observations).}
 }
-The names match \code{\link[=coef.psvr_fit]{coef.psvr_fit()}} on a \code{loss = "rmspe"} fit.
+Three components, not the five the MAPE classes return: LS-SVR has no
+\code{alpha_star} and no pruned \code{beta}, and they are not materialised as
+\code{NULL}. See \code{\link[=coef.psvr_rmspe]{coef.psvr_rmspe()}}.
 }
 \description{
 Extract coefficients from a psvr_rmspe_sym model

@@ -6,13 +6,13 @@ make_data <- function(N = 40L, p = 2L, seed = 11L) {
   list(X = X, y = 2 + X[, 1]^2 + 0.5 * X[, 2] + abs(rnorm(N, 0, 0.15)))
 }
 
-# The four models as psvr() calls, keyed by label.
+# The four models, keyed by label.
 fit_all <- function(d, K = make_kernel("rbf", sigma = 0.8)) {
   suppressWarnings(list(
-    M1 = psvr(d$X, d$y, loss = "mape",  kernel = K, C = 1, eps = 0.1),
-    M2 = psvr(d$X, d$y, loss = "mape",  kernel = K, C = 1, eps = 0.1, sym = 1L),
-    M3 = psvr(d$X, d$y, loss = "rmspe", kernel = K, gamma = 10),
-    M4 = psvr(d$X, d$y, loss = "rmspe", kernel = K, gamma = 10, sym = 1L)
+    M1 = psvr_mape(d$X, d$y, kernel = K, C = 1, eps = 0.1),
+    M2 = psvr_mape(d$X, d$y, kernel = K, C = 1, eps = 0.1, sym_type = "even"),
+    M3 = psvr_rmspe(d$X, d$y, kernel = K, gamma = 10),
+    M4 = psvr_rmspe(d$X, d$y, kernel = K, gamma = 10, sym_type = "even")
   ))
 }
 
@@ -92,10 +92,10 @@ test_that("fitted()/predict() agreement holds under the LS-SVR preconditioner", 
   y <- exp(rnorm(30, 1, 1.5))                    # max(y)/min(y) >> 10
   K <- make_kernel("rbf", sigma = 0.8)
   for (pc in c("always", "never")) {
-    for (s in list(NULL, 1L)) {
-      f <- psvr(X, y, loss = "rmspe", kernel = K, gamma = 10,
-                sym = s, precondition = pc)
-      expect_true(identical(f$solver_meta$precondition_applied, pc == "always"))
+    for (s in c("none", "even")) {
+      f <- psvr_rmspe(X, y, kernel = K, gamma = 10,
+                      sym_type = s, precondition = pc)
+      expect_true(identical(f$precondition_applied, pc == "always"))
       expect_equal(fitted(f), predict(f, X), tolerance = 1e-9)
     }
   }
@@ -106,7 +106,7 @@ test_that("fitted() agrees with predict() across kernels", {
   for (K in list(make_kernel("rbf", sigma = 0.8),
                  make_kernel("linear"),
                  make_kernel("polynomial", degree = 2L, coef0 = 1))) {
-    f <- psvr(d$X, d$y, loss = "rmspe", kernel = K, gamma = 10)
+    f <- psvr_rmspe(d$X, d$y, kernel = K, gamma = 10)
     expect_equal(fitted(f), predict(f, d$X), tolerance = 1e-9)
   }
 })
@@ -159,8 +159,8 @@ test_that("the four legacy classes support fitted() and residuals()", {
   d <- make_data()
   N <- length(d$y)
   K <- make_kernel("rbf", sigma = 0.8)
-  # The internal fitters, not psvr(): these four classes are what the parsnip
-  # engine fit wrappers return, and psvr() returns psvr_fit instead.
+  # The internal fitters, not the public entry points: same classes, one
+  # layer down. This is what parsnip::extract_fit_engine() hands back.
   legacy <- suppressWarnings(list(
     psvr_mape      = psvr:::.fit_mape(d$X, d$y, K, C = 1, eps = 0.1),
     psvr_mape_sym  = psvr:::.fit_mape_sym(d$X, d$y, K, C = 1, eps = 0.1, a = 1L),

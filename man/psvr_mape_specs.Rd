@@ -69,7 +69,7 @@ optimize.  (Polynomial specs only.)}
 A parsnip \code{model_spec} object of the corresponding class.
 }
 \description{
-Create parsnip model specifications for \code{\link[=psvr]{psvr()}} with a fixed kernel
+Create parsnip model specifications for \code{\link[=psvr_mape]{psvr_mape()}} with a fixed kernel
 type.  Kernel parameters are tunable parsnip arguments; the symmetry
 parameter \code{a} and solver tolerance are engine arguments passed via
 \code{set_engine()}.

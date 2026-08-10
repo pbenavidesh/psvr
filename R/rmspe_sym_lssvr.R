@@ -1,18 +1,19 @@
 #' Fit symmetric LS-SVR with RMSPE loss (Model 4) — internal
 #'
-#' Internal fitter for the symmetric RMSPE LS-SVR family. Use [psvr()]
-#' with `loss = "rmspe"` and `sym = +1L` / `-1L` instead. Returns the
-#' legacy `psvr_rmspe_sym` shape, which is also what the parsnip engine fit
-#' wrappers return with `sym_type = "even"` / `"odd"`. The kernel must
+#' Internal fitter for the symmetric RMSPE LS-SVR family. Use [psvr_rmspe()]
+#' with `sym_type = "even"` / `"odd"` instead. Returns the `psvr_rmspe_sym`
+#' shape, which is what [psvr_rmspe()] and the parsnip engine fit wrappers both
+#' return with `sym_type = "even"` / `"odd"`. The kernel must
 #' satisfy Assumption 3 of the paper (kernel symmetry); see [make_kernel()].
 #'
-#' @param X,y,kernel,gamma,precondition See [psvr()] for the full semantics of
-#'   each argument (including the Remark-17 preconditioner).
-#' @param a Symmetry type: `1` (even) or `-1` (odd). Corresponds to
-#'   `psvr(sym = +1L)` and `psvr(sym = -1L)` respectively; `psvr()` has no `a`
-#'   argument of its own.
+#' @param X,y,kernel,gamma,precondition See [psvr_rmspe()] for the full
+#'   semantics of each argument (including the Remark-17 preconditioner).
+#' @param a Symmetry type: `1` (even) or `-1` (odd). This is the internal
+#'   integer; the public argument is `sym_type`, with `"even"` mapping to
+#'   `a = 1` and `"odd"` to `a = -1`. Neither [psvr_rmspe()] nor the parsnip
+#'   specifications expose `a` directly.
 #'
-#' @return A list of class `"psvr_rmspe_sym"` (legacy shape).
+#' @return A list of class `"psvr_rmspe_sym"`.
 #'
 #' @keywords internal
 .fit_rmspe_sym <- function(X, y, kernel, gamma, a = 1, precondition = "auto") {
@@ -82,16 +83,19 @@
 
 #' Predict from a fitted symmetric LS-SVR with RMSPE model
 #'
-#' Method dispatched on the legacy `"psvr_rmspe_sym"` class, which the parsnip
-#' engine fit wrappers return. Uses the symmetric representer
-#' `f(x) = Σₖ αₖ · ½(K(xₖ, x) + a·K(xₖ, -x)) + b`. For direct fitting use
-#' [psvr()].
+#' Method dispatched on the `"psvr_rmspe_sym"` class, which both [psvr_rmspe()]
+#' and the parsnip engine fit wrappers return. Uses the symmetric representer
+#' \deqn{f(x) = \sum_k \alpha_k \cdot
+#'              \tfrac{1}{2}\left(K(x_k, x) + a K(x_k, -x)\right) + b}{%
+#'       f(x) = sum_k alpha_k * 0.5 * (K(x_k, x) + a * K(x_k, -x)) + b}
 #'
-#' @param object An object of class `"psvr_rmspe_sym"`, as returned by the parsnip
-#'   engine fit wrappers with `sym_type = "even"` or `"odd"` (see
-#'   [psvr-fit-wrappers]; `sym_type = "none"` yields `"psvr_rmspe"` instead).
-#'   Unwrap a parsnip fit with [parsnip::extract_fit_engine()] to obtain it.
-#' @param newdata Numeric matrix of new inputs, one observation per row (M × p).
+#' @param object An object of class `"psvr_rmspe_sym"`, as returned by
+#'   [psvr_rmspe()] with `sym_type = "even"` or `"odd"`, or by the parsnip
+#'   engine fit wrappers (see [psvr-fit-wrappers]; `sym_type = "none"` yields
+#'   `"psvr_rmspe"` instead). Unwrap a parsnip fit with
+#'   [parsnip::extract_fit_engine()] to obtain it.
+#' @param newdata Numeric matrix of new inputs, one observation per row
+#'   (\eqn{M \times p}{M x p}).
 #' @param ... Ignored.
 #'
 #' @return Numeric vector of length M with predicted values.
@@ -141,7 +145,9 @@ print.psvr_rmspe_sym <- function(x, ...) {
 #'     \item{`b`}{Bias term.}
 #'     \item{`support_data`}{Training input matrix (all N observations).}
 #'   }
-#'   The names match [coef.psvr_fit()] on a `loss = "rmspe"` fit.
+#'   Three components, not the five the MAPE classes return: LS-SVR has no
+#'   `alpha_star` and no pruned `beta`, and they are not materialised as
+#'   `NULL`. See [coef.psvr_rmspe()].
 #'
 #' @section Renamed in 0.0.2.9011:
 #' See [coef.psvr_rmspe()] — the same rename, for the same reason, applied to

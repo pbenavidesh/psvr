@@ -19,9 +19,10 @@
 \method{residuals}{psvr_rmspe_sym}(object, type = c("response", "percentage", "multiplicative"), ...)
 }
 \arguments{
-\item{object}{A \code{"psvr_fit"} object from \code{\link[=psvr]{psvr()}}, or one of the legacy
-\code{"psvr_mape"}, \code{"psvr_mape_sym"}, \code{"psvr_rmspe"}, \code{"psvr_rmspe_sym"}
-objects from the deprecated fitters.}
+\item{object}{A fitted object of class \code{"psvr_mape"}, \code{"psvr_mape_sym"},
+\code{"psvr_rmspe"} or \code{"psvr_rmspe_sym"}, from \code{\link[=psvr_mape]{psvr_mape()}}, \code{\link[=psvr_rmspe]{psvr_rmspe()}},
+or a parsnip fit unwrapped with \code{\link[parsnip:reexports]{parsnip::extract_fit_engine()}}. Also
+accepts a \code{"psvr_fit"} object from the superseded \code{\link[=psvr]{psvr()}}.}
 
 \item{type}{One of \code{"response"} (default), \code{"percentage"}, or
 \code{"multiplicative"}. See above; the denominators differ.}
@@ -103,7 +104,7 @@ it is not a substitute for the \code{"percentage"} and \code{"multiplicative"} t
 set.seed(1)
 X <- matrix(runif(40, 0.5, 3), 20, 2)
 y <- 2 + X[, 1]^2
-fit <- psvr(X, y, loss = "rmspe", kernel = make_kernel("rbf"), gamma = 100)
+fit <- psvr_rmspe(X, y, kernel = make_kernel("rbf"), gamma = 100)
 head(residuals(fit))
 mean(abs(residuals(fit, type = "percentage"))) * 100   # training MAPE
 

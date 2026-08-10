@@ -30,7 +30,7 @@ manual_cv <- function(folds, X_var, y_var, ...) {
     } else {
       alpha_init <- NULL; alpha_star_init <- NULL
     }
-    fit_i <- do.call(psvr, c(
+    fit_i <- do.call(psvr_mape, c(
       list(X = X_i, y = y_i,
            alpha_init = alpha_init,
            alpha_star_init = alpha_star_init),
@@ -57,21 +57,21 @@ test_that("psvr_cv() precomputed path produces bit-identical fits (non-sym)", {
 
   res_cv  <- suppressWarnings(psvr_cv(folds,
                                       X_var = c("x1", "x2", "x3"), y_var = "y",
-                                      loss = "mape", kernel = K, C = 10, eps = 5,
+                                      kernel = K, C = 10, eps = 5,
                                       warm_start = TRUE, verbose = FALSE))
   res_man <- suppressWarnings(manual_cv(folds,
                                         X_var = c("x1", "x2", "x3"), y_var = "y",
-                                        loss = "mape", kernel = K, C = 10, eps = 5))
+                                        kernel = K, C = 10, eps = 5))
 
   for (i in seq_along(res_man)) {
     expect_identical(res_cv$fit[[i]]$alpha,      res_man[[i]]$alpha)
     expect_identical(res_cv$fit[[i]]$alpha_star, res_man[[i]]$alpha_star)
     expect_identical(res_cv$fit[[i]]$beta,       res_man[[i]]$beta)
     expect_identical(res_cv$fit[[i]]$b,          res_man[[i]]$b)
-    expect_identical(res_cv$fit[[i]]$solver_meta$iters,
-                     res_man[[i]]$solver_meta$iters)
-    expect_identical(res_cv$fit[[i]]$solver_meta$converged,
-                     res_man[[i]]$solver_meta$converged)
+    expect_identical(res_cv$fit[[i]]$iterations,
+                     res_man[[i]]$iterations)
+    expect_identical(res_cv$fit[[i]]$converged,
+                     res_man[[i]]$converged)
   }
 })
 
@@ -88,20 +88,20 @@ test_that("psvr_cv() precomputed path produces bit-identical fits (sym = +1)", {
 
   res_cv  <- suppressWarnings(psvr_cv(folds,
                                       X_var = c("x1", "x2"), y_var = "y",
-                                      loss = "mape", sym = +1L,
+                                      sym_type = "even",
                                       kernel = K, C = 10, eps = 5,
                                       warm_start = TRUE, verbose = FALSE))
   res_man <- suppressWarnings(manual_cv(folds,
                                         X_var = c("x1", "x2"), y_var = "y",
-                                        loss = "mape", sym = +1L,
+                                        sym_type = "even",
                                         kernel = K, C = 10, eps = 5))
 
   for (i in seq_along(res_man)) {
     expect_identical(res_cv$fit[[i]]$alpha,      res_man[[i]]$alpha)
     expect_identical(res_cv$fit[[i]]$beta,       res_man[[i]]$beta)
     expect_identical(res_cv$fit[[i]]$b,          res_man[[i]]$b)
-    expect_identical(res_cv$fit[[i]]$solver_meta$iters,
-                     res_man[[i]]$solver_meta$iters)
+    expect_identical(res_cv$fit[[i]]$iterations,
+                     res_man[[i]]$iterations)
   }
 })
 
@@ -124,11 +124,11 @@ test_that("psvr_cv() list-of-tuples path still works (no precompute)", {
 
   res_list <- suppressWarnings(psvr_cv(folds_list,
                                        X_var = c("x1", "x2"), y_var = "y",
-                                       loss = "mape", kernel = K, C = 10, eps = 5,
+                                       kernel = K, C = 10, eps = 5,
                                        warm_start = TRUE))
   res_rset <- suppressWarnings(psvr_cv(folds_rset,
                                        X_var = c("x1", "x2"), y_var = "y",
-                                       loss = "mape", kernel = K, C = 10, eps = 5,
+                                       kernel = K, C = 10, eps = 5,
                                        warm_start = TRUE))
 
   # Both paths should agree bit-exactly because kernel_matrix() is

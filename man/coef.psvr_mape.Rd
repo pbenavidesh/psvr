@@ -12,27 +12,36 @@
 \item{...}{Ignored.}
 }
 \value{
-A named list with the same component names and meanings as
-\code{\link[=coef.psvr_fit]{coef.psvr_fit()}} on a \code{loss = "mape"} fit, so the two entry points agree:
+A named list with five components:
 \describe{
 \item{\code{alpha}, \code{alpha_star}}{The length-\code{N} pre-pruning dual variables
-\code{αk} and \verb{αk*}.}
-\item{\code{beta}}{The pruned dual differences \verb{βk = αk − αk*} over the
-support-vector indices (length \code{n_sv}); this is what \code{predict()} uses.}
+\eqn{\alpha_k}{alpha_k} and \eqn{\alpha^*_k}{alpha_star_k}.}
+\item{\code{beta}}{The pruned dual differences
+\eqn{\beta_k = \alpha_k - \alpha^*_k}{beta_k = alpha_k - alpha_star_k}
+over the support-vector indices (length \code{n_sv}); this is what
+\code{predict()} uses.}
 \item{\code{b}}{Bias term.}
 \item{\code{support_data}}{Support vector input matrix.}
 }
+
+The LS-SVR classes return \strong{three} components rather than five, since
+they have no \code{alpha_star} and no pruned \code{beta}; the absent components are
+not materialised as \code{NULL}. So \code{names(coef(fit))} depends on the model
+family. That is deliberate: each class is family-specific, and inventing
+empty slots to make the two agree would add structure with nothing to
+inherit it from.
 }
 \description{
 Extract coefficients from a psvr_mape model
 }
 \section{Renamed in 0.0.2.9011}{
 
-\code{alpha} previously held the pruned \code{β} and \code{support_data} was named \code{X_sv},
-which made \code{coef(fit)$alpha} mean the length-\code{n_sv} \code{β} here but the
-length-\code{N} dual \code{α} on a \code{\link[=psvr]{psvr()}} fit — the same generic returning two
-different vectors under one name, silently, depending on entry point. The
-\code{β}-under-\code{alpha} meaning is the one 0.0.2.9004 moved away from on the object
-itself; this aligns \code{coef()} with it.
+\code{alpha} previously held the pruned \eqn{\beta}{beta} and \code{support_data} was
+named \code{X_sv}, which made \code{coef(fit)$alpha} mean the length-\code{n_sv}
+\eqn{\beta}{beta} here but the length-\code{N} dual \eqn{\alpha}{alpha} on a fit
+from the superseded \code{psvr()}: one generic returning two different vectors under
+one name, silently, depending on entry point. The
+\eqn{\beta}{beta}-under-\code{alpha} meaning is the one 0.0.2.9004 moved away
+from on the object itself; this aligns \code{coef()} with it.
 }
 
