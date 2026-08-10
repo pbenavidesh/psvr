@@ -248,8 +248,8 @@ data.</p>
 <h2 id="inspecting-the-fitted-psvr-model">8 — Inspecting the fitted psvr model<a class="anchor" aria-label="anchor" href="#inspecting-the-fitted-psvr-model"></a>
 </h2>
 <p>The tidymodels layer wraps a <code>psvr_rmspe</code> object (returned
-by <code><a href="../reference/rmspe_lssvr.html">rmspe_lssvr()</a></code>). Extract it to use <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code>
-and <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code> directly.</p>
+by the engine fit wrapper <code><a href="../reference/psvr-fit-wrappers.html">psvr_rmspe_rbf_fit()</a></code>). Extract it
+to use <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> and <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code> directly.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># extract_fit_engine() unwraps the parsnip/workflow layer to the raw psvr object</span></span>
 <span><span class="va">psvr_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_fit_engine</a></span><span class="op">(</span><span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_workflow</a></span><span class="op">(</span><span class="va">final_fit</span><span class="op">)</span><span class="op">)</span></span>

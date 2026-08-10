@@ -199,8 +199,9 @@ predict(extract_workflow(final_fit), new_data = new_obs)
 
 ## 8 — Inspecting the fitted psvr model
 
-The tidymodels layer wraps a `psvr_rmspe` object (returned by
-[`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)).
+The tidymodels layer wraps a `psvr_rmspe` object (returned by the engine
+fit wrapper
+[`psvr_rmspe_rbf_fit()`](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md)).
 Extract it to use [`print()`](https://rdrr.io/r/base/print.html) and
 [`coef()`](https://rdrr.io/r/stats/coef.html) directly.
 
