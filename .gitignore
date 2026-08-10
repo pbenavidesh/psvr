@@ -67,3 +67,10 @@ src/*.o
 src/*.so
 src/*.dll
 src/symbols.rds
+
+# rmarkdown::render("README.Rmd") writes a preview alongside README.md when
+# github_document has html_preview enabled. README.Rmd sets html_preview:
+# false so it is no longer produced; this is belt-and-braces, because the file
+# reaching the tarball costs an R CMD check NOTE ("Non-standard file/directory
+# found at top level").
+README.html

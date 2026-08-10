@@ -1,13 +1,13 @@
 #' Fit LS-SVR with RMSPE loss (Model 3) — internal
 #'
-#' Internal fitter for the RMSPE LS-SVR family. Use [psvr()] with
-#' `loss = "rmspe"` instead. Returns the legacy `psvr_rmspe` shape, which is also
-#' what the parsnip engine fit wrappers return.
+#' Internal fitter for the RMSPE LS-SVR family. Use [psvr_rmspe()] instead.
+#' Returns the `psvr_rmspe` shape, which is what [psvr_rmspe()] and the parsnip
+#' engine fit wrappers both return.
 #'
-#' @param X,y,kernel,gamma,precondition See [psvr()] for the full semantics of
-#'   each argument (including the Remark-17 preconditioner).
+#' @param X,y,kernel,gamma,precondition See [psvr_rmspe()] for the full
+#'   semantics of each argument (including the Remark-17 preconditioner).
 #'
-#' @return A list of class `"psvr_rmspe"` (legacy shape).
+#' @return A list of class `"psvr_rmspe"`.
 #'
 #' @keywords internal
 .fit_rmspe <- function(X, y, kernel, gamma, precondition = "auto") {
@@ -77,14 +77,16 @@
 
 #' Predict from a fitted LS-SVR with RMSPE model
 #'
-#' Method dispatched on the legacy `"psvr_rmspe"` class, which the parsnip engine
-#' fit wrappers return. For direct fitting use [psvr()].
+#' Method dispatched on the `"psvr_rmspe"` class, which both [psvr_rmspe()] and
+#' the parsnip engine fit wrappers return.
 #'
-#' @param object An object of class `"psvr_rmspe"`, as returned by the parsnip
-#'   engine fit wrappers with `sym_type = "none"` (see [psvr-fit-wrappers];
-#'   `sym_type = "even"` or `"odd"` yields `"psvr_rmspe_sym"` instead). Unwrap a
-#'   parsnip fit with [parsnip::extract_fit_engine()] to obtain it.
-#' @param newdata Numeric matrix of new inputs, one observation per row (M × p).
+#' @param object An object of class `"psvr_rmspe"`, as returned by
+#'   [psvr_rmspe()] with `sym_type = "none"` or by the parsnip engine fit
+#'   wrappers (see [psvr-fit-wrappers]; `sym_type = "even"` or `"odd"` yields
+#'   `"psvr_rmspe_sym"` instead). Unwrap a parsnip fit with
+#'   [parsnip::extract_fit_engine()] to obtain it.
+#' @param newdata Numeric matrix of new inputs, one observation per row
+#'   (\eqn{M \times p}{M x p}).
 #' @param ... Ignored.
 #'
 #' @return Numeric vector of length M with predicted values.
@@ -133,10 +135,13 @@ print.psvr_rmspe <- function(x, ...) {
 #'     \item{`b`}{Bias term.}
 #'     \item{`support_data`}{Training input matrix (all N observations).}
 #'   }
-#'   The names match [coef.psvr_fit()] on a `loss = "rmspe"` fit. That method
-#'   additionally carries `alpha_star` and `beta` as `NULL`, because one class
-#'   serves both families; here they are simply absent, so `$alpha_star` and
-#'   `$beta` are `NULL` either way.
+#'   Three components, against five for the MAPE classes ([coef.psvr_mape()]):
+#'   LS-SVR has no `alpha_star` and no pruned `beta`, and they are **not**
+#'   materialised as `NULL`. So `names(coef(fit))` depends on the model family,
+#'   which is a decision rather than an oversight -- each class is
+#'   family-specific, and inventing empty slots to make the two agree would add
+#'   structure with nothing to inherit it from. `$alpha_star` and `$beta` yield
+#'   `NULL` on both, so every accessor still agrees.
 #'
 #' @section Renamed in 0.0.2.9011:
 #' `support_data` was named `X_sv`. LS-SVR performs no pruning — every training

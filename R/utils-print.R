@@ -1,6 +1,6 @@
 # Internal helper: build a human-readable kernel description from kernel_info.
-# Used by the four print.psvr_*() methods on the OLD classes and by
-# print.psvr_fit() on the unified class.
+# Used by the four print.psvr_*() and four summary.psvr_*() methods.
+
 .kernel_desc <- function(ki) {
   if (is.null(ki)) return("user-supplied function")
   switch(ki$type,

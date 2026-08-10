@@ -1,15 +1,16 @@
 #' Fit symmetric epsilon-SVR with MAPE loss (Model 2) — internal
 #'
-#' Internal fitter for the symmetric MAPE epsilon-SVR family. Use [psvr()]
-#' with `loss = "mape"` and `sym = +1L` / `-1L` instead. Returns the legacy
-#' `psvr_mape_sym` shape, which is also what the parsnip engine fit wrappers
+#' Internal fitter for the symmetric MAPE epsilon-SVR family. Use [psvr_mape()]
+#' with `sym_type = "even"` / `"odd"` instead. Returns the `psvr_mape_sym`
+#' shape, which is what [psvr_mape()] and the parsnip engine fit wrappers both
 #' return with `sym_type = "even"` / `"odd"`. The kernel must satisfy
 #' Assumption 3 of the paper; see [make_kernel()].
 #'
-#' @param X,y,kernel,C,eps,solver,tol See [psvr()].
-#' @param a Symmetry type: `1` (even) or `-1` (odd). Corresponds to
-#'   `psvr(sym = +1L)` and `psvr(sym = -1L)` respectively; `psvr()` has no `a`
-#'   argument of its own.
+#' @param X,y,kernel,C,eps,solver,tol See [psvr_mape()].
+#' @param a Symmetry type: `1` (even) or `-1` (odd). This is the internal
+#'   integer; the public argument is `sym_type`, with `"even"` mapping to
+#'   `a = 1` and `"odd"` to `a = -1`. Neither [psvr_mape()] nor the parsnip
+#'   specifications expose `a` directly.
 #' @param alpha_init,alpha_star_init Optional length-N numeric warm-start
 #'   vectors (Theorem 5); `NULL` cold-starts.
 #' @param warm_start_check Logical; if `TRUE`, validate the post-projection
@@ -204,9 +205,9 @@
       iterations = iterations,
       converged  = converged,
       # F3 — spectral diagnostics (Algorithm 2). psvr-main.R surfaces this
-      # under solver_meta$spectral on psvr_fit objects; the legacy
-      # mape_sym_svr() wrapper passes the legacy shape through unchanged,
-      # so callers of the deprecated API can still inspect $spectral.
+      # on the fit object as $spectral; before API-redesign stage 5 psvr()
+      # surfaced it under solver_meta$spectral instead. Callers of the
+      # parsnip wrappers have always seen it here.
       spectral   = spec[c("mu", "lambda_min_hat", "lambda_max_hat",
                           "branch_taken", "n_power_iterations")],
       block_k4   = block_k4       # F7 telemetry
@@ -217,16 +218,21 @@
 
 #' Predict from a fitted symmetric epsilon-SVR with MAPE model
 #'
-#' Method dispatched on the legacy `"psvr_mape_sym"` class, which the parsnip
-#' engine fit wrappers return. Uses the symmetric representer theorem
-#' `f(x) = ½ Σk βk Ks(xk, x) + b` with
-#' `Ks(xk, x) = K(xk, x) + a·K(xk, -x)`. For direct fitting use [psvr()].
+#' Method dispatched on the `"psvr_mape_sym"` class, which both [psvr_mape()]
+#' and the parsnip engine fit wrappers return. Uses the symmetric representer
+#' theorem
+#' \deqn{f(x) = \tfrac{1}{2}\sum_k \beta_k K_s(x_k, x) + b}{%
+#'       f(x) = 0.5 * sum_k beta_k Ks(x_k, x) + b}
+#' with \eqn{K_s(x_k, x) = K(x_k, x) + a K(x_k, -x)}{%
+#'           Ks(x_k, x) = K(x_k, x) + a * K(x_k, -x)}.
 #'
-#' @param object An object of class `"psvr_mape_sym"`, as returned by the parsnip
-#'   engine fit wrappers with `sym_type = "even"` or `"odd"` (see
-#'   [psvr-fit-wrappers]; `sym_type = "none"` yields `"psvr_mape"` instead).
-#'   Unwrap a parsnip fit with [parsnip::extract_fit_engine()] to obtain it.
-#' @param newdata Numeric matrix of new inputs, one observation per row (M × p).
+#' @param object An object of class `"psvr_mape_sym"`, as returned by
+#'   [psvr_mape()] with `sym_type = "even"` or `"odd"`, or by the parsnip
+#'   engine fit wrappers (see [psvr-fit-wrappers]; `sym_type = "none"` yields
+#'   `"psvr_mape"` instead). Unwrap a parsnip fit with
+#'   [parsnip::extract_fit_engine()] to obtain it.
+#' @param newdata Numeric matrix of new inputs, one observation per row
+#'   (\eqn{M \times p}{M x p}).
 #' @param ... Ignored.
 #'
 #' @return Numeric vector of length M with predicted values.
@@ -269,13 +275,15 @@ print.psvr_mape_sym <- function(x, ...) {
 #' @param object An object of class `"psvr_mape_sym"`.
 #' @param ... Ignored.
 #'
-#' @return A named list with the same component names and meanings as
-#'   [coef.psvr_fit()] on a `loss = "mape"` fit, so the two entry points agree:
+#' @return A named list with five components, identical in meaning to
+#'   [coef.psvr_mape()]:
 #'   \describe{
 #'     \item{`alpha`, `alpha_star`}{The length-`N` pre-pruning dual variables
-#'       `αk` and `αk*`.}
-#'     \item{`beta`}{The pruned dual differences `βk = αk − αk*` over the
-#'       support-vector indices (length `n_sv`); this is what `predict()` uses.}
+#'       \eqn{\alpha_k}{alpha_k} and \eqn{\alpha^*_k}{alpha_star_k}.}
+#'     \item{`beta`}{The pruned dual differences
+#'       \eqn{\beta_k = \alpha_k - \alpha^*_k}{beta_k = alpha_k - alpha_star_k}
+#'       over the support-vector indices (length `n_sv`); this is what
+#'       `predict()` uses.}
 #'     \item{`b`}{Bias term.}
 #'     \item{`support_data`}{Support vector input matrix.}
 #'   }

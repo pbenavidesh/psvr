@@ -2,15 +2,15 @@
 ##
 ## The strict bit-identicality gate for the C++ port: every fit configured
 ## (model × kernel × block_k4) must produce IDENTICAL doubles across the
-## two engines. Predictions, solver_meta, alpha, alpha_star, b — all
+## two engines. Predictions, solver telemetry, alpha, alpha_star, b — all
 ## bit-equal. The 16-config matrix below is the regression surface that
 ## keeps the engines in lockstep through v0.0.4.x deprecation and v0.1.0
 ## removal of the R reference.
 ##
 ## Diagnostic policy: a bare expect_identical() gives binary pass/fail
 ## with no FP-level context. On any failure we print max diff, first
-## differing indices, side-by-side values at full precision, plus iter
-## and solver_meta deltas. This feeds the escalation policy directly
+## differing indices, side-by-side values at full precision, plus iteration
+## counts and block-k=4 telemetry deltas. This feeds the escalation policy
 ## (FP-order noise <1e-15 → investigate; BLAS divergence 1e-12 →
 ## investigate; algorithmic >1e-8 → urgent).
 
@@ -28,7 +28,7 @@ make_eq_fixture <- function() {
 ##   * max elementwise prediction diff
 ##   * first 5 indices where diff > 0 with side-by-side values (digits=17)
 ##   * iter R vs Rcpp
-##   * solver_meta field deltas: alpha, alpha_star, b, joint_updates,
+##   * telemetry field deltas: alpha, alpha_star, b, joint_updates,
 ##     k2_fallbacks, decoupling_rate, early/late_phase rates
 .diagnose_engine_diff <- function(fit_r, fit_rcpp, preds_r, preds_rcpp,
                                   label = "") {
@@ -47,8 +47,8 @@ make_eq_fixture <- function() {
                       collapse = " ")))
   }
   cat(sprintf("  iters R=%d  Rcpp=%d  (Δ=%+d)\n",
-              fit_r$solver_meta$iters, fit_rcpp$solver_meta$iters,
-              fit_rcpp$solver_meta$iters - fit_r$solver_meta$iters))
+              fit_r$iterations, fit_rcpp$iterations,
+              fit_rcpp$iterations - fit_r$iterations))
   for (f in c("alpha", "alpha_star")) {
     v_r <- fit_r[[f]]; v_c <- fit_rcpp[[f]]
     if (!is.null(v_r) && !is.null(v_c) && length(v_r) == length(v_c)) {
@@ -61,9 +61,9 @@ make_eq_fixture <- function() {
               "decoupling_rate",
               "early_phase_decoupling_rate",
               "late_phase_decoupling_rate")) {
-    v_r <- fit_r$solver_meta[[f]]
-    v_c <- fit_rcpp$solver_meta[[f]]
-    cat(sprintf("  solver_meta$%-30s R=%s  Rcpp=%s\n",
+    v_r <- fit_r$block_k4[[f]]
+    v_c <- fit_rcpp$block_k4[[f]]
+    cat(sprintf("  block_k4$%-30s R=%s  Rcpp=%s\n",
                 f, format(v_r), format(v_c)))
   }
   cat("--- end diagnostic ---\n")
@@ -71,16 +71,16 @@ make_eq_fixture <- function() {
 
 ## ---- Memoised fit pair -----------------------------------------------------
 ## One fit per engine per config, shared by the strict and tolerance tiers.
-.eq_fits <- function(label, kernel, sym, block_k4) {
+.eq_fits <- function(label, kernel, sym_type, block_k4) {
   psvr_memo(paste0("eqfit::", label), {
     fx <- make_eq_fixture()
-    fit_r <- suppressWarnings(psvr(
-      fx$X, fx$y, loss = "mape", sym = sym, kernel = kernel,
+    fit_r <- suppressWarnings(psvr_mape(
+      fx$X, fx$y, sym_type = sym_type, kernel = kernel,
       C = 10, eps = 5,
       engine = "r", block_k4_enabled = block_k4
     ))
-    fit_rcpp <- suppressWarnings(psvr(
-      fx$X, fx$y, loss = "mape", sym = sym, kernel = kernel,
+    fit_rcpp <- suppressWarnings(psvr_mape(
+      fx$X, fx$y, sym_type = sym_type, kernel = kernel,
       C = 10, eps = 5,
       engine = "rcpp", block_k4_enabled = block_k4
     ))
@@ -105,21 +105,21 @@ make_eq_fixture <- function() {
                    label = sprintf("[%s] alpha_star", label))
   expect_identical(r$fit_rcpp$b,          r$fit_r$b,
                    label = sprintf("[%s] b",          label))
-  m_r <- r$fit_r$solver_meta
-  m_c <- r$fit_rcpp$solver_meta
-  expect_identical(m_c$iters,                       m_r$iters,
+  m_r <- r$fit_r
+  m_c <- r$fit_rcpp
+  expect_identical(m_c$iterations,                       m_r$iterations,
                    label = sprintf("[%s] iters",                  label))
   expect_identical(m_c$converged,                   m_r$converged,
                    label = sprintf("[%s] converged",              label))
-  expect_identical(m_c$joint_updates,               m_r$joint_updates,
+  expect_identical(m_c$block_k4$joint_updates,               m_r$block_k4$joint_updates,
                    label = sprintf("[%s] joint_updates",          label))
-  expect_identical(m_c$k2_fallbacks,                m_r$k2_fallbacks,
+  expect_identical(m_c$block_k4$k2_fallbacks,                m_r$block_k4$k2_fallbacks,
                    label = sprintf("[%s] k2_fallbacks",           label))
-  expect_identical(m_c$decoupling_rate,             m_r$decoupling_rate,
+  expect_identical(m_c$block_k4$decoupling_rate,             m_r$block_k4$decoupling_rate,
                    label = sprintf("[%s] decoupling_rate",        label))
-  expect_identical(m_c$early_phase_decoupling_rate, m_r$early_phase_decoupling_rate,
+  expect_identical(m_c$block_k4$early_phase_decoupling_rate, m_r$block_k4$early_phase_decoupling_rate,
                    label = sprintf("[%s] early_phase_decoupling_rate", label))
-  expect_identical(m_c$late_phase_decoupling_rate,  m_r$late_phase_decoupling_rate,
+  expect_identical(m_c$block_k4$late_phase_decoupling_rate,  m_r$block_k4$late_phase_decoupling_rate,
                    label = sprintf("[%s] late_phase_decoupling_rate",  label))
   invisible(NULL)
 }
@@ -138,8 +138,8 @@ make_eq_fixture <- function() {
 ##   3. Otherwise -> assert to PSVR_FP_TOL, or PSVR_MARGINAL_TOL for the
 ##      configs pinned in PSVR_MARGINAL_CONFIGS.
 .assert_engine_tolerance <- function(label, r) {
-  m_r <- r$fit_r$solver_meta
-  m_c <- r$fit_rcpp$solver_meta
+  m_r <- r$fit_r
+  m_c <- r$fit_rcpp
 
   # (1) Engines must always agree on whether they converged.
   expect_identical(m_c$converged, m_r$converged,
@@ -153,7 +153,7 @@ make_eq_fixture <- function() {
              "(at_cap=%s, pinned=%s; iters r=%s rcpp=%s). Update the pin in ",
              "helper-fp-tiers.R only after establishing why convergence changed"),
       label, at_cap, label %in% PSVR_MAXITER_CONFIGS,
-      m_r$iters, m_c$iters)
+      m_r$iterations, m_c$iterations)
   )
 
   # (2) Known non-convergence pathology: nothing meaningful to compare.
@@ -164,7 +164,7 @@ make_eq_fixture <- function() {
              "(CLAUDE.md 'Known issues', paper TODO #5). Value comparison ",
              "is not meaningful between two non-converged solutions; the ",
              "strict tier still gates this config on x86_64."),
-      label, m_r$iters))
+      label, m_r$iterations))
   }
 
   # (3) Converged on both engines.
@@ -185,11 +185,11 @@ make_eq_fixture <- function() {
                label = sprintf("[%s] alpha", label))
   expect_equal(r$fit_rcpp$alpha_star, r$fit_r$alpha_star, tolerance = tol,
                label = sprintf("[%s] alpha_star", label))
-  expect_identical(m_c$iters, m_r$iters,
+  expect_identical(m_c$iterations, m_r$iterations,
                    label = sprintf("[%s] iters", label))
-  expect_identical(m_c$joint_updates, m_r$joint_updates,
+  expect_identical(m_c$block_k4$joint_updates, m_r$block_k4$joint_updates,
                    label = sprintf("[%s] joint_updates", label))
-  expect_identical(m_c$k2_fallbacks,  m_r$k2_fallbacks,
+  expect_identical(m_c$block_k4$k2_fallbacks,  m_r$block_k4$k2_fallbacks,
                    label = sprintf("[%s] k2_fallbacks", label))
   invisible(NULL)
 }
@@ -212,7 +212,7 @@ KERNELS_EQ <- list(
 )
 
 for (model_label in c("Model 1 MAPE", "Model 2 MAPE-sym")) {
-  sym_val <- if (model_label == "Model 2 MAPE-sym") 1L else NULL
+  sym_val <- if (model_label == "Model 2 MAPE-sym") "even" else "none"
   for (k_name in names(KERNELS_EQ)) {
     for (bk4 in c(FALSE, TRUE)) {
       local({
@@ -242,18 +242,25 @@ for (model_label in c("Model 1 MAPE", "Model 2 MAPE-sym")) {
 ## Even when results are bit-equal, confirm the FitResult schema returned
 ## by Rcpp matches the R wrapper's downstream expectations.
 
-test_that("engine='rcpp' returns the full solver_meta schema", {
+test_that("engine='rcpp' returns the full solver telemetry schema", {
   fx <- make_eq_fixture()
   K  <- make_kernel("rbf", sigma = 1)
-  fit <- suppressWarnings(psvr(fx$X, fx$y, loss = "mape", kernel = K,
-                                C = 10, eps = 5,
-                                engine = "rcpp", block_k4_enabled = TRUE))
-  meta <- fit$solver_meta
-  for (f in c("backend", "iters", "converged",
-              "joint_updates", "k2_fallbacks", "decoupling_rate",
+  fit <- suppressWarnings(psvr_mape(fx$X, fx$y, kernel = K,
+                                    C = 10, eps = 5,
+                                    engine = "rcpp",
+                                    block_k4_enabled = TRUE))
+  # `backend` is gone with psvr_fit: no fit class records which solver ran.
+  # `iters` is now `iterations` at the top level, and the five block-k=4
+  # counters live under `block_k4`.
+  for (f in c("iterations", "converged", "block_k4")) {
+    expect_true(f %in% names(fit),
+                info = sprintf("fit object missing field: %s", f))
+  }
+  meta <- fit$block_k4
+  for (f in c("joint_updates", "k2_fallbacks", "decoupling_rate",
               "early_phase_decoupling_rate", "late_phase_decoupling_rate")) {
     expect_true(f %in% names(meta),
-                info = sprintf("solver_meta missing field: %s", f))
+                info = sprintf("block_k4 missing field: %s", f))
   }
   # decoupling rates are numeric (not NA on a converging fit with joint updates).
   expect_true(is.numeric(meta$decoupling_rate))
@@ -273,8 +280,8 @@ test_that("engine='r' preserves the F4 baseline (snapshot match)", {
   skip_on_cran()
   fx <- make_eq_fixture()
   K  <- make_kernel("rbf", sigma = 1)
-  fit <- psvr(fx$X, fx$y, loss = "mape", kernel = K, C = 10, eps = 5,
-              engine = "r", block_k4_enabled = FALSE)
+  fit <- psvr_mape(fx$X, fx$y, kernel = K, C = 10, eps = 5,
+                   engine = "r", block_k4_enabled = FALSE)
   preds <- predict(fit, fx$X_test)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
 })

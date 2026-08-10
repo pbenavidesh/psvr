@@ -48,27 +48,32 @@ utils::globalVariables(c("object", "new_data"))
 #' @description
 #' Bridge functions called by parsnip when fitting psvr model specs.
 #' Exported only because parsnip's resolver requires it; not intended
-#' for direct use. Call [psvr()] instead for direct fitting.
+#' for direct use. Call [psvr_mape()] or [psvr_rmspe()] instead for direct
+#' fitting.
 #' @param x Numeric predictor matrix (parsnip matrix interface).
 #' @param y Numeric outcome vector (strictly positive).
 #' @param C Regularization parameter for MAPE models.
 #' @param eps Epsilon tube half-width for MAPE models.
 #' @param gamma Regularization parameter for RMSPE models.
-#' @param rbf_sigma RBF bandwidth σ > 0.
-#' @param degree Polynomial degree ≥ 1.
-#' @param scale_factor Polynomial constant term (coef₀).
+#' @param rbf_sigma RBF bandwidth \eqn{\sigma > 0}{sigma > 0}.
+#' @param degree Polynomial degree \eqn{\ge 1}{>= 1}.
+#' @param scale_factor Polynomial constant term
+#'   (\eqn{\mathrm{coef}_0}{coef0}).
 #' @param sym_type Symmetry type. `"none"` (the default) dispatches to the
 #'   non-symmetric fitter; `"even"` and `"odd"` dispatch to the symmetric
 #'   fitter with `a = 1L` and `a = -1L` respectively.
 #' @param tol Solver convergence tolerance for the SMO loop. Default `1e-3`.
 #' @param max_iter Maximum SMO iterations. Default `100000L`. The solver
-#'   emits a `warning()` and returns `solver_meta$converged = FALSE` if it
+#'   emits a `warning()` and returns `converged = FALSE` if it
 #'   does not converge within `max_iter`.
 #' @param precondition Optional symmetric rescaling preconditioner for the
-#'   RMSPE LS-SVR fitters. See [psvr()] for accepted values and semantics.
-#' @return A fitted model object of the legacy S3 class matching the wrapper's
-#'   model family. These are the pre-[psvr()] object shapes, returned
-#'   unmodified from the internal fitter; they are **not** `psvr_fit` objects.
+#'   RMSPE LS-SVR fitters. See [psvr_rmspe()] for accepted values and
+#'   semantics.
+#' @return A fitted model object of the S3 class matching the wrapper's
+#'   model family, returned unmodified from the internal fitter. These are the
+#'   same classes [psvr_mape()] and [psvr_rmspe()] return, so a parsnip fit
+#'   unwrapped with [parsnip::extract_fit_engine()] and a directly fitted
+#'   object are interchangeable.
 #'   **Which class is returned depends on `sym_type`**, since each wrapper
 #'   dispatches to the symmetric or non-symmetric fitter.
 #'
@@ -197,7 +202,7 @@ psvr_rmspe_linear_fit <- function(x, y, gamma, sym_type = "none",
 
 #' Parsnip model specs: epsilon-SVR with MAPE loss (Model 1)
 #'
-#' Create parsnip model specifications for [psvr()] with a fixed kernel
+#' Create parsnip model specifications for [psvr_mape()] with a fixed kernel
 #' type.  Kernel parameters are tunable parsnip arguments; the symmetry
 #' parameter `a` and solver tolerance are engine arguments passed via
 #' `set_engine()`.
@@ -318,8 +323,8 @@ psvr_mape_linear <- function(mode = "regression", engine = "psvr",
 
 #' Parsnip model specs: LS-SVR with RMSPE loss (Model 3)
 #'
-#' Create parsnip model specifications for [psvr()] with a fixed kernel
-#' type.  `cost` maps to the regularization parameter `Γ`.
+#' Create parsnip model specifications for [psvr_rmspe()] with a fixed kernel
+#' type.  `cost` maps to the regularization parameter \eqn{\Gamma}{Gamma}.
 #'
 #' @param mode   Only `"regression"` is supported.
 #' @param engine Only `"psvr"` is available.
@@ -342,10 +347,10 @@ psvr_mape_linear <- function(mode = "regression", engine = "psvr",
 #' @return A parsnip `model_spec` object of the corresponding class.
 #'
 #' @section Engine arguments:
-#' The `precondition` argument of [psvr()] is exposed as a non-tunable
+#' The `precondition` argument of [psvr_rmspe()] is exposed as a non-tunable
 #' engine argument. Pass it via [parsnip::set_engine()], e.g.
 #' `set_engine("psvr", precondition = "always")`. Default is `"auto"`. See
-#' [psvr()] for accepted values and semantics.
+#' [psvr_rmspe()] for accepted values and semantics.
 #'
 #' @examples
 #' \dontrun{

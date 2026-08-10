@@ -1,7 +1,7 @@
 ## F6 benchmark: Rcpp-accelerated kernel_matrix + cross-fold reuse in
 ## psvr_cv. Targets vs F5 baseline (from F5 profile at N=1000):
 ##   - kernel_matrix(N=1000, RBF):   730 ms / 222 MB  -> target  <= 100 ms
-##   - psvr() end-to-end (N=1000):   820 ms           -> target  <= 250 ms
+##   - psvr_mape() end-to-end (N=1000): 820 ms         -> target  <= 250 ms
 ##   - psvr_cv() 10-fold (N=1000):  ~8 s              -> target  <= 1.5 s
 ##
 ## Usage:
@@ -42,14 +42,14 @@ bench_psvr_e2e <- function(N) {
   y <- rlnorm(N, sdlog = 1.5)
   K <- make_kernel("rbf", sigma = 1)
 
-  invisible(psvr(X[1:20, ], y[1:20], loss = "mape", kernel = K, C = 10, eps = 5))
+  invisible(psvr_mape(X[1:20, ], y[1:20], kernel = K, C = 10, eps = 5))
 
   reps <- replicate(3L, {
     gc(reset = TRUE, verbose = FALSE)
     t0  <- Sys.time()
-    fit <- psvr(X, y, loss = "mape", kernel = K, C = 10, eps = 5)
+    fit <- psvr_mape(X, y, kernel = K, C = 10, eps = 5)
     list(elapsed = as.numeric(difftime(Sys.time(), t0, units = "secs")),
-         iters   = fit$solver_meta$iters)
+         iters   = fit$iterations)
   }, simplify = FALSE)
   walls <- vapply(reps, `[[`, numeric(1), "elapsed")
   list(N = N, wall_s = median(walls), wall_min_s = min(walls), wall_max_s = max(walls),
@@ -69,7 +69,7 @@ bench_psvr_cv <- function(N, v = 10L) {
   # With cross-fold reuse (F6 default for rset inputs)
   t_reuse <- system.time({
     res_reuse <- suppressWarnings(psvr_cv(folds, X_var = paste0("x", 1:5), y_var = "y",
-                                          loss = "mape", kernel = K, C = 10, eps = 5,
+                                          kernel = K, C = 10, eps = 5,
                                           warm_start = TRUE, verbose = FALSE))
   })["elapsed"]
 
@@ -82,7 +82,7 @@ bench_psvr_cv <- function(N, v = 10L) {
   t_no_reuse <- system.time({
     res_no_reuse <- suppressWarnings(psvr_cv(folds_list,
                                              X_var = paste0("x", 1:5), y_var = "y",
-                                             loss = "mape", kernel = K, C = 10, eps = 5,
+                                             kernel = K, C = 10, eps = 5,
                                              warm_start = TRUE, verbose = FALSE))
   })["elapsed"]
 
@@ -101,7 +101,7 @@ for (N in c(300L, 1000L, 3000L, 10000L)) {
               r$N, r$wall_s, r$wall_min_s, r$wall_max_s, r$size_MB))
 }
 
-cat("\n=== 6.2 psvr() end-to-end (RBF, MAPE) ===\n")
+cat("\n=== 6.2 psvr_mape() end-to-end (RBF, MAPE) ===\n")
 e2e_res <- list()
 for (N in c(300L, 1000L)) {
   e2e_res[[paste0("N=", N)]] <- r <- bench_psvr_e2e(N)

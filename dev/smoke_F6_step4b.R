@@ -17,7 +17,7 @@ K <- make_kernel("rbf", sigma = 1)
 
 # Path 1: psvr_cv() with cross-fold precompute (F6 default)
 res_cv <- psvr_cv(folds, X_var = c("x1","x2","x3"), y_var = "y",
-                  loss = "mape", kernel = K, C = 10, eps = 5,
+                  kernel = K, C = 10, eps = 5,
                   warm_start = TRUE, verbose = FALSE)
 
 # Path 2: manual per-fold loop WITHOUT precomputed_Omega.
@@ -46,7 +46,7 @@ for (i in seq_len(nrow(folds))) {
     alpha_init <- NULL; alpha_star_init <- NULL
   }
 
-  fit_i <- psvr(X_i, y_i, loss = "mape", kernel = K, C = 10, eps = 5,
+  fit_i <- psvr_mape(X_i, y_i, kernel = K, C = 10, eps = 5,
                 alpha_init = alpha_init,
                 alpha_star_init = alpha_star_init)
   results_manual[[i]] <- fit_i
@@ -63,14 +63,14 @@ for (i in seq_along(results_manual)) {
               identical(fit_cv_i$alpha, fit_man_i$alpha),
               identical(fit_cv_i$beta,  fit_man_i$beta),
               identical(fit_cv_i$b,     fit_man_i$b),
-              fit_cv_i$solver_meta$iters,
-              fit_man_i$solver_meta$iters))
+              fit_cv_i$iterations,
+              fit_man_i$iterations))
 }
 
 # Symmetric variant
 cat("\n--- Symmetric (sym = +1) ---\n")
 res_cv_sym <- psvr_cv(folds, X_var = c("x1","x2","x3"), y_var = "y",
-                      loss = "mape", sym = +1L, kernel = K, C = 10, eps = 5,
+                      sym_type = "even", kernel = K, C = 10, eps = 5,
                       warm_start = TRUE, verbose = FALSE)
 
 results_manual_sym <- vector("list", nrow(folds))
@@ -95,7 +95,7 @@ for (i in seq_len(nrow(folds))) {
   } else {
     alpha_init <- NULL; alpha_star_init <- NULL
   }
-  fit_i <- psvr(X_i, y_i, loss = "mape", sym = +1L, kernel = K, C = 10, eps = 5,
+  fit_i <- psvr_mape(X_i, y_i, sym_type = "even", kernel = K, C = 10, eps = 5,
                 alpha_init = alpha_init,
                 alpha_star_init = alpha_star_init)
   results_manual_sym[[i]] <- fit_i
@@ -110,6 +110,6 @@ for (i in seq_along(results_manual_sym)) {
               identical(fit_cv_i$alpha, fit_man_i$alpha),
               identical(fit_cv_i$beta,  fit_man_i$beta),
               identical(fit_cv_i$b,     fit_man_i$b),
-              fit_cv_i$solver_meta$iters,
-              fit_man_i$solver_meta$iters))
+              fit_cv_i$iterations,
+              fit_man_i$iterations))
 }

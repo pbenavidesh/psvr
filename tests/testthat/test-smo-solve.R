@@ -144,7 +144,7 @@ test_that("T3 + T8 reduce to default behavior on homogeneous targets", {
   # Near-uniform y: rho_y ~ 1.05.  Targets are still strictly positive.
   y_h <- rep(2.0, N_h) + rnorm(N_h, sd = 0.05)
   K   <- make_kernel("rbf", sigma = 1)
-  fit <- psvr(X_h, y_h, loss = "mape", kernel = K, C = 10, eps = 5)
+  fit <- psvr_mape(X_h, y_h, kernel = K, C = 10, eps = 5)
 
   preds <- predict(fit, X_h)
   expect_true(all(is.finite(preds)))
@@ -162,8 +162,8 @@ test_that("SMO fit converges to a valid KKT optimum on RBF", {
   X_e <- matrix(rnorm(40 * 4), 40L, 4L)
   y_e <- abs(rnorm(40L)) + 1
   K_e <- make_kernel("rbf", sigma = 1)
-  fit <- psvr(X_e, y_e, loss = "mape", kernel = K_e, C = 10, eps = 5)
-  expect_true(isTRUE(fit$solver_meta$converged))
+  fit <- psvr_mape(X_e, y_e, kernel = K_e, C = 10, eps = 5)
+  expect_true(isTRUE(fit$converged))
   preds <- predict(fit, X_e)
   expect_true(all(is.finite(preds)))
 })
@@ -178,7 +178,7 @@ test_that("SMO fit satisfies sum(alpha - alpha_star) = 0", {
   X_b <- matrix(rnorm(40 * 4), 40L, 4L)
   y_b <- abs(rnorm(40L)) + 1
   K_b <- make_kernel("rbf", sigma = 1)
-  fit <- psvr(X_b, y_b, loss = "mape", kernel = K_b, C = 10, eps = 5)
+  fit <- psvr_mape(X_b, y_b, kernel = K_b, C = 10, eps = 5)
   expect_lt(abs(sum(fit$alpha - fit$alpha_star)), 1e-8 * max(100 * 10 / y_b))
 })
 
@@ -189,7 +189,7 @@ test_that("SMO converges in finite iterations on the snapshot fixture", {
   X_g <- matrix(rnorm(50 * 5), 50, 5)
   y_g <- stats::rlnorm(50, meanlog = 0, sdlog = 0.5)
   K_g <- make_kernel("rbf", sigma = 1)
-  fit <- psvr(X_g, y_g, loss = "mape", kernel = K_g, C = 10, eps = 5)
-  expect_true(isTRUE(fit$solver_meta$converged))
-  expect_lt(fit$solver_meta$iters, 100000L)
+  fit <- psvr_mape(X_g, y_g, kernel = K_g, C = 10, eps = 5)
+  expect_true(isTRUE(fit$converged))
+  expect_lt(fit$iterations, 100000L)
 })

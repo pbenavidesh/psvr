@@ -5,13 +5,13 @@
 ##   - Indefinite branch: shifted returned with Theorem 2(a) PSD floor,
 ##                       diagonal-only perturbation. Tested directly against
 ##                       a hand-crafted Wigner-style indefinite matrix —
-##                       not via psvr(), because the three Mercer kernels in
+##                       not via psvr_mape(), because the three Mercer kernels in
 ##                       make_kernel() (RBF / linear / polynomial) all yield
 ##                       PSD Omega_s by Aronszajn closure / Schur product,
 ##                       so the shifted branch is a dormant defensive guard
 ##                       in production. See .claude/CLAUDE.md "Adaptive Spectral
 ##                       Regularization" for details.
-##   - psvr() integration: solver_meta$spectral populated for Model 2 (all
+##   - psvr_mape() integration: fit$spectral populated for Model 2 (all
 ##                       branches will be no_shift in production); NULL for
 ##                       Models 1, 3, 4.
 ##   - T_pi override:    caller can request more iterations.
@@ -97,54 +97,65 @@ test_that(".adaptive_spectral_shift T_pi override is accepted", {
   expect_equal(spec$n_power_iterations, c(20L, 20L))
 })
 
-# ---- psvr() integration tests (no_shift path) ------------------------------
+# ---- psvr_mape() integration tests (no_shift path) ------------------------------
 # All Mercer kernels supported by make_kernel() yield PSD Omega_s, so the
 # shifted branch is unreachable in production. These tests exercise the
-# diagnostics-plumbing wiring: solver_meta$spectral must always be a
+# diagnostics-plumbing wiring: fit$spectral must always be a
 # populated list for Model 2, with branch_taken == "no_shift" and mu == 0.
 
-test_that("psvr() Model 2 + RBF + a=-1 takes no_shift branch", {
+test_that("psvr_mape() Model 2 + RBF + a=-1 takes no_shift branch", {
   set.seed(2026)
   X <- matrix(stats::rnorm(50 * 5), 50, 5)
   y <- abs(stats::rnorm(50)) + 0.1
   K <- make_kernel("rbf", sigma = 1)
 
-  fit <- psvr(X, y, loss = "mape", sym = -1L,
+  fit <- psvr_mape(X, y, sym_type = "odd",
               kernel = K, C = 10, eps = 5)
 
-  expect_equal(fit$solver_meta$spectral$branch_taken, "no_shift")
-  expect_equal(fit$solver_meta$spectral$mu, 0)
-  expect_length(fit$solver_meta$spectral$n_power_iterations, 2L)
+  expect_equal(fit$spectral$branch_taken, "no_shift")
+  expect_equal(fit$spectral$mu, 0)
+  expect_length(fit$spectral$n_power_iterations, 2L)
 })
 
-test_that("psvr() Model 2 + RBF + a=+1 takes no_shift branch", {
+test_that("psvr_mape() Model 2 + RBF + a=+1 takes no_shift branch", {
   set.seed(2026)
   X <- matrix(stats::rnorm(50 * 5), 50, 5)
   y <- abs(stats::rnorm(50)) + 0.1
   K <- make_kernel("rbf", sigma = 1)
 
-  fit <- psvr(X, y, loss = "mape", sym = +1L,
+  fit <- psvr_mape(X, y, sym_type = "even",
               kernel = K, C = 10, eps = 5)
 
-  expect_equal(fit$solver_meta$spectral$branch_taken, "no_shift")
-  expect_equal(fit$solver_meta$spectral$mu, 0)
+  expect_equal(fit$spectral$branch_taken, "no_shift")
+  expect_equal(fit$spectral$mu, 0)
 })
 
-test_that("solver_meta$spectral is NULL for non-Model-2 fits", {
+# This block asserts BEHAVIOUR -- that only Model 2 runs the spectral guard,
+# because only .fit_mape_sym() calls .adaptive_spectral_shift(). Still true
+# after the API split; only the encoding moved, from a NULL slot on the one
+# shared class to an absent field on three family-specific ones.
+#
+# It is WEAKER than it was, and deliberately kept anyway: `$spectral` yields
+# NULL whether the field is absent or present-and-NULL, so it can no longer
+# distinguish "the guard ran and found nothing" from "there is no such field".
+# (Contrast test-psvr-direct.R's deleted block 14, which asserted shape
+# uniformity -- a proposition about one class serving two families, which the
+# split leaves with nothing to be about.)
+test_that("no spectral diagnostics on Models 1, 3 and 4", {
   set.seed(2026)
   X <- matrix(stats::rnorm(50 * 5), 50, 5)
   y <- abs(stats::rnorm(50)) + 0.1
   K <- make_kernel("rbf", sigma = 1)
 
   # Model 1 (MAPE, no sym) — no Omega_s built, no spectral guard.
-  fit1 <- psvr(X, y, loss = "mape", kernel = K, C = 10, eps = 5)
-  expect_null(fit1$solver_meta$spectral)
+  fit1 <- psvr_mape(X, y, kernel = K, C = 10, eps = 5)
+  expect_null(fit1$spectral)
 
   # Model 3 (RMSPE, no sym) — direct linear solve.
-  fit3 <- psvr(X, y, loss = "rmspe", kernel = K, gamma = 100)
-  expect_null(fit3$solver_meta$spectral)
+  fit3 <- psvr_rmspe(X, y, kernel = K, gamma = 100)
+  expect_null(fit3$spectral)
 
   # Model 4 (RMSPE, sym) — direct linear solve, no SMO Hessian to guard.
-  fit4 <- psvr(X, y, loss = "rmspe", sym = +1L, kernel = K, gamma = 100)
-  expect_null(fit4$solver_meta$spectral)
+  fit4 <- psvr_rmspe(X, y, sym_type = "even", kernel = K, gamma = 100)
+  expect_null(fit4$spectral)
 })

@@ -133,55 +133,60 @@ test_that(".warm_start_init() zero input is feasible", {
 
 # ---- 2. Warm-start fit reaches the same optimum --------------------------
 
-test_that("psvr(alpha_init = converged α) matches cold-start within tol", {
-  fit_cold <- psvr(X_tr, y_tr, loss = "mape", kernel = K_rbf,
-                   C = 10, eps = 5)
+test_that("psvr_mape(alpha_init = converged α) matches cold-start within tol", {
+  fit_cold <- psvr_mape(X_tr, y_tr, kernel = K_rbf,
+                        C = 10, eps = 5)
   # A converged input already satisfies the equality constraint, so the
   # projection is the identity and the solver restarts at its own optimum.
-  fit_warm <- psvr(X_tr, y_tr, loss = "mape", kernel = K_rbf,
-                   C = 10, eps = 5,
-                   alpha_init      = fit_cold$alpha,
-                   alpha_star_init = fit_cold$alpha_star)
+  fit_warm <- psvr_mape(X_tr, y_tr, kernel = K_rbf,
+                        C = 10, eps = 5,
+                        alpha_init      = fit_cold$alpha,
+                        alpha_star_init = fit_cold$alpha_star)
 
   p_cold <- predict(fit_cold, X_tr)
   p_warm <- predict(fit_warm, X_tr)
   expect_lt(max(abs(p_cold - p_warm)), 1e-3 * mean(y_tr))
   # Warm-start from converged state should not need more iterations than
   # the original cold-start run.
-  expect_lte(fit_warm$solver_meta$iters, fit_cold$solver_meta$iters)
+  expect_lte(fit_warm$iterations, fit_cold$iterations)
 })
 
 # ---- 3. Strict error: rmspe + warm-start --------------------------------
 
-test_that("psvr() rejects warm-start under loss = 'rmspe'", {
+# psvr_rmspe() has no alpha_init / alpha_star_init formals at all, so a bare
+# check_dots_empty() would report only that the name is unknown. The targeted
+# guard keeps the reason, and this block keeps pinning it. The wording is a
+# NEVER, not a NOT YET: LS-SVR is one linear-system solve, so there is no SMO
+# state to carry over and never will be.
+test_that("psvr_rmspe() rejects warm-start vectors with the reason", {
   expect_error(
-    psvr(X_tr, y_tr, loss = "rmspe", kernel = K_rbf, gamma = 100,
-         alpha_init = numeric(N)),
+    psvr_rmspe(X_tr, y_tr, kernel = K_rbf, gamma = 100,
+               alpha_init = numeric(N)),
     "Warm-start is not supported"
   )
   expect_error(
-    psvr(X_tr, y_tr, loss = "rmspe", kernel = K_rbf, gamma = 100,
-         alpha_star_init = numeric(N)),
+    psvr_rmspe(X_tr, y_tr, kernel = K_rbf, gamma = 100,
+               alpha_star_init = numeric(N)),
     "Warm-start is not supported"
   )
 })
 
 # ---- 4. Length-mismatch on warm-start vectors ----------------------------
 
-test_that("psvr() rejects warm-start vectors of wrong length", {
+test_that("psvr_mape() rejects warm-start vectors of wrong length", {
   expect_error(
-    psvr(X_tr, y_tr, loss = "mape", kernel = K_rbf, C = 10, eps = 5,
-         alpha_init = numeric(N + 1L)),
+    psvr_mape(X_tr, y_tr, kernel = K_rbf, C = 10, eps = 5,
+              alpha_init = numeric(N + 1L)),
     "length nrow\\(X\\)"
   )
   expect_error(
-    psvr(X_tr, y_tr, loss = "mape", kernel = K_rbf, C = 10, eps = 5,
-         alpha_star_init = numeric(N - 1L)),
+    psvr_mape(X_tr, y_tr, kernel = K_rbf, C = 10, eps = 5,
+              alpha_star_init = numeric(N - 1L)),
     "length nrow\\(X\\)"
   )
   expect_error(
-    psvr(X_tr, y_tr, loss = "mape", kernel = K_rbf, C = 10, eps = 5,
-         alpha_init = c(NA_real_, numeric(N - 1L))),
+    psvr_mape(X_tr, y_tr, kernel = K_rbf, C = 10, eps = 5,
+              alpha_init = c(NA_real_, numeric(N - 1L))),
     "finite numeric"
   )
 })
@@ -196,8 +201,8 @@ test_that("warm_start_check = FALSE bypasses the feasibility check", {
   # raises an error rather than a warning.
   bad_init <- rep(1e3, N)
   expect_no_error(
-    psvr(X_tr, y_tr, loss = "mape", kernel = K_rbf, C = 10, eps = 5,
-         alpha_init = bad_init, alpha_star_init = numeric(N),
-         warm_start_check = FALSE)
+    psvr_mape(X_tr, y_tr, kernel = K_rbf, C = 10, eps = 5,
+              alpha_init = bad_init, alpha_star_init = numeric(N),
+              warm_start_check = FALSE)
   )
 })

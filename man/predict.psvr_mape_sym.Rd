@@ -7,12 +7,14 @@
 \method{predict}{psvr_mape_sym}(object, newdata, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"psvr_mape_sym"}, as returned by the parsnip
-engine fit wrappers with \code{sym_type = "even"} or \code{"odd"} (see
-\link{psvr-fit-wrappers}; \code{sym_type = "none"} yields \code{"psvr_mape"} instead).
-Unwrap a parsnip fit with \code{\link[parsnip:reexports]{parsnip::extract_fit_engine()}} to obtain it.}
+\item{object}{An object of class \code{"psvr_mape_sym"}, as returned by
+\code{\link[=psvr_mape]{psvr_mape()}} with \code{sym_type = "even"} or \code{"odd"}, or by the parsnip
+engine fit wrappers (see \link{psvr-fit-wrappers}; \code{sym_type = "none"} yields
+\code{"psvr_mape"} instead). Unwrap a parsnip fit with
+\code{\link[parsnip:reexports]{parsnip::extract_fit_engine()}} to obtain it.}
 
-\item{newdata}{Numeric matrix of new inputs, one observation per row (M × p).}
+\item{newdata}{Numeric matrix of new inputs, one observation per row
+(\eqn{M \times p}{M x p}).}
 
 \item{...}{Ignored.}
 }
@@ -20,8 +22,11 @@ Unwrap a parsnip fit with \code{\link[parsnip:reexports]{parsnip::extract_fit_en
 Numeric vector of length M with predicted values.
 }
 \description{
-Method dispatched on the legacy \code{"psvr_mape_sym"} class, which the parsnip
-engine fit wrappers return. Uses the symmetric representer theorem
-\verb{f(x) = ½ Σk βk Ks(xk, x) + b} with
-\verb{Ks(xk, x) = K(xk, x) + a·K(xk, -x)}. For direct fitting use \code{\link[=psvr]{psvr()}}.
+Method dispatched on the \code{"psvr_mape_sym"} class, which both \code{\link[=psvr_mape]{psvr_mape()}}
+and the parsnip engine fit wrappers return. Uses the symmetric representer
+theorem
+\deqn{f(x) = \tfrac{1}{2}\sum_k \beta_k K_s(x_k, x) + b}{%
+      f(x) = 0.5 * sum_k beta_k Ks(x_k, x) + b}
+with \eqn{K_s(x_k, x) = K(x_k, x) + a K(x_k, -x)}{%
+          Ks(x_k, x) = K(x_k, x) + a * K(x_k, -x)}.
 }

@@ -53,14 +53,14 @@ run_cv_bench <- function(N, label) {
   t_cold <- system.time(
     res_cold <- suppress_convergence(
       psvr_cv(folds, X_var = X_var, y_var = y_var,
-              loss = "mape", kernel = K, C = 10, eps = 5,
+              kernel = K, C = 10, eps = 5,
               warm_start = FALSE)
     )
   )["elapsed"]
   t_warm <- system.time(
     res_warm <- suppress_convergence(
       psvr_cv(folds, X_var = X_var, y_var = y_var,
-              loss = "mape", kernel = K, C = 10, eps = 5,
+              kernel = K, C = 10, eps = 5,
               warm_start = TRUE)
     )
   )["elapsed"]

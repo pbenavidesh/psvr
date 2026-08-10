@@ -12,13 +12,15 @@
 \item{...}{Ignored.}
 }
 \value{
-A named list with the same component names and meanings as
-\code{\link[=coef.psvr_fit]{coef.psvr_fit()}} on a \code{loss = "mape"} fit, so the two entry points agree:
+A named list with five components, identical in meaning to
+\code{\link[=coef.psvr_mape]{coef.psvr_mape()}}:
 \describe{
 \item{\code{alpha}, \code{alpha_star}}{The length-\code{N} pre-pruning dual variables
-\code{αk} and \verb{αk*}.}
-\item{\code{beta}}{The pruned dual differences \verb{βk = αk − αk*} over the
-support-vector indices (length \code{n_sv}); this is what \code{predict()} uses.}
+\eqn{\alpha_k}{alpha_k} and \eqn{\alpha^*_k}{alpha_star_k}.}
+\item{\code{beta}}{The pruned dual differences
+\eqn{\beta_k = \alpha_k - \alpha^*_k}{beta_k = alpha_k - alpha_star_k}
+over the support-vector indices (length \code{n_sv}); this is what
+\code{predict()} uses.}
 \item{\code{b}}{Bias term.}
 \item{\code{support_data}}{Support vector input matrix.}
 }

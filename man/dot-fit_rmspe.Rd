@@ -7,15 +7,15 @@
 .fit_rmspe(X, y, kernel, gamma, precondition = "auto")
 }
 \arguments{
-\item{X, y, kernel, gamma, precondition}{See \code{\link[=psvr]{psvr()}} for the full semantics of
-each argument (including the Remark-17 preconditioner).}
+\item{X, y, kernel, gamma, precondition}{See \code{\link[=psvr_rmspe]{psvr_rmspe()}} for the full
+semantics of each argument (including the Remark-17 preconditioner).}
 }
 \value{
-A list of class \code{"psvr_rmspe"} (legacy shape).
+A list of class \code{"psvr_rmspe"}.
 }
 \description{
-Internal fitter for the RMSPE LS-SVR family. Use \code{\link[=psvr]{psvr()}} with
-\code{loss = "rmspe"} instead. Returns the legacy \code{psvr_rmspe} shape, which is also
-what the parsnip engine fit wrappers return.
+Internal fitter for the RMSPE LS-SVR family. Use \code{\link[=psvr_rmspe]{psvr_rmspe()}} instead.
+Returns the \code{psvr_rmspe} shape, which is what \code{\link[=psvr_rmspe]{psvr_rmspe()}} and the parsnip
+engine fit wrappers both return.
 }
 \keyword{internal}

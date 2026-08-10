@@ -18,10 +18,13 @@ A named list with components:
 \item{\code{b}}{Bias term.}
 \item{\code{support_data}}{Training input matrix (all N observations).}
 }
-The names match \code{\link[=coef.psvr_fit]{coef.psvr_fit()}} on a \code{loss = "rmspe"} fit. That method
-additionally carries \code{alpha_star} and \code{beta} as \code{NULL}, because one class
-serves both families; here they are simply absent, so \verb{$alpha_star} and
-\verb{$beta} are \code{NULL} either way.
+Three components, against five for the MAPE classes (\code{\link[=coef.psvr_mape]{coef.psvr_mape()}}):
+LS-SVR has no \code{alpha_star} and no pruned \code{beta}, and they are \strong{not}
+materialised as \code{NULL}. So \code{names(coef(fit))} depends on the model family,
+which is a decision rather than an oversight -- each class is
+family-specific, and inventing empty slots to make the two agree would add
+structure with nothing to inherit it from. \verb{$alpha_star} and \verb{$beta} yield
+\code{NULL} on both, so every accessor still agrees.
 }
 \description{
 Extract coefficients from a psvr_rmspe model

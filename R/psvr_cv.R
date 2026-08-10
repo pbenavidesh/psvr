@@ -1,25 +1,27 @@
-#' Cross-validate psvr() with automatic warm-start across folds
+#' Cross-validate psvr_mape() with automatic warm-start across folds
 #'
-#' Fits a `psvr(loss = "mape")` model on each split in `splits`, carrying
+#' Fits a [psvr_mape()] model on each split in `splits`, carrying
 #' the converged `(alpha, alpha_star)` from one fold into the next as the
 #' SMO warm-start (Theorem 5 of arXiv:2605.01446 v3, Algorithm 1). Folds
 #' are projected to feasibility before each solve. Returns a tibble with
 #' one row per fold.
 #'
-#' This helper currently only supports `loss = "mape"`. For
-#' `loss = "rmspe"` (LS-SVR), each fold is a single linear-system solve
-#' with no carryover state; use `tune::tune_grid()` with parallel
-#' cold-start instead.
+#' This helper is **MAPE-only**, and there is no `loss` argument. That is a
+#' limitation of the implementation, not of the method: only [psvr_mape()] was
+#' ever wired to it. LS-SVR cross-validates perfectly well, it simply has no
+#' carryover state to exploit (each fold is a single linear-system solve), so
+#' for [psvr_rmspe()] use `tune::tune_grid()` with parallel cold-start.
 #'
 #' @param splits Either an `rsample::rset` object (e.g. from
 #'   `rsample::vfold_cv()`), or a list of named lists each containing
 #'   `analysis` (data frame), `assessment` (data frame), and optionally
 #'   `row_ids` (integer vector of original training-row indices used for
 #'   warm-start alignment across folds; defaults to positional).
-#' @param ... Arguments forwarded to [psvr()]. Must specify `kernel` and
+#' @param ... Arguments forwarded to [psvr_mape()]. Must specify `kernel` and
 #'   the MAPE hyperparameters (`C`, `eps`). `alpha_init` and
 #'   `alpha_star_init` are managed internally; supplying them via `...`
-#'   is an error.
+#'   is an error, and so is `loss`, which is not an argument of
+#'   [psvr_mape()].
 #' @param X_var Character vector of predictor column names.
 #' @param y_var Single character giving the target column name.
 #' @param warm_start Logical; if `FALSE`, each fold fits cold-start
@@ -30,13 +32,13 @@
 #' @return A `tibble` with one row per split and columns:
 #'   \describe{
 #'     \item{`split_id`}{1-based fold index.}
-#'     \item{`fit`}{A list-column of `psvr_fit` objects.}
+#'     \item{`fit`}{A list-column of `psvr_mape` objects, or `psvr_mape_sym`
+#'       when `sym_type` is `"even"` or `"odd"`.}
 #'     \item{`predictions`}{A list-column of numeric vectors (predictions
 #'       on the assessment set).}
 #'     \item{`metrics`}{A list-column of named numeric vectors (`mape`,
 #'       `rmspe`, `mse`, `r2`).}
-#'     \item{`iter_count`}{Integer; SMO iterations from
-#'       `fit$solver_meta$iters`.}
+#'     \item{`iter_count`}{Integer; SMO iterations from `fit$iterations`.}
 #'     \item{`elapsed_sec`}{Numeric; wall-clock seconds for the fit.}
 #'     \item{`warm_started`}{Logical; `TRUE` for fold > 1 when
 #'       `warm_start = TRUE`.}
@@ -53,7 +55,6 @@
 #'   )
 #'   folds <- rsample::vfold_cv(d, v = 5)
 #'   res <- psvr_cv(folds, X_var = c("x1", "x2"), y_var = "y",
-#'                  loss = "mape",
 #'                  kernel = make_kernel("rbf", sigma = 1),
 #'                  C = 10, eps = 5)
 #'   median(vapply(res$metrics, function(m) m[["mape"]], numeric(1)))
@@ -75,11 +76,20 @@ psvr_cv <- function(splits, ...,
 
   args <- list(...)
 
-  if (!is.null(args$loss) && args$loss == "rmspe") {
-    stop("psvr_cv() only supports `loss = \"mape\"`. For LS-SVR ",
-         "(`loss = \"rmspe\"`), folds are independent (linear-system solve, ",
-         "no SMO state to carry over); use `tune::tune_grid()` with ",
-         "standard parallel cold-start.")
+  # `loss` was an argument of the superseded psvr(); psvr_mape() has no such
+  # formal, so forwarding it would fail with an opaque dots error. Reject it
+  # here with the reason. The wording is deliberately NOT YET rather than
+  # NEVER: psvr_cv() is MAPE-only because only .fit_mape() was ever wired to
+  # it, not because RMSPE resists cross-validation -- LS-SVR is a linear
+  # system and cross-validates perfectly well. Extending it will add a
+  # function or an argument, not restore this one.
+  if ("loss" %in% names(args)) {
+    stop("`psvr_cv()` currently supports MAPE only; `loss` is not an ",
+         "argument. RMSPE cross-validation is not implemented -- see ",
+         "PSVR_STATUS.md. For LS-SVR today, use `tune::tune_grid()` with ",
+         "standard parallel cold-start; folds are independent there (a ",
+         "linear-system solve, no SMO state to carry over).",
+         call. = FALSE)
   }
   if (!is.null(args$alpha_init) || !is.null(args$alpha_star_init))
     stop("psvr_cv() manages `alpha_init` / `alpha_star_init` internally. ",
@@ -117,8 +127,11 @@ psvr_cv <- function(splits, ...,
   # so it falls back to per-fold kernel construction (per-call Rcpp
   # acceleration still applies).
   kernel_arg <- args$kernel
-  sym_arg    <- args$sym
-  a_val      <- if (is.null(sym_arg)) NULL else as.integer(sym_arg)
+  # `sym_type` is the public vocabulary on psvr_mape(); `a` is the internal
+  # integer. Absent means "none", the psvr_mape() default.
+  sym_type_arg <- if (is.null(args$sym_type)) "none" else args$sym_type
+  a_val      <- if (identical(sym_type_arg, "none")) NULL
+                else .sym_type_to_a(sym_type_arg)
   precompute_ok <- is_rset && !is.null(kernel_arg)
 
   Omega_full   <- NULL
@@ -126,7 +139,7 @@ psvr_cv <- function(splits, ...,
   if (precompute_ok) {
     data_full <- splits$splits[[1L]]$data
     X_full    <- as.matrix(data_full[, X_var, drop = FALSE])
-    if (is.null(sym_arg)) {
+    if (is.null(a_val)) {
       Omega_full   <- kernel_matrix(kernel_arg, X_full)
     } else {
       Omega_s_full <- sym_kernel_matrix(kernel_arg, X_full, a_val)
@@ -171,7 +184,7 @@ psvr_cv <- function(splits, ...,
     }
 
     precomp_args <- if (precompute_ok) {
-      if (is.null(sym_arg)) {
+      if (is.null(a_val)) {
         list(precomputed_Omega   = Omega_full[row_ids_i, row_ids_i, drop = FALSE])
       } else {
         list(precomputed_Omega_s = Omega_s_full[row_ids_i, row_ids_i, drop = FALSE])
@@ -181,7 +194,7 @@ psvr_cv <- function(splits, ...,
     }
 
     t0 <- Sys.time()
-    fit_i <- do.call(psvr, c(
+    fit_i <- do.call(psvr_mape, c(
       list(X = X_i, y = y_i,
            alpha_init = alpha_init,
            alpha_star_init = alpha_star_init),
@@ -203,8 +216,8 @@ psvr_cv <- function(splits, ...,
       r2    = if (ss_tot > 0) 1 - ss_res / ss_tot else NA_real_
     )
 
-    iter_count <- if (is.null(fit_i$solver_meta$iters)) NA_integer_
-                  else as.integer(fit_i$solver_meta$iters)
+    iter_count <- if (is.null(fit_i$iterations)) NA_integer_
+                  else as.integer(fit_i$iterations)
 
     results[[i]] <- list(
       split_id     = i,

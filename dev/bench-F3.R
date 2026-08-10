@@ -16,14 +16,14 @@ y <- stats::rlnorm(N)
 K <- make_kernel("rbf", sigma = 1)
 
 # Warmup (BLAS, JIT, etc.)
-invisible(replicate(3, psvr(X, y, loss = "mape", sym = -1L,
+invisible(replicate(3, psvr_mape(X, y, sym_type = "odd",
                             kernel = K, C = 10, eps = 5)))
 
 n_reps <- 30L
 
 # (1) Total fit time (F3 active).
 t_total <- replicate(n_reps, system.time(
-  psvr(X, y, loss = "mape", sym = -1L, kernel = K, C = 10, eps = 5)
+  psvr_mape(X, y, sym_type = "odd", kernel = K, C = 10, eps = 5)
 )["elapsed"])
 
 # (2) Isolated spectral-shift time.

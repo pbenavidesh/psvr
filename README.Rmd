@@ -1,5 +1,7 @@
 ---
-output: github_document
+output:
+  github_document:
+    html_preview: false
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -26,17 +28,18 @@ negligible when the target is 1 000 but critical when it is 2. `psvr` addresses 
 by optimising MAPE and RMSPE directly, making it well-suited for forecasting tasks
 where targets are strictly positive and relative accuracy is what matters.
 
-`psvr()` is the single entry point; `loss` and `sym` select the model:
+There is one fitter per model family, and `sym_type` selects the symmetric
+variant within each:
 
-| `loss` | `sym` | Model | Solver |
+| Function | `sym_type` | Model | Solver |
 |---|---|---|---|
-| `"mape"` | `NULL` | ε-SVR with MAPE | SMO (default) or `osqp` |
-| `"mape"` | `+1L` / `-1L` | Symmetric ε-SVR with MAPE | SMO (default) or `osqp` |
-| `"rmspe"` | `NULL` | LS-SVR with RMSPE | linear system |
-| `"rmspe"` | `+1L` / `-1L` | Symmetric LS-SVR with RMSPE | linear system |
+| `psvr_mape()` | `"none"` | ε-SVR with MAPE | SMO (default) or `osqp` |
+| `psvr_mape()` | `"even"` / `"odd"` | Symmetric ε-SVR with MAPE | SMO (default) or `osqp` |
+| `psvr_rmspe()` | `"none"` | LS-SVR with RMSPE | linear system |
+| `psvr_rmspe()` | `"even"` / `"odd"` | Symmetric LS-SVR with RMSPE | linear system |
 
-`sym = +1L` imposes an even-function prior (`f(-x) = f(x)`), `sym = -1L` an odd
-one. All models require **strictly positive targets** (`y > 0`).
+`sym_type = "even"` imposes an even-function prior (`f(-x) = f(x)`), `"odd"` an
+odd one. All models require **strictly positive targets** (`y > 0`).
 
 ## Installation
 
@@ -71,19 +74,19 @@ X_te_s   <- scale(X_te, col_mean, col_sd)
 K <- make_kernel("rbf", sigma = 1)
 
 # Model 1 — ε-SVR with MAPE
-fit1  <- psvr(X_tr_s, y_tr, loss = "mape", kernel = K, C = 0.5, eps = 5)
+fit1  <- psvr_mape(X_tr_s, y_tr, kernel = K, C = 0.5, eps = 5)
 pred1 <- predict(fit1, X_te_s)
 
-# Model 2 — Symmetric ε-SVR with MAPE  (sym = 1L: even-function prior)
-fit2  <- psvr(X_tr_s, y_tr, loss = "mape", sym = 1L, kernel = K, C = 0.5, eps = 5)
+# Model 2 — Symmetric ε-SVR with MAPE  (even-function prior)
+fit2  <- psvr_mape(X_tr_s, y_tr, sym_type = "even", kernel = K, C = 0.5, eps = 5)
 pred2 <- predict(fit2, X_te_s)
 
 # Model 3 — LS-SVR with RMSPE
-fit3  <- psvr(X_tr_s, y_tr, loss = "rmspe", kernel = K, gamma = 100)
+fit3  <- psvr_rmspe(X_tr_s, y_tr, kernel = K, gamma = 100)
 pred3 <- predict(fit3, X_te_s)
 
-# Model 4 — Symmetric LS-SVR with RMSPE  (sym = 1L: even-function prior)
-fit4  <- psvr(X_tr_s, y_tr, loss = "rmspe", sym = 1L, kernel = K, gamma = 100)
+# Model 4 — Symmetric LS-SVR with RMSPE  (even-function prior)
+fit4  <- psvr_rmspe(X_tr_s, y_tr, sym_type = "even", kernel = K, gamma = 100)
 pred4 <- predict(fit4, X_te_s)
 
 mape <- function(y, yhat) mean(abs(y - yhat) / y) * 100

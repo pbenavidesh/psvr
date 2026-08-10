@@ -7,12 +7,14 @@
 \method{predict}{psvr_rmspe}(object, newdata, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"psvr_rmspe"}, as returned by the parsnip
-engine fit wrappers with \code{sym_type = "none"} (see \link{psvr-fit-wrappers};
-\code{sym_type = "even"} or \code{"odd"} yields \code{"psvr_rmspe_sym"} instead). Unwrap a
-parsnip fit with \code{\link[parsnip:reexports]{parsnip::extract_fit_engine()}} to obtain it.}
+\item{object}{An object of class \code{"psvr_rmspe"}, as returned by
+\code{\link[=psvr_rmspe]{psvr_rmspe()}} with \code{sym_type = "none"} or by the parsnip engine fit
+wrappers (see \link{psvr-fit-wrappers}; \code{sym_type = "even"} or \code{"odd"} yields
+\code{"psvr_rmspe_sym"} instead). Unwrap a parsnip fit with
+\code{\link[parsnip:reexports]{parsnip::extract_fit_engine()}} to obtain it.}
 
-\item{newdata}{Numeric matrix of new inputs, one observation per row (M × p).}
+\item{newdata}{Numeric matrix of new inputs, one observation per row
+(\eqn{M \times p}{M x p}).}
 
 \item{...}{Ignored.}
 }
@@ -20,6 +22,6 @@ parsnip fit with \code{\link[parsnip:reexports]{parsnip::extract_fit_engine()}} 
 Numeric vector of length M with predicted values.
 }
 \description{
-Method dispatched on the legacy \code{"psvr_rmspe"} class, which the parsnip engine
-fit wrappers return. For direct fitting use \code{\link[=psvr]{psvr()}}.
+Method dispatched on the \code{"psvr_rmspe"} class, which both \code{\link[=psvr_rmspe]{psvr_rmspe()}} and
+the parsnip engine fit wrappers return.
 }

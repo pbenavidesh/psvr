@@ -2,7 +2,7 @@
 % Please edit documentation in R/psvr_cv.R
 \name{psvr_cv}
 \alias{psvr_cv}
-\title{Cross-validate psvr() with automatic warm-start across folds}
+\title{Cross-validate psvr_mape() with automatic warm-start across folds}
 \usage{
 psvr_cv(
   splits,
@@ -20,10 +20,11 @@ psvr_cv(
 \code{row_ids} (integer vector of original training-row indices used for
 warm-start alignment across folds; defaults to positional).}
 
-\item{...}{Arguments forwarded to \code{\link[=psvr]{psvr()}}. Must specify \code{kernel} and
+\item{...}{Arguments forwarded to \code{\link[=psvr_mape]{psvr_mape()}}. Must specify \code{kernel} and
 the MAPE hyperparameters (\code{C}, \code{eps}). \code{alpha_init} and
 \code{alpha_star_init} are managed internally; supplying them via \code{...}
-is an error.}
+is an error, and so is \code{loss}, which is not an argument of
+\code{\link[=psvr_mape]{psvr_mape()}}.}
 
 \item{X_var}{Character vector of predictor column names.}
 
@@ -39,30 +40,31 @@ is an error.}
 A \code{tibble} with one row per split and columns:
 \describe{
 \item{\code{split_id}}{1-based fold index.}
-\item{\code{fit}}{A list-column of \code{psvr_fit} objects.}
+\item{\code{fit}}{A list-column of \code{psvr_mape} objects, or \code{psvr_mape_sym}
+when \code{sym_type} is \code{"even"} or \code{"odd"}.}
 \item{\code{predictions}}{A list-column of numeric vectors (predictions
 on the assessment set).}
 \item{\code{metrics}}{A list-column of named numeric vectors (\code{mape},
 \code{rmspe}, \code{mse}, \code{r2}).}
-\item{\code{iter_count}}{Integer; SMO iterations from
-\code{fit$solver_meta$iters}.}
+\item{\code{iter_count}}{Integer; SMO iterations from \code{fit$iterations}.}
 \item{\code{elapsed_sec}}{Numeric; wall-clock seconds for the fit.}
 \item{\code{warm_started}}{Logical; \code{TRUE} for fold > 1 when
 \code{warm_start = TRUE}.}
 }
 }
 \description{
-Fits a \code{psvr(loss = "mape")} model on each split in \code{splits}, carrying
+Fits a \code{\link[=psvr_mape]{psvr_mape()}} model on each split in \code{splits}, carrying
 the converged \verb{(alpha, alpha_star)} from one fold into the next as the
 SMO warm-start (Theorem 5 of arXiv:2605.01446 v3, Algorithm 1). Folds
 are projected to feasibility before each solve. Returns a tibble with
 one row per fold.
 }
 \details{
-This helper currently only supports \code{loss = "mape"}. For
-\code{loss = "rmspe"} (LS-SVR), each fold is a single linear-system solve
-with no carryover state; use \code{tune::tune_grid()} with parallel
-cold-start instead.
+This helper is \strong{MAPE-only}, and there is no \code{loss} argument. That is a
+limitation of the implementation, not of the method: only \code{\link[=psvr_mape]{psvr_mape()}} was
+ever wired to it. LS-SVR cross-validates perfectly well, it simply has no
+carryover state to exploit (each fold is a single linear-system solve), so
+for \code{\link[=psvr_rmspe]{psvr_rmspe()}} use \code{tune::tune_grid()} with parallel cold-start.
 }
 \examples{
 if (requireNamespace("rsample", quietly = TRUE) &&
@@ -75,7 +77,6 @@ if (requireNamespace("rsample", quietly = TRUE) &&
   )
   folds <- rsample::vfold_cv(d, v = 5)
   res <- psvr_cv(folds, X_var = c("x1", "x2"), y_var = "y",
-                 loss = "mape",
                  kernel = make_kernel("rbf", sigma = 1),
                  C = 10, eps = 5)
   median(vapply(res$metrics, function(m) m[["mape"]], numeric(1)))

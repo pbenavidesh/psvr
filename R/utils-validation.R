@@ -1,5 +1,5 @@
-# Internal validation helpers shared across the psvr fitters and the unified
-# psvr() entry point.
+# Internal validation helpers shared across the psvr fitters and the two
+# public entry points, psvr_mape() and psvr_rmspe().
 
 # Validate strictly-positive targets. All percentage-error losses require y > 0.
 .validate_y_positive <- function(y) {
@@ -27,80 +27,34 @@
   invisible(NULL)
 }
 
-# Validate inputs for the unified psvr() entry point. Used in Step 4+.
+# Validate the warm-start vectors for psvr_mape().
 #
-# `passed` is a named logical vector of `missing()` flags from psvr()'s frame:
-# TRUE means the user supplied that argument (so a cross-loss mismatch should
-# warn). `match.arg` defaults are indistinguishable from user input by value
-# alone, so the call site must compute these flags before delegating here.
-.validate_psvr_inputs <- function(X, y, loss, sym,
-                                  C = NULL, eps = NULL,
-                                  gamma = NULL,
-                                  a = NULL,
-                                  alpha_init = NULL,
-                                  alpha_star_init = NULL,
-                                  reg = NULL,
-                                  passed = list()) {
+# This is the whole of what the epsilon-SVR entry point adds over its fitters:
+# .fit_mape() / .fit_mape_sym() already check y > 0, C > 0, eps >= 0 and
+# a in {-1, 1} themselves, and duplicating those here would be drift.
+#
+# There is deliberately NO .validate_rmspe_inputs() sibling. The LS-SVR entry
+# point adds nothing its fitters do not already check except the presence of
+# `gamma` and `kernel` -- and presence is tested with missing(), which only
+# works in the frame that owns the formal and therefore cannot be delegated to
+# a helper at all. A one-line rmspe validator would have been a wrapper around
+# nothing.
+#
+# Message wording is load-bearing: test-warm-start.R matches on the substrings
+# "finite numeric" and "length nrow(X)".
+.validate_mape_inputs <- function(X, alpha_init = NULL, alpha_star_init = NULL) {
+  if (is.null(alpha_init) && is.null(alpha_star_init)) return(invisible(NULL))
 
-  if (!is.null(reg))
-    stop("psvr 0.0.2.9004 does not implement extended Lagrangian (`reg`); ",
-         "planned for a future phase. Pass `reg = NULL`.")
-
-  has_warm <- !is.null(alpha_init) || !is.null(alpha_star_init)
-  if (has_warm && loss == "rmspe") {
-    stop("Warm-start is not supported for `loss = \"rmspe\"` (LS-SVR is a ",
-         "single linear-system solve; there is no SMO state to carry over). ",
-         "Use `loss = \"mape\"` for warm-start, or `tune::tune_grid()` with ",
-         "parallel cold-start for RMSPE cross-validation.")
+  N <- nrow(X)
+  chk <- function(v, nm) {
+    if (is.null(v)) return(invisible(NULL))
+    if (!is.numeric(v) || length(v) != N || any(!is.finite(v)))
+      stop(sprintf("`%s` must be a finite numeric vector of length nrow(X).", nm),
+           call. = FALSE)
+    invisible(NULL)
   }
-  if (has_warm) {
-    N <- nrow(X)
-    if (!is.null(alpha_init)) {
-      if (!is.numeric(alpha_init) || length(alpha_init) != N ||
-          any(!is.finite(alpha_init)))
-        stop("`alpha_init` must be a finite numeric vector of length nrow(X).")
-    }
-    if (!is.null(alpha_star_init)) {
-      if (!is.numeric(alpha_star_init) || length(alpha_star_init) != N ||
-          any(!is.finite(alpha_star_init)))
-        stop("`alpha_star_init` must be a finite numeric vector of length nrow(X).")
-    }
-  }
-
-  if (!loss %in% c("mape", "rmspe"))
-    stop('`loss` must be one of "mape" or "rmspe"')
-
-  if (!is.null(sym)) {
-    sym_int <- suppressWarnings(as.integer(sym))
-    if (length(sym_int) != 1L || is.na(sym_int) || !sym_int %in% c(-1L, 1L))
-      stop("`sym` must be NULL, +1L, or -1L")
-  }
-
-  if (!is.null(a) && (length(a) != 1L || !a %in% c(-1L, 1L)))
-    stop("`a` must be 1 (even) or -1 (odd)")
-
-  .validate_y_positive(y)
-
-  if (loss == "mape") {
-    if (is.null(C))   stop('`C` is required when `loss = "mape"`')
-    if (is.null(eps)) stop('`eps` is required when `loss = "mape"`')
-    if (C   <= 0) stop("`C` must be positive")
-    if (eps <  0) stop("`eps` must be non-negative")
-    # Cross-loss: warn only when the user actively supplied a non-NULL value
-    # for an LS-SVR-only arg.  (Explicit `gamma = NULL` ≡ not passing.)
-    if (isTRUE(passed$gamma) && !is.null(gamma))
-      warning('`gamma` is ignored when `loss = "mape"`')
-    if (isTRUE(passed$precondition))
-      warning('`precondition` is ignored when `loss = "mape"`')
-  } else {  # rmspe
-    if (is.null(gamma)) stop('`gamma` is required when `loss = "rmspe"`')
-    if (gamma <= 0)     stop("`gamma` must be positive")
-    if (isTRUE(passed$C)   && !is.null(C))   warning('`C` is ignored when `loss = "rmspe"`')
-    if (isTRUE(passed$eps) && !is.null(eps)) warning('`eps` is ignored when `loss = "rmspe"`')
-    if (isTRUE(passed$solver))               warning('`solver` is ignored when `loss = "rmspe"`')
-    if (isTRUE(passed$tol))                  warning('`tol` is ignored when `loss = "rmspe"`')
-    if (isTRUE(passed$max_iter))             warning('`max_iter` is ignored when `loss = "rmspe"`')
-  }
-
+  chk(alpha_init,      "alpha_init")
+  chk(alpha_star_init, "alpha_star_init")
   invisible(NULL)
 }
+

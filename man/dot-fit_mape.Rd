@@ -23,7 +23,7 @@
 )
 }
 \arguments{
-\item{X, y, kernel, C, eps, solver, tol}{See \code{\link[=psvr]{psvr()}}.}
+\item{X, y, kernel, C, eps, solver, tol}{See \code{\link[=psvr_mape]{psvr_mape()}}.}
 
 \item{alpha_init, alpha_star_init}{Optional length-N numeric warm-start
 vectors (Theorem 5); \code{NULL} cold-starts.}
@@ -35,8 +35,8 @@ feasibility of the warm-start vectors. Default \code{TRUE}.}
 A list of class \code{"psvr_mape"} (legacy shape).
 }
 \description{
-Internal fitter for the MAPE epsilon-SVR family. Use \code{\link[=psvr]{psvr()}} with
-\code{loss = "mape"} instead. Returns the legacy \code{psvr_mape} shape, which is also
-what the parsnip engine fit wrappers return.
+Internal fitter for the MAPE epsilon-SVR family. Use \code{\link[=psvr_mape]{psvr_mape()}} instead.
+Returns the \code{psvr_mape} shape, which is what \code{\link[=psvr_mape]{psvr_mape()}} and the parsnip
+engine fit wrappers both return.
 }
 \keyword{internal}

@@ -25,7 +25,7 @@ test_that("psvr_cv() cold-start returns a tibble with seven expected columns", {
   folds <- rsample::vfold_cv(d, v = 5L)
 
   res <- psvr_cv(folds, X_var = c("x1", "x2", "x3"), y_var = "y",
-                 loss = "mape", kernel = make_kernel("rbf", sigma = 1),
+                 kernel = make_kernel("rbf", sigma = 1),
                  C = 10, eps = 5,
                  warm_start = FALSE)
 
@@ -33,7 +33,7 @@ test_that("psvr_cv() cold-start returns a tibble with seven expected columns", {
   expect_named(res, c("split_id", "fit", "predictions", "metrics",
                       "iter_count", "elapsed_sec", "warm_started"))
   expect_equal(nrow(res), 5L)
-  expect_true(all(vapply(res$fit,         inherits,    logical(1L), "psvr_fit")))
+  expect_true(all(vapply(res$fit,         inherits,    logical(1L), "psvr_mape")))
   expect_true(all(vapply(res$predictions, is.numeric,  logical(1L))))
   expect_true(all(vapply(res$metrics,     is.numeric,  logical(1L))))
   expect_true(all(!res$warm_started))  # cold-start across all folds
@@ -49,11 +49,11 @@ test_that("psvr_cv() warm-start reduces SMO iterations on later folds", {
   folds <- rsample::vfold_cv(d, v = 5L)
 
   res_warm <- psvr_cv(folds, X_var = c("x1", "x2", "x3"), y_var = "y",
-                      loss = "mape", kernel = make_kernel("rbf", sigma = 1),
+                      kernel = make_kernel("rbf", sigma = 1),
                       C = 10, eps = 5,
                       warm_start = TRUE)
   res_cold <- psvr_cv(folds, X_var = c("x1", "x2", "x3"), y_var = "y",
-                      loss = "mape", kernel = make_kernel("rbf", sigma = 1),
+                      kernel = make_kernel("rbf", sigma = 1),
                       C = 10, eps = 5,
                       warm_start = FALSE)
 
@@ -81,10 +81,10 @@ test_that("psvr_cv() accepts an rsample::rset (vfold_cv)", {
   d     <- make_fixture()
   folds <- rsample::vfold_cv(d, v = 4L)
   res   <- psvr_cv(folds, X_var = c("x1", "x2", "x3"), y_var = "y",
-                   loss = "mape", kernel = make_kernel("rbf", sigma = 1),
+                   kernel = make_kernel("rbf", sigma = 1),
                    C = 10, eps = 5)
   expect_equal(nrow(res), 4L)
-  expect_true(all(vapply(res$fit, inherits, logical(1L), "psvr_fit")))
+  expect_true(all(vapply(res$fit, inherits, logical(1L), "psvr_mape")))
 })
 
 # ---- 4. List-of-tuples integration works ---------------------------------
@@ -98,24 +98,44 @@ test_that("psvr_cv() accepts a plain list of (analysis, assessment) tuples", {
     list(analysis = d[i2, ], assessment = d[i1, ], row_ids = i2)
   )
   res <- psvr_cv(splits, X_var = c("x1", "x2", "x3"), y_var = "y",
-                 loss = "mape", kernel = make_kernel("rbf", sigma = 1),
+                 kernel = make_kernel("rbf", sigma = 1),
                  C = 10, eps = 5,
                  warm_start = FALSE)
   expect_equal(nrow(res), 2L)
-  expect_true(all(vapply(res$fit, inherits, logical(1L), "psvr_fit")))
+  expect_true(all(vapply(res$fit, inherits, logical(1L), "psvr_mape")))
 })
 
-# ---- 5. Strict error: loss = 'rmspe' --------------------------------------
+# ---- 5. Strict error: `loss` is not an argument ---------------------------
+# This block used to pin the message "only supports `loss = \"mape\"`". It is
+# REPOINTED, not deleted: the limitation it guards is unchanged, only the
+# vocabulary moved. psvr_cv() forwards to psvr_mape(), which has no `loss`
+# formal, so `loss` is rejected outright rather than compared against "rmspe".
+#
+# The message must read NOT YET, not NEVER. psvr_cv() is MAPE-only because
+# only .fit_mape() was ever wired to it, not because LS-SVR resists
+# cross-validation -- it cross-validates fine, it just has no SMO state to
+# carry between folds. Both halves of that are asserted below so neither can
+# drift into the other.
 
-test_that("psvr_cv() rejects loss = 'rmspe'", {
+test_that("psvr_cv() rejects `loss` and says the limitation is not permanent", {
   skip_if_no_rsample()
   d     <- make_fixture()
   folds <- rsample::vfold_cv(d, v = 2L)
-  expect_error(
+
+  err <- expect_error(
     psvr_cv(folds, X_var = c("x1", "x2", "x3"), y_var = "y",
             loss = "rmspe", kernel = make_kernel("rbf", sigma = 1),
-            gamma = 100),
-    "only supports `loss = \"mape\"`"
+            gamma = 100)
+  )
+  expect_match(conditionMessage(err), "currently supports MAPE only")
+  expect_match(conditionMessage(err), "not implemented")
+
+  # Rejected whatever the value -- including the one that used to be correct.
+  expect_error(
+    psvr_cv(folds, X_var = c("x1", "x2", "x3"), y_var = "y",
+            loss = "mape", kernel = make_kernel("rbf", sigma = 1),
+            C = 10, eps = 5),
+    "`loss` is not an"
   )
 })
 
@@ -127,11 +147,11 @@ test_that("psvr_cv() fold-1 fit is identical whether warm_start is TRUE or FALSE
   folds <- rsample::vfold_cv(d, v = 3L)
 
   res_warm <- psvr_cv(folds, X_var = c("x1", "x2", "x3"), y_var = "y",
-                      loss = "mape", kernel = make_kernel("rbf", sigma = 1),
+                      kernel = make_kernel("rbf", sigma = 1),
                       C = 10, eps = 5,
                       warm_start = TRUE)
   res_cold <- psvr_cv(folds, X_var = c("x1", "x2", "x3"), y_var = "y",
-                      loss = "mape", kernel = make_kernel("rbf", sigma = 1),
+                      kernel = make_kernel("rbf", sigma = 1),
                       C = 10, eps = 5,
                       warm_start = FALSE)
 
@@ -149,7 +169,7 @@ test_that("psvr_cv() warm-start reduces fold-2+ iters below fold-1 cold-start", 
   folds <- rsample::vfold_cv(d, v = 5L)
 
   res <- psvr_cv(folds, X_var = c("x1", "x2", "x3"), y_var = "y",
-                 loss = "mape", kernel = make_kernel("rbf", sigma = 1),
+                 kernel = make_kernel("rbf", sigma = 1),
                  C = 10, eps = 5,
                  warm_start = TRUE)
 
@@ -169,7 +189,7 @@ test_that("psvr_cv() errors when X_var or y_var is missing", {
   d <- make_fixture()
   splits <- list(list(analysis = d[1:40, ], assessment = d[41:80, ]))
   expect_error(
-    psvr_cv(splits, loss = "mape", kernel = make_kernel("rbf", sigma = 1),
+    psvr_cv(splits, kernel = make_kernel("rbf", sigma = 1),
             C = 10, eps = 5),
     "requires `X_var`"
   )
