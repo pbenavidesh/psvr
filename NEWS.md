@@ -14,6 +14,23 @@
 
 ## Breaking changes
 
+* **The ε-SVR margin argument is renamed `svm_margin` → `margin`**, matching
+  `parsnip::svm_rbf()` and `parsnip::svm_poly()`. Affects the three MAPE specs
+  (`psvr_mape_rbf()`, `psvr_mape_poly()`, `psvr_mape_linear()`) and their
+  `update()` methods:
+
+  ```r
+  psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1)
+  # becomes
+  psvr_mape_rbf(cost = 10, margin = 1, rbf_sigma = 1)
+  ```
+
+  The dials object behind it is **unchanged** — still `margin_percentage()`,
+  default range `[1, 20]` in percentage units. Note the units still differ from
+  `dials::svm_margin()`, which is absolute; only the argument *name* now matches
+  parsnip's. The engine-side name is also unchanged: it still maps to `eps`, so
+  `psvr()` and the internal fitters are unaffected.
+
 * **`mape_svr()`, `mape_sym_svr()`, `rmspe_lssvr()` and `rmspe_sym_lssvr()` are
   REMOVED**, along with `R/deprecated.R`. They were soft-deprecated since
   0.0.2.9000 and never shipped in a released version. Replace with `psvr()`:

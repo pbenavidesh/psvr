@@ -67,13 +67,13 @@ fit_and_predict <- function(spec, fx) {
 # poly and linear rows below are the ones that could not have passed before.
 
 sym_specs <- list(
-  psvr_mape_rbf     = function() psvr_mape_rbf(cost = 10, svm_margin = 1,
+  psvr_mape_rbf     = function() psvr_mape_rbf(cost = 10, margin = 1,
                                                rbf_sigma = 1,
                                                sym_type = tune::tune()),
-  psvr_mape_poly    = function() psvr_mape_poly(cost = 10, svm_margin = 1,
+  psvr_mape_poly    = function() psvr_mape_poly(cost = 10, margin = 1,
                                                 degree = 2, scale_factor = 1,
                                                 sym_type = tune::tune()),
-  psvr_mape_linear  = function() psvr_mape_linear(cost = 10, svm_margin = 1,
+  psvr_mape_linear  = function() psvr_mape_linear(cost = 10, margin = 1,
                                                   sym_type = tune::tune()),
   psvr_rmspe_rbf    = function() psvr_rmspe_rbf(cost = 1000, rbf_sigma = 1,
                                                 sym_type = tune::tune()),
@@ -151,7 +151,7 @@ test_that("sym_type_param() validates its values argument", {
 test_that("set_engine('psvr', a = ...) errors at fit on a survivor spec", {
   skip_on_cran()
   fx   <- make_fixture()
-  spec <- psvr_mape_poly(cost = HP$C, svm_margin = HP$eps, degree = HP$degree,
+  spec <- psvr_mape_poly(cost = HP$C, margin = HP$eps, degree = HP$degree,
                          scale_factor = HP$scale_factor) |>
             set_engine("psvr", a = 1L)
   # Documented, not desired: parsnip accepts `a` this far.
@@ -171,14 +171,14 @@ test_that("mape_rbf: omitted == NULL == 'none' == direct .fit_mape", {
   fx <- make_fixture()
 
   omitted <- fit_and_predict(
-    psvr_mape_rbf(cost = HP$C, svm_margin = HP$eps,
+    psvr_mape_rbf(cost = HP$C, margin = HP$eps,
                   rbf_sigma = HP$rbf_sigma) |> set_engine("psvr"), fx)
   explicit_null <- fit_and_predict(
-    psvr_mape_rbf(cost = HP$C, svm_margin = HP$eps,
+    psvr_mape_rbf(cost = HP$C, margin = HP$eps,
                   rbf_sigma = HP$rbf_sigma, sym_type = NULL) |>
       set_engine("psvr"), fx)
   explicit_none <- fit_and_predict(
-    psvr_mape_rbf(cost = HP$C, svm_margin = HP$eps,
+    psvr_mape_rbf(cost = HP$C, margin = HP$eps,
                   rbf_sigma = HP$rbf_sigma, sym_type = "none") |>
       set_engine("psvr"), fx)
 

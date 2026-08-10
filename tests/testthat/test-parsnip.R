@@ -24,18 +24,18 @@ smoke <- function(spec) {
 # ---- Model 1: epsilon-SVR with MAPE ----
 
 test_that("psvr_mape_rbf smoke", {
-  smoke(psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1) |>
+  smoke(psvr_mape_rbf(cost = 10, margin = 1, rbf_sigma = 1) |>
           set_engine("psvr"))
 })
 
 test_that("psvr_mape_poly smoke", {
-  smoke(psvr_mape_poly(cost = 10, svm_margin = 1, degree = 2,
+  smoke(psvr_mape_poly(cost = 10, margin = 1, degree = 2,
                        scale_factor = 1) |>
           set_engine("psvr"))
 })
 
 test_that("psvr_mape_linear smoke", {
-  smoke(psvr_mape_linear(cost = 10, svm_margin = 1) |>
+  smoke(psvr_mape_linear(cost = 10, margin = 1) |>
           set_engine("psvr"))
 })
 
@@ -45,19 +45,19 @@ test_that("psvr_mape_linear smoke", {
 # shift, none of which the sym_type-unset tests above touch.
 
 test_that("psvr_mape_rbf sym_type='even' smoke", {
-  smoke(psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1,
+  smoke(psvr_mape_rbf(cost = 10, margin = 1, rbf_sigma = 1,
                       sym_type = "even") |>
           set_engine("psvr"))
 })
 
 test_that("psvr_mape_poly sym_type='even' smoke", {
-  smoke(psvr_mape_poly(cost = 10, svm_margin = 1, degree = 2,
+  smoke(psvr_mape_poly(cost = 10, margin = 1, degree = 2,
                        scale_factor = 1, sym_type = "even") |>
           set_engine("psvr"))
 })
 
 test_that("psvr_mape_linear sym_type='even' smoke", {
-  smoke(psvr_mape_linear(cost = 10, svm_margin = 1, sym_type = "even") |>
+  smoke(psvr_mape_linear(cost = 10, margin = 1, sym_type = "even") |>
           set_engine("psvr"))
 })
 
@@ -195,9 +195,9 @@ y_t  <- 2 + X_t[, 1] + X_t[, 2] + rnorm(n_t, sd = 0.1)
 stopifnot(all(y_t > 0))
 
 test_that("tol forwarded through parsnip set_engine", {
-  spec_loose <- psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1) |>
+  spec_loose <- psvr_mape_rbf(cost = 10, margin = 1, rbf_sigma = 1) |>
     set_engine("psvr", tol = 1e-1)
-  spec_tight <- psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1) |>
+  spec_tight <- psvr_mape_rbf(cost = 10, margin = 1, rbf_sigma = 1) |>
     set_engine("psvr", tol = 1e-6)
   fit_loose <- parsnip::fit_xy(spec_loose, x = X_t, y = y_t)
   fit_tight <- parsnip::fit_xy(spec_tight, x = X_t, y = y_t)
@@ -207,7 +207,7 @@ test_that("tol forwarded through parsnip set_engine", {
 })
 
 test_that("max_iter caps SMO iterations via parsnip set_engine", {
-  spec_cap <- psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1) |>
+  spec_cap <- psvr_mape_rbf(cost = 10, margin = 1, rbf_sigma = 1) |>
     set_engine("psvr", max_iter = 5L)
   expect_warning(
     fit_cap <- parsnip::fit_xy(spec_cap, x = X_t, y = y_t),

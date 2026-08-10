@@ -94,7 +94,7 @@ test_that("parsnip default fit (solver = 'smo') runs and predicts", {
   train_df <- as.data.frame(X_tr)
   train_df$y <- y_tr
 
-  spec <- psvr_mape_rbf(cost = 1, svm_margin = 5, rbf_sigma = 1) |>
+  spec <- psvr_mape_rbf(cost = 1, margin = 5, rbf_sigma = 1) |>
     parsnip::set_engine("psvr")
 
   fit_p <- parsnip::fit(spec, y ~ ., data = train_df)

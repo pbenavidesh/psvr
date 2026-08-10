@@ -207,9 +207,11 @@ psvr_rmspe_linear_fit <- function(x, y, gamma, sym_type = "none",
 #' @param cost   Regularization parameter `C > 0`.  Use [tune()] to optimize.
 #'   Mapped to [cost_psvr()] with range `[-2, 10]` on the log2 scale — wider
 #'   than `dials::cost()` to cover the larger values needed by LS-SVR models.
-#' @param svm_margin Epsilon tube half-width `ε ≥ 0` expressed as a percentage
+#' @param margin Epsilon tube half-width `ε ≥ 0` expressed as a percentage
 #'   of each target value.  Use [tune()] to optimize.  Mapped to
 #'   [margin_percentage()] with default range `[1, 20]` (percentage units).
+#'   Named to match `parsnip::svm_rbf()`; note the units differ from
+#'   `dials::svm_margin()`, which is absolute rather than percentage.
 #' @param rbf_sigma RBF bandwidth σ > 0.  Use [tune()] to optimize.
 #'   Mapped to [rbf_sigma_psvr()]; the search range auto-finalizes using the
 #'   median-distance heuristic when training data are available.
@@ -228,18 +230,18 @@ psvr_rmspe_linear_fit <- function(x, y, gamma, sym_type = "none",
 #' @examples
 #' \dontrun{
 #' library(parsnip)
-#' spec <- psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1) |>
+#' spec <- psvr_mape_rbf(cost = 10, margin = 1, rbf_sigma = 1) |>
 #'   set_engine("psvr")
 #'
-#' spec_poly <- psvr_mape_poly(cost = 10, svm_margin = 1, degree = 2,
+#' spec_poly <- psvr_mape_poly(cost = 10, margin = 1, degree = 2,
 #'                             scale_factor = 1) |>
 #'   set_engine("psvr")
 #'
-#' spec_lin <- psvr_mape_linear(cost = 10, svm_margin = 1) |>
+#' spec_lin <- psvr_mape_linear(cost = 10, margin = 1) |>
 #'   set_engine("psvr")
 #'
 #' # Symmetric epsilon-SVR (Model 2) via the sym_type argument:
-#' spec_sym <- psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1,
+#' spec_sym <- psvr_mape_rbf(cost = 10, margin = 1, rbf_sigma = 1,
 #'                           sym_type = "even") |>
 #'   set_engine("psvr")
 #' }
@@ -247,13 +249,13 @@ psvr_rmspe_linear_fit <- function(x, y, gamma, sym_type = "none",
 #' @name psvr_mape_specs
 #' @export
 psvr_mape_rbf <- function(mode = "regression", engine = "psvr",
-                          cost = NULL, svm_margin = NULL, rbf_sigma = NULL,
+                          cost = NULL, margin = NULL, rbf_sigma = NULL,
                           sym_type = NULL) {
   args <- list(
-    cost       = rlang::enquo(cost),
-    svm_margin = rlang::enquo(svm_margin),
-    rbf_sigma  = rlang::enquo(rbf_sigma),
-    sym_type   = rlang::enquo(sym_type)
+    cost      = rlang::enquo(cost),
+    margin    = rlang::enquo(margin),
+    rbf_sigma = rlang::enquo(rbf_sigma),
+    sym_type  = rlang::enquo(sym_type)
   )
   parsnip::new_model_spec(
     "psvr_mape_rbf_model",
@@ -270,12 +272,12 @@ psvr_mape_rbf <- function(mode = "regression", engine = "psvr",
 #' @rdname psvr_mape_specs
 #' @export
 psvr_mape_poly <- function(mode = "regression", engine = "psvr",
-                           cost = NULL, svm_margin = NULL,
+                           cost = NULL, margin = NULL,
                            degree = NULL, scale_factor = NULL,
                            sym_type = NULL) {
   args <- list(
     cost         = rlang::enquo(cost),
-    svm_margin   = rlang::enquo(svm_margin),
+    margin       = rlang::enquo(margin),
     degree       = rlang::enquo(degree),
     scale_factor = rlang::enquo(scale_factor),
     sym_type     = rlang::enquo(sym_type)
@@ -295,12 +297,12 @@ psvr_mape_poly <- function(mode = "regression", engine = "psvr",
 #' @rdname psvr_mape_specs
 #' @export
 psvr_mape_linear <- function(mode = "regression", engine = "psvr",
-                             cost = NULL, svm_margin = NULL,
+                             cost = NULL, margin = NULL,
                              sym_type = NULL) {
   args <- list(
-    cost       = rlang::enquo(cost),
-    svm_margin = rlang::enquo(svm_margin),
-    sym_type   = rlang::enquo(sym_type)
+    cost     = rlang::enquo(cost),
+    margin   = rlang::enquo(margin),
+    sym_type = rlang::enquo(sym_type)
   )
   parsnip::new_model_spec(
     "psvr_mape_linear_model",
@@ -462,26 +464,26 @@ psvr_update_spec <- function(object, cls, new_args, fresh, ...) {
 
 #' @export
 update.psvr_mape_rbf_model <- function(object, parameters = NULL,
-                                       cost = NULL, svm_margin = NULL,
+                                       cost = NULL, margin = NULL,
                                        rbf_sigma = NULL, sym_type = NULL,
                                        fresh = FALSE, ...) {
   psvr_update_spec(object, "psvr_mape_rbf_model",
-                   list(cost       = rlang::enquo(cost),
-                        svm_margin = rlang::enquo(svm_margin),
-                        rbf_sigma  = rlang::enquo(rbf_sigma),
-                        sym_type   = rlang::enquo(sym_type)),
+                   list(cost      = rlang::enquo(cost),
+                        margin    = rlang::enquo(margin),
+                        rbf_sigma = rlang::enquo(rbf_sigma),
+                        sym_type  = rlang::enquo(sym_type)),
                    fresh, ...)
 }
 
 #' @export
 update.psvr_mape_poly_model <- function(object, parameters = NULL,
-                                        cost = NULL, svm_margin = NULL,
+                                        cost = NULL, margin = NULL,
                                         degree = NULL, scale_factor = NULL,
                                         sym_type = NULL,
                                         fresh = FALSE, ...) {
   psvr_update_spec(object, "psvr_mape_poly_model",
                    list(cost         = rlang::enquo(cost),
-                        svm_margin   = rlang::enquo(svm_margin),
+                        margin       = rlang::enquo(margin),
                         degree       = rlang::enquo(degree),
                         scale_factor = rlang::enquo(scale_factor),
                         sym_type     = rlang::enquo(sym_type)),
@@ -490,13 +492,13 @@ update.psvr_mape_poly_model <- function(object, parameters = NULL,
 
 #' @export
 update.psvr_mape_linear_model <- function(object, parameters = NULL,
-                                          cost = NULL, svm_margin = NULL,
+                                          cost = NULL, margin = NULL,
                                           sym_type = NULL,
                                           fresh = FALSE, ...) {
   psvr_update_spec(object, "psvr_mape_linear_model",
-                   list(cost       = rlang::enquo(cost),
-                        svm_margin = rlang::enquo(svm_margin),
-                        sym_type   = rlang::enquo(sym_type)),
+                   list(cost     = rlang::enquo(cost),
+                        margin   = rlang::enquo(margin),
+                        sym_type = rlang::enquo(sym_type)),
                    fresh, ...)
 }
 
@@ -622,7 +624,7 @@ sym_type_param <- function(values = c("none", "even", "odd")) {
 # Reusable arg-definition lists (list(parsnip_name, original_name, dials_func))
 .A_COST_C     <- list("cost",         "C",            list(pkg = "psvr",  fun = "cost_psvr"))
 .A_COST_GAMMA <- list("cost",         "gamma",        list(pkg = "psvr",  fun = "cost_psvr"))
-.A_MARGIN     <- list("svm_margin",   "eps",          list(pkg = "psvr",  fun = "margin_percentage"))
+.A_MARGIN     <- list("margin",       "eps",          list(pkg = "psvr",  fun = "margin_percentage"))
 .A_SIGMA      <- list("rbf_sigma",    "rbf_sigma",    list(pkg = "psvr",  fun = "rbf_sigma_psvr"))
 .A_DEGREE     <- list("degree",       "degree",       list(pkg = "dials", fun = "degree"))
 .A_SCALE      <- list("scale_factor", "scale_factor", list(pkg = "dials", fun = "scale_factor"))

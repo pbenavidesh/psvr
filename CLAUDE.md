@@ -111,6 +111,15 @@ The RBF kernel and polynomial kernels of even degree satisfy both.
 - Load in a session with `devtools::load_all()` from the repo root.
 - **osqp 1.0.0** uses `solve_osqp(P, q, A, l, u, pars)` directly — the old R6
   `osqp(...)$solve()` API is gone.
+- **`README.md` is regenerated with `rmarkdown::render("README.Rmd")`, NEVER
+  `knitr::knit()`.** `README.Rmd` declares `output: github_document`, which is a
+  pandoc writer: `render()` applies it, `knit()` skips pandoc entirely. A raw knit
+  leaks the YAML front matter into `README.md`, re-wraps prose to ~85 columns
+  instead of ~72, strips the alignment padding from tables, and turns ` ``` r `
+  fences into ` ```r `. Nothing guards this — the pre-commit hook checks that
+  `README.md` is not older than `README.Rmd` and that both are staged, not which
+  renderer produced it. After rendering, diff every printed value: the Quick-start
+  numbers must reproduce byte-for-byte unless `R/psvr-main.R` changed.
 - **Build invariant — do not change**: `src/Makevars` and `Makevars.win` set
   `PKG_LIBS = $(BLAS_LIBS) $(FLIBS)`. `core_smo_solve.cpp` calls `F77_CALL(dgemv)`,
   so removing `$(BLAS_LIBS)` breaks linking. Do not add `$(LAPACK_LIBS)`; if ever

@@ -119,7 +119,7 @@ fit_and_predict <- function(spec, fx) {
 test_that("psvr_mape_rbf — parsnip golden", {
   skip_on_cran()
   fx   <- make_fixture()
-  spec <- psvr_mape_rbf(cost = HP$C, svm_margin = HP$eps,
+  spec <- psvr_mape_rbf(cost = HP$C, margin = HP$eps,
                         rbf_sigma = HP$rbf_sigma) |>
             set_engine("psvr")
   preds <- fit_and_predict(spec, fx)
@@ -129,7 +129,7 @@ test_that("psvr_mape_rbf — parsnip golden", {
 test_that("psvr_mape_poly — parsnip golden", {
   skip_on_cran()
   fx   <- make_fixture()
-  spec <- psvr_mape_poly(cost = HP$C, svm_margin = HP$eps,
+  spec <- psvr_mape_poly(cost = HP$C, margin = HP$eps,
                          degree = HP$degree,
                          scale_factor = HP$scale_factor) |>
             set_engine("psvr")
@@ -140,7 +140,7 @@ test_that("psvr_mape_poly — parsnip golden", {
 test_that("psvr_mape_linear — parsnip golden", {
   skip_on_cran()
   fx   <- make_fixture()
-  spec <- psvr_mape_linear(cost = HP$C, svm_margin = HP$eps) |>
+  spec <- psvr_mape_linear(cost = HP$C, margin = HP$eps) |>
             set_engine("psvr")
   preds <- fit_and_predict(spec, fx)
   expect_snapshot_value(preds, style = "serialize", tolerance = 1e-10)
@@ -161,7 +161,7 @@ test_that("psvr_mape_linear — parsnip golden", {
 test_that("psvr_mape_sym_rbf — parsnip golden", {
   skip_on_cran()
   fx   <- make_fixture()
-  spec <- psvr_mape_rbf(cost = HP$C, svm_margin = HP$eps,
+  spec <- psvr_mape_rbf(cost = HP$C, margin = HP$eps,
                         rbf_sigma = HP$rbf_sigma,
                         sym_type = "even") |>
             set_engine("psvr")
@@ -172,7 +172,7 @@ test_that("psvr_mape_sym_rbf — parsnip golden", {
 test_that("psvr_mape_sym_poly — parsnip golden", {
   skip_on_cran()
   fx   <- make_fixture()
-  spec <- psvr_mape_poly(cost = HP$C, svm_margin = HP$eps,
+  spec <- psvr_mape_poly(cost = HP$C, margin = HP$eps,
                          degree = HP$degree,
                          scale_factor = HP$scale_factor,
                          sym_type = "even") |>
@@ -184,7 +184,7 @@ test_that("psvr_mape_sym_poly — parsnip golden", {
 test_that("psvr_mape_sym_linear — parsnip golden", {
   skip_on_cran()
   fx   <- make_fixture()
-  spec <- psvr_mape_linear(cost = HP$C, svm_margin = HP$eps,
+  spec <- psvr_mape_linear(cost = HP$C, margin = HP$eps,
                            sym_type = "even") |>
             set_engine("psvr")
   preds <- fit_and_predict(spec, fx)

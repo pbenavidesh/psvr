@@ -21,7 +21,7 @@ margin_percentage <- function(range = c(1, 20), trans = NULL) {
     range     = range,
     inclusive = c(TRUE, TRUE),
     trans     = trans,
-    label     = c(svm_margin = "Insensitivity Margin (%)"),
+    label     = c(margin = "Insensitivity Margin (%)"),
     finalize  = NULL
   )
 }
