@@ -1,10 +1,9 @@
 # Predict from a fitted symmetric epsilon-SVR with MAPE model
 
-Method dispatched on the legacy `"psvr_mape_sym"` class returned by the
-deprecated
-[`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md).
-Uses the symmetric representer theorem `f(x) = ½ Σk βk Ks(xk, x) + b`
-with `Ks(xk, x) = K(xk, x) + a·K(xk, -x)`. New code should use
+Method dispatched on the legacy `"psvr_mape_sym"` class, which the
+parsnip engine fit wrappers return. Uses the symmetric representer
+theorem `f(x) = ½ Σk βk Ks(xk, x) + b` with
+`Ks(xk, x) = K(xk, x) + a·K(xk, -x)`. For direct fitting use
 [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md).
 
 ## Usage
@@ -18,8 +17,13 @@ predict(object, newdata, ...)
 
 - object:
 
-  An object of class `"psvr_mape_sym"` from
-  [`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md).
+  An object of class `"psvr_mape_sym"`, as returned by the parsnip
+  engine fit wrappers with `sym_type = "even"` or `"odd"` (see
+  [psvr-fit-wrappers](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md);
+  `sym_type = "none"` yields `"psvr_mape"` instead). Unwrap a parsnip
+  fit with
+  [`parsnip::extract_fit_engine()`](https://parsnip.tidymodels.org/reference/reexports.html)
+  to obtain it.
 
 - newdata:
 

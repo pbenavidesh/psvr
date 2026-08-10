@@ -130,9 +130,9 @@
         </dt>
         <dd>Cross-validate psvr() with automatic warm-start across folds</dd>
       </dl></div><div class="section level2">
-      <h2 id="tidymodels-parsnip-interface-svr-with-mape-model-">tidymodels / parsnip interface — ε-SVR with MAPE (Model 1)<a class="anchor" aria-label="anchor" href="#tidymodels-parsnip-interface-svr-with-mape-model-"></a></h2>
+      <h2 id="tidymodels-parsnip-interface-svr-with-mape-models-">tidymodels / parsnip interface — ε-SVR with MAPE (Models 1 &amp; 2)<a class="anchor" aria-label="anchor" href="#tidymodels-parsnip-interface-svr-with-mape-models-"></a></h2>
 
-      <div class="section-desc"><p>Parsnip model specifications for Model 1 (one per kernel type).</p></div>
+      <div class="section-desc"><p>Parsnip model specifications for the ε-SVR family (one per kernel type). <code>sym_type = "none"</code> fits Model 1; <code>"even"</code> / <code>"odd"</code> fit Model 2.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -146,25 +146,9 @@
         </dt>
         <dd>Parsnip model specs: epsilon-SVR with MAPE loss (Model 1)</dd>
       </dl></div><div class="section level2">
-      <h2 id="tidymodels-parsnip-interface-symmetric-svr-with-mape-model-">tidymodels / parsnip interface — Symmetric ε-SVR with MAPE (Model 2)<a class="anchor" aria-label="anchor" href="#tidymodels-parsnip-interface-symmetric-svr-with-mape-model-"></a></h2>
+      <h2 id="tidymodels-parsnip-interface-ls-svr-with-rmspe-models-">tidymodels / parsnip interface — LS-SVR with RMSPE (Models 3 &amp; 4)<a class="anchor" aria-label="anchor" href="#tidymodels-parsnip-interface-ls-svr-with-rmspe-models-"></a></h2>
 
-      <div class="section-desc"><p>Parsnip model specifications for Model 2 (one per kernel type).</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="psvr_mape_sym_specs.html">psvr_mape_sym_rbf()</a></code> <code><a href="psvr_mape_sym_specs.html">psvr_mape_sym_poly()</a></code> <code><a href="psvr_mape_sym_specs.html">psvr_mape_sym_linear()</a></code>
-
-        </dt>
-        <dd>Parsnip model specs: symmetric epsilon-SVR with MAPE loss (Model 2)</dd>
-      </dl></div><div class="section level2">
-      <h2 id="tidymodels-parsnip-interface-ls-svr-with-rmspe-model-">tidymodels / parsnip interface — LS-SVR with RMSPE (Model 3)<a class="anchor" aria-label="anchor" href="#tidymodels-parsnip-interface-ls-svr-with-rmspe-model-"></a></h2>
-
-      <div class="section-desc"><p>Parsnip model specifications for Model 3 (one per kernel type).</p></div>
+      <div class="section-desc"><p>Parsnip model specifications for the LS-SVR family (one per kernel type). <code>sym_type = "none"</code> fits Model 3; <code>"even"</code> / <code>"odd"</code> fit Model 4.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -177,22 +161,6 @@
 
         </dt>
         <dd>Parsnip model specs: LS-SVR with RMSPE loss (Model 3)</dd>
-      </dl></div><div class="section level2">
-      <h2 id="tidymodels-parsnip-interface-symmetric-ls-svr-with-rmspe-model-">tidymodels / parsnip interface — Symmetric LS-SVR with RMSPE (Model 4)<a class="anchor" aria-label="anchor" href="#tidymodels-parsnip-interface-symmetric-ls-svr-with-rmspe-model-"></a></h2>
-
-      <div class="section-desc"><p>Parsnip model specifications for Model 4 (one per kernel type).</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="psvr_rmspe_sym_specs.html">psvr_rmspe_sym_rbf()</a></code> <code><a href="psvr_rmspe_sym_specs.html">psvr_rmspe_sym_poly()</a></code> <code><a href="psvr_rmspe_sym_specs.html">psvr_rmspe_sym_linear()</a></code>
-
-        </dt>
-        <dd>Parsnip model specs: symmetric LS-SVR with RMSPE loss (Model 4)</dd>
       </dl></div><div class="section level2">
       <h2 id="hyperparameter-utilities">Hyperparameter utilities<a class="anchor" aria-label="anchor" href="#hyperparameter-utilities"></a></h2>
 
@@ -266,9 +234,9 @@
         </dt>
         <dd>Dials parameter for symmetry type</dd>
       </dl></div><div class="section level2">
-      <h2 id="deprecated-api">Deprecated API<a class="anchor" aria-label="anchor" href="#deprecated-api"></a></h2>
+      <h2 id="legacy-fit-object-methods">Legacy fit-object methods<a class="anchor" aria-label="anchor" href="#legacy-fit-object-methods"></a></h2>
 
-      <div class="section-desc"><p>Soft-deprecated wrappers retained for backwards compatibility. New code should use <code><a href="../reference/psvr.html">psvr()</a></code>. Scheduled removal: v0.2.0+.</p></div>
+      <div class="section-desc"><p>Methods for the four legacy fit classes — <code>psvr_mape</code>, <code>psvr_mape_sym</code>, <code>psvr_rmspe</code>, <code>psvr_rmspe_sym</code> — which are what the parsnip engine fit wrappers return. <code><a href="../reference/psvr.html">psvr()</a></code> returns the different <code>psvr_fit</code> class; unwrap a parsnip fit with <code><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">parsnip::extract_fit_engine()</a></code> to reach these.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -276,34 +244,6 @@
 
 
       <dl><dt>
-
-          <code><a href="mape_svr.html">mape_svr()</a></code>
-
-        </dt>
-        <dd>Fit epsilon-SVR with MAPE loss (deprecated)</dd>
-
-        <dt>
-
-          <code><a href="mape_sym_svr.html">mape_sym_svr()</a></code>
-
-        </dt>
-        <dd>Fit symmetric epsilon-SVR with MAPE loss (deprecated)</dd>
-
-        <dt>
-
-          <code><a href="rmspe_lssvr.html">rmspe_lssvr()</a></code>
-
-        </dt>
-        <dd>Fit LS-SVR with RMSPE loss (deprecated)</dd>
-
-        <dt>
-
-          <code><a href="rmspe_sym_lssvr.html">rmspe_sym_lssvr()</a></code>
-
-        </dt>
-        <dd>Fit symmetric LS-SVR with RMSPE loss (deprecated)</dd>
-
-        <dt>
 
           <code><a href="predict.psvr_mape.html">predict(<i>&lt;psvr_mape&gt;</i>)</a></code>
 

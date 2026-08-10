@@ -9,7 +9,16 @@ for direct fitting.
 ## Usage
 
 ``` r
-psvr_mape_rbf_fit(x, y, C, eps, rbf_sigma = 1, tol = 0.001, max_iter = 100000L)
+psvr_mape_rbf_fit(
+  x,
+  y,
+  C,
+  eps,
+  rbf_sigma = 1,
+  sym_type = "none",
+  tol = 0.001,
+  max_iter = 100000L
+)
 
 psvr_mape_poly_fit(
   x,
@@ -18,38 +27,29 @@ psvr_mape_poly_fit(
   eps,
   degree = 3L,
   scale_factor = 1,
+  sym_type = "none",
   tol = 0.001,
   max_iter = 100000L
 )
 
-psvr_mape_linear_fit(x, y, C, eps, tol = 0.001, max_iter = 100000L)
-
-psvr_mape_sym_rbf_fit(
+psvr_mape_linear_fit(
   x,
   y,
   C,
   eps,
+  sym_type = "none",
+  tol = 0.001,
+  max_iter = 100000L
+)
+
+psvr_rmspe_rbf_fit(
+  x,
+  y,
+  gamma,
   rbf_sigma = 1,
-  sym_type = "even",
-  tol = 0.001,
-  max_iter = 100000L
+  sym_type = "none",
+  precondition = "auto"
 )
-
-psvr_mape_sym_poly_fit(
-  x,
-  y,
-  C,
-  eps,
-  degree = 3L,
-  scale_factor = 1,
-  a = 1L,
-  tol = 0.001,
-  max_iter = 100000L
-)
-
-psvr_mape_sym_linear_fit(x, y, C, eps, a = 1L, tol = 0.001, max_iter = 100000L)
-
-psvr_rmspe_rbf_fit(x, y, gamma, rbf_sigma = 1, precondition = "auto")
 
 psvr_rmspe_poly_fit(
   x,
@@ -57,31 +57,11 @@ psvr_rmspe_poly_fit(
   gamma,
   degree = 3L,
   scale_factor = 1,
+  sym_type = "none",
   precondition = "auto"
 )
 
-psvr_rmspe_linear_fit(x, y, gamma, precondition = "auto")
-
-psvr_rmspe_sym_rbf_fit(
-  x,
-  y,
-  gamma,
-  rbf_sigma = 1,
-  sym_type = "even",
-  precondition = "auto"
-)
-
-psvr_rmspe_sym_poly_fit(
-  x,
-  y,
-  gamma,
-  degree = 3L,
-  scale_factor = 1,
-  a = 1L,
-  precondition = "auto"
-)
-
-psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L, precondition = "auto")
+psvr_rmspe_linear_fit(x, y, gamma, sym_type = "none", precondition = "auto")
 ```
 
 ## Arguments
@@ -106,6 +86,12 @@ psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L, precondition = "auto")
 
   RBF bandwidth σ \> 0.
 
+- sym_type:
+
+  Symmetry type. `"none"` (the default) dispatches to the non-symmetric
+  fitter; `"even"` and `"odd"` dispatch to the symmetric fitter with
+  `a = 1L` and `a = -1L` respectively.
+
 - tol:
 
   Solver convergence tolerance for the SMO loop. Default `1e-3`.
@@ -125,11 +111,6 @@ psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L, precondition = "auto")
 
   Polynomial constant term (coef₀).
 
-- sym_type:
-
-  Symmetry type (`"even"` or `"odd"`) for symmetric models; translated
-  to `a = 1L` or `a = -1L` before calling the solver.
-
 - gamma:
 
   Regularization parameter for RMSPE models.
@@ -138,8 +119,8 @@ psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L, precondition = "auto")
 
   Optional symmetric rescaling preconditioner for the RMSPE LS-SVR
   fitters. See
-  [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
-  for accepted values and semantics.
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) for
+  accepted values and semantics.
 
 ## Value
 
@@ -147,25 +128,23 @@ A fitted model object of the legacy S3 class matching the wrapper's
 model family. These are the
 pre-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md)
 object shapes, returned unmodified from the internal fitter; they are
-**not** `psvr_fit` objects.
+**not** `psvr_fit` objects. **Which class is returned depends on
+`sym_type`**, since each wrapper dispatches to the symmetric or
+non-symmetric fitter.
 
 The MAPE wrappers (`psvr_mape_rbf_fit()`, `psvr_mape_poly_fit()`,
-`psvr_mape_linear_fit()`) return an object of class `"psvr_mape"`: a
-list with `beta` (support-vector dual differences), `alpha` and
-`alpha_star` (length-`N` pre-pruning duals, retained for warm starts),
-`b`, `X_sv`, `y_sv`, `y_train`, `fitted_values`, `kernel`, `C`, `eps`,
-`n_train`, `p_train`, `iterations`, `converged`, and `block_k4`.
-
-The symmetric MAPE wrappers (`psvr_mape_sym_rbf_fit()`,
-`psvr_mape_sym_poly_fit()`, `psvr_mape_sym_linear_fit()`) return class
-`"psvr_mape_sym"`: the same components plus `a` (the symmetry type) and
-`spectral` (Algorithm 2 diagnostics).
+`psvr_mape_linear_fit()`) with `sym_type = "none"` return an object of
+class `"psvr_mape"`: a list with `beta` (support-vector dual
+differences), `alpha` and `alpha_star` (length-`N` pre-pruning duals,
+retained for warm starts), `b`, `X_sv`, `y_sv`, `y_train`,
+`fitted_values`, `kernel`, `C`, `eps`, `n_train`, `p_train`,
+`iterations`, `converged`, and `block_k4`. With `sym_type = "even"` or
+`"odd"` they return class `"psvr_mape_sym"`: the same components plus
+`a` (the symmetry type) and `spectral` (Algorithm 2 diagnostics).
 
 The RMSPE wrappers (`psvr_rmspe_rbf_fit()`, `psvr_rmspe_poly_fit()`,
-`psvr_rmspe_linear_fit()`) return class `"psvr_rmspe"`: a list with
-`alpha`, `b`, `X_train`, `y_train`, `fitted_values`, `kernel`, `gamma`,
-`n_train`, `p_train`, and `precondition_applied`.
-
-The symmetric RMSPE wrappers (`psvr_rmspe_sym_rbf_fit()`,
-`psvr_rmspe_sym_poly_fit()`, `psvr_rmspe_sym_linear_fit()`) return class
-`"psvr_rmspe_sym"`: the same components plus `a`.
+`psvr_rmspe_linear_fit()`) with `sym_type = "none"` return class
+`"psvr_rmspe"`: a list with `alpha`, `b`, `X_train`, `y_train`,
+`fitted_values`, `kernel`, `gamma`, `n_train`, `p_train`, and
+`precondition_applied`. With `sym_type = "even"` or `"odd"` they return
+class `"psvr_rmspe_sym"`: the same components plus `a`.

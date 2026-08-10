@@ -149,9 +149,9 @@
 <li>
 <strong><code><a href="reference/psvr_cv.html">psvr_cv()</a></code></strong> (<code>R/psvr_cv.R</code>) — fold-wise fitting for <code>loss = "mape"</code> with warm-start carryover.</li>
 <li>
-<strong>12 parsnip specs</strong> (<code><a href="reference/psvr_mape_specs.html">psvr_mape_rbf()</a></code> etc.) plus dials helpers — frozen public API.</li>
+<strong>6 parsnip specs</strong> (<code><a href="reference/psvr_mape_specs.html">psvr_mape_rbf()</a></code> etc.) plus dials helpers. Symmetry is the <code>sym_type</code> argument (<code>"none"</code> / <code>"even"</code> / <code>"odd"</code>), not a separate spec.</li>
 <li>
-<strong>Deprecated wrappers</strong> <code><a href="reference/mape_svr.html">mape_svr()</a></code>, <code><a href="reference/mape_sym_svr.html">mape_sym_svr()</a></code>, <code><a href="reference/rmspe_lssvr.html">rmspe_lssvr()</a></code>, <code><a href="reference/rmspe_sym_lssvr.html">rmspe_sym_lssvr()</a></code> in <code>R/deprecated.R</code> emit <code>.Deprecated("psvr")</code>, return the legacy classes, and are scheduled for removal in v0.2.0+.</li>
+<strong>The four legacy wrappers are GONE.</strong> <code>mape_svr()</code>, <code>mape_sym_svr()</code>, <code>rmspe_lssvr()</code>, <code>rmspe_sym_lssvr()</code> and <code>R/deprecated.R</code> were removed in 0.0.2.9010. Their four fit <strong>classes</strong> and all 20 methods remain — they are what the parsnip engine fit wrappers return.</li>
 <li>
 <strong>Internal helpers</strong>: <code><a href="reference/dot-fit_mape.html">.fit_mape()</a></code>, <code><a href="reference/dot-fit_mape_sym.html">.fit_mape_sym()</a></code>, <code><a href="reference/dot-fit_rmspe.html">.fit_rmspe()</a></code>, <code><a href="reference/dot-fit_rmspe_sym.html">.fit_rmspe_sym()</a></code>; validation in <code>R/utils-validation.R</code>; predict dispatch in <code>R/utils-predict.R</code>.</li>
 <li>
@@ -191,6 +191,8 @@
 <li>Load in a session with <code>devtools::load_all()</code> from the repo root.</li>
 <li>
 <strong>osqp 1.0.0</strong> uses <code>solve_osqp(P, q, A, l, u, pars)</code> directly — the old R6 <code>osqp(...)$solve()</code> API is gone.</li>
+<li>
+<strong><code>README.md</code> is regenerated with <code>rmarkdown::render("README.Rmd")</code>, NEVER <code><a href="https://rdrr.io/pkg/knitr/man/knit.html" class="external-link">knitr::knit()</a></code>.</strong> <code>README.Rmd</code> declares <code>output: github_document</code>, which is a pandoc writer: <code>render()</code> applies it, <code>knit()</code> skips pandoc entirely. A raw knit leaks the YAML front matter into <code>README.md</code>, re-wraps prose to ~85 columns instead of ~72, strips the alignment padding from tables, and turns <code>``` r</code> fences into <code>```r</code>. Nothing guards this — the pre-commit hook checks that <code>README.md</code> is not older than <code>README.Rmd</code> and that both are staged, not which renderer produced it. After rendering, diff every printed value: the Quick-start numbers must reproduce byte-for-byte unless <code>R/psvr-main.R</code> changed.</li>
 <li>
 <strong>Build invariant — do not change</strong>: <code>src/Makevars</code> and <code>Makevars.win</code> set <code>PKG_LIBS = $(BLAS_LIBS) $(FLIBS)</code>. <code>core_smo_solve.cpp</code> calls <code>F77_CALL(dgemv)</code>, so removing <code>$(BLAS_LIBS)</code> breaks linking. Do not add <code>$(LAPACK_LIBS)</code>; if ever needed the order must be <code>$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)</code> per <em>Writing R Extensions</em> §1.2.3.</li>
 </ul></div>

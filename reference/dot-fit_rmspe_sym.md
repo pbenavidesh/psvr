@@ -3,10 +3,9 @@
 Internal fitter for the symmetric RMSPE LS-SVR family. Use
 [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) with
 `loss = "rmspe"` and `sym = +1L` / `-1L` instead. Returns the legacy
-`psvr_rmspe_sym` shape; the deprecation wrapper
-[`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md)
-forwards directly to this function. The kernel must satisfy Assumption 3
-of the paper (kernel symmetry); see
+`psvr_rmspe_sym` shape, which is also what the parsnip engine fit
+wrappers return with `sym_type = "even"` / `"odd"`. The kernel must
+satisfy Assumption 3 of the paper (kernel symmetry); see
 [`make_kernel()`](https://pbenavidesh.github.io/psvr/reference/make_kernel.md).
 
 ## Usage
@@ -17,12 +16,18 @@ of the paper (kernel symmetry); see
 
 ## Arguments
 
-- X, y, kernel, gamma, a, precondition:
+- X, y, kernel, gamma, precondition:
 
-  See
-  [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md)
+  See [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md)
   for the full semantics of each argument (including the Remark-17
   preconditioner).
+
+- a:
+
+  Symmetry type: `1` (even) or `-1` (odd). Corresponds to
+  `psvr(sym = +1L)` and `psvr(sym = -1L)` respectively;
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) has
+  no `a` argument of its own.
 
 ## Value
 

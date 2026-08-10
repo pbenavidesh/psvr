@@ -2,10 +2,8 @@
 
 Internal fitter for the MAPE epsilon-SVR family. Use
 [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) with
-`loss = "mape"` instead. Returns the legacy `psvr_mape` shape; the
-deprecation wrapper
-[`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md)
-forwards directly to this function.
+`loss = "mape"` instead. Returns the legacy `psvr_mape` shape, which is
+also what the parsnip engine fit wrappers return.
 
 ## Usage
 
@@ -33,8 +31,7 @@ forwards directly to this function.
 
 - X, y, kernel, C, eps, solver, tol:
 
-  See
-  [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md).
+  See [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md).
 
 - alpha_init, alpha_star_init:
 

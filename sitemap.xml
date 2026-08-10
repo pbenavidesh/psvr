@@ -30,8 +30,6 @@
 <url><loc>https://pbenavidesh.github.io/psvr/reference/index.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/kernel_matrix.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/make_kernel.html</loc></url>
-<url><loc>https://pbenavidesh.github.io/psvr/reference/mape_svr.html</loc></url>
-<url><loc>https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/margin_percentage.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/predict.psvr_fit.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/predict.psvr_mape.html</loc></url>
@@ -48,16 +46,12 @@
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_cv.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.html</loc></url>
-<url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_option_add.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_option_add_cost_ls.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.html</loc></url>
-<url><loc>https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr_data.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.html</loc></url>
-<url><loc>https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.html</loc></url>
-<url><loc>https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/sigma_heuristic.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/summary.psvr_fit.html</loc></url>
 <url><loc>https://pbenavidesh.github.io/psvr/reference/sym_kernel_block.html</loc></url>

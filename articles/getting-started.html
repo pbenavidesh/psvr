@@ -125,10 +125,9 @@ accessed through the unified <code><a href="../reference/psvr.html">psvr()</a></
 <code>f(x) = f(-x)</code>; <code>sym = -1L</code> enforces odd symmetry.
 Use the symmetric variants only with kernels that satisfy Assumption 3
 of the paper (RBF and even-degree polynomial kernels do).</p>
-<p>The four legacy fitters (<code><a href="../reference/mape_svr.html">mape_svr()</a></code>,
-<code><a href="../reference/mape_sym_svr.html">mape_sym_svr()</a></code>, <code><a href="../reference/rmspe_lssvr.html">rmspe_lssvr()</a></code>,
-<code><a href="../reference/rmspe_sym_lssvr.html">rmspe_sym_lssvr()</a></code>) remain available as soft-deprecated
-wrappers and will be removed in a future release.</p>
+<p><code><a href="../reference/psvr.html">psvr()</a></code> is the only direct fitter. The four legacy
+wrappers it replaced were removed in 0.0.2.9010; <code>loss</code> and
+<code>sym</code> now select the model.</p>
 <p>All models require <strong>strictly positive targets</strong>
 (<code>y &gt; 0</code>), which is the condition under which percentage
 residuals are well-defined.</p>

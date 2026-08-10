@@ -2,7 +2,142 @@
 
 ## psvr 0.0.2.9010 (development)
 
+### New features
+
+- **The six non-symmetric parsnip specs gain a tunable `sym_type`
+  argument.**
+  [`psvr_mape_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md),
+  [`psvr_mape_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md),
+  [`psvr_mape_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md),
+  [`psvr_rmspe_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md),
+  [`psvr_rmspe_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md)
+  and
+  [`psvr_rmspe_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md)
+  now accept `sym_type`, taking `"none"` (the default), `"even"` (a = 1)
+  or `"odd"` (a = -1). Leaving it unset reproduces the previous
+  behaviour exactly. Symmetry is now settable **and tunable** on the
+  polynomial and linear kernels, which it was not before: the symmetric
+  poly/linear specs exposed symmetry only as the engine argument `a`,
+  which [`tune()`](https://hardhat.tidymodels.org/reference/tune.html)
+  cannot reach, so it could not be optimised during CV on four of the
+  six symmetric specs.
+
 ### Breaking changes
+
+- **The ε-SVR margin argument is renamed `svm_margin` → `margin`**,
+  matching
+  [`parsnip::svm_rbf()`](https://parsnip.tidymodels.org/reference/svm_rbf.html)
+  and
+  [`parsnip::svm_poly()`](https://parsnip.tidymodels.org/reference/svm_poly.html).
+  Affects the three MAPE specs
+  ([`psvr_mape_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md),
+  [`psvr_mape_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md),
+  [`psvr_mape_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md))
+  and their [`update()`](https://rdrr.io/r/stats/update.html) methods:
+
+  ``` r
+
+  psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1)
+  # becomes
+  psvr_mape_rbf(cost = 10, margin = 1, rbf_sigma = 1)
+  ```
+
+  The dials object behind it is **unchanged** — still
+  [`margin_percentage()`](https://pbenavidesh.github.io/psvr/reference/margin_percentage.md),
+  default range `[1, 20]` in percentage units. Note the units still
+  differ from
+  [`dials::svm_margin()`](https://dials.tidymodels.org/reference/cost.html),
+  which is absolute; only the argument *name* now matches parsnip’s. The
+  engine-side name is also unchanged: it still maps to `eps`, so
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) and
+  the internal fitters are unaffected.
+
+- **`mape_svr()`, `mape_sym_svr()`, `rmspe_lssvr()` and
+  `rmspe_sym_lssvr()` are REMOVED**, along with `R/deprecated.R`. They
+  were soft-deprecated since 0.0.2.9000 and never shipped in a released
+  version. Replace with
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md):
+
+  ``` r
+
+  mape_svr(X, y, kernel = K, C = 10, eps = 5)
+  # becomes
+  psvr(X, y, loss = "mape", kernel = K, C = 10, eps = 5)
+
+  mape_sym_svr(X, y, kernel = K, C = 10, eps = 5, a = 1)
+  # becomes
+  psvr(X, y, loss = "mape", sym = +1L, kernel = K, C = 10, eps = 5)
+  ```
+
+  `sym = +1L` is even symmetry, `sym = -1L` odd, `sym = NULL` (the
+  default) non-symmetric. Likewise `rmspe_lssvr(...)` →
+  `psvr(loss = "rmspe", ...)` and `rmspe_sym_lssvr(..., a = 1)` →
+  `psvr(loss = "rmspe", sym = +1L, ...)`.
+
+  **The four legacy fit classes are UNAFFECTED.** `psvr_mape`,
+  `psvr_mape_sym`, `psvr_rmspe` and `psvr_rmspe_sym`, and all twenty of
+  their [`predict()`](https://rdrr.io/r/stats/predict.html) /
+  [`print()`](https://rdrr.io/r/base/print.html) /
+  [`coef()`](https://rdrr.io/r/stats/coef.html) /
+  [`fitted()`](https://rdrr.io/r/stats/fitted.values.html) /
+  [`residuals()`](https://rdrr.io/r/stats/residuals.html) methods,
+  remain exported and documented — the parsnip engine fit wrappers still
+  return them. Note that
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md)
+  itself returns the different `psvr_fit` class; unwrap a parsnip fit
+  with
+  [`parsnip::extract_fit_engine()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)
+  to reach a legacy object.
+
+- **The six symmetric parsnip specs are REMOVED** —
+  `psvr_mape_sym_rbf()`, `psvr_mape_sym_poly()`,
+  `psvr_mape_sym_linear()`, `psvr_rmspe_sym_rbf()`,
+  `psvr_rmspe_sym_poly()`, `psvr_rmspe_sym_linear()` — along with their
+  [`update()`](https://rdrr.io/r/stats/update.html) methods and engine
+  fit wrappers. Symmetry is now the `sym_type` argument of the
+  corresponding non-symmetric spec (added in this same version):
+
+  ``` r
+
+  psvr_mape_sym_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1)
+  # becomes
+  psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1, sym_type = "even")
+  ```
+
+  For the polynomial and linear symmetric specs the change is larger
+  than a rename: they took symmetry as the **engine** argument `a`,
+  which [`tune()`](https://hardhat.tidymodels.org/reference/tune.html)
+  could never reach. It is now a tunable **model** argument, so
+
+  ``` r
+
+  psvr_mape_sym_poly(...) |> set_engine("psvr", a = 1L)
+  # becomes
+  psvr_mape_poly(..., sym_type = "even") |> set_engine("psvr")
+  ```
+
+  `set_engine("psvr", a = ...)` no longer works on any psvr spec, but
+  note **where** it fails:
+  [`set_engine()`](https://parsnip.tidymodels.org/reference/set_engine.html)
+  still accepts it and
+  [`translate()`](https://parsnip.tidymodels.org/reference/translate.html)
+  still carries it, so the error arrives only at
+  [`fit()`](https://generics.r-lib.org/reference/fit.html) time, as R’s
+  generic `unused argument (a = ~1)` — which does not mention
+  `sym_type`. Replace `a = 1L` with `sym_type = "even"` and `a = -1L`
+  with `sym_type = "odd"`.
+
+- **[`sym_type_param()`](https://pbenavidesh.github.io/psvr/reference/sym_type_param.md)
+  now offers three levels** — `c("none", "even", "odd")` — where it
+  previously offered two. Code that tunes `sym_type` on
+  `psvr_mape_sym_rbf()` or `psvr_rmspe_sym_rbf()` will search the
+  additional `"none"` level, which fits a **non-symmetric** model; grid
+  size and CV cost change accordingly and a run may select `"none"`. No
+  error is raised. To keep the previous two-level grid, pass
+  `sym_type_param(values = c("even", "odd"))` — the function gains a
+  `values` argument for exactly this purpose, and now validates it via
+  [`rlang::arg_match()`](https://rlang.r-lib.org/reference/arg_match.html)
+  rather than accepting arbitrary strings.
 
 - **`new_mask` is removed** from
   [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md),
@@ -607,10 +742,7 @@ fitters is unaffected.
 
 ### Deprecations
 
-- [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md),
-  [`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md),
-  [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md),
-  [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md)
+- `mape_svr()`, `mape_sym_svr()`, `rmspe_lssvr()`, `rmspe_sym_lssvr()`
   are soft-deprecated. They continue to work and return the same legacy
   shape (`psvr_mape`, `psvr_mape_sym`, `psvr_rmspe`, `psvr_rmspe_sym`)
   with the same predict/print/coef methods, but each emits
@@ -648,11 +780,8 @@ fitters is unaffected.
 
 ### New features
 
-- The `precondition` argument from
-  [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
-  and
-  [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md)
-  is now configurable via parsnip’s
+- The `precondition` argument from `rmspe_lssvr()` and
+  `rmspe_sym_lssvr()` is now configurable via parsnip’s
   [`set_engine()`](https://parsnip.tidymodels.org/reference/set_engine.html)
   for all six RMSPE spec functions (rbf/poly/linear, both symmetric and
   non-symmetric). Default is `"auto"`; pass via
@@ -664,14 +793,13 @@ fitters is unaffected.
 
 ### New features
 
-- Added optional preconditioner for LS-SVR variants
-  ([`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md),
-  [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md))
-  via the `precondition` argument. Accepted values: “always”, “never”,
-  “auto” (default; activates when max(y)/min(y) \> 10), or a numeric
-  threshold. The preconditioner is a mathematically exact change of
-  variable that improves numerical conditioning at large target dynamic
-  ranges without changing predictions in exact arithmetic.
+- Added optional preconditioner for LS-SVR variants (`rmspe_lssvr()`,
+  `rmspe_sym_lssvr()`) via the `precondition` argument. Accepted values:
+  “always”, “never”, “auto” (default; activates when max(y)/min(y) \>
+  10), or a numeric threshold. The preconditioner is a mathematically
+  exact change of variable that improves numerical conditioning at large
+  target dynamic ranges without changing predictions in exact
+  arithmetic.
 - Returned model objects now include `precondition_applied` (logical)
   for diagnostic transparency. The `print` method displays this field
   when TRUE.
@@ -709,12 +837,9 @@ fitters is unaffected.
 
 #### New features
 
-- `sym_type` is now a tunable parsnip argument in
-  [`psvr_mape_sym_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.md)
-  and
-  [`psvr_rmspe_sym_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.md).
-  Pass `sym_type = tune()` to let CV select between even (a = 1) and odd
-  (a = -1) symmetry automatically.
+- `sym_type` is now a tunable parsnip argument in `psvr_mape_sym_rbf()`
+  and `psvr_rmspe_sym_rbf()`. Pass `sym_type = tune()` to let CV select
+  between even (a = 1) and odd (a = -1) symmetry automatically.
 - Engine default `a = 1L` removed from symmetric RBF specs; symmetry
   type is now controlled exclusively through the `sym_type` model
   argument.
@@ -812,18 +937,14 @@ and
   [`psvr_mape_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md),
   [`psvr_mape_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md)
   — Model 1 specs.
-- [`psvr_mape_sym_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.md),
-  [`psvr_mape_sym_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.md),
-  [`psvr_mape_sym_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.md)
-  — Model 2 specs.
+- `psvr_mape_sym_rbf()`, `psvr_mape_sym_poly()`,
+  `psvr_mape_sym_linear()` — Model 2 specs.
 - [`psvr_rmspe_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md),
   [`psvr_rmspe_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md),
   [`psvr_rmspe_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md)
   — Model 3 specs.
-- [`psvr_rmspe_sym_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.md),
-  [`psvr_rmspe_sym_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.md),
-  [`psvr_rmspe_sym_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.md)
-  — Model 4 specs.
+- `psvr_rmspe_sym_rbf()`, `psvr_rmspe_sym_poly()`,
+  `psvr_rmspe_sym_linear()` — Model 4 specs.
 
 Kernel parameters are now tunable parsnip args mapped to existing dials
 params: `rbf_sigma` →
@@ -855,23 +976,20 @@ Initial development release.
 
 ### New models
 
-- [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md)
-  — epsilon-SVR with MAPE loss (Model 1). Solves the dual QP via `osqp`
-  with per-sample box constraints `|βk| ≤ 100C/yₖ`.
+- `mape_svr()` — epsilon-SVR with MAPE loss (Model 1). Solves the dual
+  QP via `osqp` with per-sample box constraints `|βk| ≤ 100C/yₖ`.
 
-- [`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md)
-  — symmetric epsilon-SVR with MAPE loss (Model 2). Enforces
-  `f(x) = a·f(-x)` by replacing the kernel with the symmetric kernel
-  `Ks(xi, xj) = K(xi, xj) + a·K(xi, -xj)`.
+- `mape_sym_svr()` — symmetric epsilon-SVR with MAPE loss (Model 2).
+  Enforces `f(x) = a·f(-x)` by replacing the kernel with the symmetric
+  kernel `Ks(xi, xj) = K(xi, xj) + a·K(xi, -xj)`.
 
-- [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
-  — LS-SVR with RMSPE loss (Model 3). Solves the (N+1)×(N+1) linear
-  system directly via
+- `rmspe_lssvr()` — LS-SVR with RMSPE loss (Model 3). Solves the
+  (N+1)×(N+1) linear system directly via
   [`base::solve()`](https://rdrr.io/r/base/solve.html).
 
-- [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md)
-  — symmetric LS-SVR with RMSPE loss (Model 4). Same linear system as
-  Model 3 with the symmetrized kernel matrix `Ωs = ½(Ω + a·Ω*)`.
+- `rmspe_sym_lssvr()` — symmetric LS-SVR with RMSPE loss (Model 4). Same
+  linear system as Model 3 with the symmetrized kernel matrix
+  `Ωs = ½(Ω + a·Ω*)`.
 
 All four models are derived from a unified percentage-error loss
 framework; see Benavides-Herrera et al. (2026) for the mathematical

@@ -1,9 +1,7 @@
 # Predict from a fitted LS-SVR with RMSPE model
 
-Method dispatched on the legacy `"psvr_rmspe"` class returned by the
-deprecated
-[`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md).
-New code should use
+Method dispatched on the legacy `"psvr_rmspe"` class, which the parsnip
+engine fit wrappers return. For direct fitting use
 [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md).
 
 ## Usage
@@ -17,8 +15,13 @@ predict(object, newdata, ...)
 
 - object:
 
-  An object of class `"psvr_rmspe"` from
-  [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md).
+  An object of class `"psvr_rmspe"`, as returned by the parsnip engine
+  fit wrappers with `sym_type = "none"` (see
+  [psvr-fit-wrappers](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md);
+  `sym_type = "even"` or `"odd"` yields `"psvr_rmspe_sym"` instead).
+  Unwrap a parsnip fit with
+  [`parsnip::extract_fit_engine()`](https://parsnip.tidymodels.org/reference/reexports.html)
+  to obtain it.
 
 - newdata:
 

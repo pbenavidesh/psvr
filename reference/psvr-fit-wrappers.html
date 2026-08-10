@@ -53,7 +53,16 @@ for direct use. Call <code><a href="psvr.html">psvr()</a></code> instead for dir
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">psvr_mape_rbf_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, rbf_sigma <span class="op">=</span> <span class="fl">1</span>, tol <span class="op">=</span> <span class="fl">0.001</span>, max_iter <span class="op">=</span> <span class="fl">100000L</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">psvr_mape_rbf_fit</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  <span class="va">y</span>,</span>
+<span>  <span class="va">C</span>,</span>
+<span>  <span class="va">eps</span>,</span>
+<span>  rbf_sigma <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  sym_type <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  tol <span class="op">=</span> <span class="fl">0.001</span>,</span>
+<span>  max_iter <span class="op">=</span> <span class="fl">100000L</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">psvr_mape_poly_fit</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
@@ -62,38 +71,29 @@ for direct use. Call <code><a href="psvr.html">psvr()</a></code> instead for dir
 <span>  <span class="va">eps</span>,</span>
 <span>  degree <span class="op">=</span> <span class="fl">3L</span>,</span>
 <span>  scale_factor <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  sym_type <span class="op">=</span> <span class="st">"none"</span>,</span>
 <span>  tol <span class="op">=</span> <span class="fl">0.001</span>,</span>
 <span>  max_iter <span class="op">=</span> <span class="fl">100000L</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">psvr_mape_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, tol <span class="op">=</span> <span class="fl">0.001</span>, max_iter <span class="op">=</span> <span class="fl">100000L</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu">psvr_mape_sym_rbf_fit</span><span class="op">(</span></span>
+<span><span class="fu">psvr_mape_linear_fit</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  <span class="va">y</span>,</span>
 <span>  <span class="va">C</span>,</span>
 <span>  <span class="va">eps</span>,</span>
+<span>  sym_type <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  tol <span class="op">=</span> <span class="fl">0.001</span>,</span>
+<span>  max_iter <span class="op">=</span> <span class="fl">100000L</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">psvr_rmspe_rbf_fit</span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  <span class="va">y</span>,</span>
+<span>  <span class="va">gamma</span>,</span>
 <span>  rbf_sigma <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  sym_type <span class="op">=</span> <span class="st">"even"</span>,</span>
-<span>  tol <span class="op">=</span> <span class="fl">0.001</span>,</span>
-<span>  max_iter <span class="op">=</span> <span class="fl">100000L</span></span>
+<span>  sym_type <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  precondition <span class="op">=</span> <span class="st">"auto"</span></span>
 <span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu">psvr_mape_sym_poly_fit</span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  <span class="va">y</span>,</span>
-<span>  <span class="va">C</span>,</span>
-<span>  <span class="va">eps</span>,</span>
-<span>  degree <span class="op">=</span> <span class="fl">3L</span>,</span>
-<span>  scale_factor <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  a <span class="op">=</span> <span class="fl">1L</span>,</span>
-<span>  tol <span class="op">=</span> <span class="fl">0.001</span>,</span>
-<span>  max_iter <span class="op">=</span> <span class="fl">100000L</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu">psvr_mape_sym_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">C</span>, <span class="va">eps</span>, a <span class="op">=</span> <span class="fl">1L</span>, tol <span class="op">=</span> <span class="fl">0.001</span>, max_iter <span class="op">=</span> <span class="fl">100000L</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu">psvr_rmspe_rbf_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, rbf_sigma <span class="op">=</span> <span class="fl">1</span>, precondition <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">psvr_rmspe_poly_fit</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
@@ -101,31 +101,11 @@ for direct use. Call <code><a href="psvr.html">psvr()</a></code> instead for dir
 <span>  <span class="va">gamma</span>,</span>
 <span>  degree <span class="op">=</span> <span class="fl">3L</span>,</span>
 <span>  scale_factor <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  sym_type <span class="op">=</span> <span class="st">"none"</span>,</span>
 <span>  precondition <span class="op">=</span> <span class="st">"auto"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">psvr_rmspe_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, precondition <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu">psvr_rmspe_sym_rbf_fit</span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  <span class="va">y</span>,</span>
-<span>  <span class="va">gamma</span>,</span>
-<span>  rbf_sigma <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  sym_type <span class="op">=</span> <span class="st">"even"</span>,</span>
-<span>  precondition <span class="op">=</span> <span class="st">"auto"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu">psvr_rmspe_sym_poly_fit</span><span class="op">(</span></span>
-<span>  <span class="va">x</span>,</span>
-<span>  <span class="va">y</span>,</span>
-<span>  <span class="va">gamma</span>,</span>
-<span>  degree <span class="op">=</span> <span class="fl">3L</span>,</span>
-<span>  scale_factor <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  a <span class="op">=</span> <span class="fl">1L</span>,</span>
-<span>  precondition <span class="op">=</span> <span class="st">"auto"</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu">psvr_rmspe_sym_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, a <span class="op">=</span> <span class="fl">1L</span>, precondition <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">psvr_rmspe_linear_fit</span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span>, <span class="va">gamma</span>, sym_type <span class="op">=</span> <span class="st">"none"</span>, precondition <span class="op">=</span> <span class="st">"auto"</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -152,6 +132,12 @@ for direct use. Call <code><a href="psvr.html">psvr()</a></code> instead for dir
 <dd><p>RBF bandwidth σ &gt; 0.</p></dd>
 
 
+<dt id="arg-sym-type">sym_type<a class="anchor" aria-label="anchor" href="#arg-sym-type"></a></dt>
+<dd><p>Symmetry type. <code>"none"</code> (the default) dispatches to the
+non-symmetric fitter; <code>"even"</code> and <code>"odd"</code> dispatch to the symmetric
+fitter with <code>a = 1L</code> and <code>a = -1L</code> respectively.</p></dd>
+
+
 <dt id="arg-tol">tol<a class="anchor" aria-label="anchor" href="#arg-tol"></a></dt>
 <dd><p>Solver convergence tolerance for the SMO loop. Default <code>1e-3</code>.</p></dd>
 
@@ -170,43 +156,37 @@ does not converge within <code>max_iter</code>.</p></dd>
 <dd><p>Polynomial constant term (coef₀).</p></dd>
 
 
-<dt id="arg-sym-type">sym_type<a class="anchor" aria-label="anchor" href="#arg-sym-type"></a></dt>
-<dd><p>Symmetry type (<code>"even"</code> or <code>"odd"</code>) for symmetric models;
-translated to <code>a = 1L</code> or <code>a = -1L</code> before calling the solver.</p></dd>
-
-
 <dt id="arg-gamma">gamma<a class="anchor" aria-label="anchor" href="#arg-gamma"></a></dt>
 <dd><p>Regularization parameter for RMSPE models.</p></dd>
 
 
 <dt id="arg-precondition">precondition<a class="anchor" aria-label="anchor" href="#arg-precondition"></a></dt>
 <dd><p>Optional symmetric rescaling preconditioner for the
-RMSPE LS-SVR fitters. See <code><a href="rmspe_lssvr.html">rmspe_lssvr()</a></code> for accepted values and
-semantics.</p></dd>
+RMSPE LS-SVR fitters. See <code><a href="psvr.html">psvr()</a></code> for accepted values and semantics.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A fitted model object of the legacy S3 class matching the wrapper's
 model family. These are the pre-<code><a href="psvr.html">psvr()</a></code> object shapes, returned
-unmodified from the internal fitter; they are <strong>not</strong> <code>psvr_fit</code> objects.</p>
+unmodified from the internal fitter; they are <strong>not</strong> <code>psvr_fit</code> objects.
+<strong>Which class is returned depends on <code>sym_type</code></strong>, since each wrapper
+dispatches to the symmetric or non-symmetric fitter.</p>
 <p>The MAPE wrappers (<code>psvr_mape_rbf_fit()</code>, <code>psvr_mape_poly_fit()</code>,
-<code>psvr_mape_linear_fit()</code>) return an object of class <code>"psvr_mape"</code>: a list
-with <code>beta</code> (support-vector dual differences), <code>alpha</code> and <code>alpha_star</code>
-(length-<code>N</code> pre-pruning duals, retained for warm starts), <code>b</code>, <code>X_sv</code>,
-<code>y_sv</code>, <code>y_train</code>, <code>fitted_values</code>, <code>kernel</code>, <code>C</code>, <code>eps</code>, <code>n_train</code>,
-<code>p_train</code>, <code>iterations</code>, <code>converged</code>, and <code>block_k4</code>.</p>
-<p>The symmetric MAPE wrappers (<code>psvr_mape_sym_rbf_fit()</code>,
-<code>psvr_mape_sym_poly_fit()</code>, <code>psvr_mape_sym_linear_fit()</code>) return class
-<code>"psvr_mape_sym"</code>: the same components plus <code>a</code> (the symmetry type) and
-<code>spectral</code> (Algorithm 2 diagnostics).</p>
+<code>psvr_mape_linear_fit()</code>) with <code>sym_type = "none"</code> return an object of
+class <code>"psvr_mape"</code>: a list with <code>beta</code> (support-vector dual differences),
+<code>alpha</code> and <code>alpha_star</code> (length-<code>N</code> pre-pruning duals, retained for warm
+starts), <code>b</code>, <code>X_sv</code>, <code>y_sv</code>, <code>y_train</code>, <code>fitted_values</code>, <code>kernel</code>, <code>C</code>,
+<code>eps</code>, <code>n_train</code>, <code>p_train</code>, <code>iterations</code>, <code>converged</code>, and <code>block_k4</code>.
+With <code>sym_type = "even"</code> or <code>"odd"</code> they return class <code>"psvr_mape_sym"</code>:
+the same components plus <code>a</code> (the symmetry type) and <code>spectral</code>
+(Algorithm 2 diagnostics).</p>
 <p>The RMSPE wrappers (<code>psvr_rmspe_rbf_fit()</code>, <code>psvr_rmspe_poly_fit()</code>,
-<code>psvr_rmspe_linear_fit()</code>) return class <code>"psvr_rmspe"</code>: a list with
-<code>alpha</code>, <code>b</code>, <code>X_train</code>, <code>y_train</code>, <code>fitted_values</code>, <code>kernel</code>, <code>gamma</code>,
-<code>n_train</code>, <code>p_train</code>, and <code>precondition_applied</code>.</p>
-<p>The symmetric RMSPE wrappers (<code>psvr_rmspe_sym_rbf_fit()</code>,
-<code>psvr_rmspe_sym_poly_fit()</code>, <code>psvr_rmspe_sym_linear_fit()</code>) return class
-<code>"psvr_rmspe_sym"</code>: the same components plus <code>a</code>.</p>
+<code>psvr_rmspe_linear_fit()</code>) with <code>sym_type = "none"</code> return class
+<code>"psvr_rmspe"</code>: a list with <code>alpha</code>, <code>b</code>, <code>X_train</code>, <code>y_train</code>,
+<code>fitted_values</code>, <code>kernel</code>, <code>gamma</code>, <code>n_train</code>, <code>p_train</code>, and
+<code>precondition_applied</code>. With <code>sym_type = "even"</code> or <code>"odd"</code> they return
+class <code>"psvr_rmspe_sym"</code>: the same components plus <code>a</code>.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

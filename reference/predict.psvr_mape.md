@@ -1,12 +1,10 @@
 # Predict from a fitted epsilon-SVR with MAPE model
 
-Method dispatched on the legacy `"psvr_mape"` class returned by the
-deprecated
-[`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md).
-New code should use
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) (which
+Method dispatched on the legacy `"psvr_mape"` class, which the parsnip
+engine fit wrappers return. For direct fitting use
+[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md), which
 returns a `"psvr_fit"` object dispatched by
-[`predict.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/predict.psvr_fit.md)).
+[`predict.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/predict.psvr_fit.md).
 
 ## Usage
 
@@ -19,8 +17,13 @@ predict(object, newdata, ...)
 
 - object:
 
-  An object of class `"psvr_mape"` from
-  [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md).
+  An object of class `"psvr_mape"`, as returned by the parsnip engine
+  fit wrappers with `sym_type = "none"` (see
+  [psvr-fit-wrappers](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md);
+  `sym_type = "even"` or `"odd"` yields `"psvr_mape_sym"` instead).
+  Unwrap a parsnip fit with
+  [`parsnip::extract_fit_engine()`](https://parsnip.tidymodels.org/reference/reexports.html)
+  to obtain it.
 
 - newdata:
 

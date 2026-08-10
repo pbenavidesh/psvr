@@ -1,9 +1,8 @@
 # Parsnip model specs: LS-SVR with RMSPE loss (Model 3)
 
 Create parsnip model specifications for
-[`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
-with a fixed kernel type. `cost` maps to the regularization parameter
-`Γ`.
+[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) with a
+fixed kernel type. `cost` maps to the regularization parameter `Γ`.
 
 ## Usage
 
@@ -12,7 +11,8 @@ psvr_rmspe_rbf(
   mode = "regression",
   engine = "psvr",
   cost = NULL,
-  rbf_sigma = NULL
+  rbf_sigma = NULL,
+  sym_type = NULL
 )
 
 psvr_rmspe_poly(
@@ -20,10 +20,16 @@ psvr_rmspe_poly(
   engine = "psvr",
   cost = NULL,
   degree = NULL,
-  scale_factor = NULL
+  scale_factor = NULL,
+  sym_type = NULL
 )
 
-psvr_rmspe_linear(mode = "regression", engine = "psvr", cost = NULL)
+psvr_rmspe_linear(
+  mode = "regression",
+  engine = "psvr",
+  cost = NULL,
+  sym_type = NULL
+)
 ```
 
 ## Arguments
@@ -55,6 +61,16 @@ psvr_rmspe_linear(mode = "regression", engine = "psvr", cost = NULL)
   the search range auto-finalizes using the median-distance heuristic
   when training data are available. (RBF specs only.)
 
+- sym_type:
+
+  Symmetry type: `"none"` (default) fits the non-symmetric LS-SVR of
+  Model 3; `"even"` (a = 1) and `"odd"` (a = -1) fit the symmetric
+  LS-SVR of Model 4. Use
+  [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
+  to optimise over the levels during CV; see
+  [`sym_type_param()`](https://pbenavidesh.github.io/psvr/reference/sym_type_param.md)
+  to restrict which levels are searched.
+
 - degree:
 
   Polynomial degree ≥ 1. Use
@@ -74,13 +90,12 @@ A parsnip `model_spec` object of the corresponding class.
 ## Engine arguments
 
 The `precondition` argument of
-[`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
-is exposed as a non-tunable engine argument. Pass it via
+[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) is
+exposed as a non-tunable engine argument. Pass it via
 [`parsnip::set_engine()`](https://parsnip.tidymodels.org/reference/set_engine.html),
 e.g. `set_engine("psvr", precondition = "always")`. Default is `"auto"`.
-See
-[`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
-for accepted values and semantics.
+See [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) for
+accepted values and semantics.
 
 ## Examples
 
@@ -94,6 +109,11 @@ spec_poly <- psvr_rmspe_poly(cost = 1000, degree = 2, scale_factor = 1) |>
   set_engine("psvr")
 
 spec_lin <- psvr_rmspe_linear(cost = 1000) |>
+  set_engine("psvr")
+
+# Symmetric LS-SVR (Model 4) via the sym_type argument:
+spec_sym <- psvr_rmspe_rbf(cost = 1000, rbf_sigma = 1,
+                           sym_type = "even") |>
   set_engine("psvr")
 } # }
 ```

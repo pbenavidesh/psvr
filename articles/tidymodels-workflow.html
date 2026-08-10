@@ -152,8 +152,9 @@ combinations.</p>
 <code>rbf_sigma</code> values and evaluate each fold by MAPE. The
 <code>rbf_sigma</code> search range is set data-adaptively using
 <code><a href="../reference/rbf_sigma_psvr_data.html">rbf_sigma_psvr_data()</a></code>, centred on the median pairwise
-distance in the normalised feature space. <code><a href="../reference/rmspe_lssvr.html">rmspe_lssvr()</a></code>
-only solves a linear system, so 75 fits complete in seconds.</p>
+distance in the normalised feature space. The RMSPE LS-SVR only solves
+an <code>(N+1) × (N+1)</code> linear system — no iterative solver is
+involved — so 75 fits complete in seconds.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">2</span><span class="op">)</span></span>
 <span><span class="va">folds</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rsample.tidymodels.org/reference/vfold_cv.html" class="external-link">vfold_cv</a></span><span class="op">(</span><span class="va">train</span>, v <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>

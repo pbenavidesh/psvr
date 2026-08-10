@@ -21,17 +21,6 @@ single entry point; `loss` and `sym` select the model:
 `sym = +1L` imposes an even-function prior (`f(-x) = f(x)`), `sym = -1L`
 an odd one. All models require **strictly positive targets** (`y > 0`).
 
-The four original fitters —
-[`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md),
-[`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md),
-[`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
-and
-[`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md)
-— still work, but are deprecated and scheduled for removal in v0.2.0 or
-later. See their help pages for the
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) call
-that replaces each.
-
 ## Installation
 
 ``` r

@@ -201,16 +201,17 @@ Code
 ``` r
 
 spec_m1 <- psvr_mape_rbf(
-  cost       = tune(),
-  svm_margin = tune(),
-  rbf_sigma  = tune()
+  cost      = tune(),
+  margin    = tune(),
+  rbf_sigma = tune()
 ) |>
   set_engine("psvr")
 
-spec_m2 <- psvr_mape_sym_rbf(
-  cost       = tune(),
-  svm_margin = tune(),
-  rbf_sigma  = tune()
+spec_m2 <- psvr_mape_rbf(
+  cost      = tune(),
+  margin    = tune(),
+  rbf_sigma = tune(),
+  sym_type  = "even"
 ) |>
   set_engine("psvr")
 
@@ -220,9 +221,10 @@ spec_m3 <- psvr_rmspe_rbf(
 ) |>
   set_engine("psvr")
 
-spec_m4 <- psvr_rmspe_sym_rbf(
+spec_m4 <- psvr_rmspe_rbf(
   cost      = tune(),
-  rbf_sigma = tune()
+  rbf_sigma = tune(),
+  sym_type  = "even"
 ) |>
   set_engine("psvr")
 ```
@@ -232,7 +234,7 @@ spec_m4 <- psvr_rmspe_sym_rbf(
 > The `psvr` package supplies custom dials parameters with appropriate
 > defaults for percentage-error models:
 >
-> - **`svm_margin`** →
+> - **`margin`** →
 >   [`margin_percentage()`](https://pbenavidesh.github.io/psvr/reference/margin_percentage.md):
 >   default range \[1, 20\] in percentage units — no manual override
 >   needed.

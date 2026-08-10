@@ -225,16 +225,17 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 <div class="cell">
 <details open="" class="code-fold"><summary>Code</summary><div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">spec_m1</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr_mape_specs.html">psvr_mape_rbf</a></span><span class="op">(</span></span>
-<span>  cost       <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  svm_margin <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  rbf_sigma  <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  cost      <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  margin    <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  rbf_sigma <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"psvr"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">spec_m2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr_mape_sym_specs.html">psvr_mape_sym_rbf</a></span><span class="op">(</span></span>
-<span>  cost       <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  svm_margin <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  rbf_sigma  <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">spec_m2</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr_mape_specs.html">psvr_mape_rbf</a></span><span class="op">(</span></span>
+<span>  cost      <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  margin    <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  rbf_sigma <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  sym_type  <span class="op">=</span> <span class="st">"even"</span></span>
 <span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"psvr"</span><span class="op">)</span></span>
 <span></span>
@@ -244,9 +245,10 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 <span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"psvr"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">spec_m4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr_rmspe_sym_specs.html">psvr_rmspe_sym_rbf</a></span><span class="op">(</span></span>
+<span><span class="va">spec_m4</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr_rmspe_specs.html">psvr_rmspe_rbf</a></span><span class="op">(</span></span>
 <span>  cost      <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>,</span>
-<span>  rbf_sigma <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  rbf_sigma <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  sym_type  <span class="op">=</span> <span class="st">"even"</span></span>
 <span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"psvr"</span><span class="op">)</span></span></code></pre></div>
 </details>
@@ -257,7 +259,7 @@ $ compressive_strength &lt;dbl&gt; 79.99, 61.89, 40.27, 41.05, 44.30, 47.03, 43.
 <p>The <code>psvr</code> package supplies custom dials parameters with appropriate defaults for percentage-error models:</p>
 <ul>
 <li>
-<strong><code>svm_margin</code></strong> → <code><a href="../reference/margin_percentage.html">margin_percentage()</a></code>: default range [1, 20] in percentage units — no manual override needed.</li>
+<strong><code>margin</code></strong> → <code><a href="../reference/margin_percentage.html">margin_percentage()</a></code>: default range [1, 20] in percentage units — no manual override needed.</li>
 <li>
 <strong><code>cost</code></strong> → <code><a href="../reference/cost_psvr.html">cost_psvr()</a></code>: default range [−2, 10] on the log₂ scale (~0.25 to 1,024) — no manual override needed.</li>
 <li>

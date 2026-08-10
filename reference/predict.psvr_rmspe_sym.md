@@ -1,10 +1,8 @@
 # Predict from a fitted symmetric LS-SVR with RMSPE model
 
-Method dispatched on the legacy `"psvr_rmspe_sym"` class returned by the
-deprecated
-[`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md).
-Uses the symmetric representer
-`f(x) = Σₖ αₖ · ½(K(xₖ, x) + a·K(xₖ, -x)) + b`. New code should use
+Method dispatched on the legacy `"psvr_rmspe_sym"` class, which the
+parsnip engine fit wrappers return. Uses the symmetric representer
+`f(x) = Σₖ αₖ · ½(K(xₖ, x) + a·K(xₖ, -x)) + b`. For direct fitting use
 [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md).
 
 ## Usage
@@ -18,8 +16,13 @@ predict(object, newdata, ...)
 
 - object:
 
-  An object of class `"psvr_rmspe_sym"` from
-  [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md).
+  An object of class `"psvr_rmspe_sym"`, as returned by the parsnip
+  engine fit wrappers with `sym_type = "even"` or `"odd"` (see
+  [psvr-fit-wrappers](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md);
+  `sym_type = "none"` yields `"psvr_rmspe"` instead). Unwrap a parsnip
+  fit with
+  [`parsnip::extract_fit_engine()`](https://parsnip.tidymodels.org/reference/reexports.html)
+  to obtain it.
 
 - newdata:
 

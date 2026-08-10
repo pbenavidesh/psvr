@@ -3,15 +3,15 @@
 MAPE epsilon-SVR (Model 1), symmetric MAPE epsilon-SVR (Model 2),
 RMSPE LS-SVR (Model 3), and symmetric RMSPE LS-SVR (Model 4). Selection
 is driven by loss ("mape" or "rmspe") and sym (NULL, +1L,
-or -1L). The four legacy public fitters
-(mape_svr(), mape_sym_svr(), rmspe_lssvr(), rmspe_sym_lssvr())
-remain available but are slated for deprecation.'><meta property="og:description" content='Unified entry point for the four model families in the psvr package:
+or -1L). psvr() is the single direct entry point; the four legacy
+fitters it replaced (mape_svr(), mape_sym_svr(), rmspe_lssvr(),
+rmspe_sym_lssvr()) were removed in 0.0.2.9010.'><meta property="og:description" content='Unified entry point for the four model families in the psvr package:
 MAPE epsilon-SVR (Model 1), symmetric MAPE epsilon-SVR (Model 2),
 RMSPE LS-SVR (Model 3), and symmetric RMSPE LS-SVR (Model 4). Selection
 is driven by loss ("mape" or "rmspe") and sym (NULL, +1L,
-or -1L). The four legacy public fitters
-(mape_svr(), mape_sym_svr(), rmspe_lssvr(), rmspe_sym_lssvr())
-remain available but are slated for deprecation.'><meta property="og:image" content="https://pbenavidesh.github.io/psvr/logo.png"></head><body>
+or -1L). psvr() is the single direct entry point; the four legacy
+fitters it replaced (mape_svr(), mape_sym_svr(), rmspe_lssvr(),
+rmspe_sym_lssvr()) were removed in 0.0.2.9010.'><meta property="og:image" content="https://pbenavidesh.github.io/psvr/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -58,9 +58,9 @@ remain available but are slated for deprecation.'><meta property="og:image" cont
 MAPE epsilon-SVR (Model 1), symmetric MAPE epsilon-SVR (Model 2),
 RMSPE LS-SVR (Model 3), and symmetric RMSPE LS-SVR (Model 4). Selection
 is driven by <code>loss</code> (<code>"mape"</code> or <code>"rmspe"</code>) and <code>sym</code> (<code>NULL</code>, <code>+1L</code>,
-or <code>-1L</code>). The four legacy public fitters
-(<code><a href="mape_svr.html">mape_svr()</a></code>, <code><a href="mape_sym_svr.html">mape_sym_svr()</a></code>, <code><a href="rmspe_lssvr.html">rmspe_lssvr()</a></code>, <code><a href="rmspe_sym_lssvr.html">rmspe_sym_lssvr()</a></code>)
-remain available but are slated for deprecation.</p>
+or <code>-1L</code>). <code>psvr()</code> is the single direct entry point; the four legacy
+fitters it replaced (<code>mape_svr()</code>, <code>mape_sym_svr()</code>, <code>rmspe_lssvr()</code>,
+<code>rmspe_sym_lssvr()</code>) were removed in 0.0.2.9010.</p>
     </div>
 
     <div class="section level2">
@@ -152,7 +152,9 @@ only). Default <code>1e-3</code>. Tighter values produce more iterations.</p></d
 <dt id="arg-precondition">precondition<a class="anchor" aria-label="anchor" href="#arg-precondition"></a></dt>
 <dd><p>One of <code>"auto"</code> (default), <code>"always"</code>, <code>"never"</code>, or
 a positive numeric threshold; controls Remark-17 symmetric rescaling
-(<code>loss = "rmspe"</code> only). See <code><a href="rmspe_lssvr.html">rmspe_lssvr()</a></code> for semantics.</p></dd>
+(<code>loss = "rmspe"</code> only). <code>"auto"</code> applies the rescaling when the target
+ratio <code>max(y) / min(y)</code> exceeds 10; a numeric value sets that threshold
+explicitly.</p></dd>
 
 
 <dt id="arg-alpha-init-alpha-star-init">alpha_init, alpha_star_init<a class="anchor" aria-label="anchor" href="#arg-alpha-init-alpha-star-init"></a></dt>

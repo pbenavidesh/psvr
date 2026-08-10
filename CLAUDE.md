@@ -75,16 +75,14 @@ degree satisfy both.
 - **[`psvr_cv()`](https://pbenavidesh.github.io/psvr/reference/psvr_cv.md)**
   (`R/psvr_cv.R`) — fold-wise fitting for `loss = "mape"` with
   warm-start carryover.
-- **12 parsnip specs**
+- **6 parsnip specs**
   ([`psvr_mape_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md)
-  etc.) plus dials helpers — frozen public API.
-- **Deprecated wrappers**
-  [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md),
-  [`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md),
-  [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md),
-  [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md)
-  in `R/deprecated.R` emit `.Deprecated("psvr")`, return the legacy
-  classes, and are scheduled for removal in v0.2.0+.
+  etc.) plus dials helpers. Symmetry is the `sym_type` argument
+  (`"none"` / `"even"` / `"odd"`), not a separate spec.
+- **The four legacy wrappers are GONE.** `mape_svr()`, `mape_sym_svr()`,
+  `rmspe_lssvr()`, `rmspe_sym_lssvr()` and `R/deprecated.R` were removed
+  in 0.0.2.9010. Their four fit **classes** and all 20 methods remain —
+  they are what the parsnip engine fit wrappers return.
 - **Internal helpers**:
   [`.fit_mape()`](https://pbenavidesh.github.io/psvr/reference/dot-fit_mape.md),
   [`.fit_mape_sym()`](https://pbenavidesh.github.io/psvr/reference/dot-fit_mape_sym.md),
@@ -137,6 +135,17 @@ degree satisfy both.
 - Load in a session with `devtools::load_all()` from the repo root.
 - **osqp 1.0.0** uses `solve_osqp(P, q, A, l, u, pars)` directly — the
   old R6 `osqp(...)$solve()` API is gone.
+- **`README.md` is regenerated with `rmarkdown::render("README.Rmd")`,
+  NEVER [`knitr::knit()`](https://rdrr.io/pkg/knitr/man/knit.html).**
+  `README.Rmd` declares `output: github_document`, which is a pandoc
+  writer: `render()` applies it, `knit()` skips pandoc entirely. A raw
+  knit leaks the YAML front matter into `README.md`, re-wraps prose to
+  ~85 columns instead of ~72, strips the alignment padding from tables,
+  and turns ```` ``` r ```` fences into ```` ```r ````. Nothing guards
+  this — the pre-commit hook checks that `README.md` is not older than
+  `README.Rmd` and that both are staged, not which renderer produced it.
+  After rendering, diff every printed value: the Quick-start numbers
+  must reproduce byte-for-byte unless `R/psvr-main.R` changed.
 - **Build invariant — do not change**: `src/Makevars` and `Makevars.win`
   set `PKG_LIBS = $(BLAS_LIBS) $(FLIBS)`. `core_smo_solve.cpp` calls
   `F77_CALL(dgemv)`, so removing `$(BLAS_LIBS)` breaks linking. Do not

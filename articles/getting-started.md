@@ -23,13 +23,9 @@ point:
 odd symmetry. Use the symmetric variants only with kernels that satisfy
 Assumption 3 of the paper (RBF and even-degree polynomial kernels do).
 
-The four legacy fitters
-([`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md),
-[`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md),
-[`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md),
-[`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md))
-remain available as soft-deprecated wrappers and will be removed in a
-future release.
+[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) is the
+only direct fitter. The four legacy wrappers it replaced were removed in
+0.0.2.9010; `loss` and `sym` now select the model.
 
 All models require **strictly positive targets** (`y > 0`), which is the
 condition under which percentage residuals are well-defined.

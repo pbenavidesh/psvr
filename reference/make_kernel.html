@@ -98,8 +98,9 @@ the same length, returning a scalar kernel evaluation.</p>
 </ul><p>RBF and even-degree polynomial kernels satisfy Assumption 3 of the paper
 (kernel symmetry), making them compatible with the symmetric models.
 The linear kernel and odd-degree polynomial kernels do <strong>not</strong> satisfy
-Assumption 3 and should not be used with <code><a href="mape_sym_svr.html">mape_sym_svr()</a></code> or
-<code><a href="rmspe_sym_lssvr.html">rmspe_sym_lssvr()</a></code>.</p>
+Assumption 3 and should not be used with the symmetric models, i.e. with
+<code>psvr(sym = +1L)</code> / <code>psvr(sym = -1L)</code> or with a parsnip spec whose
+<code>sym_type</code> is <code>"even"</code> or <code>"odd"</code>.</p>
     </div>
 
     <div class="section level2">

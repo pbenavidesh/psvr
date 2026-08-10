@@ -87,8 +87,8 @@ values and evaluate each fold by MAPE. The `rbf_sigma` search range is
 set data-adaptively using
 [`rbf_sigma_psvr_data()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr_data.md),
 centred on the median pairwise distance in the normalised feature space.
-[`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
-only solves a linear system, so 75 fits complete in seconds.
+The RMSPE LS-SVR only solves an `(N+1) × (N+1)` linear system — no
+iterative solver is involved — so 75 fits complete in seconds.
 
 ``` r
 

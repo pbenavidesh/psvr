@@ -4,12 +4,9 @@ Unified entry point for the four model families in the psvr package:
 MAPE epsilon-SVR (Model 1), symmetric MAPE epsilon-SVR (Model 2), RMSPE
 LS-SVR (Model 3), and symmetric RMSPE LS-SVR (Model 4). Selection is
 driven by `loss` (`"mape"` or `"rmspe"`) and `sym` (`NULL`, `+1L`, or
-`-1L`). The four legacy public fitters
-([`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md),
-[`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md),
-[`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md),
-[`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md))
-remain available but are slated for deprecation.
+`-1L`). `psvr()` is the single direct entry point; the four legacy
+fitters it replaced (`mape_svr()`, `mape_sym_svr()`, `rmspe_lssvr()`,
+`rmspe_sym_lssvr()`) were removed in 0.0.2.9010.
 
 ## Usage
 
@@ -102,9 +99,9 @@ psvr(
 
   One of `"auto"` (default), `"always"`, `"never"`, or a positive
   numeric threshold; controls Remark-17 symmetric rescaling
-  (`loss = "rmspe"` only). See
-  [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
-  for semantics.
+  (`loss = "rmspe"` only). `"auto"` applies the rescaling when the
+  target ratio `max(y) / min(y)` exceeds 10; a numeric value sets that
+  threshold explicitly.
 
 - alpha_init, alpha_star_init:
 

@@ -2,10 +2,8 @@
 
 Internal fitter for the RMSPE LS-SVR family. Use
 [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) with
-`loss = "rmspe"` instead. Returns the legacy `psvr_rmspe` shape; the
-deprecation wrapper
-[`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
-forwards directly to this function.
+`loss = "rmspe"` instead. Returns the legacy `psvr_rmspe` shape, which
+is also what the parsnip engine fit wrappers return.
 
 ## Usage
 
@@ -17,8 +15,7 @@ forwards directly to this function.
 
 - X, y, kernel, gamma, precondition:
 
-  See
-  [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
+  See [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md)
   for the full semantics of each argument (including the Remark-17
   preconditioner).
 

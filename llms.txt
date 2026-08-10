@@ -21,17 +21,6 @@ single entry point; `loss` and `sym` select the model:
 `sym = +1L` imposes an even-function prior (`f(-x) = f(x)`), `sym = -1L`
 an odd one. All models require **strictly positive targets** (`y > 0`).
 
-The four original fitters —
-[`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md),
-[`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md),
-[`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
-and
-[`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md)
-— still work, but are deprecated and scheduled for removal in v0.2.0 or
-later. See their help pages for the
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) call
-that replaces each.
-
 ## Installation
 
 ``` r
@@ -153,41 +142,25 @@ variables from one fold into the next as a warm start.
 - [`psvr_cv()`](https://pbenavidesh.github.io/psvr/reference/psvr_cv.md)
   : Cross-validate psvr() with automatic warm-start across folds
 
-## tidymodels / parsnip interface — ε-SVR with MAPE (Model 1)
+## tidymodels / parsnip interface — ε-SVR with MAPE (Models 1 & 2)
 
-Parsnip model specifications for Model 1 (one per kernel type).
+Parsnip model specifications for the ε-SVR family (one per kernel type).
+`sym_type = "none"` fits Model 1; `"even"` / `"odd"` fit Model 2.
 
 - [`psvr_mape_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md)
   [`psvr_mape_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md)
   [`psvr_mape_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_specs.md)
   : Parsnip model specs: epsilon-SVR with MAPE loss (Model 1)
 
-## tidymodels / parsnip interface — Symmetric ε-SVR with MAPE (Model 2)
+## tidymodels / parsnip interface — LS-SVR with RMSPE (Models 3 & 4)
 
-Parsnip model specifications for Model 2 (one per kernel type).
-
-- [`psvr_mape_sym_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.md)
-  [`psvr_mape_sym_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.md)
-  [`psvr_mape_sym_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape_sym_specs.md)
-  : Parsnip model specs: symmetric epsilon-SVR with MAPE loss (Model 2)
-
-## tidymodels / parsnip interface — LS-SVR with RMSPE (Model 3)
-
-Parsnip model specifications for Model 3 (one per kernel type).
+Parsnip model specifications for the LS-SVR family (one per kernel
+type). `sym_type = "none"` fits Model 3; `"even"` / `"odd"` fit Model 4.
 
 - [`psvr_rmspe_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md)
   [`psvr_rmspe_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md)
   [`psvr_rmspe_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md)
   : Parsnip model specs: LS-SVR with RMSPE loss (Model 3)
-
-## tidymodels / parsnip interface — Symmetric LS-SVR with RMSPE (Model 4)
-
-Parsnip model specifications for Model 4 (one per kernel type).
-
-- [`psvr_rmspe_sym_rbf()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.md)
-  [`psvr_rmspe_sym_poly()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.md)
-  [`psvr_rmspe_sym_linear()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_sym_specs.md)
-  : Parsnip model specs: symmetric LS-SVR with RMSPE loss (Model 4)
 
 ## Hyperparameter utilities
 
@@ -213,21 +186,16 @@ Custom dials parameters and tuning helpers for psvr models.
 - [`sym_type_param()`](https://pbenavidesh.github.io/psvr/reference/sym_type_param.md)
   : Dials parameter for symmetry type
 
-## Deprecated API
+## Legacy fit-object methods
 
-Soft-deprecated wrappers retained for backwards compatibility. New code
-should use
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md).
-Scheduled removal: v0.2.0+.
+Methods for the four legacy fit classes — `psvr_mape`, `psvr_mape_sym`,
+`psvr_rmspe`, `psvr_rmspe_sym` — which are what the parsnip engine fit
+wrappers return.
+[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) returns
+the different `psvr_fit` class; unwrap a parsnip fit with
+[`parsnip::extract_fit_engine()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)
+to reach these.
 
-- [`mape_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_svr.md)
-  : Fit epsilon-SVR with MAPE loss (deprecated)
-- [`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md)
-  : Fit symmetric epsilon-SVR with MAPE loss (deprecated)
-- [`rmspe_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_lssvr.md)
-  : Fit LS-SVR with RMSPE loss (deprecated)
-- [`rmspe_sym_lssvr()`](https://pbenavidesh.github.io/psvr/reference/rmspe_sym_lssvr.md)
-  : Fit symmetric LS-SVR with RMSPE loss (deprecated)
 - [`predict(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/predict.psvr_mape.md)
   : Predict from a fitted epsilon-SVR with MAPE model
 - [`predict(`*`<psvr_mape_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/predict.psvr_mape_sym.md)

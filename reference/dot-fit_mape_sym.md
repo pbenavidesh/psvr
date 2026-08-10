@@ -3,10 +3,9 @@
 Internal fitter for the symmetric MAPE epsilon-SVR family. Use
 [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) with
 `loss = "mape"` and `sym = +1L` / `-1L` instead. Returns the legacy
-`psvr_mape_sym` shape; the deprecation wrapper
-[`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md)
-forwards directly to this function. The kernel must satisfy Assumption 3
-of the paper; see
+`psvr_mape_sym` shape, which is also what the parsnip engine fit
+wrappers return with `sym_type = "even"` / `"odd"`. The kernel must
+satisfy Assumption 3 of the paper; see
 [`make_kernel()`](https://pbenavidesh.github.io/psvr/reference/make_kernel.md).
 
 ## Usage
@@ -34,10 +33,16 @@ of the paper; see
 
 ## Arguments
 
-- X, y, kernel, C, eps, a, solver, tol:
+- X, y, kernel, C, eps, solver, tol:
 
-  See
-  [`mape_sym_svr()`](https://pbenavidesh.github.io/psvr/reference/mape_sym_svr.md).
+  See [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md).
+
+- a:
+
+  Symmetry type: `1` (even) or `-1` (odd). Corresponds to
+  `psvr(sym = +1L)` and `psvr(sym = -1L)` respectively;
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) has
+  no `a` argument of its own.
 
 - alpha_init, alpha_star_init:
 
