@@ -79,8 +79,9 @@ cat(sprintf("Model 1 (MAPE e-SVR):       MAPE = %.2f%%\n", mape(y_te, pred1)))
 cat(sprintf("Model 2 (MAPE sym e-SVR):   MAPE = %.2f%%\n", mape(y_te, pred2)))
 cat(sprintf("Model 3 (RMSPE LS-SVR):     MAPE = %.2f%%\n", mape(y_te, pred3)))
 cat(sprintf("Model 4 (RMSPE sym LS-SVR): MAPE = %.2f%%\n", mape(y_te, pred4)))
-#> Model 1 (MAPE e-SVR):       MAPE = 3.59%
-#> Model 2 (MAPE sym e-SVR):   MAPE = 6.04%
+# Output last executed 2026-08-09 with psvr 0.0.2.9010
+#> Model 1 (MAPE e-SVR):       MAPE = 3.57%
+#> Model 2 (MAPE sym e-SVR):   MAPE = 5.97%
 #> Model 3 (RMSPE LS-SVR):     MAPE = 3.76%
 #> Model 4 (RMSPE sym LS-SVR): MAPE = 5.79%
 ```
