@@ -188,10 +188,11 @@ spec_m1 <- psvr_mape_rbf(
 ) |>
   set_engine("psvr")
 
-spec_m2 <- psvr_mape_sym_rbf(
+spec_m2 <- psvr_mape_rbf(
   cost       = tune(),
   svm_margin = tune(),
-  rbf_sigma  = tune()
+  rbf_sigma  = tune(),
+  sym_type   = "even"
 ) |>
   set_engine("psvr")
 
@@ -201,9 +202,10 @@ spec_m3 <- psvr_rmspe_rbf(
 ) |>
   set_engine("psvr")
 
-spec_m4 <- psvr_rmspe_sym_rbf(
+spec_m4 <- psvr_rmspe_rbf(
   cost      = tune(),
-  rbf_sigma = tune()
+  rbf_sigma = tune(),
+  sym_type  = "even"
 ) |>
   set_engine("psvr")
 ```
