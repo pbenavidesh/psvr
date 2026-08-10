@@ -95,6 +95,24 @@ The RBF kernel and polynomial kernels of even degree satisfy both.
 - Symmetric models build `Ωs = ½(Ω + a·Ω*)` via `sym_kernel_matrix()` and pass `Ωs`
   straight to the solver — no extra `0.5 *` at the call site. Predictions use
   `sym_kernel_vector()`, which already returns `½ Ks(xk, x)`.
+- **NEVER use `$` to read a field on a fit object. Use `x[["name"]]`, or
+  `"name" %in% names(x)` to test presence.** `$` partial-matches on lists, so a
+  field that does not exist on a class can silently return a *different* field.
+  The four classes have different shapes, so this is a live hazard on every one
+  of them, and it is invisible to `R CMD check`.
+
+  The case that proves it — `summary()` tested for symmetry with
+  `!is.null(object$a)`:
+
+  | class | what `object$a` returns | why |
+  |---|---|---|
+  | `psvr_rmspe` | the **length-N `alpha` vector** | `a` uniquely prefix-matches `alpha`; the caller expected `NULL` and got a vector |
+  | `psvr_mape` | `NULL` | only because `alpha` **and** `alpha_star` make the prefix ambiguous |
+  | `psvr_mape_sym` | `1L` / `-1L` | exact match wins |
+
+  Correct by luck in both directions: right answer on two classes for a reason
+  that has nothing to do with the field being absent, wrong answer on the third.
+  A later field named `a…` would silently flip `psvr_mape` too.
 
 ## Conventions
 
@@ -119,7 +137,34 @@ The RBF kernel and polynomial kernels of even degree satisfy both.
   fences into ` ```r `. Nothing guards this — the pre-commit hook checks that
   `README.md` is not older than `README.Rmd` and that both are staged, not which
   renderer produced it. After rendering, diff every printed value: the Quick-start
-  numbers must reproduce byte-for-byte unless `R/psvr-main.R` changed.
+  numbers must reproduce byte-for-byte unless a fitter or solver changed.
+  (~~`R/psvr-main.R`~~ — that file was deleted in the 0.0.2.9012 `psvr()` split;
+  the numbers now come from `psvr_mape()` / `psvr_rmspe()` and the `.fit_*`
+  internals.)
+- **`FAIL 0` is NOT a green suite.** The gate is **`FAIL 0` AND `ERROR 0` AND
+  `PASS == predicted` AND `SKIP == expected`** — all four, every time. Predict the
+  PASS count *before* running and reconcile any difference; do not read the number
+  off the run and call it the baseline. testthat's summary line hides two distinct
+  failure modes, both of which fired during the stage-5 split:
+  - **An errored block counts as `0 passed / 0 failed`.** A checkpoint reported
+    `FAIL 0` while **six blocks errored** — the suite looked clean and six blocks
+    had not run. Only the PASS count moving against its prediction exposed it.
+  - **`skip_on_cran()` silently disables everything under `NOT_CRAN=false`.** The
+    same file reported `18 PASS / 0 FAIL / 0 SKIP` under `NOT_CRAN=true` and
+    `0 PASS / 0 FAIL / 6 SKIP` under `false`. "No failures" was true of both. CI
+    pins `NOT_CRAN: 'false'`, so a gate that does not state its SKIP count can
+    certify a run in which nothing executed.
+- **Stage by explicit path. NEVER `git add -A` / `git add .`.** Name every file.
+  A blanket add sweeps in build artefacts that the working tree happens to be
+  carrying, and they reach the tarball. Measured: `rmarkdown::render("README.Rmd")`
+  writes a `README.html` preview next to `README.md`, `git add -A` staged it, and
+  `R CMD check --as-cran` returned a NOTE — *"Non-standard file/directory found at
+  top level: 'README.html'"* — that the package did not have before. `README.Rmd`
+  now sets `html_preview: false` and both ignore files list `README.html`, but the
+  general rule is the load-bearing one: the next artefact will have a different
+  name. Corollary: `R CMD check` counts are only meaningful against a baseline
+  **measured on the same harness immediately beforehand**, never against a figure
+  inherited from an earlier commit body.
 - **Build invariant — do not change**: `src/Makevars` and `Makevars.win` set
   `PKG_LIBS = $(BLAS_LIBS) $(FLIBS)`. `core_smo_solve.cpp` calls `F77_CALL(dgemv)`,
   so removing `$(BLAS_LIBS)` breaks linking. Do not add `$(LAPACK_LIBS)`; if ever
