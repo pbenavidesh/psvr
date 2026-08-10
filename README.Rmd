@@ -1,41 +1,50 @@
+---
+output: github_document
+---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
 
 # psvr <img src="man/figures/logo.png" align="right" height="139"/>
 
 <!-- badges: start -->
-
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19643526.svg)](https://doi.org/10.5281/zenodo.19643526)
 <!-- badges: end -->
 
-`psvr` implements four support vector regression models derived from a
-unified mathematical framework for percentage-error loss functions.
-Classical SVR minimises absolute-error losses (MAE, MSE), which are
-scale-dependent: an error of 1 unit is negligible when the target is 1
-000 but critical when it is 2. `psvr` addresses this by optimising MAPE
-and RMSPE directly, making it well-suited for forecasting tasks where
-targets are strictly positive and relative accuracy is what matters.
+`psvr` implements four support vector regression models derived from a unified
+mathematical framework for percentage-error loss functions. Classical SVR minimises
+absolute-error losses (MAE, MSE), which are scale-dependent: an error of 1 unit is
+negligible when the target is 1 000 but critical when it is 2. `psvr` addresses this
+by optimising MAPE and RMSPE directly, making it well-suited for forecasting tasks
+where targets are strictly positive and relative accuracy is what matters.
 
 `psvr()` is the single entry point; `loss` and `sym` select the model:
 
-| `loss`    | `sym`         | Model                       | Solver                  |
-|-----------|---------------|-----------------------------|-------------------------|
-| `"mape"`  | `NULL`        | ε-SVR with MAPE             | SMO (default) or `osqp` |
-| `"mape"`  | `+1L` / `-1L` | Symmetric ε-SVR with MAPE   | SMO (default) or `osqp` |
-| `"rmspe"` | `NULL`        | LS-SVR with RMSPE           | linear system           |
-| `"rmspe"` | `+1L` / `-1L` | Symmetric LS-SVR with RMSPE | linear system           |
+| `loss` | `sym` | Model | Solver |
+|---|---|---|---|
+| `"mape"` | `NULL` | ε-SVR with MAPE | SMO (default) or `osqp` |
+| `"mape"` | `+1L` / `-1L` | Symmetric ε-SVR with MAPE | SMO (default) or `osqp` |
+| `"rmspe"` | `NULL` | LS-SVR with RMSPE | linear system |
+| `"rmspe"` | `+1L` / `-1L` | Symmetric LS-SVR with RMSPE | linear system |
 
-`sym = +1L` imposes an even-function prior (`f(-x) = f(x)`), `sym = -1L`
-an odd one. All models require **strictly positive targets** (`y > 0`).
+`sym = +1L` imposes an even-function prior (`f(-x) = f(x)`), `sym = -1L` an odd
+one. All models require **strictly positive targets** (`y > 0`).
 
-The four original fitters — `mape_svr()`, `mape_sym_svr()`,
-`rmspe_lssvr()` and `rmspe_sym_lssvr()` — still work, but are deprecated
-and scheduled for removal in v0.2.0 or later. See their help pages for
-the `psvr()` call that replaces each.
+The four original fitters — `mape_svr()`, `mape_sym_svr()`, `rmspe_lssvr()` and
+`rmspe_sym_lssvr()` — still work, but are deprecated and scheduled for removal in
+v0.2.0 or later. See their help pages for the `psvr()` call that replaces each.
 
 ## Installation
 
-``` r
+```r
 # CRAN
 install.packages("psvr")
 
@@ -45,7 +54,7 @@ pak::pak("pbenavidesh/psvr")
 
 ## Quick start
 
-``` r
+```{r quick-start}
 library(psvr)
 
 # Synthetic dataset: even function (f(-x) = f(x)), targets strictly positive
@@ -88,19 +97,15 @@ cat(sprintf("Model 1 (MAPE e-SVR):       MAPE = %.2f%%", mape(y_te, pred1)),
     sprintf("Model 3 (RMSPE LS-SVR):     MAPE = %.2f%%", mape(y_te, pred3)),
     sprintf("Model 4 (RMSPE sym LS-SVR): MAPE = %.2f%%", mape(y_te, pred4)),
     sep = "\n")
-#> Model 1 (MAPE e-SVR):       MAPE = 3.57%
-#> Model 2 (MAPE sym e-SVR):   MAPE = 5.97%
-#> Model 3 (RMSPE LS-SVR):     MAPE = 3.76%
-#> Model 4 (RMSPE sym LS-SVR): MAPE = 5.79%
 ```
 
-For a full worked example on the Boston Housing dataset — including a
-70/30 train–test split, feature standardisation, and comparison against
-a linear baseline — see `vignette("getting-started", package = "psvr")`.
+For a full worked example on the Boston Housing dataset — including a 70/30
+train–test split, feature standardisation, and comparison against a linear
+baseline — see `vignette("getting-started", package = "psvr")`.
 
 ## Reference
 
-Benavides-Herrera, P., Álvarez, G., Ruiz-Cruz, R., & Sánchez-Torres, J.
-D. (2026). A unified family of percentage-error support vector
-regression models with symmetric kernel extensions. *Mathematics*,
-14(10), 1679. <https://doi.org/10.3390/math14101679>
+Benavides-Herrera, P., Álvarez, G., Ruiz-Cruz, R., & Sánchez-Torres, J. D.
+(2026). A unified family of percentage-error support vector regression models with
+symmetric kernel extensions. *Mathematics*, 14(10), 1679.
+<https://doi.org/10.3390/math14101679>
