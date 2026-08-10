@@ -16,7 +16,16 @@
 \alias{psvr_rmspe_sym_linear_fit}
 \title{Fit wrappers for parsnip engine dispatch}
 \usage{
-psvr_mape_rbf_fit(x, y, C, eps, rbf_sigma = 1, tol = 0.001, max_iter = 100000L)
+psvr_mape_rbf_fit(
+  x,
+  y,
+  C,
+  eps,
+  rbf_sigma = 1,
+  sym_type = "none",
+  tol = 0.001,
+  max_iter = 100000L
+)
 
 psvr_mape_poly_fit(
   x,
@@ -25,11 +34,20 @@ psvr_mape_poly_fit(
   eps,
   degree = 3L,
   scale_factor = 1,
+  sym_type = "none",
   tol = 0.001,
   max_iter = 100000L
 )
 
-psvr_mape_linear_fit(x, y, C, eps, tol = 0.001, max_iter = 100000L)
+psvr_mape_linear_fit(
+  x,
+  y,
+  C,
+  eps,
+  sym_type = "none",
+  tol = 0.001,
+  max_iter = 100000L
+)
 
 psvr_mape_sym_rbf_fit(
   x,
@@ -56,7 +74,14 @@ psvr_mape_sym_poly_fit(
 
 psvr_mape_sym_linear_fit(x, y, C, eps, a = 1L, tol = 0.001, max_iter = 100000L)
 
-psvr_rmspe_rbf_fit(x, y, gamma, rbf_sigma = 1, precondition = "auto")
+psvr_rmspe_rbf_fit(
+  x,
+  y,
+  gamma,
+  rbf_sigma = 1,
+  sym_type = "none",
+  precondition = "auto"
+)
 
 psvr_rmspe_poly_fit(
   x,
@@ -64,10 +89,11 @@ psvr_rmspe_poly_fit(
   gamma,
   degree = 3L,
   scale_factor = 1,
+  sym_type = "none",
   precondition = "auto"
 )
 
-psvr_rmspe_linear_fit(x, y, gamma, precondition = "auto")
+psvr_rmspe_linear_fit(x, y, gamma, sym_type = "none", precondition = "auto")
 
 psvr_rmspe_sym_rbf_fit(
   x,
@@ -101,6 +127,10 @@ psvr_rmspe_sym_linear_fit(x, y, gamma, a = 1L, precondition = "auto")
 
 \item{rbf_sigma}{RBF bandwidth σ > 0.}
 
+\item{sym_type}{Symmetry type. \code{"none"} (the default) dispatches to the
+non-symmetric fitter; \code{"even"} and \code{"odd"} dispatch to the symmetric
+fitter with \code{a = 1L} and \code{a = -1L} respectively.}
+
 \item{tol}{Solver convergence tolerance for the SMO loop. Default \code{1e-3}.}
 
 \item{max_iter}{Maximum SMO iterations. Default \code{100000L}. The solver
@@ -110,9 +140,6 @@ does not converge within \code{max_iter}.}
 \item{degree}{Polynomial degree ≥ 1.}
 
 \item{scale_factor}{Polynomial constant term (coef₀).}
-
-\item{sym_type}{Symmetry type (\code{"even"} or \code{"odd"}) for symmetric models;
-translated to \code{a = 1L} or \code{a = -1L} before calling the solver.}
 
 \item{gamma}{Regularization parameter for RMSPE models.}
 

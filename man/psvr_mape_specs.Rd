@@ -12,7 +12,8 @@ psvr_mape_rbf(
   engine = "psvr",
   cost = NULL,
   svm_margin = NULL,
-  rbf_sigma = NULL
+  rbf_sigma = NULL,
+  sym_type = NULL
 )
 
 psvr_mape_poly(
@@ -21,14 +22,16 @@ psvr_mape_poly(
   cost = NULL,
   svm_margin = NULL,
   degree = NULL,
-  scale_factor = NULL
+  scale_factor = NULL,
+  sym_type = NULL
 )
 
 psvr_mape_linear(
   mode = "regression",
   engine = "psvr",
   cost = NULL,
-  svm_margin = NULL
+  svm_margin = NULL,
+  sym_type = NULL
 )
 }
 \arguments{
@@ -48,6 +51,11 @@ of each target value.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimi
 Mapped to \code{\link[=rbf_sigma_psvr]{rbf_sigma_psvr()}}; the search range auto-finalizes using the
 median-distance heuristic when training data are available.
 (RBF specs only.)}
+
+\item{sym_type}{Symmetry type: \code{"none"} (default) fits the non-symmetric
+ε-SVR of Model 1; \code{"even"} (a = 1) and \code{"odd"} (a = -1) fit the
+symmetric ε-SVR of Model 2.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimise over the levels
+during CV; see \code{\link[=sym_type_param]{sym_type_param()}} to restrict which levels are searched.}
 
 \item{degree}{Polynomial degree ≥ 1.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
 (Polynomial specs only.)}
@@ -75,6 +83,11 @@ spec_poly <- psvr_mape_poly(cost = 10, svm_margin = 1, degree = 2,
   set_engine("psvr")
 
 spec_lin <- psvr_mape_linear(cost = 10, svm_margin = 1) |>
+  set_engine("psvr")
+
+# Symmetric epsilon-SVR (Model 2) via the sym_type argument:
+spec_sym <- psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1,
+                          sym_type = "even") |>
   set_engine("psvr")
 }
 

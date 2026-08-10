@@ -16,6 +16,26 @@
 utils::globalVariables(c("object", "new_data"))
 
 
+# ---- Symmetry-type translation -------------------------------------------
+# Maps the `sym_type` model argument onto the solver's integer `a`. Callers
+# branch on "none" BEFORE reaching this helper (that level selects a different
+# fitter, not a different `a`), so "none" arriving here is a caller bug and is
+# reported as one rather than silently treated as "odd".
+#
+# The strict switch() replaces the earlier `if (sym_type == "even") 1L else -1L`
+# form, which mapped every non-"even" string — including typos — to -1L.
+.sym_type_to_a <- function(sym_type) {
+  if (!is.character(sym_type) || length(sym_type) != 1L)
+    stop("`sym_type` must be a single string, one of \"none\", \"even\", ",
+         "\"odd\".", call. = FALSE)
+  switch(sym_type,
+         even = 1L,
+         odd  = -1L,
+         stop("`sym_type` must be one of \"none\", \"even\", \"odd\"; got \"",
+              sym_type, "\".", call. = FALSE))
+}
+
+
 # ---- Fit wrappers --------------------------------------------------------
 # parsnip calls each wrapper with (x, y, <original-arg-names>, ...).
 # The wrapper builds the kernel and delegates to the underlying internal
@@ -37,8 +57,9 @@ utils::globalVariables(c("object", "new_data"))
 #' @param rbf_sigma RBF bandwidth σ > 0.
 #' @param degree Polynomial degree ≥ 1.
 #' @param scale_factor Polynomial constant term (coef₀).
-#' @param sym_type Symmetry type (`"even"` or `"odd"`) for symmetric models;
-#'   translated to `a = 1L` or `a = -1L` before calling the solver.
+#' @param sym_type Symmetry type. `"none"` (the default) dispatches to the
+#'   non-symmetric fitter; `"even"` and `"odd"` dispatch to the symmetric
+#'   fitter with `a = 1L` and `a = -1L` respectively.
 #' @param tol Solver convergence tolerance for the SMO loop. Default `1e-3`.
 #' @param max_iter Maximum SMO iterations. Default `100000L`. The solver
 #'   emits a `warning()` and returns `solver_meta$converged = FALSE` if it
@@ -78,34 +99,50 @@ NULL
 #' @keywords internal
 #' @export
 psvr_mape_rbf_fit <- function(x, y, C, eps, rbf_sigma = 1,
+                              sym_type = "none",
                               tol = 1e-3, max_iter = 100000L) {
-  .fit_mape(X = x, y = y,
-            kernel = make_kernel("rbf", sigma = rbf_sigma),
-            C = C, eps = eps,
-            tol = tol, max_iter = max_iter)
+  K <- make_kernel("rbf", sigma = rbf_sigma)
+  if (identical(sym_type, "none")) {
+    .fit_mape(X = x, y = y, kernel = K, C = C, eps = eps,
+              tol = tol, max_iter = max_iter)
+  } else {
+    .fit_mape_sym(X = x, y = y, kernel = K, C = C, eps = eps,
+                  a = .sym_type_to_a(sym_type),
+                  tol = tol, max_iter = max_iter)
+  }
 }
 
 #' @rdname psvr-fit-wrappers
 #' @keywords internal
 #' @export
 psvr_mape_poly_fit <- function(x, y, C, eps, degree = 3L, scale_factor = 1,
+                               sym_type = "none",
                                tol = 1e-3, max_iter = 100000L) {
-  .fit_mape(X = x, y = y,
-            kernel = make_kernel("polynomial", degree = degree,
-                                 coef0 = scale_factor),
-            C = C, eps = eps,
-            tol = tol, max_iter = max_iter)
+  K <- make_kernel("polynomial", degree = degree, coef0 = scale_factor)
+  if (identical(sym_type, "none")) {
+    .fit_mape(X = x, y = y, kernel = K, C = C, eps = eps,
+              tol = tol, max_iter = max_iter)
+  } else {
+    .fit_mape_sym(X = x, y = y, kernel = K, C = C, eps = eps,
+                  a = .sym_type_to_a(sym_type),
+                  tol = tol, max_iter = max_iter)
+  }
 }
 
 #' @rdname psvr-fit-wrappers
 #' @keywords internal
 #' @export
-psvr_mape_linear_fit <- function(x, y, C, eps,
+psvr_mape_linear_fit <- function(x, y, C, eps, sym_type = "none",
                                  tol = 1e-3, max_iter = 100000L) {
-  .fit_mape(X = x, y = y,
-            kernel = make_kernel("linear"),
-            C = C, eps = eps,
-            tol = tol, max_iter = max_iter)
+  K <- make_kernel("linear")
+  if (identical(sym_type, "none")) {
+    .fit_mape(X = x, y = y, kernel = K, C = C, eps = eps,
+              tol = tol, max_iter = max_iter)
+  } else {
+    .fit_mape_sym(X = x, y = y, kernel = K, C = C, eps = eps,
+                  a = .sym_type_to_a(sym_type),
+                  tol = tol, max_iter = max_iter)
+  }
 }
 
 #' @rdname psvr-fit-wrappers
@@ -149,29 +186,50 @@ psvr_mape_sym_linear_fit <- function(x, y, C, eps, a = 1L,
 #' @keywords internal
 #' @export
 psvr_rmspe_rbf_fit <- function(x, y, gamma, rbf_sigma = 1,
+                               sym_type = "none",
                                precondition = "auto") {
-  .fit_rmspe(X = x, y = y,
-             kernel = make_kernel("rbf", sigma = rbf_sigma),
-             gamma = gamma, precondition = precondition)
+  K <- make_kernel("rbf", sigma = rbf_sigma)
+  if (identical(sym_type, "none")) {
+    .fit_rmspe(X = x, y = y, kernel = K,
+               gamma = gamma, precondition = precondition)
+  } else {
+    .fit_rmspe_sym(X = x, y = y, kernel = K,
+                   gamma = gamma, a = .sym_type_to_a(sym_type),
+                   precondition = precondition)
+  }
 }
 
 #' @rdname psvr-fit-wrappers
 #' @keywords internal
 #' @export
 psvr_rmspe_poly_fit <- function(x, y, gamma, degree = 3L, scale_factor = 1,
+                                sym_type = "none",
                                 precondition = "auto") {
-  .fit_rmspe(X = x, y = y,
-             kernel = make_kernel("polynomial", degree = degree,
-                                  coef0 = scale_factor),
-             gamma = gamma, precondition = precondition)
+  K <- make_kernel("polynomial", degree = degree, coef0 = scale_factor)
+  if (identical(sym_type, "none")) {
+    .fit_rmspe(X = x, y = y, kernel = K,
+               gamma = gamma, precondition = precondition)
+  } else {
+    .fit_rmspe_sym(X = x, y = y, kernel = K,
+                   gamma = gamma, a = .sym_type_to_a(sym_type),
+                   precondition = precondition)
+  }
 }
 
 #' @rdname psvr-fit-wrappers
 #' @keywords internal
 #' @export
-psvr_rmspe_linear_fit <- function(x, y, gamma, precondition = "auto") {
-  .fit_rmspe(X = x, y = y, kernel = make_kernel("linear"),
-             gamma = gamma, precondition = precondition)
+psvr_rmspe_linear_fit <- function(x, y, gamma, sym_type = "none",
+                                  precondition = "auto") {
+  K <- make_kernel("linear")
+  if (identical(sym_type, "none")) {
+    .fit_rmspe(X = x, y = y, kernel = K,
+               gamma = gamma, precondition = precondition)
+  } else {
+    .fit_rmspe_sym(X = x, y = y, kernel = K,
+                   gamma = gamma, a = .sym_type_to_a(sym_type),
+                   precondition = precondition)
+  }
 }
 
 #' @rdname psvr-fit-wrappers
@@ -233,6 +291,10 @@ psvr_rmspe_sym_linear_fit <- function(x, y, gamma, a = 1L,
 #'   (Polynomial specs only.)
 #' @param scale_factor Polynomial constant term (coef₀).  Use [tune()] to
 #'   optimize.  (Polynomial specs only.)
+#' @param sym_type Symmetry type: `"none"` (default) fits the non-symmetric
+#'   ε-SVR of Model 1; `"even"` (a = 1) and `"odd"` (a = -1) fit the
+#'   symmetric ε-SVR of Model 2.  Use [tune()] to optimise over the levels
+#'   during CV; see [sym_type_param()] to restrict which levels are searched.
 #'
 #' @return A parsnip `model_spec` object of the corresponding class.
 #'
@@ -248,16 +310,23 @@ psvr_rmspe_sym_linear_fit <- function(x, y, gamma, a = 1L,
 #'
 #' spec_lin <- psvr_mape_linear(cost = 10, svm_margin = 1) |>
 #'   set_engine("psvr")
+#'
+#' # Symmetric epsilon-SVR (Model 2) via the sym_type argument:
+#' spec_sym <- psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1,
+#'                           sym_type = "even") |>
+#'   set_engine("psvr")
 #' }
 #'
 #' @name psvr_mape_specs
 #' @export
 psvr_mape_rbf <- function(mode = "regression", engine = "psvr",
-                          cost = NULL, svm_margin = NULL, rbf_sigma = NULL) {
+                          cost = NULL, svm_margin = NULL, rbf_sigma = NULL,
+                          sym_type = NULL) {
   args <- list(
     cost       = rlang::enquo(cost),
     svm_margin = rlang::enquo(svm_margin),
-    rbf_sigma  = rlang::enquo(rbf_sigma)
+    rbf_sigma  = rlang::enquo(rbf_sigma),
+    sym_type   = rlang::enquo(sym_type)
   )
   parsnip::new_model_spec(
     "psvr_mape_rbf_model",
@@ -275,12 +344,14 @@ psvr_mape_rbf <- function(mode = "regression", engine = "psvr",
 #' @export
 psvr_mape_poly <- function(mode = "regression", engine = "psvr",
                            cost = NULL, svm_margin = NULL,
-                           degree = NULL, scale_factor = NULL) {
+                           degree = NULL, scale_factor = NULL,
+                           sym_type = NULL) {
   args <- list(
     cost         = rlang::enquo(cost),
     svm_margin   = rlang::enquo(svm_margin),
     degree       = rlang::enquo(degree),
-    scale_factor = rlang::enquo(scale_factor)
+    scale_factor = rlang::enquo(scale_factor),
+    sym_type     = rlang::enquo(sym_type)
   )
   parsnip::new_model_spec(
     "psvr_mape_poly_model",
@@ -297,10 +368,12 @@ psvr_mape_poly <- function(mode = "regression", engine = "psvr",
 #' @rdname psvr_mape_specs
 #' @export
 psvr_mape_linear <- function(mode = "regression", engine = "psvr",
-                             cost = NULL, svm_margin = NULL) {
+                             cost = NULL, svm_margin = NULL,
+                             sym_type = NULL) {
   args <- list(
     cost       = rlang::enquo(cost),
-    svm_margin = rlang::enquo(svm_margin)
+    svm_margin = rlang::enquo(svm_margin),
+    sym_type   = rlang::enquo(sym_type)
   )
   parsnip::new_model_spec(
     "psvr_mape_linear_model",
@@ -425,6 +498,10 @@ psvr_mape_sym_linear <- function(mode = "regression", engine = "psvr",
 #'   (Polynomial specs only.)
 #' @param scale_factor Polynomial constant term (coef₀).  Use [tune()] to
 #'   optimize.  (Polynomial specs only.)
+#' @param sym_type Symmetry type: `"none"` (default) fits the non-symmetric
+#'   LS-SVR of Model 3; `"even"` (a = 1) and `"odd"` (a = -1) fit the
+#'   symmetric LS-SVR of Model 4.  Use [tune()] to optimise over the levels
+#'   during CV; see [sym_type_param()] to restrict which levels are searched.
 #'
 #' @return A parsnip `model_spec` object of the corresponding class.
 #'
@@ -445,15 +522,21 @@ psvr_mape_sym_linear <- function(mode = "regression", engine = "psvr",
 #'
 #' spec_lin <- psvr_rmspe_linear(cost = 1000) |>
 #'   set_engine("psvr")
+#'
+#' # Symmetric LS-SVR (Model 4) via the sym_type argument:
+#' spec_sym <- psvr_rmspe_rbf(cost = 1000, rbf_sigma = 1,
+#'                            sym_type = "even") |>
+#'   set_engine("psvr")
 #' }
 #'
 #' @name psvr_rmspe_specs
 #' @export
 psvr_rmspe_rbf <- function(mode = "regression", engine = "psvr",
-                           cost = NULL, rbf_sigma = NULL) {
+                           cost = NULL, rbf_sigma = NULL, sym_type = NULL) {
   args <- list(
     cost      = rlang::enquo(cost),
-    rbf_sigma = rlang::enquo(rbf_sigma)
+    rbf_sigma = rlang::enquo(rbf_sigma),
+    sym_type  = rlang::enquo(sym_type)
   )
   parsnip::new_model_spec(
     "psvr_rmspe_rbf_model",
@@ -470,11 +553,13 @@ psvr_rmspe_rbf <- function(mode = "regression", engine = "psvr",
 #' @rdname psvr_rmspe_specs
 #' @export
 psvr_rmspe_poly <- function(mode = "regression", engine = "psvr",
-                            cost = NULL, degree = NULL, scale_factor = NULL) {
+                            cost = NULL, degree = NULL, scale_factor = NULL,
+                            sym_type = NULL) {
   args <- list(
     cost         = rlang::enquo(cost),
     degree       = rlang::enquo(degree),
-    scale_factor = rlang::enquo(scale_factor)
+    scale_factor = rlang::enquo(scale_factor),
+    sym_type     = rlang::enquo(sym_type)
   )
   parsnip::new_model_spec(
     "psvr_rmspe_poly_model",
@@ -491,8 +576,11 @@ psvr_rmspe_poly <- function(mode = "regression", engine = "psvr",
 #' @rdname psvr_rmspe_specs
 #' @export
 psvr_rmspe_linear <- function(mode = "regression", engine = "psvr",
-                              cost = NULL) {
-  args <- list(cost = rlang::enquo(cost))
+                              cost = NULL, sym_type = NULL) {
+  args <- list(
+    cost     = rlang::enquo(cost),
+    sym_type = rlang::enquo(sym_type)
+  )
   parsnip::new_model_spec(
     "psvr_rmspe_linear_model",
     args                  = args,
@@ -635,12 +723,13 @@ psvr_update_spec <- function(object, cls, new_args, fresh, ...) {
 #' @export
 update.psvr_mape_rbf_model <- function(object, parameters = NULL,
                                        cost = NULL, svm_margin = NULL,
-                                       rbf_sigma = NULL,
+                                       rbf_sigma = NULL, sym_type = NULL,
                                        fresh = FALSE, ...) {
   psvr_update_spec(object, "psvr_mape_rbf_model",
                    list(cost       = rlang::enquo(cost),
                         svm_margin = rlang::enquo(svm_margin),
-                        rbf_sigma  = rlang::enquo(rbf_sigma)),
+                        rbf_sigma  = rlang::enquo(rbf_sigma),
+                        sym_type   = rlang::enquo(sym_type)),
                    fresh, ...)
 }
 
@@ -648,22 +737,26 @@ update.psvr_mape_rbf_model <- function(object, parameters = NULL,
 update.psvr_mape_poly_model <- function(object, parameters = NULL,
                                         cost = NULL, svm_margin = NULL,
                                         degree = NULL, scale_factor = NULL,
+                                        sym_type = NULL,
                                         fresh = FALSE, ...) {
   psvr_update_spec(object, "psvr_mape_poly_model",
                    list(cost         = rlang::enquo(cost),
                         svm_margin   = rlang::enquo(svm_margin),
                         degree       = rlang::enquo(degree),
-                        scale_factor = rlang::enquo(scale_factor)),
+                        scale_factor = rlang::enquo(scale_factor),
+                        sym_type     = rlang::enquo(sym_type)),
                    fresh, ...)
 }
 
 #' @export
 update.psvr_mape_linear_model <- function(object, parameters = NULL,
                                           cost = NULL, svm_margin = NULL,
+                                          sym_type = NULL,
                                           fresh = FALSE, ...) {
   psvr_update_spec(object, "psvr_mape_linear_model",
                    list(cost       = rlang::enquo(cost),
-                        svm_margin = rlang::enquo(svm_margin)),
+                        svm_margin = rlang::enquo(svm_margin),
+                        sym_type   = rlang::enquo(sym_type)),
                    fresh, ...)
 }
 
@@ -708,31 +801,35 @@ update.psvr_mape_sym_linear_model <- function(object, parameters = NULL,
 #' @export
 update.psvr_rmspe_rbf_model <- function(object, parameters = NULL,
                                         cost = NULL, rbf_sigma = NULL,
+                                        sym_type = NULL,
                                         fresh = FALSE, ...) {
   psvr_update_spec(object, "psvr_rmspe_rbf_model",
                    list(cost      = rlang::enquo(cost),
-                        rbf_sigma = rlang::enquo(rbf_sigma)),
+                        rbf_sigma = rlang::enquo(rbf_sigma),
+                        sym_type  = rlang::enquo(sym_type)),
                    fresh, ...)
 }
 
 #' @export
 update.psvr_rmspe_poly_model <- function(object, parameters = NULL,
                                          cost = NULL, degree = NULL,
-                                         scale_factor = NULL,
+                                         scale_factor = NULL, sym_type = NULL,
                                          fresh = FALSE, ...) {
   psvr_update_spec(object, "psvr_rmspe_poly_model",
                    list(cost         = rlang::enquo(cost),
                         degree       = rlang::enquo(degree),
-                        scale_factor = rlang::enquo(scale_factor)),
+                        scale_factor = rlang::enquo(scale_factor),
+                        sym_type     = rlang::enquo(sym_type)),
                    fresh, ...)
 }
 
 #' @export
 update.psvr_rmspe_linear_model <- function(object, parameters = NULL,
-                                           cost = NULL,
+                                           cost = NULL, sym_type = NULL,
                                            fresh = FALSE, ...) {
   psvr_update_spec(object, "psvr_rmspe_linear_model",
-                   list(cost = rlang::enquo(cost)),
+                   list(cost     = rlang::enquo(cost),
+                        sym_type = rlang::enquo(sym_type)),
                    fresh, ...)
 }
 
@@ -827,16 +924,27 @@ update.psvr_rmspe_sym_linear_model <- function(object, parameters = NULL,
 #' Dials parameter for symmetry type
 #'
 #' Returns a qualitative [dials::new_qual_param()] describing the `sym_type`
-#' argument of symmetric psvr model specs.  `"even"` maps to `a = 1L`
-#' (standard symmetric kernel); `"odd"` maps to `a = -1L`
-#' (anti-symmetric kernel).
+#' argument of the psvr model specs.  `"none"` fits the non-symmetric model;
+#' `"even"` maps to `a = 1L` (standard symmetric kernel); `"odd"` maps to
+#' `a = -1L` (anti-symmetric kernel).
+#'
+#' @param values Character vector of levels to search over.  Any subset of
+#'   `c("none", "even", "odd")`; defaults to all three.  Pass
+#'   `values = c("even", "odd")` to tune over the symmetric models only,
+#'   which reproduces the two-level grid offered before psvr 0.0.2.9011.
 #'
 #' @return A `qual_param` object.
+#'
+#' @examples
+#' sym_type_param()
+#' sym_type_param(values = c("even", "odd"))
+#'
 #' @export
-sym_type_param <- function() {
+sym_type_param <- function(values = c("none", "even", "odd")) {
+  values <- rlang::arg_match(values, c("none", "even", "odd"), multiple = TRUE)
   dials::new_qual_param(
     type   = "character",
-    values = c("even", "odd"),
+    values = values,
     label  = c(sym_type = "Symmetry type"),
     tags   = "model"
   )
@@ -857,13 +965,13 @@ make_psvr_engines <- function() {
     return(invisible(NULL))
   }
 
-  # ---- Model 1: epsilon-SVR with MAPE ----
+  # ---- Model 1: epsilon-SVR with MAPE (sym_type = "none" by default) ----
   .reg_psvr("psvr_mape_rbf_model",    "psvr_mape_rbf_fit",
-            list(.A_COST_C, .A_MARGIN, .A_SIGMA))
+            list(.A_COST_C, .A_MARGIN, .A_SIGMA, .A_SYM_TYPE))
   .reg_psvr("psvr_mape_poly_model",   "psvr_mape_poly_fit",
-            list(.A_COST_C, .A_MARGIN, .A_DEGREE, .A_SCALE))
+            list(.A_COST_C, .A_MARGIN, .A_DEGREE, .A_SCALE, .A_SYM_TYPE))
   .reg_psvr("psvr_mape_linear_model", "psvr_mape_linear_fit",
-            list(.A_COST_C, .A_MARGIN))
+            list(.A_COST_C, .A_MARGIN, .A_SYM_TYPE))
 
   # ---- Model 2: symmetric epsilon-SVR with MAPE ----
   .reg_psvr("psvr_mape_sym_rbf_model",    "psvr_mape_sym_rbf_fit",
@@ -873,15 +981,15 @@ make_psvr_engines <- function() {
   .reg_psvr("psvr_mape_sym_linear_model", "psvr_mape_sym_linear_fit",
             list(.A_COST_C, .A_MARGIN), defaults = list(a = 1L))
 
-  # ---- Model 3: LS-SVR with RMSPE ----
+  # ---- Model 3: LS-SVR with RMSPE (sym_type = "none" by default) ----
   .reg_psvr("psvr_rmspe_rbf_model",    "psvr_rmspe_rbf_fit",
-            list(.A_COST_GAMMA, .A_SIGMA),
+            list(.A_COST_GAMMA, .A_SIGMA, .A_SYM_TYPE),
             defaults = list(precondition = "auto"))
   .reg_psvr("psvr_rmspe_poly_model",   "psvr_rmspe_poly_fit",
-            list(.A_COST_GAMMA, .A_DEGREE, .A_SCALE),
+            list(.A_COST_GAMMA, .A_DEGREE, .A_SCALE, .A_SYM_TYPE),
             defaults = list(precondition = "auto"))
   .reg_psvr("psvr_rmspe_linear_model", "psvr_rmspe_linear_fit",
-            list(.A_COST_GAMMA),
+            list(.A_COST_GAMMA, .A_SYM_TYPE),
             defaults = list(precondition = "auto"))
 
   # ---- Model 4: symmetric LS-SVR with RMSPE ----

@@ -1,6 +1,28 @@
 # psvr 0.0.2.9010 (development)
 
+## New features
+
+* **The six non-symmetric parsnip specs gain a tunable `sym_type` argument.**
+  `psvr_mape_rbf()`, `psvr_mape_poly()`, `psvr_mape_linear()`,
+  `psvr_rmspe_rbf()`, `psvr_rmspe_poly()` and `psvr_rmspe_linear()` now accept
+  `sym_type`, taking `"none"` (the default), `"even"` (a = 1) or `"odd"`
+  (a = -1). Leaving it unset reproduces the previous behaviour exactly.
+  Symmetry is now settable **and tunable** on the polynomial and linear
+  kernels, which it was not before: the symmetric poly/linear specs exposed
+  symmetry only as the engine argument `a`, which `tune()` cannot reach, so
+  it could not be optimised during CV on four of the six symmetric specs.
+
 ## Breaking changes
+
+* **`sym_type_param()` now offers three levels** — `c("none", "even", "odd")` —
+  where it previously offered two. Code that tunes `sym_type` on
+  `psvr_mape_sym_rbf()` or `psvr_rmspe_sym_rbf()` will search the additional
+  `"none"` level, which fits a **non-symmetric** model; grid size and CV cost
+  change accordingly and a run may select `"none"`. No error is raised. To
+  keep the previous two-level grid, pass
+  `sym_type_param(values = c("even", "odd"))` — the function gains a `values`
+  argument for exactly this purpose, and now validates it via
+  `rlang::arg_match()` rather than accepting arbitrary strings.
 
 * **`new_mask` is removed** from `psvr()`, `psvr_cv()`, `.smo_solve()`,
   `.smo_solve_r()`, `.fit_mape()`, `.fit_mape_sym()`, and

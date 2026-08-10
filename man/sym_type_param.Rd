@@ -4,14 +4,25 @@
 \alias{sym_type_param}
 \title{Dials parameter for symmetry type}
 \usage{
-sym_type_param()
+sym_type_param(values = c("none", "even", "odd"))
+}
+\arguments{
+\item{values}{Character vector of levels to search over.  Any subset of
+\code{c("none", "even", "odd")}; defaults to all three.  Pass
+\code{values = c("even", "odd")} to tune over the symmetric models only,
+which reproduces the two-level grid offered before psvr 0.0.2.9011.}
 }
 \value{
 A \code{qual_param} object.
 }
 \description{
 Returns a qualitative \code{\link[dials:new-param]{dials::new_qual_param()}} describing the \code{sym_type}
-argument of symmetric psvr model specs.  \code{"even"} maps to \code{a = 1L}
-(standard symmetric kernel); \code{"odd"} maps to \code{a = -1L}
-(anti-symmetric kernel).
+argument of the psvr model specs.  \code{"none"} fits the non-symmetric model;
+\code{"even"} maps to \code{a = 1L} (standard symmetric kernel); \code{"odd"} maps to
+\code{a = -1L} (anti-symmetric kernel).
+}
+\examples{
+sym_type_param()
+sym_type_param(values = c("even", "odd"))
+
 }
