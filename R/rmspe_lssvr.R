@@ -1,11 +1,11 @@
 #' Fit LS-SVR with RMSPE loss (Model 3) — internal
 #'
 #' Internal fitter for the RMSPE LS-SVR family. Use [psvr()] with
-#' `loss = "rmspe"` instead. Returns the legacy `psvr_rmspe` shape; the
-#' deprecation wrapper [rmspe_lssvr()] forwards directly to this function.
+#' `loss = "rmspe"` instead. Returns the legacy `psvr_rmspe` shape, which is also
+#' what the parsnip engine fit wrappers return.
 #'
-#' @param X,y,kernel,gamma,precondition See [rmspe_lssvr()] for the full
-#'   semantics of each argument (including the Remark-17 preconditioner).
+#' @param X,y,kernel,gamma,precondition See [psvr()] for the full semantics of
+#'   each argument (including the Remark-17 preconditioner).
 #'
 #' @return A list of class `"psvr_rmspe"` (legacy shape).
 #'
@@ -77,10 +77,13 @@
 
 #' Predict from a fitted LS-SVR with RMSPE model
 #'
-#' Method dispatched on the legacy `"psvr_rmspe"` class returned by the
-#' deprecated [rmspe_lssvr()]. New code should use [psvr()].
+#' Method dispatched on the legacy `"psvr_rmspe"` class, which the parsnip engine
+#' fit wrappers return. For direct fitting use [psvr()].
 #'
-#' @param object An object of class `"psvr_rmspe"` from [rmspe_lssvr()].
+#' @param object An object of class `"psvr_rmspe"`, as returned by the parsnip
+#'   engine fit wrappers with `sym_type = "none"` (see [psvr-fit-wrappers];
+#'   `sym_type = "even"` or `"odd"` yields `"psvr_rmspe_sym"` instead). Unwrap a
+#'   parsnip fit with [parsnip::extract_fit_engine()] to obtain it.
 #' @param newdata Numeric matrix of new inputs, one observation per row (M × p).
 #' @param ... Ignored.
 #'

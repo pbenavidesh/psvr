@@ -2,13 +2,15 @@
 #'
 #' Internal fitter for the symmetric RMSPE LS-SVR family. Use [psvr()]
 #' with `loss = "rmspe"` and `sym = +1L` / `-1L` instead. Returns the
-#' legacy `psvr_rmspe_sym` shape; the deprecation wrapper
-#' [rmspe_sym_lssvr()] forwards directly to this function. The kernel must
+#' legacy `psvr_rmspe_sym` shape, which is also what the parsnip engine fit
+#' wrappers return with `sym_type = "even"` / `"odd"`. The kernel must
 #' satisfy Assumption 3 of the paper (kernel symmetry); see [make_kernel()].
 #'
-#' @param X,y,kernel,gamma,a,precondition See [rmspe_sym_lssvr()] for the
-#'   full semantics of each argument (including the Remark-17
-#'   preconditioner).
+#' @param X,y,kernel,gamma,precondition See [psvr()] for the full semantics of
+#'   each argument (including the Remark-17 preconditioner).
+#' @param a Symmetry type: `1` (even) or `-1` (odd). Corresponds to
+#'   `psvr(sym = +1L)` and `psvr(sym = -1L)` respectively; `psvr()` has no `a`
+#'   argument of its own.
 #'
 #' @return A list of class `"psvr_rmspe_sym"` (legacy shape).
 #'
@@ -80,12 +82,15 @@
 
 #' Predict from a fitted symmetric LS-SVR with RMSPE model
 #'
-#' Method dispatched on the legacy `"psvr_rmspe_sym"` class returned by the
-#' deprecated [rmspe_sym_lssvr()]. Uses the symmetric representer
-#' `f(x) = Σₖ αₖ · ½(K(xₖ, x) + a·K(xₖ, -x)) + b`. New code should use
+#' Method dispatched on the legacy `"psvr_rmspe_sym"` class, which the parsnip
+#' engine fit wrappers return. Uses the symmetric representer
+#' `f(x) = Σₖ αₖ · ½(K(xₖ, x) + a·K(xₖ, -x)) + b`. For direct fitting use
 #' [psvr()].
 #'
-#' @param object An object of class `"psvr_rmspe_sym"` from [rmspe_sym_lssvr()].
+#' @param object An object of class `"psvr_rmspe_sym"`, as returned by the parsnip
+#'   engine fit wrappers with `sym_type = "even"` or `"odd"` (see
+#'   [psvr-fit-wrappers]; `sym_type = "none"` yields `"psvr_rmspe"` instead).
+#'   Unwrap a parsnip fit with [parsnip::extract_fit_engine()] to obtain it.
 #' @param newdata Numeric matrix of new inputs, one observation per row (M × p).
 #' @param ... Ignored.
 #'

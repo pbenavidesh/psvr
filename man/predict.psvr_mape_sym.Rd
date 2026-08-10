@@ -7,7 +7,10 @@
 \method{predict}{psvr_mape_sym}(object, newdata, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"psvr_mape_sym"} from \code{\link[=mape_sym_svr]{mape_sym_svr()}}.}
+\item{object}{An object of class \code{"psvr_mape_sym"}, as returned by the parsnip
+engine fit wrappers with \code{sym_type = "even"} or \code{"odd"} (see
+\link{psvr-fit-wrappers}; \code{sym_type = "none"} yields \code{"psvr_mape"} instead).
+Unwrap a parsnip fit with \code{\link[parsnip:reexports]{parsnip::extract_fit_engine()}} to obtain it.}
 
 \item{newdata}{Numeric matrix of new inputs, one observation per row (M × p).}
 
@@ -17,8 +20,8 @@
 Numeric vector of length M with predicted values.
 }
 \description{
-Method dispatched on the legacy \code{"psvr_mape_sym"} class returned by the
-deprecated \code{\link[=mape_sym_svr]{mape_sym_svr()}}. Uses the symmetric representer theorem
+Method dispatched on the legacy \code{"psvr_mape_sym"} class, which the parsnip
+engine fit wrappers return. Uses the symmetric representer theorem
 \verb{f(x) = ½ Σk βk Ks(xk, x) + b} with
-\verb{Ks(xk, x) = K(xk, x) + a·K(xk, -x)}. New code should use \code{\link[=psvr]{psvr()}}.
+\verb{Ks(xk, x) = K(xk, x) + a·K(xk, -x)}. For direct fitting use \code{\link[=psvr]{psvr()}}.
 }

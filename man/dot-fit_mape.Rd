@@ -23,7 +23,7 @@
 )
 }
 \arguments{
-\item{X, y, kernel, C, eps, solver, tol}{See \code{\link[=mape_svr]{mape_svr()}}.}
+\item{X, y, kernel, C, eps, solver, tol}{See \code{\link[=psvr]{psvr()}}.}
 
 \item{alpha_init, alpha_star_init}{Optional length-N numeric warm-start
 vectors (Theorem 5); \code{NULL} cold-starts.}
@@ -36,7 +36,7 @@ A list of class \code{"psvr_mape"} (legacy shape).
 }
 \description{
 Internal fitter for the MAPE epsilon-SVR family. Use \code{\link[=psvr]{psvr()}} with
-\code{loss = "mape"} instead. Returns the legacy \code{psvr_mape} shape; the
-deprecation wrapper \code{\link[=mape_svr]{mape_svr()}} forwards directly to this function.
+\code{loss = "mape"} instead. Returns the legacy \code{psvr_mape} shape, which is also
+what the parsnip engine fit wrappers return.
 }
 \keyword{internal}

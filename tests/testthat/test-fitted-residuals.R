@@ -159,11 +159,13 @@ test_that("the four legacy classes support fitted() and residuals()", {
   d <- make_data()
   N <- length(d$y)
   K <- make_kernel("rbf", sigma = 0.8)
+  # The internal fitters, not psvr(): these four classes are what the parsnip
+  # engine fit wrappers return, and psvr() returns psvr_fit instead.
   legacy <- suppressWarnings(list(
-    psvr_mape      = mape_svr(d$X, d$y, K, C = 1, eps = 0.1),
-    psvr_mape_sym  = mape_sym_svr(d$X, d$y, K, C = 1, eps = 0.1, a = 1L),
-    psvr_rmspe     = rmspe_lssvr(d$X, d$y, K, gamma = 10),
-    psvr_rmspe_sym = rmspe_sym_lssvr(d$X, d$y, K, gamma = 10, a = 1L)
+    psvr_mape      = psvr:::.fit_mape(d$X, d$y, K, C = 1, eps = 0.1),
+    psvr_mape_sym  = psvr:::.fit_mape_sym(d$X, d$y, K, C = 1, eps = 0.1, a = 1L),
+    psvr_rmspe     = psvr:::.fit_rmspe(d$X, d$y, K, gamma = 10),
+    psvr_rmspe_sym = psvr:::.fit_rmspe_sym(d$X, d$y, K, gamma = 10, a = 1L)
   ))
   for (nm in names(legacy)) {
     f <- legacy[[nm]]

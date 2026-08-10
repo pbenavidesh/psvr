@@ -23,8 +23,9 @@
 #' RBF and even-degree polynomial kernels satisfy Assumption 3 of the paper
 #' (kernel symmetry), making them compatible with the symmetric models.
 #' The linear kernel and odd-degree polynomial kernels do **not** satisfy
-#' Assumption 3 and should not be used with `mape_sym_svr()` or
-#' `rmspe_sym_lssvr()`.
+#' Assumption 3 and should not be used with the symmetric models, i.e. with
+#' `psvr(sym = +1L)` / `psvr(sym = -1L)` or with a parsnip spec whose
+#' `sym_type` is `"even"` or `"odd"`.
 #'
 #' @examples
 #' K <- make_kernel("rbf", sigma = 0.5)

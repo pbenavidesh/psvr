@@ -69,9 +69,10 @@ The RBF kernel and polynomial kernels of even degree satisfy both.
   warm-start carryover.
 - **6 parsnip specs** (`psvr_mape_rbf()` etc.) plus dials helpers. Symmetry is the
   `sym_type` argument (`"none"` / `"even"` / `"odd"`), not a separate spec.
-- **Deprecated wrappers** `mape_svr()`, `mape_sym_svr()`, `rmspe_lssvr()`,
-  `rmspe_sym_lssvr()` in `R/deprecated.R` emit `.Deprecated("psvr")`, return the
-  legacy classes, and are scheduled for removal in v0.2.0+.
+- **The four legacy wrappers are GONE.** `mape_svr()`, `mape_sym_svr()`,
+  `rmspe_lssvr()`, `rmspe_sym_lssvr()` and `R/deprecated.R` were removed in
+  0.0.2.9010. Their four fit **classes** and all 20 methods remain — they are what
+  the parsnip engine fit wrappers return.
 - **Internal helpers**: `.fit_mape()`, `.fit_mape_sym()`, `.fit_rmspe()`,
   `.fit_rmspe_sym()`; validation in `R/utils-validation.R`; predict dispatch in
   `R/utils-predict.R`.

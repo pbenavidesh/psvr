@@ -14,6 +14,31 @@
 
 ## Breaking changes
 
+* **`mape_svr()`, `mape_sym_svr()`, `rmspe_lssvr()` and `rmspe_sym_lssvr()` are
+  REMOVED**, along with `R/deprecated.R`. They were soft-deprecated since
+  0.0.2.9000 and never shipped in a released version. Replace with `psvr()`:
+
+  ```r
+  mape_svr(X, y, kernel = K, C = 10, eps = 5)
+  # becomes
+  psvr(X, y, loss = "mape", kernel = K, C = 10, eps = 5)
+
+  mape_sym_svr(X, y, kernel = K, C = 10, eps = 5, a = 1)
+  # becomes
+  psvr(X, y, loss = "mape", sym = +1L, kernel = K, C = 10, eps = 5)
+  ```
+
+  `sym = +1L` is even symmetry, `sym = -1L` odd, `sym = NULL` (the default)
+  non-symmetric. Likewise `rmspe_lssvr(...)` → `psvr(loss = "rmspe", ...)` and
+  `rmspe_sym_lssvr(..., a = 1)` → `psvr(loss = "rmspe", sym = +1L, ...)`.
+
+  **The four legacy fit classes are UNAFFECTED.** `psvr_mape`, `psvr_mape_sym`,
+  `psvr_rmspe` and `psvr_rmspe_sym`, and all twenty of their `predict()` /
+  `print()` / `coef()` / `fitted()` / `residuals()` methods, remain exported and
+  documented — the parsnip engine fit wrappers still return them. Note that
+  `psvr()` itself returns the different `psvr_fit` class; unwrap a parsnip fit
+  with `parsnip::extract_fit_engine()` to reach a legacy object.
+
 * **The six symmetric parsnip specs are REMOVED** — `psvr_mape_sym_rbf()`,
   `psvr_mape_sym_poly()`, `psvr_mape_sym_linear()`, `psvr_rmspe_sym_rbf()`,
   `psvr_rmspe_sym_poly()`, `psvr_rmspe_sym_linear()` — along with their

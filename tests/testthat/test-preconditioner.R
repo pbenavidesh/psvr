@@ -12,8 +12,8 @@
 # output stays focused on preconditioner behavior. The deprecation
 # contract itself is asserted in test-rmspe-lssvr.R / test-rmspe-sym-lssvr.R.
 
-.q_rmspe_lssvr     <- function(...) suppressWarnings(rmspe_lssvr(...))
-.q_rmspe_sym_lssvr <- function(...) suppressWarnings(rmspe_sym_lssvr(...))
+.q_rmspe_lssvr     <- function(...) psvr:::.fit_rmspe(...)
+.q_rmspe_sym_lssvr <- function(...) psvr:::.fit_rmspe_sym(...)
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 

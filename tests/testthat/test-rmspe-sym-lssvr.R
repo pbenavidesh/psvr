@@ -8,15 +8,14 @@ X_tr <- matrix(rnorm(30), 15, 2)
 y_tr <- abs(rnorm(15)) + 1
 K    <- make_kernel("rbf", sigma = 1)
 
-.q_rmspe_sym_lssvr <- function(...) suppressWarnings(rmspe_sym_lssvr(...))
+.q_rmspe_sym_lssvr <- function(...) psvr:::.fit_rmspe_sym(...)
 
 # ── shape, class, and deprecation contract ───────────────────────────────────
 
-test_that("rmspe_sym_lssvr emits deprecation notice and returns legacy psvr_rmspe_sym shape", {
-  expect_warning(
-    fit <- rmspe_sym_lssvr(X_tr, y_tr, kernel = K, gamma = 1, a = 1),
-    regexp = "deprecated|psvr"
-  )
+test_that(".fit_rmspe_sym returns the legacy psvr_rmspe_sym shape", {
+  # Deprecation assertion removed with rmspe_sym_lssvr() in stage 3; every shape
+  # assertion below is UNCHANGED. See test-mape-svr.R for why they matter.
+  fit <- .q_rmspe_sym_lssvr(X_tr, y_tr, kernel = K, gamma = 1, a = 1)
   expect_s3_class(fit, "psvr_rmspe_sym")
   # Subset, not exact equality — see test-mape-svr.R for the rationale.
   expect_in(c("alpha", "b", "X_train", "kernel",

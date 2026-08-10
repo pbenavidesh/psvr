@@ -1,11 +1,39 @@
 ## F4 drift-quantification helper.
 ##
+## ###################################################################
+## STALE -- DOES NOT RUN as of the shape-B API redesign (stages 2-3).
+## ###################################################################
+## The parsnip half calls the six psvr_*_sym_* specs (deleted in 6598b51) and
+## the direct half calls mape_sym_svr() / rmspe_sym_lssvr() (deleted in stage 3).
+##
+## NOT repointed, deliberately: its purpose is capturing F4-ERA predictions, and
+## F4-era code no longer exists, so a repointed run would label current output
+## "F4". preds_F3.rds / preds_F5.rds can never be regenerated at all.
+## Retained as the record of HOW the F3->F4->F5 drift was measured; the verdict
+## taxonomy it feeds is defined in dev/drift_F4.R and dev/drift_F5.R.
+##
+## TO RUN IT, you need a PACKAGE STATE, not a file version. This file is
+## byte-identical at every commit in the redesign, so `git show <sha>:` on it
+## returns the same bytes no matter which <sha> you pick -- that is not the
+## variable. What broke it is the package around it:
+##   9513cc6  (stage 1)  LAST COMMIT WHERE IT RAN. Stage 1 deleted nothing;
+##                       sym_type arrived with a default, so the six _sym_
+##                       specs and the four wrappers were all still present.
+##   6598b51  (stage 2)  the six psvr_*_sym_* specs deleted -> the parsnip
+##                       half (:85, :92, :99, :120, :127, :133) already broke.
+##   stage 3             mape_sym_svr() / rmspe_sym_lssvr() deleted -> the
+##                       direct half (:45, :55) breaks too.
+## So: `git checkout 9513cc6` and install that tree.
+##
+## NOTE: .gitignore:37 calls dev/preds_*.rds "regenerable from dev/*.R scripts".
+## That is FALSE for preds_F4.rds as of this commit.
+##
 ## Runs the exact 16 + 12 = 28 snapshot fits from
 ## tests/testthat/test-bit-identical.R and tests/testthat/test-psvr-direct.R
 ## and dumps a named list of prediction vectors to an RDS file. Used to
 ## quantify F3 -> F4 drift element-wise.
 ##
-## Usage:
+## Usage (historical):
 ##   Rscript dev/capture_preds_F4.R <output.rds>
 
 args <- commandArgs(trailingOnly = TRUE)

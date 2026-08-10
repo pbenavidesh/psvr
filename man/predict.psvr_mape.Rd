@@ -7,7 +7,10 @@
 \method{predict}{psvr_mape}(object, newdata, ...)
 }
 \arguments{
-\item{object}{An object of class \code{"psvr_mape"} from \code{\link[=mape_svr]{mape_svr()}}.}
+\item{object}{An object of class \code{"psvr_mape"}, as returned by the parsnip
+engine fit wrappers with \code{sym_type = "none"} (see \link{psvr-fit-wrappers};
+\code{sym_type = "even"} or \code{"odd"} yields \code{"psvr_mape_sym"} instead). Unwrap a
+parsnip fit with \code{\link[parsnip:reexports]{parsnip::extract_fit_engine()}} to obtain it.}
 
 \item{newdata}{Numeric matrix of new inputs, one observation per row (M × p).}
 
@@ -17,7 +20,7 @@
 Numeric vector of length M with predicted values.
 }
 \description{
-Method dispatched on the legacy \code{"psvr_mape"} class returned by the
-deprecated \code{\link[=mape_svr]{mape_svr()}}. New code should use \code{\link[=psvr]{psvr()}} (which returns a
-\code{"psvr_fit"} object dispatched by \code{\link[=predict.psvr_fit]{predict.psvr_fit()}}).
+Method dispatched on the legacy \code{"psvr_mape"} class, which the parsnip engine
+fit wrappers return. For direct fitting use \code{\link[=psvr]{psvr()}}, which returns a
+\code{"psvr_fit"} object dispatched by \code{\link[=predict.psvr_fit]{predict.psvr_fit()}}.
 }

@@ -77,15 +77,13 @@ reference:
       - cost_psvr_ls_data
       - sym_type_param
 
-  - title: "Deprecated API"
+  - title: "Legacy fit-object methods"
     desc: >
-      Soft-deprecated wrappers retained for backwards compatibility.
-      New code should use `psvr()`. Scheduled removal: v0.2.0+.
+      Methods for the four legacy fit classes — `psvr_mape`, `psvr_mape_sym`,
+      `psvr_rmspe`, `psvr_rmspe_sym` — which are what the parsnip engine fit
+      wrappers return. `psvr()` returns the different `psvr_fit` class; unwrap
+      a parsnip fit with `parsnip::extract_fit_engine()` to reach these.
     contents:
-      - mape_svr
-      - mape_sym_svr
-      - rmspe_lssvr
-      - rmspe_sym_lssvr
       - predict.psvr_mape
       - predict.psvr_mape_sym
       - predict.psvr_rmspe
