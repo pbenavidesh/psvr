@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9010</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9011</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,17 +65,34 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A named list with components:</p><dl><dt><code>alpha</code></dt>
-<dd><p>Dual variable differences <code>βk = αk − αk*</code> for support vectors.</p></dd>
+    <p>A named list with the same component names and meanings as
+<code><a href="coef.psvr_fit.html">coef.psvr_fit()</a></code> on a <code>loss = "mape"</code> fit, so the two entry points agree:</p><dl><dt><code>alpha</code>, <code>alpha_star</code></dt>
+<dd><p>The length-<code>N</code> pre-pruning dual variables
+<code>αk</code> and <code>αk*</code>.</p></dd>
+
+<dt><code>beta</code></dt>
+<dd><p>The pruned dual differences <code>βk = αk − αk*</code> over the
+support-vector indices (length <code>n_sv</code>); this is what <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> uses.</p></dd>
 
 <dt><code>b</code></dt>
 <dd><p>Bias term.</p></dd>
 
-<dt><code>X_sv</code></dt>
+<dt><code>support_data</code></dt>
 <dd><p>Support vector input matrix.</p></dd>
 
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="renamed-in-">Renamed in 0.0.2.9011<a class="anchor" aria-label="anchor" href="#renamed-in-"></a></h2>
+
+
+<p><code>alpha</code> previously held the pruned <code>β</code> and <code>support_data</code> was named <code>X_sv</code>,
+which made <code>coef(fit)$alpha</code> mean the length-<code>n_sv</code> <code>β</code> here but the
+length-<code>N</code> dual <code>α</code> on a <code><a href="psvr.html">psvr()</a></code> fit — the same generic returning two
+different vectors under one name, silently, depending on entry point. The
+<code>β</code>-under-<code>alpha</code> meaning is the one 0.0.2.9004 moved away from on the object
+itself; this aligns <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code> with it.</p>
+    </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

@@ -31,6 +31,19 @@ A named list with components:
 
   Bias term.
 
-- `X_sv`:
+- `support_data`:
 
   Training input matrix (all N observations).
+
+The names match
+[`coef.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_fit.md)
+on a `loss = "rmspe"` fit. That method additionally carries `alpha_star`
+and `beta` as `NULL`, because one class serves both families; here they
+are simply absent, so `$alpha_star` and `$beta` are `NULL` either way.
+
+## Renamed in 0.0.2.9011
+
+`support_data` was named `X_sv`. LS-SVR performs no pruning — every
+training point contributes to `f(x)` — so there are no support vectors
+to name: it was an epsilon-SVR name on an LS-SVR value. The value is
+unchanged.

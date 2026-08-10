@@ -1,5 +1,54 @@
 # Changelog
 
+## psvr 0.0.2.9011 (development)
+
+### Breaking changes
+
+- **[`coef()`](https://rdrr.io/r/stats/coef.html) on the four legacy fit
+  classes now uses the same component names as
+  [`coef()`](https://rdrr.io/r/stats/coef.html) on a `psvr_fit`.**
+  Previously `coef(fit)$alpha` meant two different things depending on
+  how the model was fitted: the length-`N` dual variable `α` via
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md), but
+  the length-`n_sv` pruned `β = α − α*` via
+  [`parsnip::extract_fit_engine()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html).
+  One generic, one component name, two different vectors, no warning.
+  The `β`-under-`alpha` meaning is the one 0.0.2.9004 moved away from on
+  the fit object itself; [`coef()`](https://rdrr.io/r/stats/coef.html)
+  was not updated with it.
+
+  - [`coef.psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_mape.md)
+    and
+    [`coef.psvr_mape_sym()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_mape_sym.md)
+    now return `alpha` (length `N`), `alpha_star` (length `N`), `beta`
+    (length `n_sv`), `b`, and `support_data`. Code reading
+    `coef(fit)$alpha` for **prediction** must switch to
+    `coef(fit)$beta`; code reading it as the **dual variable** was
+    already getting the wrong vector and is now correct.
+  - [`coef.psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_rmspe.md)
+    and
+    [`coef.psvr_rmspe_sym()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_rmspe_sym.md)
+    rename their third component `X_sv` → `support_data`. LS-SVR
+    performs no pruning — every training point contributes — so `X_sv`
+    was an ε-SVR name on an LS-SVR value. The value is unchanged.
+
+  [`coef.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_fit.md)
+  is **unchanged**; it was already correct. No fit object’s fields
+  changed, so `fit$alpha`, `fit$beta`, `fit$X_sv` and `fit$X_train` are
+  all as before — this affects the
+  [`coef()`](https://rdrr.io/r/stats/coef.html) return only.
+
+### Testing
+
+- New `tests/testthat/test-coef.R` pins the
+  [`coef()`](https://rdrr.io/r/stats/coef.html) contract on **both**
+  entry points, including a cross-entry-point congruence block that
+  fails if `coef(psvr(...))` and
+  [`coef()`](https://rdrr.io/r/stats/coef.html) on the corresponding
+  legacy object ever disagree again.
+  [`coef.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_fit.md)
+  previously had no test coverage at all.
+
 ## psvr 0.0.2.9010 (development)
 
 ### New features

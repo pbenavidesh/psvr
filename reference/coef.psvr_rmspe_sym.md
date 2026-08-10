@@ -31,6 +31,17 @@ A named list with components:
 
   Bias term.
 
-- `X_sv`:
+- `support_data`:
 
   Training input matrix (all N observations).
+
+The names match
+[`coef.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_fit.md)
+on a `loss = "rmspe"` fit.
+
+## Renamed in 0.0.2.9011
+
+See
+[`coef.psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_rmspe.md)
+— the same rename, for the same reason, applied to both LS-SVR classes
+together.

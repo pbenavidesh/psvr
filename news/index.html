@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9010</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9011</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,6 +40,24 @@
 
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.0.2.9011" id="psvr-0029011-development">psvr 0.0.2.9011 (development)<a class="anchor" aria-label="anchor" href="#psvr-0029011-development"></a></h2>
+<div class="section level3">
+<h3 id="breaking-changes-0-0-2-9011">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-0-2-9011"></a></h3>
+<ul><li>
+<p><strong><code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code> on the four legacy fit classes now uses the same component names as <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code> on a <code>psvr_fit</code>.</strong> Previously <code>coef(fit)$alpha</code> meant two different things depending on how the model was fitted: the length-<code>N</code> dual variable <code>α</code> via <code><a href="../reference/psvr.html">psvr()</a></code>, but the length-<code>n_sv</code> pruned <code>β = α − α*</code> via <code><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">parsnip::extract_fit_engine()</a></code>. One generic, one component name, two different vectors, no warning. The <code>β</code>-under-<code>alpha</code> meaning is the one 0.0.2.9004 moved away from on the fit object itself; <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code> was not updated with it.</p>
+<ul><li>
+<code><a href="../reference/coef.psvr_mape.html">coef.psvr_mape()</a></code> and <code><a href="../reference/coef.psvr_mape_sym.html">coef.psvr_mape_sym()</a></code> now return <code>alpha</code> (length <code>N</code>), <code>alpha_star</code> (length <code>N</code>), <code>beta</code> (length <code>n_sv</code>), <code>b</code>, and <code>support_data</code>. Code reading <code>coef(fit)$alpha</code> for <strong>prediction</strong> must switch to <code>coef(fit)$beta</code>; code reading it as the <strong>dual variable</strong> was already getting the wrong vector and is now correct.</li>
+<li>
+<code><a href="../reference/coef.psvr_rmspe.html">coef.psvr_rmspe()</a></code> and <code><a href="../reference/coef.psvr_rmspe_sym.html">coef.psvr_rmspe_sym()</a></code> rename their third component <code>X_sv</code> → <code>support_data</code>. LS-SVR performs no pruning — every training point contributes — so <code>X_sv</code> was an ε-SVR name on an LS-SVR value. The value is unchanged.</li>
+</ul><p><code><a href="../reference/coef.psvr_fit.html">coef.psvr_fit()</a></code> is <strong>unchanged</strong>; it was already correct. No fit object’s fields changed, so <code>fit$alpha</code>, <code>fit$beta</code>, <code>fit$X_sv</code> and <code>fit$X_train</code> are all as before — this affects the <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code> return only.</p>
+</li>
+</ul></div>
+<div class="section level3">
+<h3 id="testing-0-0-2-9011">Testing<a class="anchor" aria-label="anchor" href="#testing-0-0-2-9011"></a></h3>
+<ul><li>New <code>tests/testthat/test-coef.R</code> pins the <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code> contract on <strong>both</strong> entry points, including a cross-entry-point congruence block that fails if <code>coef(psvr(...))</code> and <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code> on the corresponding legacy object ever disagree again. <code><a href="../reference/coef.psvr_fit.html">coef.psvr_fit()</a></code> previously had no test coverage at all.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.0.2.9010" id="psvr-0029010-development">psvr 0.0.2.9010 (development)<a class="anchor" aria-label="anchor" href="#psvr-0029010-development"></a></h2>
 <div class="section level3">

@@ -21,16 +21,31 @@ coef(object, ...)
 
 ## Value
 
-A named list with components:
+A named list with the same component names and meanings as
+[`coef.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_fit.md)
+on a `loss = "mape"` fit, so the two entry points agree:
 
-- `alpha`:
+- `alpha`, `alpha_star`:
 
-  Dual variable differences `βk = αk − αk*` for support vectors.
+  The length-`N` pre-pruning dual variables `αk` and `αk*`.
+
+- `beta`:
+
+  The pruned dual differences `βk = αk − αk*` over the support-vector
+  indices (length `n_sv`); this is what
+  [`predict()`](https://rdrr.io/r/stats/predict.html) uses.
 
 - `b`:
 
   Bias term.
 
-- `X_sv`:
+- `support_data`:
 
   Support vector input matrix.
+
+## Renamed in 0.0.2.9011
+
+See
+[`coef.psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_mape.md)
+— the same rename, for the same reason, applied to both MAPE classes
+together.
