@@ -97,7 +97,10 @@ reference for the Rcpp port and will be deprecated in v0.0.4.0
 and removed in v0.1.0. Ignored for \code{loss = "rmspe"} (LS-SVR uses
 \code{base::solve()} directly).}
 
-\item{...}{Currently unused; reserved for future extension.}
+\item{...}{Must be empty. Present only so that \code{alpha_couple},
+\code{precomputed_Omega}, and \code{precomputed_Omega_s} must be matched by their
+exact names rather than by position or partial matching. Passing anything
+here is an error, which is how a mistyped argument name is caught.}
 
 \item{alpha_couple}{Numeric between 0 and 1 (default \code{0.5}). Internal F7
 coupling penalty in the pair-2 WSS3 score

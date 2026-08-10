@@ -34,6 +34,10 @@ test_that("sigma_heuristic() subsamples when nrow(X) > sample_size", {
 })
 
 test_that("sigma_heuristic() respects the seed argument", {
+  # Seed explicitly: sigma_heuristic() now restores .Random.seed, so this
+  # fixture would otherwise inherit whatever stream the preceding test left,
+  # making X depend on test order.
+  set.seed(2026)
   X <- matrix(rnorm(2000), ncol = 4)
   r1 <- sigma_heuristic(X, sample_size = 20L, seed = 99L)
   r2 <- sigma_heuristic(X, sample_size = 20L, seed = 99L)

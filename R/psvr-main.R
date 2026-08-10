@@ -65,7 +65,10 @@
 #'   reference for the Rcpp port and will be deprecated in v0.0.4.0
 #'   and removed in v0.1.0. Ignored for `loss = "rmspe"` (LS-SVR uses
 #'   `base::solve()` directly).
-#' @param ... Currently unused; reserved for future extension.
+#' @param ... Must be empty. Present only so that `alpha_couple`,
+#'   `precomputed_Omega`, and `precomputed_Omega_s` must be matched by their
+#'   exact names rather than by position or partial matching. Passing anything
+#'   here is an error, which is how a mistyped argument name is caught.
 #' @param alpha_couple Numeric between 0 and 1 (default `0.5`). Internal F7
 #'   coupling penalty in the pair-2 WSS3 score
 #'   `score = gain * (1 - alpha_couple * coupling)`. Exposed for
@@ -158,6 +161,13 @@ psvr <- function(X, y,
                  alpha_couple        = 0.5,
                  precomputed_Omega   = NULL,
                  precomputed_Omega_s = NULL) {
+  # `...` exists only to force exact-name matching on the three internal
+  # arguments that follow it (alpha_couple, precomputed_Omega,
+  # precomputed_Omega_s); without it, `precomputed_Omega` would be a
+  # partial-match prefix of `precomputed_Omega_s`. Nothing may be passed
+  # through it, so reject unknown arguments instead of swallowing typos.
+  rlang::check_dots_empty()
+
   engine <- match.arg(engine)
   # `precomputed_Omega` and `precomputed_Omega_s` are INTERNAL — populated by
   # psvr_cv() to share a single full-dataset kernel matrix across folds. Not

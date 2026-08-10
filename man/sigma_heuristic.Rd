@@ -14,7 +14,9 @@ preprocessed — centred, scaled, etc.).}
 subsample is used to avoid O(n²) memory cost on large datasets.
 Default \code{500L}.}
 
-\item{seed}{Integer seed for the subsample. Default \code{NULL}.}
+\item{seed}{Integer seed for the subsample. Default \code{NULL}. The caller's
+RNG stream is restored on exit, so passing \code{seed} makes the subsample
+reproducible without affecting the caller's subsequent random draws.}
 }
 \value{
 A scalar numeric: the median pairwise Euclidean distance.

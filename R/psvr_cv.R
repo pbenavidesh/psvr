@@ -24,7 +24,8 @@
 #' @param y_var Single character giving the target column name.
 #' @param warm_start Logical; if `FALSE`, each fold fits cold-start
 #'   (useful for benchmarking the T5 speedup).
-#' @param verbose Logical; if `TRUE`, print per-fold progress.
+#' @param verbose Logical; if `TRUE`, report per-fold progress via
+#'   [message()] (suppressible with [suppressMessages()]).
 #'
 #' @return A `tibble` with one row per split and columns:
 #'   \describe{
@@ -216,10 +217,10 @@ psvr_cv <- function(splits, ...,
     )
 
     if (isTRUE(verbose)) {
-      cat(sprintf("Fold %d/%d: iters=%s elapsed=%.2fs warm=%s mape=%.2f\n",
-                  i, n_splits,
-                  if (is.na(iter_count)) "NA" else as.character(iter_count),
-                  elapsed, warm_started, metrics_i[["mape"]]))
+      message(sprintf("Fold %d/%d: iters=%s elapsed=%.2fs warm=%s mape=%.2f",
+                      i, n_splits,
+                      if (is.na(iter_count)) "NA" else as.character(iter_count),
+                      elapsed, warm_started, metrics_i[["mape"]]))
     }
 
     fit_prev     <- fit_i

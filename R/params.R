@@ -39,7 +39,9 @@ margin_percentage <- function(range = c(1, 20), trans = NULL) {
 #' @param sample_size Integer. If `nrow(X) > sample_size`, a random
 #'   subsample is used to avoid O(n²) memory cost on large datasets.
 #'   Default `500L`.
-#' @param seed Integer seed for the subsample. Default `NULL`.
+#' @param seed Integer seed for the subsample. Default `NULL`. The caller's
+#'   RNG stream is restored on exit, so passing `seed` makes the subsample
+#'   reproducible without affecting the caller's subsequent random draws.
 #'
 #' @return A scalar numeric: the median pairwise Euclidean distance.
 #'
@@ -52,7 +54,22 @@ margin_percentage <- function(range = c(1, 20), trans = NULL) {
 sigma_heuristic <- function(X, sample_size = 500L, seed = NULL) {
   X <- as.matrix(X)
   if (nrow(X) > sample_size) {
-    if (!is.null(seed)) set.seed(seed)
+    if (!is.null(seed)) {
+      # The subsample is meant to be reproducible; the caller's downstream
+      # draws are not. Without this, set.seed() below silently hijacks the
+      # caller's RNG stream. Base-R equivalent of withr::with_preserve_seed()
+      # (withr is not a dependency).
+      old_seed <- get0(".Random.seed", envir = globalenv(), inherits = FALSE)
+      on.exit({
+        if (is.null(old_seed)) {
+          if (exists(".Random.seed", envir = globalenv(), inherits = FALSE))
+            rm(".Random.seed", envir = globalenv())
+        } else {
+          assign(".Random.seed", old_seed, envir = globalenv())
+        }
+      }, add = TRUE)
+      set.seed(seed)
+    }
     X <- X[sample(nrow(X), sample_size), , drop = FALSE]
   }
   median(dist(X))

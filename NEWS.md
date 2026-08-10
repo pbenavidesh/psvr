@@ -60,6 +60,32 @@
   linear/polynomial "did not converge" warning. The blanket form is why the
   equality-residual warning went unobserved through the F5 benchmark run.
 
+* **`psvr()` no longer silently discards unknown arguments.** `...` sat in the
+  signature with no consumer, so a mistyped hyperparameter — `epsilon = 5`,
+  `sigma = 2` — was swallowed and the fit ran on defaults with no signal.
+  `rlang::check_dots_empty()` now runs as the first statement of the body and
+  names the offending argument. `...` itself is retained deliberately: the three
+  arguments that follow it (`alpha_couple`, `precomputed_Omega`,
+  `precomputed_Omega_s`) are exact-match-only because of it, and removing it
+  would make `precomputed_Omega` a partial-match prefix of
+  `precomputed_Omega_s`.
+
+* **`sigma_heuristic()` no longer hijacks the caller's RNG stream.** When
+  `seed` was supplied it called `set.seed()` and never restored
+  `.Random.seed`, so every random draw after it was silently re-anchored to
+  that seed. Reachable from `sigma_heuristic()`, `rbf_sigma_psvr_data()`, and
+  `psvr_option_add()`. The prior state is now saved and restored via
+  `on.exit()` (and removed again if the session had not yet drawn). The
+  subsample stays reproducible; the caller's stream is untouched. Behaviour is
+  unchanged for the default `seed = NULL`, which never set a seed to begin
+  with.
+
+* **`psvr_cv(verbose = TRUE)` reports progress via `message()`, not `cat()`.**
+  The per-fold line went to stdout, could not be muffled with
+  `suppressMessages()`, and polluted captured output. It now matches the
+  `message()` already used for the Theorem 5 × Theorem 7 note in the same
+  function.
+
 ## New features
 
 * **`fitted()` and `residuals()`** for `psvr_fit` and the four legacy

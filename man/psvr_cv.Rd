@@ -32,7 +32,8 @@ is an error.}
 \item{warm_start}{Logical; if \code{FALSE}, each fold fits cold-start
 (useful for benchmarking the T5 speedup).}
 
-\item{verbose}{Logical; if \code{TRUE}, print per-fold progress.}
+\item{verbose}{Logical; if \code{TRUE}, report per-fold progress via
+\code{\link[=message]{message()}} (suppressible with \code{\link[=suppressMessages]{suppressMessages()}}).}
 }
 \value{
 A \code{tibble} with one row per split and columns:
