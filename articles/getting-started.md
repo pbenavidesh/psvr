@@ -8,24 +8,30 @@ forecasting. An error of 1 unit is negligible when the target is 1 000
 but large when it is 2.
 
 **psvr** implements four SVR variants derived from percentage-error loss
-functions (Benavides-Herrera et al., 2026), accessed through the unified
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) entry
-point:
+functions (Benavides-Herrera et al., 2026), accessed through one fitter
+per model family:
 
-| Model | `loss`    | `sym`         | Solver            |
-|-------|-----------|---------------|-------------------|
-| 3     | `"rmspe"` | `NULL`        | linear system     |
-| 4     | `"rmspe"` | `+1L` / `-1L` | linear system     |
-| 1     | `"mape"`  | `NULL`        | quadratic program |
-| 2     | `"mape"`  | `+1L` / `-1L` | quadratic program |
+| Model | Function | `sym_type` | Solver |
+|----|----|----|----|
+| 3 | [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md) | `"none"` | linear system |
+| 4 | [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md) | `"even"` / `"odd"` | linear system |
+| 1 | [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md) | `"none"` | quadratic program |
+| 2 | [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md) | `"even"` / `"odd"` | quadratic program |
 
-`sym = +1L` enforces even symmetry `f(x) = f(-x)`; `sym = -1L` enforces
-odd symmetry. Use the symmetric variants only with kernels that satisfy
-Assumption 3 of the paper (RBF and even-degree polynomial kernels do).
+`sym_type = "even"` enforces even symmetry `f(x) = f(-x)`; `"odd"`
+enforces odd symmetry. Use the symmetric variants only with kernels that
+satisfy Assumption 3 of the paper (RBF and even-degree polynomial
+kernels do).
 
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) is the
-only direct fitter. The four legacy wrappers it replaced were removed in
-0.0.2.9010; `loss` and `sym` now select the model.
+These are the two direct fitters. They replaced the unified
+[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md)
+entry point in 0.0.2.9012, which had in turn replaced four separate
+wrappers in 0.0.2.9010: seven of
+[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md)’s
+eleven arguments were conditional on which family you were fitting, so
+the families are now separate functions. Both return the same classes
+the tidymodels engine returns, so a fit obtained either way behaves
+identically.
 
 All models require **strictly positive targets** (`y > 0`), which is the
 condition under which percentage residuals are well-defined.
@@ -119,7 +125,7 @@ $`Y_\Gamma = \operatorname{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)`$.
 K <- make_kernel("rbf", sigma = 1)
 
 # gamma = 5000: regularisation; larger gamma -> smaller Y_Gamma diagonal -> tighter fit
-fit_ls <- psvr(X_tr, y_tr, loss = "rmspe", kernel = K, gamma = 5000)
+fit_ls <- psvr_rmspe(X_tr, y_tr, kernel = K, gamma = 5000)
 pred_ls <- predict(fit_ls, X_te)
 
 cat(sprintf("LS-SVR RMSPE  — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
@@ -127,11 +133,11 @@ cat(sprintf("LS-SVR RMSPE  — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
 #> LS-SVR RMSPE  — MAPE: 15.46%  RMSPE: 27.21%  R²: 0.7277
 print(fit_ls)
 #> 
-#> LS-SVR with RMSPE loss  [psvr_fit]
+#> LS-SVR with RMSPE loss  [psvr_rmspe]
 #> 
-#>   Kernel:          RBF (sigma = 1)
-#>   Gamma:           5000
-#>   Training obs.:   354
+#>   Kernel:        RBF (sigma = 1)
+#>   Gamma:         5000
+#>   Training obs.: 354
 ```
 
 ![](getting-started_files/figure-html/rmspe-plot-1.png)
@@ -158,17 +164,17 @@ targets, concentrating model capacity on low-magnitude observations.
 ``` r
 
 # C = 10: per-sample box bound |beta_k| <= 100*C/y_k; eps = 1: tube width (% of y_k)
-fit_ep <- psvr(X_tr, y_tr, loss = "mape", kernel = K, C = 10, eps = 1)
+fit_ep <- psvr_mape(X_tr, y_tr, kernel = K, C = 10, eps = 1)
 pred_ep <- predict(fit_ep, X_te)
 
 cat(sprintf("ε-SVR MAPE    — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
             mape(y_te, pred_ep), rmspe(y_te, pred_ep), r2(y_te, pred_ep)))
 #> ε-SVR MAPE    — MAPE: 15.76%  RMSPE: 27.55%  R²: 0.7617
-cat(sprintf("Support vectors: %d / %d\n", fit_ep$n_sv, fit_ep$n_train))
+cat(sprintf("Support vectors: %d / %d\n", length(fit_ep$beta), fit_ep$n_train))
 #> Support vectors: 327 / 354
 print(fit_ep)
 #> 
-#> epsilon-SVR with MAPE loss  [psvr_fit]
+#> Epsilon-SVR with MAPE loss  [psvr_mape]
 #> 
 #>   Kernel:          RBF (sigma = 1)
 #>   C:               10

@@ -35,11 +35,14 @@ A named list with components:
 
   Training input matrix (all N observations).
 
-The names match
-[`coef.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_fit.md)
-on a `loss = "rmspe"` fit. That method additionally carries `alpha_star`
-and `beta` as `NULL`, because one class serves both families; here they
-are simply absent, so `$alpha_star` and `$beta` are `NULL` either way.
+Three components, against five for the MAPE classes
+([`coef.psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_mape.md)):
+LS-SVR has no `alpha_star` and no pruned `beta`, and they are **not**
+materialised as `NULL`. So `names(coef(fit))` depends on the model
+family, which is a decision rather than an oversight – each class is
+family-specific, and inventing empty slots to make the two agree would
+add structure with nothing to inherit it from. `$alpha_star` and `$beta`
+yield `NULL` on both, so every accessor still agrees.
 
 ## Renamed in 0.0.2.9011
 

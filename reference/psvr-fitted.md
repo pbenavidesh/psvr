@@ -12,9 +12,6 @@ this purpose.
 ## Usage
 
 ``` r
-# S3 method for class 'psvr_fit'
-fitted(object, ...)
-
 # S3 method for class 'psvr_mape'
 fitted(object, ...)
 
@@ -32,10 +29,12 @@ fitted(object, ...)
 
 - object:
 
-  A `"psvr_fit"` object from
-  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md), or
-  one of the legacy `"psvr_mape"`, `"psvr_mape_sym"`, `"psvr_rmspe"`,
-  `"psvr_rmspe_sym"` objects from the deprecated fitters.
+  A fitted object of class `"psvr_mape"`, `"psvr_mape_sym"`,
+  `"psvr_rmspe"` or `"psvr_rmspe_sym"`, from
+  [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md),
+  [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md),
+  or a parsnip fit unwrapped with
+  [`parsnip::extract_fit_engine()`](https://parsnip.tidymodels.org/reference/reexports.html).
 
 - ...:
 
@@ -73,7 +72,8 @@ response residuals only.
 
 ## See also
 
-[`residuals.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
+[`residuals.psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr-residuals.md)
+and the other residuals methods
 
 ## Examples
 
@@ -81,7 +81,7 @@ response residuals only.
 set.seed(1)
 X <- matrix(runif(40, 0.5, 3), 20, 2)
 y <- 2 + X[, 1]^2
-fit <- psvr(X, y, loss = "rmspe", kernel = make_kernel("rbf"), gamma = 100)
+fit <- psvr_rmspe(X, y, kernel = make_kernel("rbf"), gamma = 100)
 head(fitted(fit))
 #> [1] 3.661072 4.139683 5.812108 8.972789 2.982308 8.699083
 

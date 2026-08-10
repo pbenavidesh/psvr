@@ -1,8 +1,9 @@
 # Parsnip model specs: LS-SVR with RMSPE loss (Model 3)
 
 Create parsnip model specifications for
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) with a
-fixed kernel type. `cost` maps to the regularization parameter `Γ`.
+[`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
+with a fixed kernel type. `cost` maps to the regularization parameter
+\\\Gamma\\.
 
 ## Usage
 
@@ -90,12 +91,13 @@ A parsnip `model_spec` object of the corresponding class.
 ## Engine arguments
 
 The `precondition` argument of
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) is
-exposed as a non-tunable engine argument. Pass it via
+[`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
+is exposed as a non-tunable engine argument. Pass it via
 [`parsnip::set_engine()`](https://parsnip.tidymodels.org/reference/set_engine.html),
 e.g. `set_engine("psvr", precondition = "always")`. Default is `"auto"`.
-See [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) for
-accepted values and semantics.
+See
+[`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
+for accepted values and semantics.
 
 ## Examples
 

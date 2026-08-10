@@ -1,33 +1,20 @@
 # Package index
 
-## Unified entry point
+## Model fitting
 
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) is the
-single primary fitter for all four model families. Selects via
-`loss = "mape" | "rmspe"` and `sym = NULL | +1L | -1L`.
+One fitter per model family.
+[`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+covers the epsilon-SVR models (1 and 2),
+[`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
+the LS-SVR models (3 and 4); within each,
+`sym_type = "none" | "even" | "odd"` selects the symmetric variant. They
+are separate functions because the two families share no solver, no dual
+structure and no hyperparameter search space.
 
-- [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) : Fit
-  a percentage-error SVR / LS-SVR model
-- [`predict(`*`<psvr_fit>`*`)`](https://pbenavidesh.github.io/psvr/reference/predict.psvr_fit.md)
-  : Predict from a fitted psvr_fit model
-- [`print(`*`<psvr_fit>`*`)`](https://pbenavidesh.github.io/psvr/reference/print.psvr_fit.md)
-  : Print method for psvr_fit objects
-- [`coef(`*`<psvr_fit>`*`)`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_fit.md)
-  : Extract coefficients from a psvr_fit model
-- [`summary(`*`<psvr_fit>`*`)`](https://pbenavidesh.github.io/psvr/reference/summary.psvr_fit.md)
-  : Summary method for psvr_fit objects
-- [`fitted(`*`<psvr_fit>`*`)`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
-  [`fitted(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
-  [`fitted(`*`<psvr_mape_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
-  [`fitted(`*`<psvr_rmspe>`*`)`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
-  [`fitted(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
-  : Extract training fitted values from a psvr model
-- [`residuals(`*`<psvr_fit>`*`)`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
-  [`residuals(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
-  [`residuals(`*`<psvr_mape_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
-  [`residuals(`*`<psvr_rmspe>`*`)`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
-  [`residuals(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
-  : Extract training residuals from a psvr model
+- [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+  : Fit an epsilon-SVR with MAPE loss
+- [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
+  : Fit a least-squares SVR with RMSPE loss
 
 ## Kernel factory
 
@@ -42,7 +29,7 @@ Fold-wise fitting for `loss = "mape"`, carrying the converged SMO dual
 variables from one fold into the next as a warm start.
 
 - [`psvr_cv()`](https://pbenavidesh.github.io/psvr/reference/psvr_cv.md)
-  : Cross-validate psvr() with automatic warm-start across folds
+  : Cross-validate psvr_mape() with automatic warm-start across folds
 
 ## tidymodels / parsnip interface — ε-SVR with MAPE (Models 1 & 2)
 
@@ -88,15 +75,17 @@ Custom dials parameters and tuning helpers for psvr models.
 - [`sym_type_param()`](https://pbenavidesh.github.io/psvr/reference/sym_type_param.md)
   : Dials parameter for symmetry type
 
-## Legacy fit-object methods
+## Fit-object methods
 
-Methods for the four legacy fit classes — `psvr_mape`, `psvr_mape_sym`,
-`psvr_rmspe`, `psvr_rmspe_sym` — which are what the parsnip engine fit
-wrappers return.
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) returns
-the different `psvr_fit` class; unwrap a parsnip fit with
+Methods for the four fit classes — `psvr_mape`, `psvr_mape_sym`,
+`psvr_rmspe`, `psvr_rmspe_sym`. These are what
+[`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+and
+[`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
+return **and** what the parsnip engine fit wrappers return, so a direct
+fit and a parsnip fit unwrapped with
 [`parsnip::extract_fit_engine()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)
-to reach these.
+are the same object.
 
 - [`predict(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/predict.psvr_mape.md)
   : Predict from a fitted epsilon-SVR with MAPE model
@@ -122,3 +111,21 @@ to reach these.
   : Extract coefficients from a psvr_rmspe model
 - [`coef(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_rmspe_sym.md)
   : Extract coefficients from a psvr_rmspe_sym model
+- [`summary(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/summary.psvr_mape.md)
+  : Summarize a fitted epsilon-SVR with MAPE loss
+- [`summary(`*`<psvr_mape_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/summary.psvr_mape_sym.md)
+  : Summarize a fitted symmetric epsilon-SVR with MAPE loss
+- [`summary(`*`<psvr_rmspe>`*`)`](https://pbenavidesh.github.io/psvr/reference/summary.psvr_rmspe.md)
+  : Summarize a fitted LS-SVR with RMSPE loss
+- [`summary(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/summary.psvr_rmspe_sym.md)
+  : Summarize a fitted symmetric LS-SVR with RMSPE loss
+- [`fitted(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/psvr-fitted.md)
+  [`fitted(`*`<psvr_mape_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/psvr-fitted.md)
+  [`fitted(`*`<psvr_rmspe>`*`)`](https://pbenavidesh.github.io/psvr/reference/psvr-fitted.md)
+  [`fitted(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/psvr-fitted.md)
+  : Extract training fitted values from a psvr model
+- [`residuals(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/psvr-residuals.md)
+  [`residuals(`*`<psvr_mape_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/psvr-residuals.md)
+  [`residuals(`*`<psvr_rmspe>`*`)`](https://pbenavidesh.github.io/psvr/reference/psvr-residuals.md)
+  [`residuals(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/psvr-residuals.md)
+  : Extract training residuals from a psvr model

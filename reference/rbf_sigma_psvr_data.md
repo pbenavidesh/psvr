@@ -66,9 +66,9 @@ X <- matrix(rnorm(200), ncol = 4)
 rbf_sigma_psvr_data(X)
 #> RBF Sigma (psvr) (quantitative)
 #> Transformer: log-10 [1e-100, Inf]
-#> Range (transformed scale): [-0.608, 1.39]
+#> Range (transformed scale): [-0.575, 1.43]
 rbf_sigma_psvr_data(X, width = 5)
 #> RBF Sigma (psvr) (quantitative)
 #> Transformer: log-10 [1e-100, Inf]
-#> Range (transformed scale): [-0.307, 1.09]
+#> Range (transformed scale): [-0.274, 1.12]
 ```

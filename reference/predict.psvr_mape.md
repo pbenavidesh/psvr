@@ -1,10 +1,8 @@
 # Predict from a fitted epsilon-SVR with MAPE model
 
-Method dispatched on the legacy `"psvr_mape"` class, which the parsnip
-engine fit wrappers return. For direct fitting use
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md), which
-returns a `"psvr_fit"` object dispatched by
-[`predict.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/predict.psvr_fit.md).
+Method dispatched on the `"psvr_mape"` class, which both
+[`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+and the parsnip engine fit wrappers return.
 
 ## Usage
 
@@ -17,8 +15,9 @@ predict(object, newdata, ...)
 
 - object:
 
-  An object of class `"psvr_mape"`, as returned by the parsnip engine
-  fit wrappers with `sym_type = "none"` (see
+  An object of class `"psvr_mape"`, as returned by
+  [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+  with `sym_type = "none"` or by the parsnip engine fit wrappers (see
   [psvr-fit-wrappers](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md);
   `sym_type = "even"` or `"odd"` yields `"psvr_mape_sym"` instead).
   Unwrap a parsnip fit with
@@ -27,7 +26,8 @@ predict(object, newdata, ...)
 
 - newdata:
 
-  Numeric matrix of new inputs, one observation per row (M × p).
+  Numeric matrix of new inputs, one observation per row (\\M \times
+  p\\).
 
 - ...:
 

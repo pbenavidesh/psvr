@@ -1,10 +1,11 @@
-# Cross-validate psvr() with automatic warm-start across folds
+# Cross-validate psvr_mape() with automatic warm-start across folds
 
-Fits a `psvr(loss = "mape")` model on each split in `splits`, carrying
-the converged `(alpha, alpha_star)` from one fold into the next as the
-SMO warm-start (Theorem 5 of arXiv:2605.01446 v3, Algorithm 1). Folds
-are projected to feasibility before each solve. Returns a tibble with
-one row per fold.
+Fits a
+[`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+model on each split in `splits`, carrying the converged
+`(alpha, alpha_star)` from one fold into the next as the SMO warm-start
+(Theorem 5 of arXiv:2605.01446 v3, Algorithm 1). Folds are projected to
+feasibility before each solve. Returns a tibble with one row per fold.
 
 ## Usage
 
@@ -33,10 +34,12 @@ psvr_cv(
 - ...:
 
   Arguments forwarded to
-  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md). Must
-  specify `kernel` and the MAPE hyperparameters (`C`, `eps`).
+  [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md).
+  Must specify `kernel` and the MAPE hyperparameters (`C`, `eps`).
   `alpha_init` and `alpha_star_init` are managed internally; supplying
-  them via `...` is an error.
+  them via `...` is an error, and so is `loss`, which is not an argument
+  of
+  [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md).
 
 - X_var:
 
@@ -67,7 +70,8 @@ A `tibble` with one row per split and columns:
 
 - `fit`:
 
-  A list-column of `psvr_fit` objects.
+  A list-column of `psvr_mape` objects, or `psvr_mape_sym` when
+  `sym_type` is `"even"` or `"odd"`.
 
 - `predictions`:
 
@@ -79,7 +83,7 @@ A `tibble` with one row per split and columns:
 
 - `iter_count`:
 
-  Integer; SMO iterations from `fit$solver_meta$iters`.
+  Integer; SMO iterations from `fit$iterations`.
 
 - `elapsed_sec`:
 
@@ -91,11 +95,16 @@ A `tibble` with one row per split and columns:
 
 ## Details
 
-This helper currently only supports `loss = "mape"`. For
-`loss = "rmspe"` (LS-SVR), each fold is a single linear-system solve
-with no carryover state; use
+This helper is **MAPE-only**, and there is no `loss` argument. That is a
+limitation of the implementation, not of the method: only
+[`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+was ever wired to it. LS-SVR cross-validates perfectly well, it simply
+has no carryover state to exploit (each fold is a single linear-system
+solve), so for
+[`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
+use
 [`tune::tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html)
-with parallel cold-start instead.
+with parallel cold-start.
 
 ## Examples
 
@@ -110,7 +119,6 @@ if (requireNamespace("rsample", quietly = TRUE) &&
   )
   folds <- rsample::vfold_cv(d, v = 5)
   res <- psvr_cv(folds, X_var = c("x1", "x2"), y_var = "y",
-                 loss = "mape",
                  kernel = make_kernel("rbf", sigma = 1),
                  C = 10, eps = 5)
   median(vapply(res$metrics, function(m) m[["mape"]], numeric(1)))

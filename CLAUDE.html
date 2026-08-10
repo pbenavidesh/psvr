@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9011</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9012</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -157,20 +157,37 @@
 <li>
 <strong>Kernel interface</strong>: <code>make_kernel(type, ...)</code> returns a closure carrying <code>attr(K, "kernel_info")</code>; <code><a href="reference/kernel_matrix.html">kernel_matrix()</a></code> dispatches through it to the Rcpp implementations in <code>src/kernel_*.cpp</code>. Closures without the attribute fall back to the R-only <code><a href="reference/dot-legacy_kernel_matrix.html">.legacy_kernel_matrix()</a></code>.</li>
 <li>
-<strong>Engine selector</strong>: <code>engine = c("rcpp", "r")</code> on <code><a href="reference/psvr.html">psvr()</a></code>, default <code>"rcpp"</code>. <code>"r"</code> is the bit-identical reference implementation, preserved through v0.0.3.x, soft-deprecated at v0.0.4.0, removed at v0.1.0.</li>
+<strong>Engine selector</strong>: <code>engine = c("rcpp", "r")</code> on <code><a href="reference/psvr-package.html">psvr()</a></code>, default <code>"rcpp"</code>. <code>"r"</code> is the bit-identical reference implementation, preserved through v0.0.3.x, soft-deprecated at v0.0.4.0, removed at v0.1.0.</li>
 </ul></div>
 <div class="section level2">
 <h2 id="invariants-to-enforce-everywhere">Invariants to enforce everywhere<a class="anchor" aria-label="anchor" href="#invariants-to-enforce-everywhere"></a></h2>
-<ul><li>
-<code>yk &gt; 0</code> always — validated at fit time, never silently coerced.</li>
+<ul><li><p><code>yk &gt; 0</code> always — validated at fit time, never silently coerced.</p></li>
+<li><p><code>a ∈ {-1, 1}</code> for symmetric models.</p></li>
+<li><p><code>Ks(xi, xj)</code> negates <code>xj</code>, so kernel closures must accept negative inputs even when training data is strictly positive.</p></li>
+<li><p><code>YΓ</code> is diagonal — add to <code>diag(Omega)</code> in place, never build an N×N diagonal matrix.</p></li>
+<li><p>Box constraints in Models 1 and 2 are per-sample: <code>|βk| ≤ 100C/yk</code>.</p></li>
+<li><p>Symmetric models build <code>Ωs = ½(Ω + a·Ω*)</code> via <code><a href="reference/sym_kernel_matrix.html">sym_kernel_matrix()</a></code> and pass <code>Ωs</code> straight to the solver — no extra <code>0.5 *</code> at the call site. Predictions use <code><a href="reference/sym_kernel_vector.html">sym_kernel_vector()</a></code>, which already returns <code>½ Ks(xk, x)</code>.</p></li>
 <li>
-<code>a ∈ {-1, 1}</code> for symmetric models.</li>
-<li>
-<code>Ks(xi, xj)</code> negates <code>xj</code>, so kernel closures must accept negative inputs even when training data is strictly positive.</li>
-<li>
-<code>YΓ</code> is diagonal — add to <code>diag(Omega)</code> in place, never build an N×N diagonal matrix.</li>
-<li>Box constraints in Models 1 and 2 are per-sample: <code>|βk| ≤ 100C/yk</code>.</li>
-<li>Symmetric models build <code>Ωs = ½(Ω + a·Ω*)</code> via <code><a href="reference/sym_kernel_matrix.html">sym_kernel_matrix()</a></code> and pass <code>Ωs</code> straight to the solver — no extra <code>0.5 *</code> at the call site. Predictions use <code><a href="reference/sym_kernel_vector.html">sym_kernel_vector()</a></code>, which already returns <code>½ Ks(xk, x)</code>.</li>
+<p><strong>NEVER use <code>$</code> to read a field on a fit object. Use <code>x[["name"]]</code>, or <code>"name" %in% names(x)</code> to test presence.</strong> <code>$</code> partial-matches on lists, so a field that does not exist on a class can silently return a <em>different</em> field. The four classes have different shapes, so this is a live hazard on every one of them, and it is invisible to <code>R CMD check</code>.</p>
+<p>The case that proves it — <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> tested for symmetry with <code>!is.null(object$a)</code>:</p>
+<table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>class</th>
+<th>what <code>object$a</code> returns</th>
+<th>why</th>
+</tr></thead><tbody><tr><td><code>psvr_rmspe</code></td>
+<td>the <strong>length-N <code>alpha</code> vector</strong>
+</td>
+<td>
+<code>a</code> uniquely prefix-matches <code>alpha</code>; the caller expected <code>NULL</code> and got a vector</td>
+</tr><tr><td><code>psvr_mape</code></td>
+<td><code>NULL</code></td>
+<td>only because <code>alpha</code> <strong>and</strong> <code>alpha_star</code> make the prefix ambiguous</td>
+</tr><tr><td><code>psvr_mape_sym</code></td>
+<td>
+<code>1L</code> / <code>-1L</code>
+</td>
+<td>exact match wins</td>
+</tr></tbody></table><p>Correct by luck in both directions: right answer on two classes for a reason that has nothing to do with the field being absent, wrong answer on the third. A later field named <code>a…</code> would silently flip <code>psvr_mape</code> too.</p>
+</li>
 </ul></div>
 <div class="section level2">
 <h2 id="conventions">Conventions<a class="anchor" aria-label="anchor" href="#conventions"></a></h2>
@@ -192,7 +209,16 @@
 <li>
 <strong>osqp 1.0.0</strong> uses <code>solve_osqp(P, q, A, l, u, pars)</code> directly — the old R6 <code>osqp(...)$solve()</code> API is gone.</li>
 <li>
-<strong><code>README.md</code> is regenerated with <code>rmarkdown::render("README.Rmd")</code>, NEVER <code><a href="https://rdrr.io/pkg/knitr/man/knit.html" class="external-link">knitr::knit()</a></code>.</strong> <code>README.Rmd</code> declares <code>output: github_document</code>, which is a pandoc writer: <code>render()</code> applies it, <code>knit()</code> skips pandoc entirely. A raw knit leaks the YAML front matter into <code>README.md</code>, re-wraps prose to ~85 columns instead of ~72, strips the alignment padding from tables, and turns <code>``` r</code> fences into <code>```r</code>. Nothing guards this — the pre-commit hook checks that <code>README.md</code> is not older than <code>README.Rmd</code> and that both are staged, not which renderer produced it. After rendering, diff every printed value: the Quick-start numbers must reproduce byte-for-byte unless <code>R/psvr-main.R</code> changed.</li>
+<strong><code>README.md</code> is regenerated with <code>rmarkdown::render("README.Rmd")</code>, NEVER <code><a href="https://rdrr.io/pkg/knitr/man/knit.html" class="external-link">knitr::knit()</a></code>.</strong> <code>README.Rmd</code> declares <code>output: github_document</code>, which is a pandoc writer: <code>render()</code> applies it, <code>knit()</code> skips pandoc entirely. A raw knit leaks the YAML front matter into <code>README.md</code>, re-wraps prose to ~85 columns instead of ~72, strips the alignment padding from tables, and turns <code>``` r</code> fences into <code>```r</code>. Nothing guards this — the pre-commit hook checks that <code>README.md</code> is not older than <code>README.Rmd</code> and that both are staged, not which renderer produced it. After rendering, diff every printed value: the Quick-start numbers must reproduce byte-for-byte unless a fitter or solver changed. (<del><code>R/psvr-main.R</code></del> — that file was deleted in the 0.0.2.9012 <code><a href="reference/psvr-package.html">psvr()</a></code> split; the numbers now come from <code><a href="reference/psvr_mape.html">psvr_mape()</a></code> / <code><a href="reference/psvr_rmspe.html">psvr_rmspe()</a></code> and the <code>.fit_*</code> internals.)</li>
+<li>
+<strong><code>FAIL 0</code> is NOT a green suite.</strong> The gate is <strong><code>FAIL 0</code> AND <code>ERROR 0</code> AND <code>PASS == predicted</code> AND <code>SKIP == expected</code></strong> — all four, every time. Predict the PASS count <em>before</em> running and reconcile any difference; do not read the number off the run and call it the baseline. testthat’s summary line hides two distinct failure modes, both of which fired during the stage-5 split:
+<ul><li>
+<strong>An errored block counts as <code>0 passed / 0 failed</code>.</strong> A checkpoint reported <code>FAIL 0</code> while <strong>six blocks errored</strong> — the suite looked clean and six blocks had not run. Only the PASS count moving against its prediction exposed it.</li>
+<li>
+<strong><code>skip_on_cran()</code> silently disables everything under <code>NOT_CRAN=false</code>.</strong> The same file reported <code>18 PASS / 0 FAIL / 0 SKIP</code> under <code>NOT_CRAN=true</code> and <code>0 PASS / 0 FAIL / 6 SKIP</code> under <code>false</code>. “No failures” was true of both. CI pins <code>NOT_CRAN: 'false'</code>, so a gate that does not state its SKIP count can certify a run in which nothing executed.</li>
+</ul></li>
+<li>
+<strong>Stage by explicit path. NEVER <code>git add -A</code> / <code>git add .</code>.</strong> Name every file. A blanket add sweeps in build artefacts that the working tree happens to be carrying, and they reach the tarball. Measured: <code>rmarkdown::render("README.Rmd")</code> writes a <code>README.html</code> preview next to <code>README.md</code>, <code>git add -A</code> staged it, and <code>R CMD check --as-cran</code> returned a NOTE — <em>“Non-standard file/directory found at top level: ‘README.html’”</em> — that the package did not have before. <code>README.Rmd</code> now sets <code>html_preview: false</code> and both ignore files list <code>README.html</code>, but the general rule is the load-bearing one: the next artefact will have a different name. Corollary: <code>R CMD check</code> counts are only meaningful against a baseline <strong>measured on the same harness immediately beforehand</strong>, never against a figure inherited from an earlier commit body.</li>
 <li>
 <strong>Build invariant — do not change</strong>: <code>src/Makevars</code> and <code>Makevars.win</code> set <code>PKG_LIBS = $(BLAS_LIBS) $(FLIBS)</code>. <code>core_smo_solve.cpp</code> calls <code>F77_CALL(dgemv)</code>, so removing <code>$(BLAS_LIBS)</code> breaks linking. Do not add <code>$(LAPACK_LIBS)</code>; if ever needed the order must be <code>$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)</code> per <em>Writing R Extensions</em> §1.2.3.</li>
 </ul></div>

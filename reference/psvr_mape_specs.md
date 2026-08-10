@@ -1,10 +1,10 @@
 # Parsnip model specs: epsilon-SVR with MAPE loss (Model 1)
 
 Create parsnip model specifications for
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) with a
-fixed kernel type. Kernel parameters are tunable parsnip arguments; the
-symmetry parameter `a` and solver tolerance are engine arguments passed
-via `set_engine()`.
+[`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+with a fixed kernel type. Kernel parameters are tunable parsnip
+arguments; the symmetry parameter `a` and solver tolerance are engine
+arguments passed via `set_engine()`.
 
 ## Usage
 

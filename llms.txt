@@ -8,18 +8,19 @@ scale-dependent: an error of 1 unit is negligible when the target is 1
 and RMSPE directly, making it well-suited for forecasting tasks where
 targets are strictly positive and relative accuracy is what matters.
 
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) is the
-single entry point; `loss` and `sym` select the model:
+There is one fitter per model family, and `sym_type` selects the
+symmetric variant within each:
 
-| `loss`    | `sym`         | Model                       | Solver                  |
-|-----------|---------------|-----------------------------|-------------------------|
-| `"mape"`  | `NULL`        | ε-SVR with MAPE             | SMO (default) or `osqp` |
-| `"mape"`  | `+1L` / `-1L` | Symmetric ε-SVR with MAPE   | SMO (default) or `osqp` |
-| `"rmspe"` | `NULL`        | LS-SVR with RMSPE           | linear system           |
-| `"rmspe"` | `+1L` / `-1L` | Symmetric LS-SVR with RMSPE | linear system           |
+| Function | `sym_type` | Model | Solver |
+|----|----|----|----|
+| [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md) | `"none"` | ε-SVR with MAPE | SMO (default) or `osqp` |
+| [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md) | `"even"` / `"odd"` | Symmetric ε-SVR with MAPE | SMO (default) or `osqp` |
+| [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md) | `"none"` | LS-SVR with RMSPE | linear system |
+| [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md) | `"even"` / `"odd"` | Symmetric LS-SVR with RMSPE | linear system |
 
-`sym = +1L` imposes an even-function prior (`f(-x) = f(x)`), `sym = -1L`
-an odd one. All models require **strictly positive targets** (`y > 0`).
+`sym_type = "even"` imposes an even-function prior (`f(-x) = f(x)`),
+`"odd"` an odd one. All models require **strictly positive targets**
+(`y > 0`).
 
 ## Installation
 
@@ -56,19 +57,19 @@ X_te_s   <- scale(X_te, col_mean, col_sd)
 K <- make_kernel("rbf", sigma = 1)
 
 # Model 1 — ε-SVR with MAPE
-fit1  <- psvr(X_tr_s, y_tr, loss = "mape", kernel = K, C = 0.5, eps = 5)
+fit1  <- psvr_mape(X_tr_s, y_tr, kernel = K, C = 0.5, eps = 5)
 pred1 <- predict(fit1, X_te_s)
 
-# Model 2 — Symmetric ε-SVR with MAPE  (sym = 1L: even-function prior)
-fit2  <- psvr(X_tr_s, y_tr, loss = "mape", sym = 1L, kernel = K, C = 0.5, eps = 5)
+# Model 2 — Symmetric ε-SVR with MAPE  (even-function prior)
+fit2  <- psvr_mape(X_tr_s, y_tr, sym_type = "even", kernel = K, C = 0.5, eps = 5)
 pred2 <- predict(fit2, X_te_s)
 
 # Model 3 — LS-SVR with RMSPE
-fit3  <- psvr(X_tr_s, y_tr, loss = "rmspe", kernel = K, gamma = 100)
+fit3  <- psvr_rmspe(X_tr_s, y_tr, kernel = K, gamma = 100)
 pred3 <- predict(fit3, X_te_s)
 
-# Model 4 — Symmetric LS-SVR with RMSPE  (sym = 1L: even-function prior)
-fit4  <- psvr(X_tr_s, y_tr, loss = "rmspe", sym = 1L, kernel = K, gamma = 100)
+# Model 4 — Symmetric LS-SVR with RMSPE  (even-function prior)
+fit4  <- psvr_rmspe(X_tr_s, y_tr, sym_type = "even", kernel = K, gamma = 100)
 pred4 <- predict(fit4, X_te_s)
 
 mape <- function(y, yhat) mean(abs(y - yhat) / y) * 100
@@ -98,34 +99,21 @@ regression models with symmetric kernel extensions. *Mathematics*,
 
 # Package index
 
-## Unified entry point
+## Model fitting
 
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) is the
-single primary fitter for all four model families. Selects via
-`loss = "mape" | "rmspe"` and `sym = NULL | +1L | -1L`.
+One fitter per model family.
+[`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+covers the epsilon-SVR models (1 and 2),
+[`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
+the LS-SVR models (3 and 4); within each,
+`sym_type = "none" | "even" | "odd"` selects the symmetric variant. They
+are separate functions because the two families share no solver, no dual
+structure and no hyperparameter search space.
 
-- [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) : Fit
-  a percentage-error SVR / LS-SVR model
-- [`predict(`*`<psvr_fit>`*`)`](https://pbenavidesh.github.io/psvr/reference/predict.psvr_fit.md)
-  : Predict from a fitted psvr_fit model
-- [`print(`*`<psvr_fit>`*`)`](https://pbenavidesh.github.io/psvr/reference/print.psvr_fit.md)
-  : Print method for psvr_fit objects
-- [`coef(`*`<psvr_fit>`*`)`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_fit.md)
-  : Extract coefficients from a psvr_fit model
-- [`summary(`*`<psvr_fit>`*`)`](https://pbenavidesh.github.io/psvr/reference/summary.psvr_fit.md)
-  : Summary method for psvr_fit objects
-- [`fitted(`*`<psvr_fit>`*`)`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
-  [`fitted(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
-  [`fitted(`*`<psvr_mape_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
-  [`fitted(`*`<psvr_rmspe>`*`)`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
-  [`fitted(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
-  : Extract training fitted values from a psvr model
-- [`residuals(`*`<psvr_fit>`*`)`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
-  [`residuals(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
-  [`residuals(`*`<psvr_mape_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
-  [`residuals(`*`<psvr_rmspe>`*`)`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
-  [`residuals(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
-  : Extract training residuals from a psvr model
+- [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+  : Fit an epsilon-SVR with MAPE loss
+- [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
+  : Fit a least-squares SVR with RMSPE loss
 
 ## Kernel factory
 
@@ -140,7 +128,7 @@ Fold-wise fitting for `loss = "mape"`, carrying the converged SMO dual
 variables from one fold into the next as a warm start.
 
 - [`psvr_cv()`](https://pbenavidesh.github.io/psvr/reference/psvr_cv.md)
-  : Cross-validate psvr() with automatic warm-start across folds
+  : Cross-validate psvr_mape() with automatic warm-start across folds
 
 ## tidymodels / parsnip interface — ε-SVR with MAPE (Models 1 & 2)
 
@@ -186,15 +174,17 @@ Custom dials parameters and tuning helpers for psvr models.
 - [`sym_type_param()`](https://pbenavidesh.github.io/psvr/reference/sym_type_param.md)
   : Dials parameter for symmetry type
 
-## Legacy fit-object methods
+## Fit-object methods
 
-Methods for the four legacy fit classes — `psvr_mape`, `psvr_mape_sym`,
-`psvr_rmspe`, `psvr_rmspe_sym` — which are what the parsnip engine fit
-wrappers return.
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) returns
-the different `psvr_fit` class; unwrap a parsnip fit with
+Methods for the four fit classes — `psvr_mape`, `psvr_mape_sym`,
+`psvr_rmspe`, `psvr_rmspe_sym`. These are what
+[`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+and
+[`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
+return **and** what the parsnip engine fit wrappers return, so a direct
+fit and a parsnip fit unwrapped with
 [`parsnip::extract_fit_engine()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)
-to reach these.
+are the same object.
 
 - [`predict(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/predict.psvr_mape.md)
   : Predict from a fitted epsilon-SVR with MAPE model
@@ -220,6 +210,24 @@ to reach these.
   : Extract coefficients from a psvr_rmspe model
 - [`coef(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_rmspe_sym.md)
   : Extract coefficients from a psvr_rmspe_sym model
+- [`summary(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/summary.psvr_mape.md)
+  : Summarize a fitted epsilon-SVR with MAPE loss
+- [`summary(`*`<psvr_mape_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/summary.psvr_mape_sym.md)
+  : Summarize a fitted symmetric epsilon-SVR with MAPE loss
+- [`summary(`*`<psvr_rmspe>`*`)`](https://pbenavidesh.github.io/psvr/reference/summary.psvr_rmspe.md)
+  : Summarize a fitted LS-SVR with RMSPE loss
+- [`summary(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/summary.psvr_rmspe_sym.md)
+  : Summarize a fitted symmetric LS-SVR with RMSPE loss
+- [`fitted(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/psvr-fitted.md)
+  [`fitted(`*`<psvr_mape_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/psvr-fitted.md)
+  [`fitted(`*`<psvr_rmspe>`*`)`](https://pbenavidesh.github.io/psvr/reference/psvr-fitted.md)
+  [`fitted(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/psvr-fitted.md)
+  : Extract training fitted values from a psvr model
+- [`residuals(`*`<psvr_mape>`*`)`](https://pbenavidesh.github.io/psvr/reference/psvr-residuals.md)
+  [`residuals(`*`<psvr_mape_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/psvr-residuals.md)
+  [`residuals(`*`<psvr_rmspe>`*`)`](https://pbenavidesh.github.io/psvr/reference/psvr-residuals.md)
+  [`residuals(`*`<psvr_rmspe_sym>`*`)`](https://pbenavidesh.github.io/psvr/reference/psvr-residuals.md)
+  : Extract training residuals from a psvr model
 
 # Articles
 

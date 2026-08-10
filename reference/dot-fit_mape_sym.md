@@ -1,11 +1,12 @@
 # Fit symmetric epsilon-SVR with MAPE loss (Model 2) — internal
 
 Internal fitter for the symmetric MAPE epsilon-SVR family. Use
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) with
-`loss = "mape"` and `sym = +1L` / `-1L` instead. Returns the legacy
-`psvr_mape_sym` shape, which is also what the parsnip engine fit
-wrappers return with `sym_type = "even"` / `"odd"`. The kernel must
-satisfy Assumption 3 of the paper; see
+[`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+with `sym_type = "even"` / `"odd"` instead. Returns the `psvr_mape_sym`
+shape, which is what
+[`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+and the parsnip engine fit wrappers both return with `sym_type = "even"`
+/ `"odd"`. The kernel must satisfy Assumption 3 of the paper; see
 [`make_kernel()`](https://pbenavidesh.github.io/psvr/reference/make_kernel.md).
 
 ## Usage
@@ -35,14 +36,16 @@ satisfy Assumption 3 of the paper; see
 
 - X, y, kernel, C, eps, solver, tol:
 
-  See [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md).
+  See
+  [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md).
 
 - a:
 
-  Symmetry type: `1` (even) or `-1` (odd). Corresponds to
-  `psvr(sym = +1L)` and `psvr(sym = -1L)` respectively;
-  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) has
-  no `a` argument of its own.
+  Symmetry type: `1` (even) or `-1` (odd). This is the internal integer;
+  the public argument is `sym_type`, with `"even"` mapping to `a = 1`
+  and `"odd"` to `a = -1`. Neither
+  [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+  nor the parsnip specifications expose `a` directly.
 
 - alpha_init, alpha_star_init:
 

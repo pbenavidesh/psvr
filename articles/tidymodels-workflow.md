@@ -207,9 +207,10 @@ Extract it to use [`print()`](https://rdrr.io/r/base/print.html) and
 
 ``` r
 
-# extract_fit_engine() unwraps the parsnip/workflow layer to the raw psvr object
-psvr_fit <- extract_fit_engine(extract_workflow(final_fit))
-print(psvr_fit)
+# extract_fit_engine() unwraps the parsnip/workflow layer to the raw psvr
+# object -- the same class psvr_rmspe() returns when called directly
+engine_fit <- extract_fit_engine(extract_workflow(final_fit))
+print(engine_fit)
 #> 
 #> LS-SVR with RMSPE loss  [psvr_rmspe]
 #> 
@@ -220,7 +221,7 @@ print(psvr_fit)
 
 ``` r
 
-cf <- coef(psvr_fit)
+cf <- coef(engine_fit)
 # alpha:        N dual variables; weight each training point in
 #               f(x) = sum_k alpha_k K(x_k, x) + b
 # b:            bias / intercept term

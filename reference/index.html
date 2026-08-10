@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9011</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9012</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -40,9 +40,9 @@
     </div>
 
     <div class="section level2">
-      <h2 id="unified-entry-point">Unified entry point<a class="anchor" aria-label="anchor" href="#unified-entry-point"></a></h2>
+      <h2 id="model-fitting">Model fitting<a class="anchor" aria-label="anchor" href="#model-fitting"></a></h2>
 
-      <div class="section-desc"><p><code><a href="../reference/psvr.html">psvr()</a></code> is the single primary fitter for all four model families. Selects via <code>loss = "mape" | "rmspe"</code> and <code>sym = NULL | +1L | -1L</code>.</p></div>
+      <div class="section-desc"><p>One fitter per model family. <code><a href="../reference/psvr_mape.html">psvr_mape()</a></code> covers the epsilon-SVR models (1 and 2), <code><a href="../reference/psvr_rmspe.html">psvr_rmspe()</a></code> the LS-SVR models (3 and 4); within each, <code>sym_type = "none" | "even" | "odd"</code> selects the symmetric variant. They are separate functions because the two families share no solver, no dual structure and no hyperparameter search space.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -51,52 +51,17 @@
 
       <dl><dt>
 
-          <code><a href="psvr.html">psvr()</a></code>
+          <code><a href="psvr_mape.html">psvr_mape()</a></code>
 
         </dt>
-        <dd>Fit a percentage-error SVR / LS-SVR model</dd>
+        <dd>Fit an epsilon-SVR with MAPE loss</dd>
 
         <dt>
 
-          <code><a href="predict.psvr_fit.html">predict(<i>&lt;psvr_fit&gt;</i>)</a></code>
+          <code><a href="psvr_rmspe.html">psvr_rmspe()</a></code>
 
         </dt>
-        <dd>Predict from a fitted psvr_fit model</dd>
-
-        <dt>
-
-          <code><a href="print.psvr_fit.html">print(<i>&lt;psvr_fit&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Print method for psvr_fit objects</dd>
-
-        <dt>
-
-          <code><a href="coef.psvr_fit.html">coef(<i>&lt;psvr_fit&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Extract coefficients from a psvr_fit model</dd>
-
-        <dt>
-
-          <code><a href="summary.psvr_fit.html">summary(<i>&lt;psvr_fit&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Summary method for psvr_fit objects</dd>
-
-        <dt>
-
-          <code><a href="fitted.psvr_fit.html">fitted(<i>&lt;psvr_fit&gt;</i>)</a></code> <code><a href="fitted.psvr_fit.html">fitted(<i>&lt;psvr_mape&gt;</i>)</a></code> <code><a href="fitted.psvr_fit.html">fitted(<i>&lt;psvr_mape_sym&gt;</i>)</a></code> <code><a href="fitted.psvr_fit.html">fitted(<i>&lt;psvr_rmspe&gt;</i>)</a></code> <code><a href="fitted.psvr_fit.html">fitted(<i>&lt;psvr_rmspe_sym&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Extract training fitted values from a psvr model</dd>
-
-        <dt>
-
-          <code><a href="residuals.psvr_fit.html">residuals(<i>&lt;psvr_fit&gt;</i>)</a></code> <code><a href="residuals.psvr_fit.html">residuals(<i>&lt;psvr_mape&gt;</i>)</a></code> <code><a href="residuals.psvr_fit.html">residuals(<i>&lt;psvr_mape_sym&gt;</i>)</a></code> <code><a href="residuals.psvr_fit.html">residuals(<i>&lt;psvr_rmspe&gt;</i>)</a></code> <code><a href="residuals.psvr_fit.html">residuals(<i>&lt;psvr_rmspe_sym&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Extract training residuals from a psvr model</dd>
+        <dd>Fit a least-squares SVR with RMSPE loss</dd>
       </dl></div><div class="section level2">
       <h2 id="kernel-factory">Kernel factory<a class="anchor" aria-label="anchor" href="#kernel-factory"></a></h2>
 
@@ -128,7 +93,7 @@
           <code><a href="psvr_cv.html">psvr_cv()</a></code>
 
         </dt>
-        <dd>Cross-validate psvr() with automatic warm-start across folds</dd>
+        <dd>Cross-validate psvr_mape() with automatic warm-start across folds</dd>
       </dl></div><div class="section level2">
       <h2 id="tidymodels-parsnip-interface-svr-with-mape-models-">tidymodels / parsnip interface — ε-SVR with MAPE (Models 1 &amp; 2)<a class="anchor" aria-label="anchor" href="#tidymodels-parsnip-interface-svr-with-mape-models-"></a></h2>
 
@@ -234,9 +199,9 @@
         </dt>
         <dd>Dials parameter for symmetry type</dd>
       </dl></div><div class="section level2">
-      <h2 id="legacy-fit-object-methods">Legacy fit-object methods<a class="anchor" aria-label="anchor" href="#legacy-fit-object-methods"></a></h2>
+      <h2 id="fit-object-methods">Fit-object methods<a class="anchor" aria-label="anchor" href="#fit-object-methods"></a></h2>
 
-      <div class="section-desc"><p>Methods for the four legacy fit classes — <code>psvr_mape</code>, <code>psvr_mape_sym</code>, <code>psvr_rmspe</code>, <code>psvr_rmspe_sym</code> — which are what the parsnip engine fit wrappers return. <code><a href="../reference/psvr.html">psvr()</a></code> returns the different <code>psvr_fit</code> class; unwrap a parsnip fit with <code><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">parsnip::extract_fit_engine()</a></code> to reach these.</p></div>
+      <div class="section-desc"><p>Methods for the four fit classes — <code>psvr_mape</code>, <code>psvr_mape_sym</code>, <code>psvr_rmspe</code>, <code>psvr_rmspe_sym</code>. These are what <code><a href="../reference/psvr_mape.html">psvr_mape()</a></code> and <code><a href="../reference/psvr_rmspe.html">psvr_rmspe()</a></code> return <strong>and</strong> what the parsnip engine fit wrappers return, so a direct fit and a parsnip fit unwrapped with <code><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">parsnip::extract_fit_engine()</a></code> are the same object.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -326,6 +291,48 @@
 
         </dt>
         <dd>Extract coefficients from a psvr_rmspe_sym model</dd>
+
+        <dt>
+
+          <code><a href="summary.psvr_mape.html">summary(<i>&lt;psvr_mape&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Summarize a fitted epsilon-SVR with MAPE loss</dd>
+
+        <dt>
+
+          <code><a href="summary.psvr_mape_sym.html">summary(<i>&lt;psvr_mape_sym&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Summarize a fitted symmetric epsilon-SVR with MAPE loss</dd>
+
+        <dt>
+
+          <code><a href="summary.psvr_rmspe.html">summary(<i>&lt;psvr_rmspe&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Summarize a fitted LS-SVR with RMSPE loss</dd>
+
+        <dt>
+
+          <code><a href="summary.psvr_rmspe_sym.html">summary(<i>&lt;psvr_rmspe_sym&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Summarize a fitted symmetric LS-SVR with RMSPE loss</dd>
+
+        <dt>
+
+          <code><a href="psvr-fitted.html">fitted(<i>&lt;psvr_mape&gt;</i>)</a></code> <code><a href="psvr-fitted.html">fitted(<i>&lt;psvr_mape_sym&gt;</i>)</a></code> <code><a href="psvr-fitted.html">fitted(<i>&lt;psvr_rmspe&gt;</i>)</a></code> <code><a href="psvr-fitted.html">fitted(<i>&lt;psvr_rmspe_sym&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Extract training fitted values from a psvr model</dd>
+
+        <dt>
+
+          <code><a href="psvr-residuals.html">residuals(<i>&lt;psvr_mape&gt;</i>)</a></code> <code><a href="psvr-residuals.html">residuals(<i>&lt;psvr_mape_sym&gt;</i>)</a></code> <code><a href="psvr-residuals.html">residuals(<i>&lt;psvr_rmspe&gt;</i>)</a></code> <code><a href="psvr-residuals.html">residuals(<i>&lt;psvr_rmspe_sym&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Extract training residuals from a psvr model</dd>
       </dl></div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside></div>

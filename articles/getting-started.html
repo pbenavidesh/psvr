@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9011</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9012</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -82,52 +82,56 @@ forecasting. An error of 1 unit is negligible when the target is 1 000
 but large when it is 2.</p>
 <p><strong>psvr</strong> implements four SVR variants derived from
 percentage-error loss functions (Benavides-Herrera et al., 2026),
-accessed through the unified <code><a href="../reference/psvr.html">psvr()</a></code> entry point:</p>
+accessed through one fitter per model family:</p>
 <table class="table">
 <thead><tr class="header">
 <th>Model</th>
-<th><code>loss</code></th>
-<th><code>sym</code></th>
+<th>Function</th>
+<th><code>sym_type</code></th>
 <th>Solver</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td>3</td>
-<td><code>"rmspe"</code></td>
-<td><code>NULL</code></td>
+<td><code><a href="../reference/psvr_rmspe.html">psvr_rmspe()</a></code></td>
+<td><code>"none"</code></td>
 <td>linear system</td>
 </tr>
 <tr class="even">
 <td>4</td>
-<td><code>"rmspe"</code></td>
+<td><code><a href="../reference/psvr_rmspe.html">psvr_rmspe()</a></code></td>
 <td>
-<code>+1L</code> / <code>-1L</code>
+<code>"even"</code> / <code>"odd"</code>
 </td>
 <td>linear system</td>
 </tr>
 <tr class="odd">
 <td>1</td>
-<td><code>"mape"</code></td>
-<td><code>NULL</code></td>
+<td><code><a href="../reference/psvr_mape.html">psvr_mape()</a></code></td>
+<td><code>"none"</code></td>
 <td>quadratic program</td>
 </tr>
 <tr class="even">
 <td>2</td>
-<td><code>"mape"</code></td>
+<td><code><a href="../reference/psvr_mape.html">psvr_mape()</a></code></td>
 <td>
-<code>+1L</code> / <code>-1L</code>
+<code>"even"</code> / <code>"odd"</code>
 </td>
 <td>quadratic program</td>
 </tr>
 </tbody>
 </table>
-<p><code>sym = +1L</code> enforces even symmetry
-<code>f(x) = f(-x)</code>; <code>sym = -1L</code> enforces odd symmetry.
-Use the symmetric variants only with kernels that satisfy Assumption 3
-of the paper (RBF and even-degree polynomial kernels do).</p>
-<p><code><a href="../reference/psvr.html">psvr()</a></code> is the only direct fitter. The four legacy
-wrappers it replaced were removed in 0.0.2.9010; <code>loss</code> and
-<code>sym</code> now select the model.</p>
+<p><code>sym_type = "even"</code> enforces even symmetry
+<code>f(x) = f(-x)</code>; <code>"odd"</code> enforces odd symmetry. Use
+the symmetric variants only with kernels that satisfy Assumption 3 of
+the paper (RBF and even-degree polynomial kernels do).</p>
+<p>These are the two direct fitters. They replaced the unified
+<code><a href="../reference/psvr-package.html">psvr()</a></code> entry point in 0.0.2.9012, which had in turn
+replaced four separate wrappers in 0.0.2.9010: seven of
+<code><a href="../reference/psvr-package.html">psvr()</a></code>’s eleven arguments were conditional on which family
+you were fitting, so the families are now separate functions. Both
+return the same classes the tidymodels engine returns, so a fit obtained
+either way behaves identically.</p>
 <p>All models require <strong>strictly positive targets</strong>
 (<code>y &gt; 0</code>), which is the condition under which percentage
 residuals are well-defined.</p>
@@ -212,7 +216,7 @@ a quadratic penalty on percentage residuals. The dual reduces to:</p>
 <span><span class="va">K</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/make_kernel.html">make_kernel</a></span><span class="op">(</span><span class="st">"rbf"</span>, sigma <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># gamma = 5000: regularisation; larger gamma -&gt; smaller Y_Gamma diagonal -&gt; tighter fit</span></span>
-<span><span class="va">fit_ls</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr.html">psvr</a></span><span class="op">(</span><span class="va">X_tr</span>, <span class="va">y_tr</span>, loss <span class="op">=</span> <span class="st">"rmspe"</span>, kernel <span class="op">=</span> <span class="va">K</span>, gamma <span class="op">=</span> <span class="fl">5000</span><span class="op">)</span></span>
+<span><span class="va">fit_ls</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr_rmspe.html">psvr_rmspe</a></span><span class="op">(</span><span class="va">X_tr</span>, <span class="va">y_tr</span>, kernel <span class="op">=</span> <span class="va">K</span>, gamma <span class="op">=</span> <span class="fl">5000</span><span class="op">)</span></span>
 <span><span class="va">pred_ls</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_ls</span>, <span class="va">X_te</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"LS-SVR RMSPE  — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n"</span>,</span>
@@ -220,11 +224,11 @@ a quadratic penalty on percentage residuals. The dual reduces to:</p>
 <span><span class="co">#&gt; LS-SVR RMSPE  — MAPE: 15.46%  RMSPE: 27.21%  R²: 0.7277</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_ls</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; LS-SVR with RMSPE loss  [psvr_fit]</span></span>
+<span><span class="co">#&gt; LS-SVR with RMSPE loss  [psvr_rmspe]</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;   Kernel:          RBF (sigma = 1)</span></span>
-<span><span class="co">#&gt;   Gamma:           5000</span></span>
-<span><span class="co">#&gt;   Training obs.:   354</span></span></code></pre></div>
+<span><span class="co">#&gt;   Kernel:        RBF (sigma = 1)</span></span>
+<span><span class="co">#&gt;   Gamma:         5000</span></span>
+<span><span class="co">#&gt;   Training obs.: 354</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/rmspe-plot-1.png" class="r-plt" alt="" width="576"></p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cf_ls</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_ls</span><span class="op">)</span></span>
@@ -247,17 +251,17 @@ tighter bounds for small targets, concentrating model capacity on
 low-magnitude observations.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># C = 10: per-sample box bound |beta_k| &lt;= 100*C/y_k; eps = 1: tube width (% of y_k)</span></span>
-<span><span class="va">fit_ep</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr.html">psvr</a></span><span class="op">(</span><span class="va">X_tr</span>, <span class="va">y_tr</span>, loss <span class="op">=</span> <span class="st">"mape"</span>, kernel <span class="op">=</span> <span class="va">K</span>, C <span class="op">=</span> <span class="fl">10</span>, eps <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">fit_ep</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr_mape.html">psvr_mape</a></span><span class="op">(</span><span class="va">X_tr</span>, <span class="va">y_tr</span>, kernel <span class="op">=</span> <span class="va">K</span>, C <span class="op">=</span> <span class="fl">10</span>, eps <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">pred_ep</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_ep</span>, <span class="va">X_te</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"ε-SVR MAPE    — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n"</span>,</span>
 <span>            <span class="fu">mape</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ep</span><span class="op">)</span>, <span class="fu">rmspe</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ep</span><span class="op">)</span>, <span class="fu">r2</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ep</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; ε-SVR MAPE    — MAPE: 15.76%  RMSPE: 27.55%  R²: 0.7617</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Support vectors: %d / %d\n"</span>, <span class="va">fit_ep</span><span class="op">$</span><span class="va">n_sv</span>, <span class="va">fit_ep</span><span class="op">$</span><span class="va">n_train</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Support vectors: %d / %d\n"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">fit_ep</span><span class="op">$</span><span class="va">beta</span><span class="op">)</span>, <span class="va">fit_ep</span><span class="op">$</span><span class="va">n_train</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Support vectors: 327 / 354</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_ep</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; epsilon-SVR with MAPE loss  [psvr_fit]</span></span>
+<span><span class="co">#&gt; Epsilon-SVR with MAPE loss  [psvr_mape]</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;   Kernel:          RBF (sigma = 1)</span></span>
 <span><span class="co">#&gt;   C:               10</span></span>

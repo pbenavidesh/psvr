@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9011</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9012</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,10 +75,13 @@
 <dd><p>Training input matrix (all N observations).</p></dd>
 
 
-</dl><p>The names match <code><a href="coef.psvr_fit.html">coef.psvr_fit()</a></code> on a <code>loss = "rmspe"</code> fit. That method
-additionally carries <code>alpha_star</code> and <code>beta</code> as <code>NULL</code>, because one class
-serves both families; here they are simply absent, so <code>$alpha_star</code> and
-<code>$beta</code> are <code>NULL</code> either way.</p>
+</dl><p>Three components, against five for the MAPE classes (<code><a href="coef.psvr_mape.html">coef.psvr_mape()</a></code>):
+LS-SVR has no <code>alpha_star</code> and no pruned <code>beta</code>, and they are <strong>not</strong>
+materialised as <code>NULL</code>. So <code>names(coef(fit))</code> depends on the model family,
+which is a decision rather than an oversight – each class is
+family-specific, and inventing empty slots to make the two agree would add
+structure with nothing to inherit it from. <code>$alpha_star</code> and <code>$beta</code> yield
+<code>NULL</code> on both, so every accessor still agrees.</p>
     </div>
     <div class="section level2">
     <h2 id="renamed-in-">Renamed in 0.0.2.9011<a class="anchor" aria-label="anchor" href="#renamed-in-"></a></h2>

@@ -3,8 +3,10 @@
 Bridge functions called by parsnip when fitting psvr model specs.
 Exported only because parsnip's resolver requires it; not intended for
 direct use. Call
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) instead
-for direct fitting.
+[`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+or
+[`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
+instead for direct fitting.
 
 ## Usage
 
@@ -84,7 +86,7 @@ psvr_rmspe_linear_fit(x, y, gamma, sym_type = "none", precondition = "auto")
 
 - rbf_sigma:
 
-  RBF bandwidth σ \> 0.
+  RBF bandwidth \\\sigma \> 0\\.
 
 - sym_type:
 
@@ -100,16 +102,15 @@ psvr_rmspe_linear_fit(x, y, gamma, sym_type = "none", precondition = "auto")
 
   Maximum SMO iterations. Default `100000L`. The solver emits a
   [`warning()`](https://rdrr.io/r/base/warning.html) and returns
-  `solver_meta$converged = FALSE` if it does not converge within
-  `max_iter`.
+  `converged = FALSE` if it does not converge within `max_iter`.
 
 - degree:
 
-  Polynomial degree ≥ 1.
+  Polynomial degree \\\ge 1\\.
 
 - scale_factor:
 
-  Polynomial constant term (coef₀).
+  Polynomial constant term (\\\mathrm{coef}\_0\\).
 
 - gamma:
 
@@ -119,18 +120,22 @@ psvr_rmspe_linear_fit(x, y, gamma, sym_type = "none", precondition = "auto")
 
   Optional symmetric rescaling preconditioner for the RMSPE LS-SVR
   fitters. See
-  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) for
-  accepted values and semantics.
+  [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
+  for accepted values and semantics.
 
 ## Value
 
-A fitted model object of the legacy S3 class matching the wrapper's
-model family. These are the
-pre-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md)
-object shapes, returned unmodified from the internal fitter; they are
-**not** `psvr_fit` objects. **Which class is returned depends on
-`sym_type`**, since each wrapper dispatches to the symmetric or
-non-symmetric fitter.
+A fitted model object of the S3 class matching the wrapper's model
+family, returned unmodified from the internal fitter. These are the same
+classes
+[`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+and
+[`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
+return, so a parsnip fit unwrapped with
+[`parsnip::extract_fit_engine()`](https://parsnip.tidymodels.org/reference/reexports.html)
+and a directly fitted object are interchangeable. **Which class is
+returned depends on `sym_type`**, since each wrapper dispatches to the
+symmetric or non-symmetric fitter.
 
 The MAPE wrappers (`psvr_mape_rbf_fit()`, `psvr_mape_poly_fit()`,
 `psvr_mape_linear_fit()`) with `sym_type = "none"` return an object of

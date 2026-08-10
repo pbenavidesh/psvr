@@ -30,7 +30,7 @@
 
     <a class="navbar-brand me-2" href="index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9011</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9012</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -72,54 +72,54 @@
 <!-- badges: start -->
 
 <p><code>psvr</code> implements four support vector regression models derived from a unified mathematical framework for percentage-error loss functions. Classical SVR minimises absolute-error losses (MAE, MSE), which are scale-dependent: an error of 1 unit is negligible when the target is 1 000 but critical when it is 2. <code>psvr</code> addresses this by optimising MAPE and RMSPE directly, making it well-suited for forecasting tasks where targets are strictly positive and relative accuracy is what matters.</p>
-<p><code><a href="reference/psvr.html">psvr()</a></code> is the single entry point; <code>loss</code> and <code>sym</code> select the model:</p>
+<p>There is one fitter per model family, and <code>sym_type</code> selects the symmetric variant within each:</p>
 <table class="table">
 <colgroup>
-<col width="13%">
-<col width="18%">
-<col width="36%">
-<col width="31%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
+<col width="25%">
 </colgroup>
 <thead><tr>
-<th><code>loss</code></th>
-<th><code>sym</code></th>
+<th>Function</th>
+<th><code>sym_type</code></th>
 <th>Model</th>
 <th>Solver</th>
 </tr></thead>
 <tbody>
 <tr>
-<td><code>"mape"</code></td>
-<td><code>NULL</code></td>
+<td><code><a href="reference/psvr_mape.html">psvr_mape()</a></code></td>
+<td><code>"none"</code></td>
 <td>ε-SVR with MAPE</td>
 <td>SMO (default) or <code>osqp</code>
 </td>
 </tr>
 <tr>
-<td><code>"mape"</code></td>
+<td><code><a href="reference/psvr_mape.html">psvr_mape()</a></code></td>
 <td>
-<code>+1L</code> / <code>-1L</code>
+<code>"even"</code> / <code>"odd"</code>
 </td>
 <td>Symmetric ε-SVR with MAPE</td>
 <td>SMO (default) or <code>osqp</code>
 </td>
 </tr>
 <tr>
-<td><code>"rmspe"</code></td>
-<td><code>NULL</code></td>
+<td><code><a href="reference/psvr_rmspe.html">psvr_rmspe()</a></code></td>
+<td><code>"none"</code></td>
 <td>LS-SVR with RMSPE</td>
 <td>linear system</td>
 </tr>
 <tr>
-<td><code>"rmspe"</code></td>
+<td><code><a href="reference/psvr_rmspe.html">psvr_rmspe()</a></code></td>
 <td>
-<code>+1L</code> / <code>-1L</code>
+<code>"even"</code> / <code>"odd"</code>
 </td>
 <td>Symmetric LS-SVR with RMSPE</td>
 <td>linear system</td>
 </tr>
 </tbody>
 </table>
-<p><code>sym = +1L</code> imposes an even-function prior (<code>f(-x) = f(x)</code>), <code>sym = -1L</code> an odd one. All models require <strong>strictly positive targets</strong> (<code>y &gt; 0</code>).</p>
+<p><code>sym_type = "even"</code> imposes an even-function prior (<code>f(-x) = f(x)</code>), <code>"odd"</code> an odd one. All models require <strong>strictly positive targets</strong> (<code>y &gt; 0</code>).</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -154,19 +154,19 @@
 <span><span class="va">K</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/make_kernel.html">make_kernel</a></span><span class="op">(</span><span class="st">"rbf"</span>, sigma <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Model 1 — ε-SVR with MAPE</span></span>
-<span><span class="va">fit1</span>  <span class="op">&lt;-</span> <span class="fu"><a href="reference/psvr.html">psvr</a></span><span class="op">(</span><span class="va">X_tr_s</span>, <span class="va">y_tr</span>, loss <span class="op">=</span> <span class="st">"mape"</span>, kernel <span class="op">=</span> <span class="va">K</span>, C <span class="op">=</span> <span class="fl">0.5</span>, eps <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
+<span><span class="va">fit1</span>  <span class="op">&lt;-</span> <span class="fu"><a href="reference/psvr_mape.html">psvr_mape</a></span><span class="op">(</span><span class="va">X_tr_s</span>, <span class="va">y_tr</span>, kernel <span class="op">=</span> <span class="va">K</span>, C <span class="op">=</span> <span class="fl">0.5</span>, eps <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="va">pred1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit1</span>, <span class="va">X_te_s</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Model 2 — Symmetric ε-SVR with MAPE  (sym = 1L: even-function prior)</span></span>
-<span><span class="va">fit2</span>  <span class="op">&lt;-</span> <span class="fu"><a href="reference/psvr.html">psvr</a></span><span class="op">(</span><span class="va">X_tr_s</span>, <span class="va">y_tr</span>, loss <span class="op">=</span> <span class="st">"mape"</span>, sym <span class="op">=</span> <span class="fl">1L</span>, kernel <span class="op">=</span> <span class="va">K</span>, C <span class="op">=</span> <span class="fl">0.5</span>, eps <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
+<span><span class="co"># Model 2 — Symmetric ε-SVR with MAPE  (even-function prior)</span></span>
+<span><span class="va">fit2</span>  <span class="op">&lt;-</span> <span class="fu"><a href="reference/psvr_mape.html">psvr_mape</a></span><span class="op">(</span><span class="va">X_tr_s</span>, <span class="va">y_tr</span>, sym_type <span class="op">=</span> <span class="st">"even"</span>, kernel <span class="op">=</span> <span class="va">K</span>, C <span class="op">=</span> <span class="fl">0.5</span>, eps <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span>
 <span><span class="va">pred2</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit2</span>, <span class="va">X_te_s</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Model 3 — LS-SVR with RMSPE</span></span>
-<span><span class="va">fit3</span>  <span class="op">&lt;-</span> <span class="fu"><a href="reference/psvr.html">psvr</a></span><span class="op">(</span><span class="va">X_tr_s</span>, <span class="va">y_tr</span>, loss <span class="op">=</span> <span class="st">"rmspe"</span>, kernel <span class="op">=</span> <span class="va">K</span>, gamma <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
+<span><span class="va">fit3</span>  <span class="op">&lt;-</span> <span class="fu"><a href="reference/psvr_rmspe.html">psvr_rmspe</a></span><span class="op">(</span><span class="va">X_tr_s</span>, <span class="va">y_tr</span>, kernel <span class="op">=</span> <span class="va">K</span>, gamma <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
 <span><span class="va">pred3</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit3</span>, <span class="va">X_te_s</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Model 4 — Symmetric LS-SVR with RMSPE  (sym = 1L: even-function prior)</span></span>
-<span><span class="va">fit4</span>  <span class="op">&lt;-</span> <span class="fu"><a href="reference/psvr.html">psvr</a></span><span class="op">(</span><span class="va">X_tr_s</span>, <span class="va">y_tr</span>, loss <span class="op">=</span> <span class="st">"rmspe"</span>, sym <span class="op">=</span> <span class="fl">1L</span>, kernel <span class="op">=</span> <span class="va">K</span>, gamma <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
+<span><span class="co"># Model 4 — Symmetric LS-SVR with RMSPE  (even-function prior)</span></span>
+<span><span class="va">fit4</span>  <span class="op">&lt;-</span> <span class="fu"><a href="reference/psvr_rmspe.html">psvr_rmspe</a></span><span class="op">(</span><span class="va">X_tr_s</span>, <span class="va">y_tr</span>, sym_type <span class="op">=</span> <span class="st">"even"</span>, kernel <span class="op">=</span> <span class="va">K</span>, gamma <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span>
 <span><span class="va">pred4</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit4</span>, <span class="va">X_te_s</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">mape</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">y</span>, <span class="va">yhat</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">y</span> <span class="op">-</span> <span class="va">yhat</span><span class="op">)</span> <span class="op">/</span> <span class="va">y</span><span class="op">)</span> <span class="op">*</span> <span class="fl">100</span></span>

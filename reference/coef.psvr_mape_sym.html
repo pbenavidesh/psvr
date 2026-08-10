@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9011</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9012</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -65,14 +65,16 @@
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A named list with the same component names and meanings as
-<code><a href="coef.psvr_fit.html">coef.psvr_fit()</a></code> on a <code>loss = "mape"</code> fit, so the two entry points agree:</p><dl><dt><code>alpha</code>, <code>alpha_star</code></dt>
+    <p>A named list with five components, identical in meaning to
+<code><a href="coef.psvr_mape.html">coef.psvr_mape()</a></code>:</p><dl><dt><code>alpha</code>, <code>alpha_star</code></dt>
 <dd><p>The length-<code>N</code> pre-pruning dual variables
-<code>αk</code> and <code>αk*</code>.</p></dd>
+\(\alpha_k\) and \(\alpha^*_k\).</p></dd>
 
 <dt><code>beta</code></dt>
-<dd><p>The pruned dual differences <code>βk = αk − αk*</code> over the
-support-vector indices (length <code>n_sv</code>); this is what <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> uses.</p></dd>
+<dd><p>The pruned dual differences
+\(\beta_k = \alpha_k - \alpha^*_k\)
+over the support-vector indices (length <code>n_sv</code>); this is what
+<code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> uses.</p></dd>
 
 <dt><code>b</code></dt>
 <dd><p>Bias term.</p></dd>

@@ -35,9 +35,10 @@ A named list with components:
 
   Training input matrix (all N observations).
 
-The names match
-[`coef.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_fit.md)
-on a `loss = "rmspe"` fit.
+Three components, not the five the MAPE classes return: LS-SVR has no
+`alpha_star` and no pruned `beta`, and they are not materialised as
+`NULL`. See
+[`coef.psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_rmspe.md).
 
 ## Renamed in 0.0.2.9011
 

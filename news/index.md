@@ -1,5 +1,134 @@
 # Changelog
 
+## psvr 0.0.2.9012 (development)
+
+### Breaking changes
+
+- **[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md)
+  is removed and replaced by two functions,
+  [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+  and
+  [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md).**
+  Seven of
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md)’s
+  eleven named arguments were conditional on `loss` —
+  `C`/`eps`/`solver`/`tol`/`max_iter` against `gamma`/`precondition`.
+  That is the
+  [`lm()`](https://rdrr.io/r/stats/lm.html)/[`glm()`](https://rdrr.io/r/stats/glm.html)
+  pattern rather than a single algorithm with a mode switch: the two
+  families share no solver, no dual structure, no numerical diagnostic
+  and no hyperparameter search space. The tidymodels layer had already
+  made the same split.
+
+  ``` r
+  # before                                    # after
+  psvr(X, y, loss = "mape",  C = 10, eps = 5) psvr_mape(X, y, C = 10, eps = 5)
+  psvr(X, y, loss = "rmspe", gamma = 100)     psvr_rmspe(X, y, gamma = 100)
+  ```
+
+  **The name
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md)
+  is reserved, not recycled.** It is intended for a future
+  automatic-selection front end that picks a family for you — an
+  `auto.arima()` to these two `Arima()`s. It will not come back as a
+  synonym for either.
+
+- **`sym` is now `sym_type`, taking `"none"` / `"even"` / `"odd"`.**
+  This is the vocabulary the parsnip specifications have used since
+  0.0.2.9010, so the two public surfaces now agree; previously the same
+  axis had three spellings (`sym`, `sym_type`, and the internal `a`).
+  `sym = 1L` partial-matches `sym_type` and errors rather than being
+  silently ignored.
+
+  ``` r
+
+  psvr(X, y, loss = "mape", sym = +1L, ...)   # before
+  psvr_mape(X, y, sym_type = "even", ...)     # after
+  ```
+
+- **The returned class changes from `psvr_fit` to the four family
+  classes** — `psvr_mape`, `psvr_mape_sym`, `psvr_rmspe`,
+  `psvr_rmspe_sym`. These are what the tidymodels engine has always
+  returned, so a direct fit and a fit unwrapped with
+  [`parsnip::extract_fit_engine()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)
+  are now **the same object**; previously they were two different
+  classes with two different field vocabularies. The `psvr_fit` class
+  and its six methods are gone.
+
+  Field map for code that read a `psvr_fit`:
+
+  | was | now |
+  |----|----|
+  | `fit$hyperparameters$C` / `$eps` / `$gamma` / `$a` | `fit$C` / `$eps` / `$gamma` / `$a` |
+  | `fit$solver_meta$iters` | `fit$iterations` |
+  | `fit$solver_meta$converged` | `fit$converged` |
+  | `fit$solver_meta$precondition_applied` | `fit$precondition_applied` |
+  | `fit$solver_meta$spectral` | `fit$spectral` |
+  | `fit$solver_meta$joint_updates` (and the other four telemetry fields) | `fit$block_k4$joint_updates` |
+  | `fit$support_data` | `fit$X_sv` (MAPE) / `fit$X_train` (LS-SVR) |
+  | `fit$support_targets` | `fit$y_sv` (MAPE only) |
+  | `fit$n_sv` | `length(fit$beta)` |
+  | `fit$loss` / `fit$sym` | implied by `class(fit)` |
+  | `fit$solver_meta$backend` | *no equivalent* — no fit class records which solver ran |
+
+- **[`coef()`](https://rdrr.io/r/stats/coef.html)’s component names now
+  depend on the model family**: five for the MAPE classes (`alpha`,
+  `alpha_star`, `beta`, `b`, `support_data`), three for the LS-SVR
+  classes (`alpha`, `b`, `support_data`). LS-SVR has no `alpha_star` and
+  no pruned `beta`, and they are **not** materialised as `NULL`. This is
+  a decision rather than an oversight: each class is family-specific, so
+  inventing empty slots to make the two agree would add structure with
+  nothing to inherit it from. `$alpha_star` and `$beta` yield `NULL` on
+  both, so every accessor still agrees — only
+  [`names()`](https://rdrr.io/r/base/names.html) differs.
+
+- **[`psvr_cv()`](https://pbenavidesh.github.io/psvr/reference/psvr_cv.md)
+  no longer accepts `loss`.** It forwards to
+  [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md),
+  which has no such argument. The error says **not yet**, not never:
+  [`psvr_cv()`](https://pbenavidesh.github.io/psvr/reference/psvr_cv.md)
+  is MAPE-only because only the MAPE fitter was ever wired to it, not
+  because LS-SVR resists cross-validation. LS-SVR cross-validates
+  perfectly well — it simply has no solver state to carry between folds,
+  so use
+  [`tune::tune_grid()`](https://tune.tidymodels.org/reference/tune_grid.html)
+  with parallel cold-start.
+
+- **`reg` is removed.** Its entire behaviour was to error on any
+  non-`NULL` value: a not-implemented placeholder rather than a validity
+  guard. The extended-Lagrangian penalty is still unimplemented; when it
+  lands it will add an argument rather than restore this one.
+  [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+  keeps a targeted guard so the reason survives.
+
+### New features
+
+- **[`summary()`](https://rdrr.io/r/base/summary.html) now works on
+  every psvr fit, including those obtained through tidymodels.** It was
+  registered on `psvr_fit` only, which no parsnip fit could ever be, so
+  it was unreachable through
+  [`extract_fit_engine()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)
+  and had no test coverage at all — the same shape as the
+  [`coef()`](https://rdrr.io/r/stats/coef.html) defect fixed in
+  0.0.2.9011. There are now four family-specific methods. Each is
+  shorter than the one it replaces: a method that knows its own family
+  needs no `NULL`-skipping. The MAPE methods report the SMO iteration
+  count and convergence status in place of the old constant `Solver:`
+  line.
+
+### Documentation
+
+- [`fitted()`](https://rdrr.io/r/stats/fitted.values.html) and
+  [`residuals()`](https://rdrr.io/r/stats/residuals.html) share the
+  topics `?psvr-fitted` and `?psvr-residuals`, renamed from
+  `?fitted.psvr_fit` / `?residuals.psvr_fit` so that deleting `psvr_fit`
+  did not promote an arbitrary one of the four remaining methods to
+  topic owner.
+- Converted the Unicode mathematics in the four fitters’ roxygen to Rd
+  `\eqn{}` markup. Raw Unicode in roxygen reaches `man/*.Rd` and breaks
+  the PDF manual, which CRAN builds. This is partial: the remaining
+  occurrences are tracked.
+
 ## psvr 0.0.2.9011 (development)
 
 ### Breaking changes
@@ -9,8 +138,8 @@
   [`coef()`](https://rdrr.io/r/stats/coef.html) on a `psvr_fit`.**
   Previously `coef(fit)$alpha` meant two different things depending on
   how the model was fitted: the length-`N` dual variable `α` via
-  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md), but
-  the length-`n_sv` pruned `β = α − α*` via
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md),
+  but the length-`n_sv` pruned `β = α − α*` via
   [`parsnip::extract_fit_engine()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html).
   One generic, one component name, two different vectors, no warning.
   The `β`-under-`alpha` meaning is the one 0.0.2.9004 moved away from on
@@ -32,10 +161,9 @@
     performs no pruning — every training point contributes — so `X_sv`
     was an ε-SVR name on an LS-SVR value. The value is unchanged.
 
-  [`coef.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_fit.md)
-  is **unchanged**; it was already correct. No fit object’s fields
-  changed, so `fit$alpha`, `fit$beta`, `fit$X_sv` and `fit$X_train` are
-  all as before — this affects the
+  `coef.psvr_fit()` is **unchanged**; it was already correct. No fit
+  object’s fields changed, so `fit$alpha`, `fit$beta`, `fit$X_sv` and
+  `fit$X_train` are all as before — this affects the
   [`coef()`](https://rdrr.io/r/stats/coef.html) return only.
 
 ### Testing
@@ -45,9 +173,8 @@
   entry points, including a cross-entry-point congruence block that
   fails if `coef(psvr(...))` and
   [`coef()`](https://rdrr.io/r/stats/coef.html) on the corresponding
-  legacy object ever disagree again.
-  [`coef.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/coef.psvr_fit.md)
-  previously had no test coverage at all.
+  legacy object ever disagree again. `coef.psvr_fit()` previously had no
+  test coverage at all.
 
 ## psvr 0.0.2.9010 (development)
 
@@ -98,14 +225,14 @@
   [`dials::svm_margin()`](https://dials.tidymodels.org/reference/cost.html),
   which is absolute; only the argument *name* now matches parsnip’s. The
   engine-side name is also unchanged: it still maps to `eps`, so
-  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) and
-  the internal fitters are unaffected.
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md)
+  and the internal fitters are unaffected.
 
 - **`mape_svr()`, `mape_sym_svr()`, `rmspe_lssvr()` and
   `rmspe_sym_lssvr()` are REMOVED**, along with `R/deprecated.R`. They
   were soft-deprecated since 0.0.2.9000 and never shipped in a released
   version. Replace with
-  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md):
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md):
 
   ``` r
 
@@ -132,7 +259,7 @@
   [`residuals()`](https://rdrr.io/r/stats/residuals.html) methods,
   remain exported and documented — the parsnip engine fit wrappers still
   return them. Note that
-  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md)
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md)
   itself returns the different `psvr_fit` class; unwrap a parsnip fit
   with
   [`parsnip::extract_fit_engine()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)
@@ -189,7 +316,7 @@
   rather than accepting arbitrary strings.
 
 - **`new_mask` is removed** from
-  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md),
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md),
   [`psvr_cv()`](https://pbenavidesh.github.io/psvr/reference/psvr_cv.md),
   [`.smo_solve()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve.md),
   [`.smo_solve_r()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve_r.md),
@@ -258,8 +385,8 @@
   The blanket form is why the equality-residual warning went unobserved
   through the F5 benchmark run.
 
-- **[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) no
-  longer silently discards unknown arguments.** `...` sat in the
+- **[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md)
+  no longer silently discards unknown arguments.** `...` sat in the
   signature with no consumer, so a mistyped hyperparameter —
   `epsilon = 5`, `sigma = 2` — was swallowed and the fit ran on defaults
   with no signal.
@@ -331,16 +458,13 @@
   with the training rows; affected entries keep their raw value
   (possibly `Inf`/`NaN`) and a single warning names how many. For pooled
   diagnostics, exclude at the point of aggregation – see
-  [`?residuals.psvr_fit`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md).
+  `?residuals.psvr_fit`.
 
 ### Documentation
 
-- [`?fitted.psvr_fit`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
-  and
-  [`?residuals.psvr_fit`](https://pbenavidesh.github.io/psvr/reference/residuals.psvr_fit.md)
-  document that parsnip registers neither `residuals.model_fit` nor
-  `fitted.model_fit`, so both generics return `NULL` **silently** on a
-  `model_fit`. Use
+- `?fitted.psvr_fit` and `?residuals.psvr_fit` document that parsnip
+  registers neither `residuals.model_fit` nor `fitted.model_fit`, so
+  both generics return `NULL` **silently** on a `model_fit`. Use
   [`parsnip::extract_fit_engine()`](https://hardhat.tidymodels.org/reference/hardhat-extract.html)
   to reach the psvr object first. psvr deliberately does not register S3
   methods on parsnip’s class.
@@ -421,7 +545,7 @@
   /
   [`.smo_solve_r()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve_r.md)
   return when `trace = TRUE` (developer interface; not exposed in
-  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md)).
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md)).
   Integer vector of length `iterations` containing the per-iteration
   active-set count, `sum(active_alpha) + sum(active_astar)`, captured at
   the same loop site as `delta_history`. Used by the smo-paper Figure 1
@@ -442,7 +566,7 @@
   and
   [`.smo_solve_r()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve_r.md)
   (developer interface; not exposed in
-  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md)).
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md)).
   When `TRUE`, the returned list carries a `delta_history` numeric
   vector of length `iterations` containing the per-iteration WSS1 KKT
   optimality gap (`Delta = tau_i - tau_j_w1`) — used by the smo-paper
@@ -476,7 +600,8 @@
 ### New features
 
 - **`engine` parameter** on
-  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) and
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md)
+  and
   [`.smo_solve()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve.md):
   `"rcpp"` (default) selects the C++ core; `"r"` selects the R reference
   implementation. Both produce **bit-identical** results across 16 test
@@ -485,7 +610,7 @@
   for removal in v0.1.0. See `CLAUDE.md` “engine = ‘r’ lifecycle” for
   the graduation criteria.
 - **`block_k4_enabled` parameter** on
-  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md)
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md)
   (default `TRUE` for `loss = "mape"`). Set to `FALSE` to restore F4
   (k=2-only) behaviour bit-identically.
 - **`alpha_couple` parameter** (default `0.5`, between 0 and 1):
@@ -505,7 +630,7 @@ None. `engine = "rcpp"` is a new *default* but is bit-identical to the
 prior R-level path (which is the now-renamed
 [`.smo_solve_r()`](https://pbenavidesh.github.io/psvr/reference/dot-smo_solve_r.md)).
 Downstream code calling
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md),
+[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md),
 [`predict()`](https://rdrr.io/r/stats/predict.html), or the deprecated
 fitters is unaffected.
 
@@ -577,7 +702,7 @@ fitters is unaffected.
   For `rsample::rset` inputs, the full-dataset Omega (or `Omega_s` for
   `sym != NULL`) is built once and sliced per fold via the new internal
   `precomputed_Omega` / `precomputed_Omega_s` channel on
-  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md).
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md).
   List-of-tuples inputs fall back to per-fold construction (still
   benefits from the per-call Rcpp dispatch).
 
@@ -610,7 +735,7 @@ fitters is unaffected.
   [`.fit_mape_sym()`](https://pbenavidesh.github.io/psvr/reference/dot-fit_mape_sym.md)
   gains `precomputed_Omega_s`. Both default to `NULL` (cold-start path).
   Forwarded transparently through
-  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md).
+  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md).
 - Paper TODO \#8 added (Theorem 6 architectural mismatch — see
   CLAUDE.md).
 
@@ -630,11 +755,11 @@ fitters is unaffected.
 
 ### New features
 
-- [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md) now
-  accepts `alpha_init`, `alpha_star_init`, and `warm_start_check` for
-  SMO warm-start (`loss = "mape"` only). Validation: length-`N` vectors,
-  strictly positive `C_k`; Algorithm 1 projection applied to ensure
-  feasibility regardless of input.
+- [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr-package.md)
+  now accepts `alpha_init`, `alpha_star_init`, and `warm_start_check`
+  for SMO warm-start (`loss = "mape"` only). Validation: length-`N`
+  vectors, strictly positive `C_k`; Algorithm 1 projection applied to
+  ensure feasibility regardless of input.
 
 - New
   [`psvr_cv()`](https://pbenavidesh.github.io/psvr/reference/psvr_cv.md)
@@ -1005,9 +1130,11 @@ params: `rbf_sigma` →
 The kernel closure is built inside each fit wrapper and no longer
 appears in the parsnip layer.
 
-The old single-spec API (`psvr_mape()`, `psvr_mape_sym()`,
-`psvr_rmspe()`, `psvr_rmspe_sym()`) has been removed. Migrate by
-replacing, for example,
+The old single-spec API
+([`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md),
+`psvr_mape_sym()`,
+[`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md),
+`psvr_rmspe_sym()`) has been removed. Migrate by replacing, for example,
 `psvr_rmspe(cost = tune()) |> set_engine("psvr", kernel = K)` with
 `psvr_rmspe_rbf(cost = tune(), rbf_sigma = 1) |> set_engine("psvr")`.
 
@@ -1056,12 +1183,12 @@ proofs.
 
 Four parsnip model specifications for use within tidymodels workflows:
 
-- `psvr_mape()` — spec for Model 1; hyperparameters `cost` and
-  `svm_margin`.
+- [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+  — spec for Model 1; hyperparameters `cost` and `svm_margin`.
 - `psvr_mape_sym()` — spec for Model 2; hyperparameters `cost` and
   `svm_margin`.
-- `psvr_rmspe()` — spec for Model 3; hyperparameter `cost` (maps to
-  `Γ`).
+- [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
+  — spec for Model 3; hyperparameter `cost` (maps to `Γ`).
 - `psvr_rmspe_sym()` — spec for Model 4; hyperparameter `cost` (maps to
   `Γ`).
 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9011</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9012</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -75,7 +75,9 @@
 <dd><p>Training input matrix (all N observations).</p></dd>
 
 
-</dl><p>The names match <code><a href="coef.psvr_fit.html">coef.psvr_fit()</a></code> on a <code>loss = "rmspe"</code> fit.</p>
+</dl><p>Three components, not the five the MAPE classes return: LS-SVR has no
+<code>alpha_star</code> and no pruned <code>beta</code>, and they are not materialised as
+<code>NULL</code>. See <code><a href="coef.psvr_rmspe.html">coef.psvr_rmspe()</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="renamed-in-">Renamed in 0.0.2.9011<a class="anchor" aria-label="anchor" href="#renamed-in-"></a></h2>

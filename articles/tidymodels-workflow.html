@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9011</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9012</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -252,9 +252,10 @@ data.</p>
 by the engine fit wrapper <code><a href="../reference/psvr-fit-wrappers.html">psvr_rmspe_rbf_fit()</a></code>). Extract it
 to use <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> and <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code> directly.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># extract_fit_engine() unwraps the parsnip/workflow layer to the raw psvr object</span></span>
-<span><span class="va">psvr_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_fit_engine</a></span><span class="op">(</span><span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_workflow</a></span><span class="op">(</span><span class="va">final_fit</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">psvr_fit</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># extract_fit_engine() unwraps the parsnip/workflow layer to the raw psvr</span></span>
+<span><span class="co"># object -- the same class psvr_rmspe() returns when called directly</span></span>
+<span><span class="va">engine_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_fit_engine</a></span><span class="op">(</span><span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_workflow</a></span><span class="op">(</span><span class="va">final_fit</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">engine_fit</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; LS-SVR with RMSPE loss  [psvr_rmspe]</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -262,7 +263,7 @@ to use <code><a href="https://rdrr.io/r/base/print.html" class="external-link">p
 <span><span class="co">#&gt;   Gamma:         565.294</span></span>
 <span><span class="co">#&gt;   Training obs.: 150</span></span></code></pre></div>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cf</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">psvr_fit</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">cf</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">engine_fit</span><span class="op">)</span></span>
 <span><span class="co"># alpha:        N dual variables; weight each training point in</span></span>
 <span><span class="co">#               f(x) = sum_k alpha_k K(x_k, x) + b</span></span>
 <span><span class="co"># b:            bias / intercept term</span></span>

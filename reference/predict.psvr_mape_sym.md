@@ -1,10 +1,10 @@
 # Predict from a fitted symmetric epsilon-SVR with MAPE model
 
-Method dispatched on the legacy `"psvr_mape_sym"` class, which the
-parsnip engine fit wrappers return. Uses the symmetric representer
-theorem `f(x) = ½ Σk βk Ks(xk, x) + b` with
-`Ks(xk, x) = K(xk, x) + a·K(xk, -x)`. For direct fitting use
-[`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md).
+Method dispatched on the `"psvr_mape_sym"` class, which both
+[`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+and the parsnip engine fit wrappers return. Uses the symmetric
+representer theorem \$\$f(x) = \tfrac{1}{2}\sum_k \beta_k K_s(x_k, x) +
+b\$\$ with \\K_s(x_k, x) = K(x_k, x) + a K(x_k, -x)\\.
 
 ## Usage
 
@@ -17,8 +17,10 @@ predict(object, newdata, ...)
 
 - object:
 
-  An object of class `"psvr_mape_sym"`, as returned by the parsnip
-  engine fit wrappers with `sym_type = "even"` or `"odd"` (see
+  An object of class `"psvr_mape_sym"`, as returned by
+  [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
+  with `sym_type = "even"` or `"odd"`, or by the parsnip engine fit
+  wrappers (see
   [psvr-fit-wrappers](https://pbenavidesh.github.io/psvr/reference/psvr-fit-wrappers.md);
   `sym_type = "none"` yields `"psvr_mape"` instead). Unwrap a parsnip
   fit with
@@ -27,7 +29,8 @@ predict(object, newdata, ...)
 
 - newdata:
 
-  Numeric matrix of new inputs, one observation per row (M × p).
+  Numeric matrix of new inputs, one observation per row (\\M \times
+  p\\).
 
 - ...:
 

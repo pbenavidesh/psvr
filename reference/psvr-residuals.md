@@ -6,9 +6,6 @@ different denominators**, not interchangeable scalings of one another:
 ## Usage
 
 ``` r
-# S3 method for class 'psvr_fit'
-residuals(object, type = c("response", "percentage", "multiplicative"), ...)
-
 # S3 method for class 'psvr_mape'
 residuals(object, type = c("response", "percentage", "multiplicative"), ...)
 
@@ -26,10 +23,12 @@ residuals(object, type = c("response", "percentage", "multiplicative"), ...)
 
 - object:
 
-  A `"psvr_fit"` object from
-  [`psvr()`](https://pbenavidesh.github.io/psvr/reference/psvr.md), or
-  one of the legacy `"psvr_mape"`, `"psvr_mape_sym"`, `"psvr_rmspe"`,
-  `"psvr_rmspe_sym"` objects from the deprecated fitters.
+  A fitted object of class `"psvr_mape"`, `"psvr_mape_sym"`,
+  `"psvr_rmspe"` or `"psvr_rmspe_sym"`, from
+  [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md),
+  [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md),
+  or a parsnip fit unwrapped with
+  [`parsnip::extract_fit_engine()`](https://parsnip.tidymodels.org/reference/reexports.html).
 
 - type:
 
@@ -119,7 +118,8 @@ response residuals only, so it is not a substitute for the
 
 ## See also
 
-[`fitted.psvr_fit()`](https://pbenavidesh.github.io/psvr/reference/fitted.psvr_fit.md)
+[`fitted.psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr-fitted.md)
+and the other fitted methods
 
 ## Examples
 
@@ -127,7 +127,7 @@ response residuals only, so it is not a substitute for the
 set.seed(1)
 X <- matrix(runif(40, 0.5, 3), 20, 2)
 y <- 2 + X[, 1]^2
-fit <- psvr(X, y, loss = "rmspe", kernel = make_kernel("rbf"), gamma = 100)
+fit <- psvr_rmspe(X, y, kernel = make_kernel("rbf"), gamma = 100)
 head(residuals(fit))
 #> [1] -0.30670706 -0.09389727 -0.07896843  0.70298893  0.02611907  0.84129179
 mean(abs(residuals(fit, type = "percentage"))) * 100   # training MAPE
