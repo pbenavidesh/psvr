@@ -1,6 +1,6 @@
 ## F4 benchmark: heterogeneous vs homogeneous targets.
 ##
-## Replicates psvr() fits 20 times each on two y vectors with very
+## Replicates psvr_mape() fits 20 times each on two y vectors with very
 ## different rho_y, then writes wall-clock medians + iter counts to
 ## an RDS file for F3-vs-F4 comparison.
 ##
@@ -25,7 +25,7 @@ K <- make_kernel("rbf", sigma = 1)
 run_once <- function(y) {
   t <- system.time(
     fit <- suppressWarnings(
-      psvr(X, y, loss = "mape", kernel = K, C = 10, eps = 5)
+      psvr_mape(X, y, kernel = K, C = 10, eps = 5)
     )
   )["elapsed"]
   as.numeric(t)

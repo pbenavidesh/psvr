@@ -25,18 +25,16 @@ navbar:
       aria-label: GitHub
 
 reference:
-  - title: "Unified entry point"
+  - title: "Model fitting"
     desc: >
-      `psvr()` is the single primary fitter for all four model families.
-      Selects via `loss = "mape" | "rmspe"` and `sym = NULL | +1L | -1L`.
+      One fitter per model family. `psvr_mape()` covers the epsilon-SVR
+      models (1 and 2), `psvr_rmspe()` the LS-SVR models (3 and 4); within
+      each, `sym_type = "none" | "even" | "odd"` selects the symmetric
+      variant. They are separate functions because the two families share no
+      solver, no dual structure and no hyperparameter search space.
     contents:
-      - psvr
-      - predict.psvr_fit
-      - print.psvr_fit
-      - coef.psvr_fit
-      - summary.psvr_fit
-      - fitted.psvr_fit
-      - residuals.psvr_fit
+      - psvr_mape
+      - psvr_rmspe
 
   - title: "Kernel factory"
     desc: "Shared kernel interface used by all four models."
@@ -77,12 +75,13 @@ reference:
       - cost_psvr_ls_data
       - sym_type_param
 
-  - title: "Legacy fit-object methods"
+  - title: "Fit-object methods"
     desc: >
-      Methods for the four legacy fit classes — `psvr_mape`, `psvr_mape_sym`,
-      `psvr_rmspe`, `psvr_rmspe_sym` — which are what the parsnip engine fit
-      wrappers return. `psvr()` returns the different `psvr_fit` class; unwrap
-      a parsnip fit with `parsnip::extract_fit_engine()` to reach these.
+      Methods for the four fit classes — `psvr_mape`, `psvr_mape_sym`,
+      `psvr_rmspe`, `psvr_rmspe_sym`. These are what `psvr_mape()` and
+      `psvr_rmspe()` return **and** what the parsnip engine fit wrappers
+      return, so a direct fit and a parsnip fit unwrapped with
+      `parsnip::extract_fit_engine()` are the same object.
     contents:
       - predict.psvr_mape
       - predict.psvr_mape_sym
@@ -96,6 +95,12 @@ reference:
       - coef.psvr_mape_sym
       - coef.psvr_rmspe
       - coef.psvr_rmspe_sym
+      - summary.psvr_mape
+      - summary.psvr_mape_sym
+      - summary.psvr_rmspe
+      - summary.psvr_rmspe_sym
+      - psvr-fitted
+      - psvr-residuals
 
 articles:
   - title: ~

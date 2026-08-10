@@ -1,4 +1,9 @@
-# fitted() and residuals() for the psvr_fit class and the four legacy classes.
+# fitted() and residuals() for the four fit classes.
+#
+# The shared Rd topics are named `psvr-fitted` / `psvr-residuals` rather than
+# hosted on one method: before API-redesign stage 5 they were hosted on
+# fitted.psvr_fit / residuals.psvr_fit, and deleting that class would otherwise
+# have promoted an arbitrary one of the four survivors to topic owner.
 #
 # Both read the length-N `y_train` / `fitted_values` vectors stored at fit
 # time; neither recomputes predictions, so neither rebuilds the N x N kernel
@@ -59,7 +64,7 @@
           paste0("%d of %d fitted value%s at or below the near-zero floor ",
                  "(%.3g); the\n  corresponding \"multiplicative\" residuals are ",
                  "inflated, infinite, or sign-flipped.\n  Returned unmodified; ",
-                 "see ?residuals.psvr_fit for the exclusion rule used for ",
+                 "see ?psvr-residuals for the exclusion rule used for ",
                  "pooled diagnostics."),
           sum(bad), length(bad), if (sum(bad) == 1L) " is" else "s are",
           .psvr_yhat_floor(y)),
@@ -100,14 +105,13 @@
 #'
 #' @param object A fitted object of class `"psvr_mape"`, `"psvr_mape_sym"`,
 #'   `"psvr_rmspe"` or `"psvr_rmspe_sym"`, from [psvr_mape()], [psvr_rmspe()],
-#'   or a parsnip fit unwrapped with [parsnip::extract_fit_engine()]. Also
-#'   accepts a `"psvr_fit"` object from the superseded [psvr()].
+#'   or a parsnip fit unwrapped with [parsnip::extract_fit_engine()].
 #' @param ... Ignored.
 #'
 #' @return Numeric vector of length `N` (the number of training
 #'   observations), in training-row order.
 #'
-#' @seealso [residuals.psvr_fit()]
+#' @seealso [residuals.psvr_mape()] and the other residuals methods
 #'
 #' @examples
 #' set.seed(1)
@@ -125,8 +129,8 @@
 #' head(fitted(parsnip::extract_fit_engine(pfit)))  # the fitted values
 #'
 #' @importFrom stats fitted residuals
-#' @export
-fitted.psvr_fit <- function(object, ...) .psvr_fitted(object)
+#' @name psvr-fitted
+NULL
 
 #' Extract training residuals from a psvr model
 #'
@@ -195,8 +199,7 @@ fitted.psvr_fit <- function(object, ...) .psvr_fitted(object)
 #'
 #' @param object A fitted object of class `"psvr_mape"`, `"psvr_mape_sym"`,
 #'   `"psvr_rmspe"` or `"psvr_rmspe_sym"`, from [psvr_mape()], [psvr_rmspe()],
-#'   or a parsnip fit unwrapped with [parsnip::extract_fit_engine()]. Also
-#'   accepts a `"psvr_fit"` object from the superseded [psvr()].
+#'   or a parsnip fit unwrapped with [parsnip::extract_fit_engine()].
 #' @param type One of `"response"` (default), `"percentage"`, or
 #'   `"multiplicative"`. See above; the denominators differ.
 #' @param ... Ignored.
@@ -204,7 +207,7 @@ fitted.psvr_fit <- function(object, ...) .psvr_fitted(object)
 #' @return Numeric vector of length `N` (the number of training
 #'   observations), in training-row order.
 #'
-#' @seealso [fitted.psvr_fit()]
+#' @seealso [fitted.psvr_mape()] and the other fitted methods
 #'
 #' @examples
 #' set.seed(1)
@@ -222,31 +225,26 @@ fitted.psvr_fit <- function(object, ...) .psvr_fitted(object)
 #' residuals(pfit)                                     # NULL
 #' head(residuals(parsnip::extract_fit_engine(pfit)))  # the residuals
 #'
-#' @export
-residuals.psvr_fit <- function(object,
-                               type = c("response", "percentage",
-                                        "multiplicative"),
-                               ...) {
-  .psvr_residuals(object, type)
-}
+#' @name psvr-residuals
+NULL
 
-#' @rdname fitted.psvr_fit
+#' @rdname psvr-fitted
 #' @export
 fitted.psvr_mape <- function(object, ...) .psvr_fitted(object)
 
-#' @rdname fitted.psvr_fit
+#' @rdname psvr-fitted
 #' @export
 fitted.psvr_mape_sym <- function(object, ...) .psvr_fitted(object)
 
-#' @rdname fitted.psvr_fit
+#' @rdname psvr-fitted
 #' @export
 fitted.psvr_rmspe <- function(object, ...) .psvr_fitted(object)
 
-#' @rdname fitted.psvr_fit
+#' @rdname psvr-fitted
 #' @export
 fitted.psvr_rmspe_sym <- function(object, ...) .psvr_fitted(object)
 
-#' @rdname residuals.psvr_fit
+#' @rdname psvr-residuals
 #' @export
 residuals.psvr_mape <- function(object,
                                 type = c("response", "percentage",
@@ -254,7 +252,7 @@ residuals.psvr_mape <- function(object,
   .psvr_residuals(object, type)
 }
 
-#' @rdname residuals.psvr_fit
+#' @rdname psvr-residuals
 #' @export
 residuals.psvr_mape_sym <- function(object,
                                     type = c("response", "percentage",
@@ -262,7 +260,7 @@ residuals.psvr_mape_sym <- function(object,
   .psvr_residuals(object, type)
 }
 
-#' @rdname residuals.psvr_fit
+#' @rdname psvr-residuals
 #' @export
 residuals.psvr_rmspe <- function(object,
                                  type = c("response", "percentage",
@@ -270,7 +268,7 @@ residuals.psvr_rmspe <- function(object,
   .psvr_residuals(object, type)
 }
 
-#' @rdname residuals.psvr_fit
+#' @rdname psvr-residuals
 #' @export
 residuals.psvr_rmspe_sym <- function(object,
                                      type = c("response", "percentage",

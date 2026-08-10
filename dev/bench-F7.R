@@ -50,7 +50,7 @@ make_fixture <- function(N, sdlog, seed = 2026L) {
 time_fit <- function(X, y, kernel, engine, block_k4_enabled, reps = REPS) {
   # Pre-warm (avoid first-call dispatch overhead in the timing).
   invisible(suppressWarnings(
-    psvr(X[1:20, ], y[1:20], loss = "mape", kernel = kernel,
+    psvr_mape(X[1:20, ], y[1:20], kernel = kernel,
          C = 10, eps = 5, engine = engine,
          block_k4_enabled = block_k4_enabled)
   ))
@@ -59,12 +59,12 @@ time_fit <- function(X, y, kernel, engine, block_k4_enabled, reps = REPS) {
     gc(reset = TRUE, verbose = FALSE)
     t0  <- Sys.time()
     fit <- suppressWarnings(
-      psvr(X, y, loss = "mape", kernel = kernel, C = 10, eps = 5,
+      psvr_mape(X, y, kernel = kernel, C = 10, eps = 5,
            engine = engine, block_k4_enabled = block_k4_enabled)
     )
     el  <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
-    m   <- fit$solver_meta
-    list(elapsed = el, iters = m$iters, converged = m$converged,
+    m   <- fit$block_k4
+    list(elapsed = el, iters = fit$iterations, converged = fit$converged,
          joint   = m$joint_updates,
          k2      = m$k2_fallbacks,
          dr      = m$decoupling_rate,
@@ -182,7 +182,7 @@ time_cv <- function(folds, kernel, warm_start, block_k4_enabled, engine,
     t0  <- Sys.time()
     res <- suppressWarnings(suppressMessages(
       psvr_cv(folds, X_var = paste0("x", 1:5), y_var = "y",
-              loss = "mape", kernel = kernel, C = 10, eps = 5,
+              kernel = kernel, C = 10, eps = 5,
               warm_start = warm_start,
               block_k4_enabled = block_k4_enabled,
               engine = engine)

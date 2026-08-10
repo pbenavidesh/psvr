@@ -1,3 +1,102 @@
+# psvr 0.0.2.9012 (development)
+
+## Breaking changes
+
+* **`psvr()` is removed and replaced by two functions, `psvr_mape()` and
+  `psvr_rmspe()`.** Seven of `psvr()`'s eleven named arguments were conditional
+  on `loss` — `C`/`eps`/`solver`/`tol`/`max_iter` against `gamma`/`precondition`.
+  That is the `lm()`/`glm()` pattern rather than a single algorithm with a mode
+  switch: the two families share no solver, no dual structure, no numerical
+  diagnostic and no hyperparameter search space. The tidymodels layer had
+  already made the same split.
+
+  ```r
+  # before                                    # after
+  psvr(X, y, loss = "mape",  C = 10, eps = 5) psvr_mape(X, y, C = 10, eps = 5)
+  psvr(X, y, loss = "rmspe", gamma = 100)     psvr_rmspe(X, y, gamma = 100)
+  ```
+
+  **The name `psvr()` is reserved, not recycled.** It is intended for a future
+  automatic-selection front end that picks a family for you — an `auto.arima()`
+  to these two `Arima()`s. It will not come back as a synonym for either.
+
+* **`sym` is now `sym_type`, taking `"none"` / `"even"` / `"odd"`.** This is the
+  vocabulary the parsnip specifications have used since 0.0.2.9010, so the two
+  public surfaces now agree; previously the same axis had three spellings
+  (`sym`, `sym_type`, and the internal `a`). `sym = 1L` partial-matches
+  `sym_type` and errors rather than being silently ignored.
+
+  ```r
+  psvr(X, y, loss = "mape", sym = +1L, ...)   # before
+  psvr_mape(X, y, sym_type = "even", ...)     # after
+  ```
+
+* **The returned class changes from `psvr_fit` to the four family classes** —
+  `psvr_mape`, `psvr_mape_sym`, `psvr_rmspe`, `psvr_rmspe_sym`. These are what
+  the tidymodels engine has always returned, so a direct fit and a fit unwrapped
+  with `parsnip::extract_fit_engine()` are now **the same object**; previously
+  they were two different classes with two different field vocabularies. The
+  `psvr_fit` class and its six methods are gone.
+
+  Field map for code that read a `psvr_fit`:
+
+  | was | now |
+  |---|---|
+  | `fit$hyperparameters$C` / `$eps` / `$gamma` / `$a` | `fit$C` / `$eps` / `$gamma` / `$a` |
+  | `fit$solver_meta$iters` | `fit$iterations` |
+  | `fit$solver_meta$converged` | `fit$converged` |
+  | `fit$solver_meta$precondition_applied` | `fit$precondition_applied` |
+  | `fit$solver_meta$spectral` | `fit$spectral` |
+  | `fit$solver_meta$joint_updates` (and the other four telemetry fields) | `fit$block_k4$joint_updates` |
+  | `fit$support_data` | `fit$X_sv` (MAPE) / `fit$X_train` (LS-SVR) |
+  | `fit$support_targets` | `fit$y_sv` (MAPE only) |
+  | `fit$n_sv` | `length(fit$beta)` |
+  | `fit$loss` / `fit$sym` | implied by `class(fit)` |
+  | `fit$solver_meta$backend` | *no equivalent* — no fit class records which solver ran |
+
+* **`coef()`'s component names now depend on the model family**: five for the
+  MAPE classes (`alpha`, `alpha_star`, `beta`, `b`, `support_data`), three for
+  the LS-SVR classes (`alpha`, `b`, `support_data`). LS-SVR has no `alpha_star`
+  and no pruned `beta`, and they are **not** materialised as `NULL`. This is a
+  decision rather than an oversight: each class is family-specific, so inventing
+  empty slots to make the two agree would add structure with nothing to inherit
+  it from. `$alpha_star` and `$beta` yield `NULL` on both, so every accessor
+  still agrees — only `names()` differs.
+
+* **`psvr_cv()` no longer accepts `loss`.** It forwards to `psvr_mape()`, which
+  has no such argument. The error says **not yet**, not never: `psvr_cv()` is
+  MAPE-only because only the MAPE fitter was ever wired to it, not because
+  LS-SVR resists cross-validation. LS-SVR cross-validates perfectly well — it
+  simply has no solver state to carry between folds, so use
+  `tune::tune_grid()` with parallel cold-start.
+
+* **`reg` is removed.** Its entire behaviour was to error on any non-`NULL`
+  value: a not-implemented placeholder rather than a validity guard. The
+  extended-Lagrangian penalty is still unimplemented; when it lands it will add
+  an argument rather than restore this one. `psvr_mape()` keeps a targeted guard
+  so the reason survives.
+
+## New features
+
+* **`summary()` now works on every psvr fit, including those obtained through
+  tidymodels.** It was registered on `psvr_fit` only, which no parsnip fit could
+  ever be, so it was unreachable through `extract_fit_engine()` and had no test
+  coverage at all — the same shape as the `coef()` defect fixed in 0.0.2.9011.
+  There are now four family-specific methods. Each is shorter than the one it
+  replaces: a method that knows its own family needs no `NULL`-skipping. The
+  MAPE methods report the SMO iteration count and convergence status in place
+  of the old constant `Solver:` line.
+
+## Documentation
+
+* `fitted()` and `residuals()` share the topics `?psvr-fitted` and
+  `?psvr-residuals`, renamed from `?fitted.psvr_fit` / `?residuals.psvr_fit`
+  so that deleting `psvr_fit` did not promote an arbitrary one of the four
+  remaining methods to topic owner.
+* Converted the Unicode mathematics in the four fitters' roxygen to Rd `\eqn{}`
+  markup. Raw Unicode in roxygen reaches `man/*.Rd` and breaks the PDF manual,
+  which CRAN builds. This is partial: the remaining occurrences are tracked.
+
 # psvr 0.0.2.9011 (development)
 
 ## Breaking changes
