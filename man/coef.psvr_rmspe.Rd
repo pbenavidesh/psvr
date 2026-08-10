@@ -16,9 +16,20 @@ A named list with components:
 \describe{
 \item{\code{alpha}}{Dual variables / Lagrange multipliers (length N).}
 \item{\code{b}}{Bias term.}
-\item{\code{X_sv}}{Training input matrix (all N observations).}
+\item{\code{support_data}}{Training input matrix (all N observations).}
 }
+The names match \code{\link[=coef.psvr_fit]{coef.psvr_fit()}} on a \code{loss = "rmspe"} fit. That method
+additionally carries \code{alpha_star} and \code{beta} as \code{NULL}, because one class
+serves both families; here they are simply absent, so \verb{$alpha_star} and
+\verb{$beta} are \code{NULL} either way.
 }
 \description{
 Extract coefficients from a psvr_rmspe model
 }
+\section{Renamed in 0.0.2.9011}{
+
+\code{support_data} was named \code{X_sv}. LS-SVR performs no pruning — every training
+point contributes to \code{f(x)} — so there are no support vectors to name: it was
+an epsilon-SVR name on an LS-SVR value. The value is unchanged.
+}
+

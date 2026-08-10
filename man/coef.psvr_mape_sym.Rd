@@ -12,13 +12,23 @@
 \item{...}{Ignored.}
 }
 \value{
-A named list with components:
+A named list with the same component names and meanings as
+\code{\link[=coef.psvr_fit]{coef.psvr_fit()}} on a \code{loss = "mape"} fit, so the two entry points agree:
 \describe{
-\item{\code{alpha}}{Dual variable differences \verb{βk = αk − αk*} for support vectors.}
+\item{\code{alpha}, \code{alpha_star}}{The length-\code{N} pre-pruning dual variables
+\code{αk} and \verb{αk*}.}
+\item{\code{beta}}{The pruned dual differences \verb{βk = αk − αk*} over the
+support-vector indices (length \code{n_sv}); this is what \code{predict()} uses.}
 \item{\code{b}}{Bias term.}
-\item{\code{X_sv}}{Support vector input matrix.}
+\item{\code{support_data}}{Support vector input matrix.}
 }
 }
 \description{
 Extract coefficients from a psvr_mape_sym model
 }
+\section{Renamed in 0.0.2.9011}{
+
+See \code{\link[=coef.psvr_mape]{coef.psvr_mape()}} — the same rename, for the same reason, applied to
+both MAPE classes together.
+}
+

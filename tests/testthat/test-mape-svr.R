@@ -145,11 +145,20 @@ test_that("print.psvr_mape produces output and returns object invisibly", {
 
 # ── coef() ───────────────────────────────────────────────────────────────────
 
-test_that("coef.psvr_mape returns named list with alpha, b, X_sv", {
+test_that("coef.psvr_mape names match coef.psvr_fit, alpha is the length-N dual", {
+  # NOT a regression: `alpha` used to hold the PRUNED beta here (length n_sv)
+  # while meaning the length-N dual on a psvr() fit -- one generic, one name,
+  # two vectors. `alpha` is now the length-N dual and `beta` is separate, so
+  # both entry points agree. `X_sv` became `support_data` in the same change.
   fit <- .q_mape_svr(X_tr, y_tr, kernel = K, C = 10, eps = 5)
   co  <- coef(fit)
-  expect_named(co, c("alpha", "b", "X_sv"))
-  expect_identical(co$alpha, fit$beta)
-  expect_identical(co$b,     fit$b)
-  expect_identical(co$X_sv,  fit$X_sv)
+  expect_named(co, c("alpha", "alpha_star", "beta", "b", "support_data"))
+  expect_identical(co$alpha,        fit$alpha)
+  expect_identical(co$alpha_star,   fit$alpha_star)
+  expect_identical(co$beta,         fit$beta)
+  expect_identical(co$b,            fit$b)
+  expect_identical(co$support_data, fit$X_sv)
+  # The distinction the old name collapsed.
+  expect_length(co$alpha, nrow(X_tr))
+  expect_length(co$beta,  length(fit$beta))
 })

@@ -113,11 +113,12 @@ test_that("print.psvr_rmspe_sym produces output and returns object invisibly", {
 
 # ── coef() ───────────────────────────────────────────────────────────────────
 
-test_that("coef.psvr_rmspe_sym returns named list with alpha, b, X_sv", {
+test_that("coef.psvr_rmspe_sym returns named list with alpha, b, support_data", {
+  # NOT a regression -- see test-rmspe-lssvr.R for the rationale. Value unchanged.
   fit <- .q_rmspe_sym_lssvr(X_tr, y_tr, kernel = K, gamma = 1, a = 1)
   co  <- coef(fit)
-  expect_named(co, c("alpha", "b", "X_sv"))
-  expect_identical(co$alpha, fit$alpha)
-  expect_identical(co$b,     fit$b)
-  expect_identical(co$X_sv,  fit$X_train)
+  expect_named(co, c("alpha", "b", "support_data"))
+  expect_identical(co$alpha,        fit$alpha)
+  expect_identical(co$b,            fit$b)
+  expect_identical(co$support_data, fit$X_train)
 })

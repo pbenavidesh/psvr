@@ -139,10 +139,15 @@ print.psvr_rmspe_sym <- function(x, ...) {
 #'   \describe{
 #'     \item{`alpha`}{Dual variables / Lagrange multipliers (length N).}
 #'     \item{`b`}{Bias term.}
-#'     \item{`X_sv`}{Training input matrix (all N observations).}
+#'     \item{`support_data`}{Training input matrix (all N observations).}
 #'   }
+#'   The names match [coef.psvr_fit()] on a `loss = "rmspe"` fit.
+#'
+#' @section Renamed in 0.0.2.9011:
+#' See [coef.psvr_rmspe()] — the same rename, for the same reason, applied to
+#' both LS-SVR classes together.
 #'
 #' @export
 coef.psvr_rmspe_sym <- function(object, ...) {
-  list(alpha = object$alpha, b = object$b, X_sv = object$X_train)
+  list(alpha = object$alpha, b = object$b, support_data = object$X_train)
 }

@@ -165,9 +165,11 @@ print(psvr_fit)
 
 ```{r engine-coef}
 cf <- coef(psvr_fit)
-# alpha: N dual variables; weight each training point in f(x) = sum_k alpha_k K(x_k, x) + b
-# b:     bias / intercept term
-# X_sv:  all N training inputs (LS-SVR has no sparsity — every training point contributes)
+# alpha:        N dual variables; weight each training point in
+#               f(x) = sum_k alpha_k K(x_k, x) + b
+# b:            bias / intercept term
+# support_data: all N training inputs (LS-SVR has no sparsity — every training
+#               point contributes, so despite the name this is not a subset)
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf$b, min(cf$alpha), max(cf$alpha)))
 ```

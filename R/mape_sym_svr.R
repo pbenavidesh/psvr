@@ -269,14 +269,26 @@ print.psvr_mape_sym <- function(x, ...) {
 #' @param object An object of class `"psvr_mape_sym"`.
 #' @param ... Ignored.
 #'
-#' @return A named list with components:
+#' @return A named list with the same component names and meanings as
+#'   [coef.psvr_fit()] on a `loss = "mape"` fit, so the two entry points agree:
 #'   \describe{
-#'     \item{`alpha`}{Dual variable differences `βk = αk − αk*` for support vectors.}
+#'     \item{`alpha`, `alpha_star`}{The length-`N` pre-pruning dual variables
+#'       `αk` and `αk*`.}
+#'     \item{`beta`}{The pruned dual differences `βk = αk − αk*` over the
+#'       support-vector indices (length `n_sv`); this is what `predict()` uses.}
 #'     \item{`b`}{Bias term.}
-#'     \item{`X_sv`}{Support vector input matrix.}
+#'     \item{`support_data`}{Support vector input matrix.}
 #'   }
+#'
+#' @section Renamed in 0.0.2.9011:
+#' See [coef.psvr_mape()] — the same rename, for the same reason, applied to
+#' both MAPE classes together.
 #'
 #' @export
 coef.psvr_mape_sym <- function(object, ...) {
-  list(alpha = object$beta, b = object$b, X_sv = object$X_sv)
+  list(alpha        = object$alpha,        # length N, pre-pruning
+       alpha_star   = object$alpha_star,   # length N, pre-pruning
+       beta         = object$beta,         # length n_sv, used by predict()
+       b            = object$b,
+       support_data = object$X_sv)
 }

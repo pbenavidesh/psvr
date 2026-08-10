@@ -16,9 +16,16 @@ A named list with components:
 \describe{
 \item{\code{alpha}}{Dual variables / Lagrange multipliers (length N).}
 \item{\code{b}}{Bias term.}
-\item{\code{X_sv}}{Training input matrix (all N observations).}
+\item{\code{support_data}}{Training input matrix (all N observations).}
 }
+The names match \code{\link[=coef.psvr_fit]{coef.psvr_fit()}} on a \code{loss = "rmspe"} fit.
 }
 \description{
 Extract coefficients from a psvr_rmspe_sym model
 }
+\section{Renamed in 0.0.2.9011}{
+
+See \code{\link[=coef.psvr_rmspe]{coef.psvr_rmspe()}} — the same rename, for the same reason, applied to
+both LS-SVR classes together.
+}
+

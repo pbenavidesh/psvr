@@ -107,11 +107,15 @@ test_that("print.psvr_rmspe produces output and returns object invisibly", {
 
 # ── coef() ───────────────────────────────────────────────────────────────────
 
-test_that("coef.psvr_rmspe returns named list with alpha, b, X_sv", {
+test_that("coef.psvr_rmspe returns named list with alpha, b, support_data", {
+  # NOT a regression: the third element was named `X_sv`, an epsilon-SVR name on
+  # an LS-SVR value -- LS-SVR does no pruning, so there are no support vectors.
+  # The value is unchanged; only the name moved, to match coef.psvr_fit.
   fit <- .q_rmspe_lssvr(X_tr, y_tr, kernel = K, gamma = 1)
   co  <- coef(fit)
-  expect_named(co, c("alpha", "b", "X_sv"))
-  expect_identical(co$alpha, fit$alpha)
-  expect_identical(co$b,     fit$b)
-  expect_identical(co$X_sv,  fit$X_train)
+  expect_named(co, c("alpha", "b", "support_data"))
+  expect_identical(co$alpha,        fit$alpha)
+  expect_identical(co$b,            fit$b)
+  expect_identical(co$support_data, fit$X_train)
+  expect_identical(nrow(co$support_data), nrow(X_tr))   # all N, not a subset
 })

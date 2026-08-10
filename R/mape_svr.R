@@ -235,14 +235,30 @@ print.psvr_mape <- function(x, ...) {
 #' @param object An object of class `"psvr_mape"`.
 #' @param ... Ignored.
 #'
-#' @return A named list with components:
+#' @return A named list with the same component names and meanings as
+#'   [coef.psvr_fit()] on a `loss = "mape"` fit, so the two entry points agree:
 #'   \describe{
-#'     \item{`alpha`}{Dual variable differences `βk = αk − αk*` for support vectors.}
+#'     \item{`alpha`, `alpha_star`}{The length-`N` pre-pruning dual variables
+#'       `αk` and `αk*`.}
+#'     \item{`beta`}{The pruned dual differences `βk = αk − αk*` over the
+#'       support-vector indices (length `n_sv`); this is what `predict()` uses.}
 #'     \item{`b`}{Bias term.}
-#'     \item{`X_sv`}{Support vector input matrix.}
+#'     \item{`support_data`}{Support vector input matrix.}
 #'   }
+#'
+#' @section Renamed in 0.0.2.9011:
+#' `alpha` previously held the pruned `β` and `support_data` was named `X_sv`,
+#' which made `coef(fit)$alpha` mean the length-`n_sv` `β` here but the
+#' length-`N` dual `α` on a [psvr()] fit — the same generic returning two
+#' different vectors under one name, silently, depending on entry point. The
+#' `β`-under-`alpha` meaning is the one 0.0.2.9004 moved away from on the object
+#' itself; this aligns `coef()` with it.
 #'
 #' @export
 coef.psvr_mape <- function(object, ...) {
-  list(alpha = object$beta, b = object$b, X_sv = object$X_sv)
+  list(alpha        = object$alpha,        # length N, pre-pruning
+       alpha_star   = object$alpha_star,   # length N, pre-pruning
+       beta         = object$beta,         # length n_sv, used by predict()
+       b            = object$b,
+       support_data = object$X_sv)
 }
