@@ -50,25 +50,19 @@ reference:
     contents:
       - psvr_cv
 
-  - title: "tidymodels / parsnip interface — ε-SVR with MAPE (Model 1)"
-    desc: "Parsnip model specifications for Model 1 (one per kernel type)."
+  - title: "tidymodels / parsnip interface — ε-SVR with MAPE (Models 1 & 2)"
+    desc: >
+      Parsnip model specifications for the ε-SVR family (one per kernel type).
+      `sym_type = "none"` fits Model 1; `"even"` / `"odd"` fit Model 2.
     contents:
       - psvr_mape_specs
 
-  - title: "tidymodels / parsnip interface — Symmetric ε-SVR with MAPE (Model 2)"
-    desc: "Parsnip model specifications for Model 2 (one per kernel type)."
-    contents:
-      - psvr_mape_sym_specs
-
-  - title: "tidymodels / parsnip interface — LS-SVR with RMSPE (Model 3)"
-    desc: "Parsnip model specifications for Model 3 (one per kernel type)."
+  - title: "tidymodels / parsnip interface — LS-SVR with RMSPE (Models 3 & 4)"
+    desc: >
+      Parsnip model specifications for the LS-SVR family (one per kernel type).
+      `sym_type = "none"` fits Model 3; `"even"` / `"odd"` fit Model 4.
     contents:
       - psvr_rmspe_specs
-
-  - title: "tidymodels / parsnip interface — Symmetric LS-SVR with RMSPE (Model 4)"
-    desc: "Parsnip model specifications for Model 4 (one per kernel type)."
-    contents:
-      - psvr_rmspe_sym_specs
 
   - title: "Hyperparameter utilities"
     desc: "Custom dials parameters and tuning helpers for psvr models."

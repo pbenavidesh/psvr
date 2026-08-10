@@ -67,7 +67,8 @@ The RBF kernel and polynomial kernels of even degree satisfy both.
   `summary()`.
 - **`psvr_cv()`** (`R/psvr_cv.R`) — fold-wise fitting for `loss = "mape"` with
   warm-start carryover.
-- **12 parsnip specs** (`psvr_mape_rbf()` etc.) plus dials helpers — frozen public API.
+- **6 parsnip specs** (`psvr_mape_rbf()` etc.) plus dials helpers. Symmetry is the
+  `sym_type` argument (`"none"` / `"even"` / `"odd"`), not a separate spec.
 - **Deprecated wrappers** `mape_svr()`, `mape_sym_svr()`, `rmspe_lssvr()`,
   `rmspe_sym_lssvr()` in `R/deprecated.R` emit `.Deprecated("psvr")`, return the
   legacy classes, and are scheduled for removal in v0.2.0+.

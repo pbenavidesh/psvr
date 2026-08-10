@@ -1,12 +1,22 @@
-## Stage-1 tests for the `sym_type` model argument on the six non-symmetric
-## parsnip specs.
+## Tests for the `sym_type` model argument on the six parsnip specs.
 ##
-## THIS FILE IS DELETED IN STAGE 2 BY DESIGN. Its equivalence tests exist only
-## while the old `_sym_` specs and the new `sym_type` argument coexist: they
-## prove, BEFORE stage 2 repoints the twelve goldens, that the new argument
-## reproduces the old specs' numerics exactly. Once the `_sym_` specs are gone
-## there is nothing left to compare against, and the repointed goldens in
-## test-bit-identical.R carry the guarantee instead.
+## HISTORY, because it explains what is missing. This file was added in stage 1
+## of the shape-B API redesign with four groups. Group (a) held six equivalence
+## tests asserting that
+##     psvr_<loss>_<kernel>(..., sym_type = "even")
+##     psvr_<loss>_sym_<kernel>(...)                  [a = 1L]
+## produced identical predictions at tolerance = 0. All six passed. They were
+## REMOVED IN STAGE 2 together with the six `psvr_*_sym_*` specs -- once the old
+## specs are gone there is nothing left to compare against, and the repointed
+## goldens in test-bit-identical.R carry the guarantee instead. Recover the
+## deleted group with:
+##     git show 9513cc6:tests/testthat/test-sym-type-arg.R
+##
+## Groups (b), (c) and (d) below are PERMANENT. They cover code that survived
+## stage 2 untouched, and each is the only coverage of what it tests:
+##   (b) the executable proof that PSVR_STATUS.md section 9.2 is closed;
+##   (c) .sym_type_to_a(), added in stage 1 to close a silent `else -1L`;
+##   (d) the NULL-default mechanism the whole redesign rests on.
 
 library(parsnip)
 
@@ -47,97 +57,6 @@ fit_and_predict <- function(spec, fx) {
   fit_obj <- parsnip::fit_xy(spec, x = fx$X, y = fx$y)
   predict(fit_obj, new_data = fx$df_test)$.pred
 }
-
-
-# ---- (a) Six equivalence tests -------------------------------------------
-# new spec + sym_type = "even"  ==  old _sym_ spec at a = 1L, exactly.
-#
-# The MAPE poly and linear pairs do not converge within max_iter (see the
-# "Known limitation" note in CLAUDE.md: the SMO solver stalls on linear and
-# polynomial kernels with MAPE loss). Both sides stall at the SAME endpoint,
-# so tolerance = 0 remains the right assertion -- it proves the two code paths
-# are one path, which is exactly the claim. suppressWarnings() swallows the
-# expected "did not converge" notice.
-
-test_that("mape_rbf sym_type='even' == psvr_mape_sym_rbf", {
-  skip_on_cran()
-  fx  <- make_fixture()
-  new <- fit_and_predict(
-    psvr_mape_rbf(cost = HP$C, svm_margin = HP$eps,
-                  rbf_sigma = HP$rbf_sigma, sym_type = "even") |>
-      set_engine("psvr"), fx)
-  old <- fit_and_predict(
-    psvr_mape_sym_rbf(cost = HP$C, svm_margin = HP$eps,
-                      rbf_sigma = HP$rbf_sigma, sym_type = "even") |>
-      set_engine("psvr"), fx)
-  expect_equal(new, old, tolerance = 0)
-})
-
-test_that("mape_poly sym_type='even' == psvr_mape_sym_poly", {
-  skip_on_cran()
-  fx  <- make_fixture()
-  new <- suppressWarnings(fit_and_predict(
-    psvr_mape_poly(cost = HP$C, svm_margin = HP$eps, degree = HP$degree,
-                   scale_factor = HP$scale_factor, sym_type = "even") |>
-      set_engine("psvr"), fx))
-  old <- suppressWarnings(fit_and_predict(
-    psvr_mape_sym_poly(cost = HP$C, svm_margin = HP$eps, degree = HP$degree,
-                       scale_factor = HP$scale_factor) |>
-      set_engine("psvr", a = HP$a), fx))
-  expect_equal(new, old, tolerance = 0)
-})
-
-test_that("mape_linear sym_type='even' == psvr_mape_sym_linear", {
-  skip_on_cran()
-  fx  <- make_fixture()
-  new <- suppressWarnings(fit_and_predict(
-    psvr_mape_linear(cost = HP$C, svm_margin = HP$eps, sym_type = "even") |>
-      set_engine("psvr"), fx))
-  old <- suppressWarnings(fit_and_predict(
-    psvr_mape_sym_linear(cost = HP$C, svm_margin = HP$eps) |>
-      set_engine("psvr", a = HP$a), fx))
-  expect_equal(new, old, tolerance = 0)
-})
-
-test_that("rmspe_rbf sym_type='even' == psvr_rmspe_sym_rbf", {
-  skip_on_cran()
-  fx  <- make_fixture()
-  new <- fit_and_predict(
-    psvr_rmspe_rbf(cost = HP$gamma, rbf_sigma = HP$rbf_sigma,
-                   sym_type = "even") |>
-      set_engine("psvr"), fx)
-  old <- fit_and_predict(
-    psvr_rmspe_sym_rbf(cost = HP$gamma, rbf_sigma = HP$rbf_sigma,
-                       sym_type = "even") |>
-      set_engine("psvr"), fx)
-  expect_equal(new, old, tolerance = 0)
-})
-
-test_that("rmspe_poly sym_type='even' == psvr_rmspe_sym_poly", {
-  skip_on_cran()
-  fx  <- make_fixture()
-  new <- fit_and_predict(
-    psvr_rmspe_poly(cost = HP$gamma, degree = HP$degree,
-                    scale_factor = HP$scale_factor, sym_type = "even") |>
-      set_engine("psvr"), fx)
-  old <- fit_and_predict(
-    psvr_rmspe_sym_poly(cost = HP$gamma, degree = HP$degree,
-                        scale_factor = HP$scale_factor) |>
-      set_engine("psvr", a = HP$a), fx)
-  expect_equal(new, old, tolerance = 0)
-})
-
-test_that("rmspe_linear sym_type='even' == psvr_rmspe_sym_linear", {
-  skip_on_cran()
-  fx  <- make_fixture()
-  new <- fit_and_predict(
-    psvr_rmspe_linear(cost = HP$gamma, sym_type = "even") |>
-      set_engine("psvr"), fx)
-  old <- fit_and_predict(
-    psvr_rmspe_sym_linear(cost = HP$gamma) |>
-      set_engine("psvr", a = HP$a), fx)
-  expect_equal(new, old, tolerance = 0)
-})
 
 
 # ---- (b) sym_type = tune() resolves on ALL SIX survivors ------------------
@@ -215,6 +134,29 @@ test_that("sym_type_param() validates its values argument", {
                   c("even", "odd"))
   expect_error(sym_type_param(values = c("even", "od")))
   expect_error(sym_type_param(values = "symmetric"))
+})
+
+# Pins the migration failure mode for anyone moving off the deleted `_sym_`
+# specs, which took symmetry as the ENGINE argument `a`. Measured behaviour,
+# not assumed: parsnip:::check_eng_args strips only args colliding with
+# `protect` (x, y) or the renamed originals (C, eps, gamma), so `a` is NOT
+# filtered -- set_engine() accepts it and translate() carries it into
+# fit$args. The failure is therefore DEFERRED to fit time, where R raises
+# "unused argument" because no surviving wrapper has a `...` formal.
+#
+# This is the guard that keeps the migration out of the shape-A failure class
+# (PSVR_STATUS.md section 9.1): a silently-ignored `a` would mean fitting a
+# NON-symmetric model while believing otherwise. If this test ever starts
+# passing at the translate() step but not erroring at fit, that has happened.
+test_that("set_engine('psvr', a = ...) errors at fit on a survivor spec", {
+  skip_on_cran()
+  fx   <- make_fixture()
+  spec <- psvr_mape_poly(cost = HP$C, svm_margin = HP$eps, degree = HP$degree,
+                         scale_factor = HP$scale_factor) |>
+            set_engine("psvr", a = 1L)
+  # Documented, not desired: parsnip accepts `a` this far.
+  expect_no_error(parsnip::translate(spec))
+  expect_error(parsnip::fit_xy(spec, x = fx$X, y = fx$y), "unused argument")
 })
 
 

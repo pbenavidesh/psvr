@@ -14,6 +14,35 @@
 
 ## Breaking changes
 
+* **The six symmetric parsnip specs are REMOVED** — `psvr_mape_sym_rbf()`,
+  `psvr_mape_sym_poly()`, `psvr_mape_sym_linear()`, `psvr_rmspe_sym_rbf()`,
+  `psvr_rmspe_sym_poly()`, `psvr_rmspe_sym_linear()` — along with their
+  `update()` methods and engine fit wrappers. Symmetry is now the `sym_type`
+  argument of the corresponding non-symmetric spec (added in this same
+  version):
+
+  ```r
+  psvr_mape_sym_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1)
+  # becomes
+  psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1, sym_type = "even")
+  ```
+
+  For the polynomial and linear symmetric specs the change is larger than a
+  rename: they took symmetry as the **engine** argument `a`, which `tune()`
+  could never reach. It is now a tunable **model** argument, so
+
+  ```r
+  psvr_mape_sym_poly(...) |> set_engine("psvr", a = 1L)
+  # becomes
+  psvr_mape_poly(..., sym_type = "even") |> set_engine("psvr")
+  ```
+
+  `set_engine("psvr", a = ...)` no longer works on any psvr spec, but note
+  **where** it fails: `set_engine()` still accepts it and `translate()` still
+  carries it, so the error arrives only at `fit()` time, as R's generic
+  `unused argument (a = ~1)` — which does not mention `sym_type`. Replace
+  `a = 1L` with `sym_type = "even"` and `a = -1L` with `sym_type = "odd"`.
+
 * **`sym_type_param()` now offers three levels** — `c("none", "even", "odd")` —
   where it previously offered two. Code that tunes `sym_type` on
   `psvr_mape_sym_rbf()` or `psvr_rmspe_sym_rbf()` will search the additional

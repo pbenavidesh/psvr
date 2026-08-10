@@ -39,22 +39,26 @@ test_that("psvr_mape_linear smoke", {
           set_engine("psvr"))
 })
 
-# ---- Model 2: symmetric epsilon-SVR with MAPE ----
+# ---- Model 2: symmetric epsilon-SVR with MAPE (via sym_type = "even") ----
+# These exercise .fit_mape_sym() through the parsnip layer — a different fitter,
+# a different kernel build (sym_kernel_matrix()) and the Algorithm-2 spectral
+# shift, none of which the sym_type-unset tests above touch.
 
-test_that("psvr_mape_sym_rbf smoke", {
-  smoke(psvr_mape_sym_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1, sym_type = "even") |>
+test_that("psvr_mape_rbf sym_type='even' smoke", {
+  smoke(psvr_mape_rbf(cost = 10, svm_margin = 1, rbf_sigma = 1,
+                      sym_type = "even") |>
           set_engine("psvr"))
 })
 
-test_that("psvr_mape_sym_poly smoke", {
-  smoke(psvr_mape_sym_poly(cost = 10, svm_margin = 1, degree = 2,
-                           scale_factor = 1) |>
-          set_engine("psvr", a = 1L))
+test_that("psvr_mape_poly sym_type='even' smoke", {
+  smoke(psvr_mape_poly(cost = 10, svm_margin = 1, degree = 2,
+                       scale_factor = 1, sym_type = "even") |>
+          set_engine("psvr"))
 })
 
-test_that("psvr_mape_sym_linear smoke", {
-  smoke(psvr_mape_sym_linear(cost = 10, svm_margin = 1) |>
-          set_engine("psvr", a = 1L))
+test_that("psvr_mape_linear sym_type='even' smoke", {
+  smoke(psvr_mape_linear(cost = 10, svm_margin = 1, sym_type = "even") |>
+          set_engine("psvr"))
 })
 
 # ---- Model 3: LS-SVR with RMSPE ----
@@ -74,21 +78,23 @@ test_that("psvr_rmspe_linear smoke", {
           set_engine("psvr"))
 })
 
-# ---- Model 4: symmetric LS-SVR with RMSPE ----
+# ---- Model 4: symmetric LS-SVR with RMSPE (via sym_type = "even") ----
+# Exercise .fit_rmspe_sym() through the parsnip layer; see the Model 2 note.
 
-test_that("psvr_rmspe_sym_rbf smoke", {
-  smoke(psvr_rmspe_sym_rbf(cost = 1000, rbf_sigma = 1, sym_type = "even") |>
+test_that("psvr_rmspe_rbf sym_type='even' smoke", {
+  smoke(psvr_rmspe_rbf(cost = 1000, rbf_sigma = 1, sym_type = "even") |>
           set_engine("psvr"))
 })
 
-test_that("psvr_rmspe_sym_poly smoke", {
-  smoke(psvr_rmspe_sym_poly(cost = 1000, degree = 2, scale_factor = 1) |>
-          set_engine("psvr", a = 1L))
+test_that("psvr_rmspe_poly sym_type='even' smoke", {
+  smoke(psvr_rmspe_poly(cost = 1000, degree = 2, scale_factor = 1,
+                        sym_type = "even") |>
+          set_engine("psvr"))
 })
 
-test_that("psvr_rmspe_sym_linear smoke", {
-  smoke(psvr_rmspe_sym_linear(cost = 1000) |>
-          set_engine("psvr", a = 1L))
+test_that("psvr_rmspe_linear sym_type='even' smoke", {
+  smoke(psvr_rmspe_linear(cost = 1000, sym_type = "even") |>
+          set_engine("psvr"))
 })
 
 # ---- precondition engine-arg forwarding (RMSPE specs) -------------------
@@ -145,18 +151,23 @@ test_that("psvr_rmspe_linear forwards precondition='never'", {
   expect_false(fit_obj$fit$precondition_applied)
 })
 
-# sym_rbf
+# sym_rbf (now the survivor spec with sym_type = "even")
+# NOTE: these two are the ONLY tests that pass `precondition` through the
+# symmetric branch of a survivor wrapper, i.e.
+# psvr_rmspe_rbf_fit(..., sym_type = "even", precondition = ...) ->
+# .fit_rmspe_sym(..., precondition = ...). If they fail, suspect the wrapper's
+# `else` branch before suspecting the test.
 
 test_that("psvr_rmspe_sym_rbf forwards precondition='always'", {
-  fit_obj <- fit_p(psvr_rmspe_sym_rbf(cost = 1, rbf_sigma = 1,
-                                      sym_type = "even") |>
+  fit_obj <- fit_p(psvr_rmspe_rbf(cost = 1, rbf_sigma = 1,
+                                  sym_type = "even") |>
                      set_engine("psvr", precondition = "always"))
   expect_true(fit_obj$fit$precondition_applied)
 })
 
 test_that("psvr_rmspe_sym_rbf forwards precondition='never'", {
-  fit_obj <- fit_p(psvr_rmspe_sym_rbf(cost = 1, rbf_sigma = 1,
-                                      sym_type = "even") |>
+  fit_obj <- fit_p(psvr_rmspe_rbf(cost = 1, rbf_sigma = 1,
+                                  sym_type = "even") |>
                      set_engine("psvr", precondition = "never"))
   expect_false(fit_obj$fit$precondition_applied)
 })
