@@ -40,8 +40,11 @@ psvr_mape_linear(
 \item{engine}{Only \code{"psvr"} is available.}
 
 \item{cost}{Regularization parameter \code{C > 0}.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
-Mapped to \code{\link[=cost_psvr]{cost_psvr()}} with range \verb{[-2, 10]} on the log2 scale — wider
-than \code{dials::cost()} to cover the larger values needed by LS-SVR models.}
+Mapped to \code{\link[=cost_psvr]{cost_psvr()}}, whose default range is \verb{[-2, 10]} on the log2
+scale (about 0.25 to 1024).  That range is adequate here, where typical
+\eqn{\epsilon}{epsilon}-SVR optima lie in [10, 100].  The LS-SVR specs
+(\link{psvr_rmspe_specs}) map \code{cost} to \eqn{\Gamma}{Gamma} and need a much
+wider range; see there.}
 
 \item{margin}{Epsilon tube half-width \eqn{\epsilon \ge 0}{epsilon >= 0} expressed
 as a percentage
@@ -51,8 +54,13 @@ Named to match \code{parsnip::svm_rbf()}; note the units differ from
 \code{dials::svm_margin()}, which is absolute rather than percentage.}
 
 \item{rbf_sigma}{RBF bandwidth \eqn{\sigma > 0}{sigma > 0}.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
-Mapped to \code{\link[=rbf_sigma_psvr]{rbf_sigma_psvr()}}; the search range auto-finalizes using the
-median-distance heuristic when training data are available.
+Mapped to \code{\link[=rbf_sigma_psvr]{rbf_sigma_psvr()}}, whose default range \verb{[-3, 1]} on the log10
+scale is a fixed, conservative fallback.  \strong{The range does not finalize
+automatically from the training data.}  \code{\link[=rbf_sigma_psvr]{rbf_sigma_psvr()}} sets
+\code{finalize = NULL}, so \code{dials::finalize()} leaves it untouched.  To centre
+the range on the data, pass \code{\link[=rbf_sigma_psvr_data]{rbf_sigma_psvr_data()}} computed on the
+\strong{preprocessed} predictors explicitly — via \code{update()} on the extracted
+parameter set, or via \code{\link[=psvr_option_add]{psvr_option_add()}} for a workflow set.
 (RBF specs only.)}
 
 \item{sym_type}{Symmetry type: \code{"none"} (default) fits the non-symmetric

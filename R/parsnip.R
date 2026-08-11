@@ -210,8 +210,11 @@ psvr_rmspe_linear_fit <- function(x, y, gamma, sym_type = "none",
 #' @param mode   Only `"regression"` is supported.
 #' @param engine Only `"psvr"` is available.
 #' @param cost   Regularization parameter `C > 0`.  Use [tune()] to optimize.
-#'   Mapped to [cost_psvr()] with range `[-2, 10]` on the log2 scale — wider
-#'   than `dials::cost()` to cover the larger values needed by LS-SVR models.
+#'   Mapped to [cost_psvr()], whose default range is `[-2, 10]` on the log2
+#'   scale (about 0.25 to 1024).  That range is adequate here, where typical
+#'   \eqn{\epsilon}{epsilon}-SVR optima lie in \[10, 100\].  The LS-SVR specs
+#'   ([psvr_rmspe_specs]) map `cost` to \eqn{\Gamma}{Gamma} and need a much
+#'   wider range; see there.
 #' @param margin Epsilon tube half-width \eqn{\epsilon \ge 0}{epsilon >= 0} expressed
 #'   as a percentage
 #'   of each target value.  Use [tune()] to optimize.  Mapped to
@@ -219,8 +222,13 @@ psvr_rmspe_linear_fit <- function(x, y, gamma, sym_type = "none",
 #'   Named to match `parsnip::svm_rbf()`; note the units differ from
 #'   `dials::svm_margin()`, which is absolute rather than percentage.
 #' @param rbf_sigma RBF bandwidth \eqn{\sigma > 0}{sigma > 0}.  Use [tune()] to optimize.
-#'   Mapped to [rbf_sigma_psvr()]; the search range auto-finalizes using the
-#'   median-distance heuristic when training data are available.
+#'   Mapped to [rbf_sigma_psvr()], whose default range `[-3, 1]` on the log10
+#'   scale is a fixed, conservative fallback.  **The range does not finalize
+#'   automatically from the training data.**  [rbf_sigma_psvr()] sets
+#'   `finalize = NULL`, so `dials::finalize()` leaves it untouched.  To centre
+#'   the range on the data, pass [rbf_sigma_psvr_data()] computed on the
+#'   **preprocessed** predictors explicitly — via `update()` on the extracted
+#'   parameter set, or via [psvr_option_add()] for a workflow set.
 #'   (RBF specs only.)
 #' @param degree Polynomial degree \eqn{\ge 1}{>= 1}.  Use [tune()] to optimize.
 #'   (Polynomial specs only.)
@@ -331,11 +339,25 @@ psvr_mape_linear <- function(mode = "regression", engine = "psvr",
 #' @param mode   Only `"regression"` is supported.
 #' @param engine Only `"psvr"` is available.
 #' @param cost   Regularization parameter \eqn{\Gamma > 0}{Gamma > 0}.  Use [tune()] to optimize.
-#'   Mapped to [cost_psvr()] with range `[-2, 10]` on the log2 scale — wider
-#'   than `dials::cost()` to cover the larger values needed by LS-SVR models.
+#'   Mapped to [cost_psvr()], whose default range `[-2, 10]` on the log2 scale
+#'   (\eqn{\Gamma \le 1024}{Gamma <= 1024}) is the
+#'   \eqn{\epsilon}{epsilon}-SVR range and is **too narrow for LS-SVR**.  On
+#'   Boston Housing the tuned optimum is around
+#'   \eqn{1.1 \times 10^5}{1.1 x 10^5} — roughly 100 times that ceiling — so a
+#'   grid over the default is boundary-trapped.  Pass [cost_psvr_ls_data()]
+#'   built from the training outcome explicitly, via `update()` on the
+#'   extracted parameter set or via [psvr_option_add_cost_ls()] for a workflow
+#'   set.  This **cannot** be automated: `tune` finalizes parameters from the
+#'   molded **predictors** only and never passes the outcome to
+#'   `dials::finalize()`, so no `finalize` function on `cost` could compute it.
 #' @param rbf_sigma RBF bandwidth \eqn{\sigma > 0}{sigma > 0}.  Use [tune()] to optimize.
-#'   Mapped to [rbf_sigma_psvr()]; the search range auto-finalizes using the
-#'   median-distance heuristic when training data are available.
+#'   Mapped to [rbf_sigma_psvr()], whose default range `[-3, 1]` on the log10
+#'   scale is a fixed, conservative fallback.  **The range does not finalize
+#'   automatically from the training data.**  [rbf_sigma_psvr()] sets
+#'   `finalize = NULL`, so `dials::finalize()` leaves it untouched.  To centre
+#'   the range on the data, pass [rbf_sigma_psvr_data()] computed on the
+#'   **preprocessed** predictors explicitly — via `update()` on the extracted
+#'   parameter set, or via [psvr_option_add()] for a workflow set.
 #'   (RBF specs only.)
 #' @param degree Polynomial degree \eqn{\ge 1}{>= 1}.  Use [tune()] to optimize.
 #'   (Polynomial specs only.)
