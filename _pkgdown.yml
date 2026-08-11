@@ -120,3 +120,44 @@ articles:
 
 news:
   one_page_per_version: true
+
+# Keep the three private root-level `.md` files off the published site.
+#
+# `pkgdown:::package_mds()` globs every `*.md` at the package root and filters
+# only against two hard-coded literals; it never consults `.Rbuildignore` or
+# `.gitignore`, and there is no per-file opt-out. Registering a page as a
+# redirect is the only mechanism that removes it from ALL FOUR publication
+# surfaces at once, because `pkgdown:::get_site_paths()` subtracts the redirect
+# sources, and the sitemap, the llm `.md` twins and the search index are all
+# derived from it:
+#
+#   - `<name>.html`  -> overwritten by `build_redirect()` with a 241-byte
+#                       meta-refresh stub (the full page IS written first, by
+#                       `build_home()`; see the hazard note below)
+#   - `<name>.md`    -> never written  (`build_llm_docs()` walks get_site_paths)
+#   - sitemap.xml    -> no entry        (`build_sitemap()`     likewise)
+#   - search.json    -> no entry, no page text (`build_search_index()` likewise)
+#
+# `search.exclude:` alone is NOT sufficient — it only trims the search index;
+# the page, its `.md` twin and the sitemap entry all still publish.
+#
+# This lives here rather than only in `.github/workflows/pkgdown.yaml` because
+# `_pkgdown.yml` is tracked and applies to every build path, including a local
+# `pkgdown::build_site()`. The workflow's `rm -f CLAUDE.md` step is kept as
+# defence in depth for the deployed path.
+#
+# HAZARD 1 (transient write): `build_home()` writes the full page to `docs/`
+# and `build_redirects()` only overwrites it at the END of the build. A locally
+# aborted build therefore leaves the complete rendered page on disk.
+# HAZARD 2 (stale docs): `get_site_paths()` globs `docs/`, not the source tree,
+# so a page built before this fix survives into every later local build until
+# `docs/` is deleted.
+# HAZARD 3 (nominative): this list names three files. Any FUTURE root-level
+# `.md` publishes, and nothing detects it — not `R CMD check`, not the test
+# suite, not `pkgdown::check_pkgdown()`, not `check_built_site()`, not the
+# pre-commit hook. The only detector is a human noticing. See PSVR_STATUS.md
+# section 2.8.
+redirects:
+  - ["CLAUDE.html", "index.html"]
+  - ["PSVR_STATUS.html", "index.html"]
+  - ["PSVR_STATUS_ARCHIVE.html", "index.html"]
