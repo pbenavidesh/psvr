@@ -27,7 +27,7 @@ Also used by tests to verify Rcpp-vs-R parity.
 - X2:
 
   Numeric matrix with one observation per row (n2 × p). Defaults to
-  `X1`, giving the square training kernel matrix Ω.
+  `X1`, giving the square training kernel matrix \\\Omega\\.
 
 ## Value
 

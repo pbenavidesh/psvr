@@ -45,7 +45,7 @@ psvr_rmspe_linear(
 
 - cost:
 
-  Regularization parameter `Γ > 0`. Use
+  Regularization parameter \\\Gamma \> 0\\. Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
   to optimize. Mapped to
   [`cost_psvr()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr.md)
@@ -55,7 +55,7 @@ psvr_rmspe_linear(
 
 - rbf_sigma:
 
-  RBF bandwidth σ \> 0. Use
+  RBF bandwidth \\\sigma \> 0\\. Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
   to optimize. Mapped to
   [`rbf_sigma_psvr()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.md);
@@ -74,13 +74,13 @@ psvr_rmspe_linear(
 
 - degree:
 
-  Polynomial degree ≥ 1. Use
+  Polynomial degree \\\ge 1\\. Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
   to optimize. (Polynomial specs only.)
 
 - scale_factor:
 
-  Polynomial constant term (coef₀). Use
+  Polynomial constant term (`coef0`). Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
   to optimize. (Polynomial specs only.)
 

@@ -59,8 +59,8 @@ psvr_mape_linear(
 
 - margin:
 
-  Epsilon tube half-width `ε ≥ 0` expressed as a percentage of each
-  target value. Use
+  Epsilon tube half-width \\\epsilon \ge 0\\ expressed as a percentage
+  of each target value. Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
   to optimize. Mapped to
   [`margin_percentage()`](https://pbenavidesh.github.io/psvr/reference/margin_percentage.md)
@@ -72,7 +72,7 @@ psvr_mape_linear(
 
 - rbf_sigma:
 
-  RBF bandwidth σ \> 0. Use
+  RBF bandwidth \\\sigma \> 0\\. Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
   to optimize. Mapped to
   [`rbf_sigma_psvr()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.md);
@@ -81,9 +81,9 @@ psvr_mape_linear(
 
 - sym_type:
 
-  Symmetry type: `"none"` (default) fits the non-symmetric ε-SVR of
-  Model 1; `"even"` (a = 1) and `"odd"` (a = -1) fit the symmetric ε-SVR
-  of Model 2. Use
+  Symmetry type: `"none"` (default) fits the non-symmetric
+  \\\epsilon\\-SVR of Model 1; `"even"` (a = 1) and `"odd"` (a = -1) fit
+  the symmetric \\\epsilon\\-SVR of Model 2. Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
   to optimise over the levels during CV; see
   [`sym_type_param()`](https://pbenavidesh.github.io/psvr/reference/sym_type_param.md)
@@ -91,13 +91,13 @@ psvr_mape_linear(
 
 - degree:
 
-  Polynomial degree ≥ 1. Use
+  Polynomial degree \\\ge 1\\. Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
   to optimize. (Polynomial specs only.)
 
 - scale_factor:
 
-  Polynomial constant term (coef₀). Use
+  Polynomial constant term (`coef0`). Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
   to optimize. (Polynomial specs only.)
 

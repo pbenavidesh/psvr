@@ -35,8 +35,8 @@ The updated `workflow_set`.
 
 ## Details
 
-Workflows for `m1`/`m2` (`ε`-SVR) are intentionally skipped — for those,
-`cost` maps to `C` and the static
+Workflows for `m1`/`m2` (\\\epsilon\\-SVR) are intentionally skipped —
+for those, `cost` maps to `C` and the static
 [`cost_psvr()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr.md)
 range is usually adequate.
 
