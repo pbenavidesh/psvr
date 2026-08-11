@@ -186,8 +186,10 @@ class <code>"psvr_mape"</code>: a list with <code>beta</code> (support-vector du
 starts), <code>b</code>, <code>X_sv</code>, <code>y_sv</code>, <code>y_train</code>, <code>fitted_values</code>, <code>kernel</code>, <code>C</code>,
 <code>eps</code>, <code>n_train</code>, <code>p_train</code>, <code>iterations</code>, <code>converged</code>, and <code>block_k4</code>.
 With <code>sym_type = "even"</code> or <code>"odd"</code> they return class <code>"psvr_mape_sym"</code>:
-the same components plus <code>a</code> (the symmetry type) and <code>spectral</code>
-(Algorithm 2 diagnostics).</p>
+the same components plus <code>a</code> (the symmetry type) and <code>spectral</code> (the
+estimated extreme eigenvalues of the symmetrized kernel matrix, and the
+diagonal shift applied to it if it was not numerically positive
+semi-definite).</p>
 <p>The RMSPE wrappers (<code>psvr_rmspe_rbf_fit()</code>, <code>psvr_rmspe_poly_fit()</code>,
 <code>psvr_rmspe_linear_fit()</code>) with <code>sym_type = "none"</code> return class
 <code>"psvr_rmspe"</code>: a list with <code>alpha</code>, <code>b</code>, <code>X_train</code>, <code>y_train</code>,

@@ -91,17 +91,13 @@ a warning, since the resulting upper bound falls below the
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>With the default <code>width_log2 = 4</code>, the upper bound covers the
-typical optimum within ~2 orders of magnitude on benchmark
-datasets.  For Boston Housing (<code>var(medv)</code> about 84.6, <code>N_train = 404</code>
-under an 80/20 split), this gives an upper bound of
-\(2^{19.06} \approx 5.4 \times 10^5\), two
-decades above the published optimum
-\(\Gamma \approx 1.7 \times 10^4\) — comfortable
-headroom for Bayesian optimisation
-without boundary trapping.  The static <code><a href="cost_psvr.html">cost_psvr()</a></code> range
-[-2, 10] (i.e. \(\Gamma \le 1024\)) underestimates
-this by more than a decade.</p>
+    <p>The default <code>width_log2 = 4</code> places the upper bound about 16 times above
+<code>var(y) * n</code>, which is headroom for a Bayesian or grid search to work in
+without pinning against the boundary.  Because the bound tracks
+<code>var(y) * n</code>, it moves with the outcome: the static <code><a href="cost_psvr.html">cost_psvr()</a></code> range
+[-2, 10] (i.e. \(\Gamma \le 1024\)) is fixed, so it
+falls short whenever <code>var(y) * n</code> exceeds a few hundred — which is the
+usual case, not the exception.</p>
 <p>Use this function for <code>m3</code> (LS-SVR) and <code>m4</code> (symmetric LS-SVR)
 workflows.  Stick to <code><a href="cost_psvr.html">cost_psvr()</a></code> for <code>m1</code>/<code>m2</code>
 (\(\epsilon\)-SVR), where

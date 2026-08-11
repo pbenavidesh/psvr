@@ -93,9 +93,10 @@ single warning reports how many observations are affected.
 For *pooled* diagnostics (a mean multiplicative error, a variance, a
 histogram) the affected observations must be excluded, or one near-zero
 fitted value dominates the summary. This follows the standard treatment
-of percentage errors near zero (Makridakis); the thesis applies it in
-Ch. 7 Sec. 7.6.1 by excluding observations below a threshold before
-pooling. Exclude at the point of aggregation, e.g.:
+of percentage errors near zero (Makridakis): screen the fitted values
+against a threshold and drop the observations below it before pooling,
+rather than altering the per-observation values. Exclude at the point of
+aggregation, e.g.:
 
     e <- residuals(fit, type = "multiplicative")
     mean(e[is.finite(e)])

@@ -145,7 +145,9 @@ retained for warm starts), `b`, `X_sv`, `y_sv`, `y_train`,
 `fitted_values`, `kernel`, `C`, `eps`, `n_train`, `p_train`,
 `iterations`, `converged`, and `block_k4`. With `sym_type = "even"` or
 `"odd"` they return class `"psvr_mape_sym"`: the same components plus
-`a` (the symmetry type) and `spectral` (Algorithm 2 diagnostics).
+`a` (the symmetry type) and `spectral` (the estimated extreme
+eigenvalues of the symmetrized kernel matrix, and the diagonal shift
+applied to it if it was not numerically positive semi-definite).
 
 The RMSPE wrappers (`psvr_rmspe_rbf_fit()`, `psvr_rmspe_poly_fit()`,
 `psvr_rmspe_linear_fit()`) with `sym_type = "none"` return class

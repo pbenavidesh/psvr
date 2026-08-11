@@ -137,32 +137,40 @@ either way behaves identically.</p>
 residuals are well-defined.</p>
 </div>
 <div class="section level2">
-<h2 id="boston-housing-data">Boston Housing data<a class="anchor" aria-label="anchor" href="#boston-housing-data"></a>
+<h2 id="fuel-economy-data">Fuel-economy data<a class="anchor" aria-label="anchor" href="#fuel-economy-data"></a>
 </h2>
-<p>We reproduce the experiments reported in Tables 1–2 of the paper
-using the Boston Housing dataset (Harrison &amp; Rubinfeld, 1978). All
-506 observations have strictly positive median home values (MEDV, in
-thousands of USD), making MAPE well-defined throughout.</p>
+<p>This vignette <strong>demonstrates</strong> the package on a small
+public dataset. It does not reproduce the paper’s experiments, and every
+number printed below is computed when the vignette is built.</p>
+<p>We use <code><a href="https://ggplot2.tidyverse.org/reference/mpg.html" class="external-link">ggplot2::mpg</a></code>: 234 records of US passenger
+vehicles. The target is <code>hwy</code>, highway fuel economy in miles
+per gallon. It is strictly positive on every observation, so the
+percentage residuals — and therefore MAPE and RMSPE — are well-defined
+throughout.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://pbenavidesh.github.io/psvr/">psvr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Boston Housing is available in the MASS package</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"Boston"</span>, package <span class="op">=</span> <span class="st">"MASS"</span><span class="op">)</span></span>
+<span><span class="co"># Target: highway fuel economy (all &gt; 0)</span></span>
+<span><span class="va">y_all</span> <span class="op">&lt;-</span> <span class="va">mpg</span><span class="op">$</span><span class="va">hwy</span></span>
 <span></span>
-<span><span class="co"># Target: median home value (all &gt; 0)</span></span>
-<span><span class="va">y_all</span> <span class="op">&lt;-</span> <span class="va">Boston</span><span class="op">$</span><span class="va">medv</span></span>
-<span><span class="va">X_raw</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">Boston</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/sets.html" class="external-link">setdiff</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">Boston</span><span class="op">)</span>, <span class="st">"medv"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co"># Predictors: engine displacement, model year, cylinder count.</span></span>
+<span><span class="co">#</span></span>
+<span><span class="co"># `cty` is deliberately EXCLUDED. City and highway fuel economy are two</span></span>
+<span><span class="co"># measurements of the same property of the same vehicle (they correlate at</span></span>
+<span><span class="co"># 0.96), so predicting one from the other is leakage rather than modelling.</span></span>
+<span><span class="va">X_raw</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="va">mpg</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"displ"</span>, <span class="st">"year"</span>, <span class="st">"cyl"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/all.html" class="external-link">all</a></span><span class="op">(</span><span class="va">y_all</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"N ="</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">X_raw</span><span class="op">)</span>, <span class="st">"  p ="</span>, <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">X_raw</span><span class="op">)</span>,</span>
-<span>    <span class="st">"  y range: ["</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">y_all</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">","</span>, <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">y_all</span><span class="op">)</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"]\n"</span><span class="op">)</span></span>
-<span><span class="co">#&gt; N = 506   p = 13   y range: [ 5 , 50 ]</span></span></code></pre></div>
+<span>    <span class="st">"  y range: ["</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">y_all</span><span class="op">)</span>, <span class="st">","</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">y_all</span><span class="op">)</span>, <span class="st">"]\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; N = 234   p = 3   y range: [ 12 , 44 ]</span></span></code></pre></div>
 <div class="section level3">
 <h3 id="traintest-split">70 / 30 train–test split<a class="anchor" aria-label="anchor" href="#traintest-split"></a>
 </h3>
 <p>Features are standardised using training-set statistics so that the
-RBF kernel operates on a comparable scale across all 13 predictors.</p>
+RBF kernel operates on a comparable scale across all three
+predictors.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
 <span><span class="va">n</span>      <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">X_raw</span><span class="op">)</span></span>
@@ -196,7 +204,7 @@ RBF kernel operates on a comparable scale across all 13 predictors.</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Linear regression — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n"</span>,</span>
 <span>            <span class="fu">mape</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">lm_pred</span><span class="op">)</span>, <span class="fu">rmspe</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">lm_pred</span><span class="op">)</span>, <span class="fu">r2</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">lm_pred</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Linear regression — MAPE: 16.29%  RMSPE: 22.48%  R²: 0.7730</span></span></code></pre></div>
+<span><span class="co">#&gt; Linear regression — MAPE: 12.91%  RMSPE: 17.65%  R²: 0.6391</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level2">
@@ -212,23 +220,28 @@ a quadratic penalty on percentage residuals. The dual reduces to:</p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mi mathvariant="normal">Γ</mi></msub><mo>=</mo><mrow><mi mathvariant="normal">diag</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msubsup><mi>y</mi><mn>1</mn><mn>2</mn></msubsup><mi>/</mi><mi mathvariant="normal">Γ</mi><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mi>y</mi><mi>N</mi><mn>2</mn></msubsup><mi>/</mi><mi mathvariant="normal">Γ</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">Y_\Gamma = \operatorname{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)</annotation></semantics></math>.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># make_kernel() returns a closure K(xi, xj) = exp(-||xi - xj||^2 / (2 sigma^2))</span></span>
-<span><span class="va">K</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/make_kernel.html">make_kernel</a></span><span class="op">(</span><span class="st">"rbf"</span>, sigma <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="co"># make_kernel() returns a closure K(xi, xj) = exp(-||xi - xj||^2 / (2 sigma^2)).</span></span>
+<span><span class="co"># sigma is a LENGTH in the units of the preprocessed feature space, so it has</span></span>
+<span><span class="co"># to be set on that scale -- sigma_heuristic() reads it off the data instead of</span></span>
+<span><span class="co"># guessing. See "Hyperparameter search ranges" below.</span></span>
+<span><span class="va">K</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/make_kernel.html">make_kernel</a></span><span class="op">(</span><span class="st">"rbf"</span>, sigma <span class="op">=</span> <span class="fu"><a href="../reference/sigma_heuristic.html">sigma_heuristic</a></span><span class="op">(</span><span class="va">X_tr</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># gamma = 5000: regularisation; larger gamma -&gt; smaller Y_Gamma diagonal -&gt; tighter fit</span></span>
+<span><span class="co"># gamma = 5000: regularisation; larger gamma -&gt; smaller Y_Gamma diagonal -&gt; tighter fit.</span></span>
+<span><span class="co"># This is roughly var(y_tr) * N, the scale cost_psvr_ls_data() computes -- and</span></span>
+<span><span class="co"># already five times the ceiling of the registered `cost` default. See below.</span></span>
 <span><span class="va">fit_ls</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr_rmspe.html">psvr_rmspe</a></span><span class="op">(</span><span class="va">X_tr</span>, <span class="va">y_tr</span>, kernel <span class="op">=</span> <span class="va">K</span>, gamma <span class="op">=</span> <span class="fl">5000</span><span class="op">)</span></span>
 <span><span class="va">pred_ls</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_ls</span>, <span class="va">X_te</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"LS-SVR RMSPE  — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n"</span>,</span>
 <span>            <span class="fu">mape</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ls</span><span class="op">)</span>, <span class="fu">rmspe</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ls</span><span class="op">)</span>, <span class="fu">r2</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ls</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; LS-SVR RMSPE  — MAPE: 15.46%  RMSPE: 27.21%  R²: 0.7277</span></span>
+<span><span class="co">#&gt; LS-SVR RMSPE  — MAPE: 11.43%  RMSPE: 14.48%  R²: 0.6845</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_ls</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; LS-SVR with RMSPE loss  [psvr_rmspe]</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;   Kernel:        RBF (sigma = 1)</span></span>
+<span><span class="co">#&gt;   Kernel:        RBF (sigma = 2.1195)</span></span>
 <span><span class="co">#&gt;   Gamma:         5000</span></span>
-<span><span class="co">#&gt;   Training obs.: 354</span></span></code></pre></div>
+<span><span class="co">#&gt;   Training obs.: 163</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/rmspe-plot-1.png" class="r-plt" alt="" width="576"></p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cf_ls</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_ls</span><span class="op">)</span></span>
@@ -239,7 +252,7 @@ a quadratic penalty on percentage residuals. The dual reduces to:</p>
 <span><span class="co"># support_data: all N training inputs stored for prediction</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"b = %.4f  |  alpha range: [%.4f, %.4f]\n"</span>,</span>
 <span>            <span class="va">cf_ls</span><span class="op">$</span><span class="va">b</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">cf_ls</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">cf_ls</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; b = 22.5268  |  alpha range: [-59.7517, 43.7321]</span></span></code></pre></div>
+<span><span class="co">#&gt; b = 23.0976  |  alpha range: [-138.1332, 68.7725]</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="model-1-ε-svr-with-mape">Model 1: ε-SVR with MAPE<a class="anchor" aria-label="anchor" href="#model-1-%CE%B5-svr-with-mape"></a>
@@ -256,18 +269,18 @@ low-magnitude observations.</p>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"ε-SVR MAPE    — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n"</span>,</span>
 <span>            <span class="fu">mape</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ep</span><span class="op">)</span>, <span class="fu">rmspe</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ep</span><span class="op">)</span>, <span class="fu">r2</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ep</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; ε-SVR MAPE    — MAPE: 15.76%  RMSPE: 27.55%  R²: 0.7617</span></span>
+<span><span class="co">#&gt; ε-SVR MAPE    — MAPE: 11.11%  RMSPE: 14.68%  R²: 0.6913</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"Support vectors: %d / %d\n"</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">fit_ep</span><span class="op">$</span><span class="va">beta</span><span class="op">)</span>, <span class="va">fit_ep</span><span class="op">$</span><span class="va">n_train</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Support vectors: 327 / 354</span></span>
+<span><span class="co">#&gt; Support vectors: 154 / 163</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_ep</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Epsilon-SVR with MAPE loss  [psvr_mape]</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;   Kernel:          RBF (sigma = 1)</span></span>
+<span><span class="co">#&gt;   Kernel:          RBF (sigma = 2.1195)</span></span>
 <span><span class="co">#&gt;   C:               10</span></span>
 <span><span class="co">#&gt;   eps:             1</span></span>
-<span><span class="co">#&gt;   Training obs.:   354</span></span>
-<span><span class="co">#&gt;   Support vectors: 327 (92.4%)</span></span></code></pre></div>
+<span><span class="co">#&gt;   Training obs.:   163</span></span>
+<span><span class="co">#&gt;   Support vectors: 154 (94.5%)</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/mape-plot-1.png" class="r-plt" alt="" width="576"></p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cf_ep</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_ep</span><span class="op">)</span></span>
@@ -281,7 +294,7 @@ low-magnitude observations.</p>
 <span><span class="co"># support_data: training rows corresponding to support vectors only</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"b = %.4f  |  beta range: [%.4f, %.4f]\n"</span>,</span>
 <span>            <span class="va">cf_ep</span><span class="op">$</span><span class="va">b</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">cf_ep</span><span class="op">$</span><span class="va">beta</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">cf_ep</span><span class="op">$</span><span class="va">beta</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; b = 23.1105  |  beta range: [-110.8025, 82.6446]</span></span></code></pre></div>
+<span><span class="co">#&gt; b = 22.2127  |  beta range: [-83.3333, 62.5000]</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="comparing-objectives">Comparing objectives<a class="anchor" aria-label="anchor" href="#comparing-objectives"></a>
@@ -303,11 +316,12 @@ low-magnitude observations.</p>
 <span><span class="va">results</span><span class="op">[</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">results</span><span class="op">[</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span>, <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">results</span>, col.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Model"</span>, <span class="st">"MAPE (%)"</span>, <span class="st">"RMSPE (%)"</span>, <span class="st">"R²"</span><span class="op">)</span>,</span>
 <span>             align <span class="op">=</span> <span class="st">"lrrr"</span>,</span>
-<span>             caption <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Test-set performance on Boston Housing"</span>,</span>
-<span>                             <span class="st">"(70/30 split, RBF kernel, single run)."</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span>             caption <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="st">"Test-set performance on ggplot2::mpg"</span>,</span>
+<span>                             <span class="st">"(70/30 split, RBF kernel, single run,"</span>,</span>
+<span>                             <span class="st">"untuned hyperparameters)."</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
-<caption>Test-set performance on Boston Housing (70/30 split, RBF
-kernel, single run).</caption>
+<caption>Test-set performance on ggplot2::mpg (70/30 split, RBF kernel,
+single run, untuned hyperparameters).</caption>
 <thead><tr class="header">
 <th align="left">Model</th>
 <th align="right">MAPE (%)</th>
@@ -317,54 +331,247 @@ kernel, single run).</caption>
 <tbody>
 <tr class="odd">
 <td align="left">Linear regression</td>
-<td align="right">16.29</td>
-<td align="right">22.48</td>
-<td align="right">0.77</td>
+<td align="right">12.91</td>
+<td align="right">17.65</td>
+<td align="right">0.64</td>
 </tr>
 <tr class="even">
 <td align="left">LS-SVR RMSPE (Model 3)</td>
-<td align="right">15.46</td>
-<td align="right">27.21</td>
-<td align="right">0.73</td>
+<td align="right">11.43</td>
+<td align="right">14.48</td>
+<td align="right">0.68</td>
 </tr>
 <tr class="odd">
 <td align="left">ε-SVR MAPE (Model 1)</td>
-<td align="right">15.76</td>
-<td align="right">27.55</td>
-<td align="right">0.76</td>
+<td align="right">11.11</td>
+<td align="right">14.68</td>
+<td align="right">0.69</td>
 </tr>
 </tbody>
 </table>
 <p>Both psvr models improve on the linear baseline under their
 respective percentage-error objectives. The LS-SVR formulation (Model 3)
-minimises RMSPE directly and achieves the lowest squared-percentage
-error; the ε-SVR formulation (Model 1) targets MAPE through
-sample-dependent box constraints on the dual variables. These results
-are consistent with Tables 1–2 of Benavides-Herrera et al. (2026), where
-SVR-MAPE reduces test-set MAPE from 15.23% (classical ε-SVR) to around
-10% relative to a linear baseline of 17.85%.</p>
+minimises RMSPE directly; the ε-SVR formulation (Model 1) targets MAPE
+through sample-dependent box constraints on the dual variables.</p>
+<p>Read the table for the ordering, not for the magnitudes. It is one
+split of one small dataset at hyperparameters nobody tuned, so the
+margins are not evidence about how these models perform in general —
+that is what the resampled comparison in the <a href="https://pbenavidesh.github.io/psvr/articles/when-to-use-psvr.html">When
+to Use Percentage-Error SVR</a> article is for.</p>
 </div>
 <div class="section level2">
 <h2 id="using-psvr-with-tidymodels">Using psvr with tidymodels<a class="anchor" aria-label="anchor" href="#using-psvr-with-tidymodels"></a>
 </h2>
 <p>All four models are registered as parsnip engines and integrate
 seamlessly with the tidymodels ecosystem. This enables hyperparameter
-tuning via <code>tune_grid()</code>, resampling via
+tuning via <code><a href="https://tune.tidymodels.org/reference/tune_grid.html" class="external-link">tune_grid()</a></code>, resampling via
 <code>rsample</code>, and unified model comparison via
 <code>workflow_set()</code>.</p>
 <p>See the <a href="tidymodels-workflow.html">tidymodels workflow</a>
 article for a complete example using <code><a href="../reference/psvr_rmspe_specs.html">psvr_rmspe_rbf()</a></code> with
-<code>tune_grid()</code> and data-driven hyperparameter ranges via
-<code><a href="../reference/rbf_sigma_psvr_data.html">rbf_sigma_psvr_data()</a></code>. The <a href="when-to-use-psvr.html">When to Use Percentage-Error SVR</a>
-article shows a full <code>workflow_set()</code> comparison of all four
-models against standard baselines.</p>
+<code><a href="https://tune.tidymodels.org/reference/tune_grid.html" class="external-link">tune_grid()</a></code> and data-driven hyperparameter ranges via
+<code><a href="../reference/rbf_sigma_psvr_data.html">rbf_sigma_psvr_data()</a></code>. The <a href="https://pbenavidesh.github.io/psvr/articles/when-to-use-psvr.html">When
+to Use Percentage-Error SVR</a> article, on the package website rather
+than in the installed package, shows a full <code>workflow_set()</code>
+comparison of all four models against standard baselines.</p>
+</div>
+<div class="section level2">
+<h2 id="hyperparameter-search-ranges">Hyperparameter search ranges<a class="anchor" aria-label="anchor" href="#hyperparameter-search-ranges"></a>
+</h2>
+<p>The parsnip specs register <strong>static</strong> default ranges — a
+<code>dials</code> parameter object has to exist before any data does.
+Three of them are deliberately conservative, one of them is actively
+wrong for LS-SVR, and one searches a level you probably do not want, so
+tuning a psvr model means supplying your own ranges through
+<code>param_info</code>.</p>
+<p>Nothing below fits a model. It builds the parameter set and prints
+it, before and after.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/tidymodels/parsnip" class="external-link">parsnip</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tune.tidymodels.org/" class="external-link">tune</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">show_ranges</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">ps</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="kw">for</span> <span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">ps</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>    <span class="va">ob</span> <span class="op">&lt;-</span> <span class="va">ps</span><span class="op">$</span><span class="va">object</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"  %-10s %s\n"</span>, <span class="va">ps</span><span class="op">$</span><span class="va">id</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>,</span>
+<span>      <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">inherits</a></span><span class="op">(</span><span class="va">ob</span>, <span class="st">"quant_param"</span><span class="op">)</span><span class="op">)</span></span>
+<span>        <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"[%s] on the %s scale"</span>,</span>
+<span>                <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">signif</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unlist.html" class="external-link">unlist</a></span><span class="op">(</span><span class="va">ob</span><span class="op">$</span><span class="va">range</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span>,</span>
+<span>                <span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">ob</span><span class="op">$</span><span class="va">trans</span><span class="op">)</span><span class="op">)</span> <span class="st">"identity"</span> <span class="kw">else</span> <span class="va">ob</span><span class="op">$</span><span class="va">trans</span><span class="op">$</span><span class="va">name</span><span class="op">)</span></span>
+<span>      <span class="kw">else</span> <span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"{%s}"</span>, <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">ob</span><span class="op">$</span><span class="va">values</span>, collapse <span class="op">=</span> <span class="st">", "</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">}</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/invisible.html" class="external-link">invisible</a></span><span class="op">(</span><span class="va">ps</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="va">spec_mape</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr_mape_specs.html">psvr_mape_rbf</a></span><span class="op">(</span>cost <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>, margin <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>                           rbf_sigma <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>, sym_type <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"psvr"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_parameter_set_dials</a></span><span class="op">(</span><span class="va">spec_mape</span><span class="op">)</span> <span class="op">|&gt;</span> <span class="fu">show_ranges</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   cost       [-2, 10] on the log-2 scale</span></span>
+<span><span class="co">#&gt;   margin     [1, 20] on the identity scale</span></span>
+<span><span class="co">#&gt;   rbf_sigma  [-3, 1] on the log-10 scale</span></span>
+<span><span class="co">#&gt;   sym_type   {none, even, odd}</span></span></code></pre></div>
+<p>For an ε-SVR (Models 1–2) only <code>rbf_sigma</code> really needs
+replacing; the <code>cost</code> and <code>margin</code> defaults are
+usable as they stand.</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_parameter_set_dials</a></span><span class="op">(</span><span class="va">spec_mape</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span></span>
+<span>    cost      <span class="op">=</span> <span class="fu"><a href="../reference/cost_psvr.html">cost_psvr</a></span><span class="op">(</span><span class="op">)</span>,                      <span class="co"># [-2, 10] log2 — fine for C</span></span>
+<span>    margin    <span class="op">=</span> <span class="fu"><a href="../reference/margin_percentage.html">margin_percentage</a></span><span class="op">(</span><span class="op">)</span>,              <span class="co"># 1-20% of each target</span></span>
+<span>    rbf_sigma <span class="op">=</span> <span class="fu"><a href="../reference/rbf_sigma_psvr_data.html">rbf_sigma_psvr_data</a></span><span class="op">(</span><span class="va">X_tr</span><span class="op">)</span>,        <span class="co"># data-driven; see below</span></span>
+<span>    sym_type  <span class="op">=</span> <span class="fu"><a href="../reference/sym_type_param.html">sym_type_param</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"even"</span>, <span class="st">"odd"</span><span class="op">)</span><span class="op">)</span>  <span class="co"># drops "none"; see below</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">show_ranges</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   cost       [-2, 10] on the log-2 scale</span></span>
+<span><span class="co">#&gt;   margin     [1, 20] on the identity scale</span></span>
+<span><span class="co">#&gt;   rbf_sigma  [-0.6738, 1.326] on the log-10 scale</span></span>
+<span><span class="co">#&gt;   sym_type   {even, odd}</span></span></code></pre></div>
+<p>For an LS-SVR (Models 3–4) <code>cost</code> is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Γ</mi><annotation encoding="application/x-tex">\Gamma</annotation></semantics></math>,
+and there the registered default is <strong>not</strong> usable.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">spec_ls</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr_rmspe_specs.html">psvr_rmspe_rbf</a></span><span class="op">(</span>cost <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>, rbf_sigma <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>                          sym_type <span class="op">=</span> <span class="fu"><a href="https://hardhat.tidymodels.org/reference/tune.html" class="external-link">tune</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"psvr"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://hardhat.tidymodels.org/reference/hardhat-extract.html" class="external-link">extract_parameter_set_dials</a></span><span class="op">(</span><span class="va">spec_ls</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></span><span class="op">(</span></span>
+<span>    cost      <span class="op">=</span> <span class="fu"><a href="../reference/cost_psvr_ls_data.html">cost_psvr_ls_data</a></span><span class="op">(</span><span class="va">y_tr</span><span class="op">)</span>,</span>
+<span>    rbf_sigma <span class="op">=</span> <span class="fu"><a href="../reference/rbf_sigma_psvr_data.html">rbf_sigma_psvr_data</a></span><span class="op">(</span><span class="va">X_tr</span><span class="op">)</span>,</span>
+<span>    sym_type  <span class="op">=</span> <span class="fu"><a href="../reference/sym_type_param.html">sym_type_param</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"even"</span>, <span class="st">"odd"</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">show_ranges</span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="co">#&gt;   cost       [-2, 16.38] on the log-2 scale</span></span>
+<span><span class="co">#&gt;   rbf_sigma  [-0.6738, 1.326] on the log-10 scale</span></span>
+<span><span class="co">#&gt;   sym_type   {even, odd}</span></span></code></pre></div>
+<p>No single spec carries all four helpers: <code>margin</code> exists
+only on the MAPE specs, and <code><a href="../reference/cost_psvr_ls_data.html">cost_psvr_ls_data()</a></code> applies
+only to the RMSPE ones.</p>
+<div class="section level3">
+<h3 id="rbf_sigma-is-a-length-scale-not-a-precision">
+<code>rbf_sigma</code> is a length scale, not a precision<a class="anchor" aria-label="anchor" href="#rbf_sigma-is-a-length-scale-not-a-precision"></a>
+</h3>
+<p>Of everything on this page, this is the one most likely to cost you a
+day. psvr’s RBF kernel is</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>K</mi><mo stretchy="false" form="prefix">(</mo><msub><mi>𝐱</mi><mi>i</mi></msub><mo>,</mo><msub><mi>𝐱</mi><mi>j</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mfrac><mrow><mo stretchy="false" form="postfix">∥</mo><msub><mi>𝐱</mi><mi>i</mi></msub><mo>−</mo><msub><mi>𝐱</mi><mi>j</mi></msub><msup><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msup></mrow><mrow><mn>2</mn><msup><mi>σ</mi><mn>2</mn></msup></mrow></mfrac><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">K(\mathbf{x}_i, \mathbf{x}_j) =
+  \exp\left(-\frac{\|\mathbf{x}_i - \mathbf{x}_j\|^2}{2\sigma^2}\right)</annotation></semantics></math></p>
+<p>so <code>rbf_sigma</code> is a <strong>length</strong>, measured in
+the units of the preprocessed feature space, and <em>larger</em> means a
+<em>wider</em> kernel. <code>kernlab::rbfdot(sigma =)</code>,
+<code>e1071::svm(gamma =)</code> and
+<code>parsnip::svm_rbf(rbf_sigma =)</code> all use the reciprocal
+convention,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>−</mi><mi>σ</mi><mo stretchy="false" form="postfix">∥</mo><mo>⋅</mo><msup><mo stretchy="false" form="postfix">∥</mo><mn>2</mn></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(-\sigma\|\cdot\|^2)</annotation></semantics></math>,
+where larger means <em>narrower</em>. Carrying a tuned value across from
+one of those gives a silently wrong kernel width — no error, no warning,
+just a worse model.</p>
+</div>
+<div class="section level3">
+<h3 id="rbf_sigma_psvr_data-needs-preprocessed-predictors">
+<code>rbf_sigma_psvr_data()</code> needs preprocessed
+predictors<a class="anchor" aria-label="anchor" href="#rbf_sigma_psvr_data-needs-preprocessed-predictors"></a>
+</h3>
+<p><code>rbf_sigma_psvr_data(X)</code> centres its range on the median
+pairwise Euclidean distance between the rows of <code>X</code>, spanning
+one decade either side of it on the log10 scale. Being a distance-based
+heuristic, it means nothing except on the scale the model is actually
+fitted on: pass the standardised predictors (<code>X_tr</code> here, or
+the baked output of a recipe), never the raw ones.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/sigma_heuristic.html">sigma_heuristic</a></span><span class="op">(</span><span class="va">X_tr</span><span class="op">)</span>   <span class="co"># the geometric centre of the range printed above,</span></span>
+<span><span class="co">#&gt; [1] 2.119499</span></span>
+<span>                        <span class="co"># and the value the fits at the top of this page used</span></span></code></pre></div>
+<p>Above <code>sample_size</code> rows (default 500) the median is taken
+on a random subsample, so the centre becomes an estimate rather than the
+exact median — and a seed-dependent one. Pass <code>seed</code> if you
+need it reproducible.</p>
+</div>
+<div class="section level3">
+<h3 id="ls-svr-needs-cost_psvr_ls_data-and-it-cannot-be-automated">LS-SVR needs <code>cost_psvr_ls_data()</code>, and it cannot be
+automated<a class="anchor" aria-label="anchor" href="#ls-svr-needs-cost_psvr_ls_data-and-it-cannot-be-automated"></a>
+</h3>
+<p><code>cost</code> maps to <code>C</code> on the ε-SVR models and to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Γ</mi><annotation encoding="application/x-tex">\Gamma</annotation></semantics></math>
+on the LS-SVR ones, but both register the same default of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mi>−</mi><mn>2</mn><mo>,</mo><mn>10</mn><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[-2, 10]</annotation></semantics></math>
+on the log2 scale, i.e.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Γ</mi><mo>≤</mo><mn>1024</mn></mrow><annotation encoding="application/x-tex">\Gamma \le 1024</annotation></semantics></math>.
+That is the ε-SVR range.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi mathvariant="normal">Γ</mi><annotation encoding="application/x-tex">\Gamma</annotation></semantics></math>
+enters the LS-SVR system only through the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>y</mi><mi>k</mi><mn>2</mn></msubsup><mi>/</mi><mi mathvariant="normal">Γ</mi></mrow><annotation encoding="application/x-tex">y_k^2/\Gamma</annotation></semantics></math>
+diagonal, so the value that balances that term against the kernel scales
+with <code>var(y) * n</code> — it is not a fixed magnitude, and it grows
+with both the spread of the outcome and the size of the training
+set.</p>
+<p>The fit at the top of this page is already past the default ceiling:
+it used <code>gamma = 5000</code>, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mi>−</mi><mn>2</mn><mo>,</mo><mn>10</mn><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[-2, 10]</annotation></semantics></math>
+stops at 1024. A grid over the default would be
+<strong>boundary-trapped</strong> — every candidate is legal, the search
+reports a plausible number, and the optimum was never inside the range.
+The <a href="tidymodels-workflow.html">tidymodels workflow</a> article
+shows the size of the effect.</p>
+<p><code>cost_psvr_ls_data(y)</code> sets the ceiling from
+<code>var(y) * n</code>. It has to be passed by hand: <code>tune</code>
+finalises parameters from the molded <strong>predictors</strong> alone
+and never passes the outcome to <code><a href="https://dials.tidymodels.org/reference/finalize.html" class="external-link">dials::finalize()</a></code>, so no
+machinery could compute a <code>var(y)</code>-based bound on your
+behalf.</p>
+</div>
+<div class="section level3">
+<h3 id="cost-is-not-comparable-across-datasets-either">
+<code>cost</code> is not comparable across datasets either<a class="anchor" aria-label="anchor" href="#cost-is-not-comparable-across-datasets-either"></a>
+</h3>
+<p>The same trap has a milder form on the ε-SVR side, and
+<code><a href="../reference/cost_psvr.html">cost_psvr()</a></code> does not protect you from it. The dual box
+constraint is</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><msub><mi>β</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mfrac><mrow><mn>100</mn><mspace width="0.167em"></mspace><mi>C</mi></mrow><msub><mi>y</mi><mi>k</mi></msub></mfrac></mrow><annotation encoding="application/x-tex">|\beta_k| \le \frac{100\,C}{y_k}</annotation></semantics></math></p>
+<p>so the bound a given <code>C</code> imposes depends on the
+<strong>magnitude of the outcome</strong>. On data where <code>y</code>
+is of order
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mn>10</mn><mn>4</mn></msup><annotation encoding="application/x-tex">10^4</annotation></semantics></math>
+rather than order
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>10</mn><annotation encoding="application/x-tex">10</annotation></semantics></math>,
+the same <code>C</code> yields a box three decades tighter, every
+multiplier saturates against it, and the fit degenerates towards a
+constant. <code><a href="../reference/cost_psvr.html">cost_psvr()</a></code> returns a static
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">[</mo><mi>−</mi><mn>2</mn><mo>,</mo><mn>10</mn><mo stretchy="false" form="postfix">]</mo></mrow><annotation encoding="application/x-tex">[-2, 10]</annotation></semantics></math>
+calibrated for outcomes of order 10, so on large-<code>y</code> data
+<code>C</code> has to be raised by hand to compensate — there is
+currently no <code>cost_psvr_data()</code> counterpart to
+<code><a href="../reference/cost_psvr_ls_data.html">cost_psvr_ls_data()</a></code> for the ε-SVR family.</p>
+</div>
+<div class="section level3">
+<h3 id="tuning-sym_type-cannot-answer-does-symmetry-help">Tuning <code>sym_type</code> cannot answer “does symmetry help”<a class="anchor" aria-label="anchor" href="#tuning-sym_type-cannot-answer-does-symmetry-help"></a>
+</h3>
+<p><code>sym_type</code> registers all three levels,
+<code>{none, even, odd}</code>, and <code>"none"</code> <em>is</em> the
+asymmetric model. So <code>sym_type = tune()</code> puts Models 1 and 2
+— or 3 and 4 — inside a single search space, and
+<code><a href="https://tune.tidymodels.org/reference/show_best.html" class="external-link">select_best()</a></code> returns whichever candidate won. That is a
+selection, not a comparison. To contrast the two families, fix
+<code>sym_type</code> on two specs and compare their resampled metrics.
+Restricting to <code>c("even", "odd")</code>, as above, tunes
+<em>within</em> the symmetric family, which is a third question
+again.</p>
+</div>
+<div class="section level3">
+<h3 id="the-outcome-stays-in-original-units">The outcome stays in original units<a class="anchor" aria-label="anchor" href="#the-outcome-stays-in-original-units"></a>
+</h3>
+<p><code><a href="https://recipes.tidymodels.org/reference/step_normalize.html" class="external-link">recipes::step_normalize()</a></code> applies to predictors. Leave
+the outcome alone: the percentage-error losses divide by <code>y</code>,
+so they need <code>y &gt; 0</code> on the original scale, and centring
+the outcome would destroy positivity and change what “percentage error”
+even refers to. This is a genuine departure from classical SVR, where
+rescaling the outcome is routine and harmless.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
-<p>Harrison, D. &amp; Rubinfeld, D. L. (1978). Hedonic prices and the
-demand for clean air. <em>Journal of Environmental Economics and
-Management</em>, <strong>5</strong>(1), 81–102.</p>
 <p>Benavides-Herrera, P., Álvarez, G., Ruiz-Cruz, R., &amp;
 Sánchez-Torres, J. D. (2026). A unified family of percentage-error
 support vector regression models with symmetric kernel extensions.

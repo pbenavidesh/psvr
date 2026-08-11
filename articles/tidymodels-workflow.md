@@ -83,10 +83,29 @@ wf <- workflow() |>
 ## 5 — Tune with 5-fold CV
 
 We search over a 15-point Latin hypercube of `cost` and `rbf_sigma`
-values and evaluate each fold by MAPE. The `rbf_sigma` search range is
-set data-adaptively using
-[`rbf_sigma_psvr_data()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr_data.md),
-centred on the median pairwise distance in the normalised feature space.
+values and evaluate each fold by MAPE. Both search ranges are set from
+the data, and **neither happens automatically** — `dials` cannot
+finalize either one, so both have to be passed explicitly through
+`param_info`:
+
+- [`rbf_sigma_psvr_data()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr_data.md)
+  centres the bandwidth range on the median pairwise distance, so it is
+  computed on the **baked** predictors: the heuristic only means
+  anything on the scale the model is actually fitted on.
+- [`cost_psvr_ls_data()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr_ls_data.md)
+  widens the `cost` range. Here `cost` is $`\Gamma`$, and its registered
+  default of $`[-2, 10]`$ on the log2 scale ($`\Gamma \le 1024`$) is the
+  $`\epsilon`$-SVR range — far too low for LS-SVR, where the optimum
+  scales with `var(y) * n`. Left at the default the grid tops out at
+  $`\Gamma = 1024`$, which on this dataset is an order of magnitude
+  below the value selected once the range is widened — compare the
+  `cost` column printed below. The search is boundary-trapped: it cannot
+  reach the optimum at all, and nothing warns you, because every
+  candidate it did evaluate was legal. This one cannot be automated even
+  in principle, because `tune` finalizes parameters from the predictors
+  alone and never passes the outcome to
+  [`dials::finalize()`](https://dials.tidymodels.org/reference/finalize.html).
+
 The RMSPE LS-SVR only solves an `(N+1) × (N+1)` linear system — no
 iterative solver is involved — so 75 fits complete in seconds.
 
@@ -100,7 +119,10 @@ train_baked      <- rec |> prep() |> bake(new_data = train)
 rbf_sigma_custom <- rbf_sigma_psvr_data(train_baked |> select(-y))
 
 wf_params <- extract_parameter_set_dials(wf) |>
-  update(rbf_sigma = rbf_sigma_custom)
+  update(
+    cost      = cost_psvr_ls_data(train$y),
+    rbf_sigma = rbf_sigma_custom
+  )
 
 tune_res <- tune_grid(
   wf,
@@ -117,23 +139,23 @@ Cross-validated MAPE for each candidate (lower is better):
 
 collect_metrics(tune_res)[, c("cost", "rbf_sigma", "mean", "std_err")]
 #> # A tibble: 15 × 4
-#>        cost rbf_sigma  mean std_err
-#>       <dbl>     <dbl> <dbl>   <dbl>
-#>  1    0.25      4.78  42.0   1.07  
-#>  2    0.453     0.478 35.0   1.13  
-#>  3    0.820     1.78  38.2   1.11  
-#>  4    1.49     12.8   42.0   1.07  
-#>  5    2.69      0.178 34.0   1.13  
-#>  6    4.88      0.665 16.9   0.538 
-#>  7    8.83      2.48  30.4   1.17  
-#>  8   16         9.23  41.8   1.13  
-#>  9   29.0       0.248 14.7   0.472 
-#> 10   52.5       0.923  6.18  0.118 
-#> 11   95.1       3.44  18.8   0.897 
-#> 12  172.       17.8   41.8   1.22  
-#> 13  312.        0.344  4.05  0.322 
-#> 14  565.        1.28   2.99  0.0743
-#> 15 1024         6.65  20.0   0.951
+#>         cost rbf_sigma  mean std_err
+#>        <dbl>     <dbl> <dbl>   <dbl>
+#>  1     0.25      4.78  42.0   1.07  
+#>  2     0.562     0.478 33.8   1.12  
+#>  3     1.26      1.78  36.4   1.13  
+#>  4     2.84     12.8   42.0   1.07  
+#>  5     6.39      0.178 29.6   1.03  
+#>  6    14.4       0.665 10.7   0.244 
+#>  7    32.3       2.48  18.2   0.863 
+#>  8    72.6       9.23  41.1   1.26  
+#>  9   163.        0.248  7.83  0.419 
+#> 10   367.        0.923  2.97  0.0925
+#> 11   825.        3.44   4.51  0.231 
+#> 12  1854.       17.8   40.3   1.37  
+#> 13  4169.        0.344  3.78  0.442 
+#> 14  9372.        1.28   1.78  0.0907
+#> 15 21070.        6.65   2.64  0.221
 ```
 
 ## 6 — Select best
@@ -145,7 +167,7 @@ best_params
 #> # A tibble: 1 × 3
 #>    cost rbf_sigma .config         
 #>   <dbl>     <dbl> <chr>           
-#> 1  565.      1.28 pre0_mod14_post0
+#> 1 9372.      1.28 pre0_mod14_post0
 ```
 
 ## 7 — Final fit and test-set evaluation
@@ -163,7 +185,7 @@ collect_metrics(final_fit)
 #> # A tibble: 1 × 4
 #>   .metric .estimator .estimate .config        
 #>   <chr>   <chr>          <dbl> <chr>          
-#> 1 mape    standard        3.14 pre0_mod0_post0
+#> 1 mape    standard        2.03 pre0_mod0_post0
 ```
 
 Predictions on the test set:
@@ -175,12 +197,12 @@ head(preds[, c(".row", "y", ".pred")])
 #> # A tibble: 6 × 3
 #>    .row     y .pred
 #>   <int> <dbl> <dbl>
-#> 1     3  5.99  6.05
-#> 2     4  6.20  6.14
-#> 3     5  4.69  4.88
-#> 4     6  1.96  2.02
-#> 5     8  6.70  6.77
-#> 6     9  3.93  4.03
+#> 1     3  5.99  5.91
+#> 2     4  6.20  6.04
+#> 3     5  4.69  4.84
+#> 4     6  1.96  2.08
+#> 5     8  6.70  6.81
+#> 6     9  3.93  3.97
 ```
 
 The fitted workflow can also be used directly for new data:
@@ -192,9 +214,9 @@ predict(extract_workflow(final_fit), new_data = new_obs)
 #> # A tibble: 3 × 1
 #>   .pred
 #>   <dbl>
-#> 1  1.97
-#> 2  3.53
-#> 3  8.13
+#> 1  2.03
+#> 2  3.45
+#> 3  8.10
 ```
 
 ## 8 — Inspecting the fitted psvr model
@@ -215,7 +237,7 @@ print(engine_fit)
 #> LS-SVR with RMSPE loss  [psvr_rmspe]
 #> 
 #>   Kernel:        RBF (sigma = 1.28306)
-#>   Gamma:         565.294
+#>   Gamma:         9371.97
 #>   Training obs.: 150
 ```
 
@@ -229,5 +251,5 @@ cf <- coef(engine_fit)
 #               point contributes, so despite the name this is not a subset)
 cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
             cf$b, min(cf$alpha), max(cf$alpha)))
-#> b = 12.6350  |  alpha range: [-18.4036, 21.9087]
+#> b = 14.8943  |  alpha range: [-366.4647, 242.8288]
 ```

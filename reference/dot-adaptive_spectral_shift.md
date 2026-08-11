@@ -1,9 +1,13 @@
 # Adaptive spectral regularization (internal, F3)
 
-Implements Theorem 2 of arXiv:2605.01446 v3 with corrected eigenvalue
-estimator. Adds a `mu * I` shift to `Omega_s` when its smallest
-eigenvalue is numerically negative, so the SMO Hessian is provably PSD
-(`>= delta_stab * I`). Returns the matrix untouched when already PSD.
+Estimates the extreme eigenvalues of the symmetrized kernel matrix
+`Omega_s` by power iteration and, if the smallest is numerically
+negative, adds a `mu * I` shift large enough to make the SMO Hessian
+provably PSD (`>= delta_stab * I`). Returns the matrix untouched when it
+is already PSD, which is the case for every kernel
+[`make_kernel()`](https://pbenavidesh.github.io/psvr/reference/make_kernel.md)
+supplies. Implements Theorem 2 of arXiv:2605.01446 v3, with the
+eigenvalue estimator corrected; see below.
 
 ## Usage
 

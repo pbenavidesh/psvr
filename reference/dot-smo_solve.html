@@ -83,9 +83,10 @@ tests for at least two release cycles.</p>
 
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Warm-start projection (Algorithm 1) runs in R via <code>.warm_start_init()</code>
-BEFORE the core call, regardless of engine, so both paths see
-already-feasible alpha/alpha* on entry.</p>
+    <p>Projection of any supplied warm-start duals back onto the constraint set
+runs in R via <code>.warm_start_init()</code> BEFORE the core call, regardless of
+engine, so both paths see already-feasible alpha/alpha* on entry. That
+projection is Algorithm 1 of arXiv:2605.01446 v3.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

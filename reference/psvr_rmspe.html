@@ -130,7 +130,15 @@ the norm penalty.</p></dd>
 
 <dt id="arg-precondition">precondition<a class="anchor" aria-label="anchor" href="#arg-precondition"></a></dt>
 <dd><p>One of <code>"auto"</code> (default), <code>"always"</code>, <code>"never"</code>, or a
-positive numeric threshold. Controls the symmetric rescaling of Remark 17.
+positive numeric threshold. Controls a symmetric rescaling of the linear
+system by \(P = \mathrm{diag}(1/y)\). Unpreconditioned,
+the system carries the target-weighted diagonal
+\(y_k^2/\Gamma\), whose entries span the square of the
+target range; solving \(P \Omega P\) instead replaces it with
+the constant \(1/\Gamma\), so the diagonal no longer inflates
+the condition number when the targets differ by orders of magnitude. The
+multipliers are rescaled back on the way out, leaving the solution
+unchanged in exact arithmetic.
 <code>"auto"</code> applies it when the target ratio
 \(\max(y)/\min(y)\) exceeds 10; a numeric value sets that
 threshold explicitly. Whether it fired is reported in

@@ -85,9 +85,10 @@ cat(sprintf("Model 1 (MAPE e-SVR):       MAPE = %.2f%%", mape(y_te, pred1)),
 #> Model 4 (RMSPE sym LS-SVR): MAPE = 5.79%
 ```
 
-For a full worked example on the Boston Housing dataset — including a
-70/30 train–test split, feature standardisation, and comparison against
-a linear baseline — see
+For a full worked example on
+[`ggplot2::mpg`](https://ggplot2.tidyverse.org/reference/mpg.html) —
+including a 70/30 train–test split, feature standardisation, and
+comparison against a linear baseline — see
 [`vignette("getting-started", package = "psvr")`](https://pbenavidesh.github.io/psvr/articles/getting-started.md).
 
 ## Reference

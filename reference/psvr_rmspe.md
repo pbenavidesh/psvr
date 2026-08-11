@@ -64,10 +64,17 @@ psvr_rmspe(
 - precondition:
 
   One of `"auto"` (default), `"always"`, `"never"`, or a positive
-  numeric threshold. Controls the symmetric rescaling of Remark 17.
-  `"auto"` applies it when the target ratio \\\max(y)/\min(y)\\ exceeds
-  10; a numeric value sets that threshold explicitly. Whether it fired
-  is reported in `fit$precondition_applied`.
+  numeric threshold. Controls a symmetric rescaling of the linear system
+  by \\P = \mathrm{diag}(1/y)\\. Unpreconditioned, the system carries
+  the target-weighted diagonal \\y_k^2/\Gamma\\, whose entries span the
+  square of the target range; solving \\P \Omega P\\ instead replaces it
+  with the constant \\1/\Gamma\\, so the diagonal no longer inflates the
+  condition number when the targets differ by orders of magnitude. The
+  multipliers are rescaled back on the way out, leaving the solution
+  unchanged in exact arithmetic. `"auto"` applies it when the target
+  ratio \\\max(y)/\min(y)\\ exceeds 10; a numeric value sets that
+  threshold explicitly. Whether it fired is reported in
+  `fit$precondition_applied`.
 
 - ...:
 

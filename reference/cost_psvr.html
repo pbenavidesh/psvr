@@ -82,9 +82,11 @@ Default <code><a href="https://scales.r-lib.org/reference/transform_log.html" cl
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>For LS-SVR (<code>m3</code>, <code>m4</code>) models, the static range may still be too
-narrow on benchmark datasets where the optimum exceeds \(10^4\).
-Prefer <code><a href="cost_psvr_ls_data.html">cost_psvr_ls_data()</a></code> in that case.</p>
+    <p>For LS-SVR (<code>m3</code>, <code>m4</code>) models the static range is still frequently too
+narrow, because \(\Gamma\) enters the LS-SVR system through the
+\(y_k^2/\Gamma\) diagonal and so scales with <code>var(y) * N</code>
+rather than sitting at a fixed magnitude.  Prefer <code><a href="cost_psvr_ls_data.html">cost_psvr_ls_data()</a></code>,
+whose range is computed from the training outcome.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

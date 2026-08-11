@@ -36,16 +36,14 @@ A `quant_param` dials object.
 
 ## Details
 
-With the default `width_log2 = 4`, the upper bound covers the typical
-optimum within ~2 orders of magnitude on benchmark datasets. For Boston
-Housing (`var(medv)` about 84.6, `N_train = 404` under an 80/20 split),
-this gives an upper bound of \\2^{19.06} \approx 5.4 \times 10^5\\, two
-decades above the published optimum \\\Gamma \approx 1.7 \times 10^4\\ —
-comfortable headroom for Bayesian optimisation without boundary
-trapping. The static
+The default `width_log2 = 4` places the upper bound about 16 times above
+`var(y) * n`, which is headroom for a Bayesian or grid search to work in
+without pinning against the boundary. Because the bound tracks
+`var(y) * n`, it moves with the outcome: the static
 [`cost_psvr()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr.md)
-range \[-2, 10\] (i.e. \\\Gamma \le 1024\\) underestimates this by more
-than a decade.
+range \[-2, 10\] (i.e. \\\Gamma \le 1024\\) is fixed, so it falls short
+whenever `var(y) * n` exceeds a few hundred — which is the usual case,
+not the exception.
 
 Use this function for `m3` (LS-SVR) and `m4` (symmetric LS-SVR)
 workflows. Stick to

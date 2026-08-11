@@ -18,8 +18,9 @@ and the parsnip engine fit wrappers both return.
 
   See
   [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md)
-  for the full semantics of each argument (including the Remark-17
-  preconditioner).
+  for the full semantics of each argument, including the `diag(1/y)`
+  preconditioner that flattens the target-weighted diagonal to a
+  constant before the solve.
 
 ## Value
 

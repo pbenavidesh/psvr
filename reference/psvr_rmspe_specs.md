@@ -48,19 +48,47 @@ psvr_rmspe_linear(
   Regularization parameter \\\Gamma \> 0\\. Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
   to optimize. Mapped to
-  [`cost_psvr()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr.md)
-  with range `[-2, 10]` on the log2 scale — wider than
-  [`dials::cost()`](https://dials.tidymodels.org/reference/cost.html) to
-  cover the larger values needed by LS-SVR models.
+  [`cost_psvr()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr.md),
+  whose default range `[-2, 10]` on the log2 scale (\\\Gamma \le 1024\\)
+  is the \\\epsilon\\-SVR range and is **too narrow for LS-SVR**.
+  \\\Gamma\\ enters the LS-SVR system only through the \\y_k^2/\Gamma\\
+  diagonal, so the value that balances that term against the kernel
+  scales with the outcome's variance and with the sample size — the
+  quantity
+  [`cost_psvr_ls_data()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr_ls_data.md)
+  computes. The LS-SVR optimum is therefore routinely orders of
+  magnitude above the static ceiling, and a grid over the default is
+  boundary-trapped whenever it is. Pass
+  [`cost_psvr_ls_data()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr_ls_data.md)
+  built from the training outcome explicitly, via
+  [`update()`](https://rdrr.io/r/stats/update.html) on the extracted
+  parameter set or via
+  [`psvr_option_add_cost_ls()`](https://pbenavidesh.github.io/psvr/reference/psvr_option_add_cost_ls.md)
+  for a workflow set. This **cannot** be automated: `tune` finalizes
+  parameters from the molded **predictors** only and never passes the
+  outcome to
+  [`dials::finalize()`](https://dials.tidymodels.org/reference/finalize.html),
+  so no `finalize` function on `cost` could compute it.
 
 - rbf_sigma:
 
   RBF bandwidth \\\sigma \> 0\\. Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
   to optimize. Mapped to
-  [`rbf_sigma_psvr()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.md);
-  the search range auto-finalizes using the median-distance heuristic
-  when training data are available. (RBF specs only.)
+  [`rbf_sigma_psvr()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.md),
+  whose default range `[-3, 1]` on the log10 scale is a fixed,
+  conservative fallback. **The range does not finalize automatically
+  from the training data.**
+  [`rbf_sigma_psvr()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.md)
+  sets `finalize = NULL`, so
+  [`dials::finalize()`](https://dials.tidymodels.org/reference/finalize.html)
+  leaves it untouched. To centre the range on the data, pass
+  [`rbf_sigma_psvr_data()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr_data.md)
+  computed on the **preprocessed** predictors explicitly — via
+  [`update()`](https://rdrr.io/r/stats/update.html) on the extracted
+  parameter set, or via
+  [`psvr_option_add()`](https://pbenavidesh.github.io/psvr/reference/psvr_option_add.md)
+  for a workflow set. (RBF specs only.)
 
 - sym_type:
 

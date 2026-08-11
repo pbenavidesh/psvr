@@ -52,10 +52,12 @@ psvr_mape_linear(
   Regularization parameter `C > 0`. Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
   to optimize. Mapped to
-  [`cost_psvr()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr.md)
-  with range `[-2, 10]` on the log2 scale — wider than
-  [`dials::cost()`](https://dials.tidymodels.org/reference/cost.html) to
-  cover the larger values needed by LS-SVR models.
+  [`cost_psvr()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr.md),
+  whose default range is `[-2, 10]` on the log2 scale (about 0.25 to
+  1024). That range is adequate here, where typical \\\epsilon\\-SVR
+  optima lie in \[10, 100\]. The LS-SVR specs
+  ([psvr_rmspe_specs](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe_specs.md))
+  map `cost` to \\\Gamma\\ and need a much wider range; see there.
 
 - margin:
 
@@ -75,9 +77,20 @@ psvr_mape_linear(
   RBF bandwidth \\\sigma \> 0\\. Use
   [`hardhat::tune()`](https://hardhat.tidymodels.org/reference/tune.html)
   to optimize. Mapped to
-  [`rbf_sigma_psvr()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.md);
-  the search range auto-finalizes using the median-distance heuristic
-  when training data are available. (RBF specs only.)
+  [`rbf_sigma_psvr()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.md),
+  whose default range `[-3, 1]` on the log10 scale is a fixed,
+  conservative fallback. **The range does not finalize automatically
+  from the training data.**
+  [`rbf_sigma_psvr()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr.md)
+  sets `finalize = NULL`, so
+  [`dials::finalize()`](https://dials.tidymodels.org/reference/finalize.html)
+  leaves it untouched. To centre the range on the data, pass
+  [`rbf_sigma_psvr_data()`](https://pbenavidesh.github.io/psvr/reference/rbf_sigma_psvr_data.md)
+  computed on the **preprocessed** predictors explicitly — via
+  [`update()`](https://rdrr.io/r/stats/update.html) on the extracted
+  parameter set, or via
+  [`psvr_option_add()`](https://pbenavidesh.github.io/psvr/reference/psvr_option_add.md)
+  for a workflow set. (RBF specs only.)
 
 - sym_type:
 

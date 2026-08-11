@@ -2,10 +2,16 @@
 
 Fits a
 [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md)
-model on each split in `splits`, carrying the converged
-`(alpha, alpha_star)` from one fold into the next as the SMO warm-start
-(Theorem 5 of arXiv:2605.01446 v3, Algorithm 1). Folds are projected to
-feasibility before each solve. Returns a tibble with one row per fold.
+model on each split in `splits`, carrying the converged dual variables
+`(alpha, alpha_star)` from one fold into the next as the SMO warm-start,
+so each solve starts from the previous fold's optimum instead of from
+zero. Because consecutive folds share most of their training rows, that
+starting point is already close to feasible; before each solve the
+carried vectors are projected back onto the constraint set (the equality
+\\\sum_k \beta_k = 0\\ and the per-sample box), with the residual
+violation absorbed by the rows that are new to this fold. The warm-start
+procedure is Algorithm 1 of arXiv:2605.01446 v3. Returns a tibble with
+one row per fold.
 
 ## Usage
 

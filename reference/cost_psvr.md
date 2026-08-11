@@ -30,10 +30,12 @@ A `quant_param` dials object.
 
 ## Details
 
-For LS-SVR (`m3`, `m4`) models, the static range may still be too narrow
-on benchmark datasets where the optimum exceeds \\10^4\\. Prefer
-[`cost_psvr_ls_data()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr_ls_data.md)
-in that case.
+For LS-SVR (`m3`, `m4`) models the static range is still frequently too
+narrow, because \\\Gamma\\ enters the LS-SVR system through the
+\\y_k^2/\Gamma\\ diagonal and so scales with `var(y) * N` rather than
+sitting at a fixed magnitude. Prefer
+[`cost_psvr_ls_data()`](https://pbenavidesh.github.io/psvr/reference/cost_psvr_ls_data.md),
+whose range is computed from the training outcome.
 
 ## See also
 

@@ -134,9 +134,10 @@ many observations are affected.</p>
 <p>For <em>pooled</em> diagnostics (a mean multiplicative error, a variance, a
 histogram) the affected observations must be excluded, or one near-zero
 fitted value dominates the summary. This follows the standard treatment of
-percentage errors near zero (Makridakis); the thesis applies it in Ch. 7
-Sec. 7.6.1 by excluding observations below a threshold before pooling.
-Exclude at the point of aggregation, e.g.:</p>
+percentage errors near zero (Makridakis): screen the fitted values against a
+threshold and drop the observations below it before pooling, rather than
+altering the per-observation values. Exclude at the point of aggregation,
+e.g.:</p>
 <p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>e <span class="ot">&lt;-</span> <span class="fu">residuals</span>(fit, <span class="at">type =</span> <span class="st">"multiplicative"</span>)</span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">mean</span>(e[<span class="fu">is.finite</span>(e)])</span></code></pre><p></p></div>
     </div>
