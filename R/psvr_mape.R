@@ -38,10 +38,10 @@
 #'   `"none"` fits Model 1 and imposes no symmetry constraint; `"even"` sets
 #'   \eqn{a = +1}{a = +1}, enforcing \eqn{f(x) = f(-x)}{f(x) = f(-x)}; `"odd"`
 #'   sets \eqn{a = -1}{a = -1}, enforcing \eqn{f(x) = -f(-x)}{f(x) = -f(-x)}.
-#'   The fitted object stores the integer as `fit$a`. This is the same
-#'   vocabulary as the `sym_type` argument of the parsnip specifications, so
-#'   the two public surfaces agree. The symmetric variants require a kernel
-#'   satisfying Assumption 3 of the paper -- see [make_kernel()].
+#'   This is the same vocabulary as the `sym_type` argument of the parsnip
+#'   specifications, so the two public surfaces agree. The symmetric variants
+#'   require a kernel satisfying Assumption 3 of the paper -- see
+#'   [make_kernel()].
 #' @param kernel A kernel function created by [make_kernel()].
 #' @param C Regularization parameter, \eqn{C > 0}{C > 0}. Required.
 #' @param eps Insensitivity tube half-width in percentage units,

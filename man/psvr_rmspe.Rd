@@ -27,10 +27,10 @@ undefined otherwise, and this is checked rather than coerced.}
 \code{"none"} fits Model 3 and imposes no symmetry constraint; \code{"even"} sets
 \eqn{a = +1}{a = +1}, enforcing \eqn{f(x) = f(-x)}{f(x) = f(-x)}; \code{"odd"}
 sets \eqn{a = -1}{a = -1}, enforcing \eqn{f(x) = -f(-x)}{f(x) = -f(-x)}.
-The fitted object stores the integer as \code{fit$a}. This is the same
-vocabulary as the \code{sym_type} argument of the parsnip specifications, so
-the two public surfaces agree. The symmetric variants require a kernel
-satisfying Assumption 3 of the paper -- see \code{\link[=make_kernel]{make_kernel()}}.}
+This is the same vocabulary as the \code{sym_type} argument of the parsnip
+specifications, so the two public surfaces agree. The symmetric variants
+require a kernel satisfying Assumption 3 of the paper -- see
+\code{\link[=make_kernel]{make_kernel()}}.}
 
 \item{kernel}{A kernel function created by \code{\link[=make_kernel]{make_kernel()}}.}
 
