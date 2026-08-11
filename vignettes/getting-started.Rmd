@@ -248,6 +248,140 @@ article, on the package website rather than in the installed package,
 shows a full `workflow_set()` comparison of all four models against
 standard baselines.
 
+## Hyperparameter search ranges
+
+The parsnip specs register **static** default ranges — a `dials` parameter
+object has to exist before any data does. Three of them are deliberately
+conservative, one of them is actively wrong for LS-SVR, and one searches a
+level you probably do not want, so tuning a psvr model means supplying your own
+ranges through `param_info`.
+
+Nothing below fits a model. It builds the parameter set and prints it, before
+and after.
+
+```{r ranges-defaults, message = FALSE}
+library(parsnip)
+library(tune)
+
+show_ranges <- function(ps) {
+  for (i in seq_len(nrow(ps))) {
+    ob <- ps$object[[i]]
+    cat(sprintf("  %-10s %s\n", ps$id[i],
+      if (inherits(ob, "quant_param"))
+        sprintf("[%s] on the %s scale",
+                paste(signif(unlist(ob$range), 4), collapse = ", "),
+                if (is.null(ob$trans)) "identity" else ob$trans$name)
+      else sprintf("{%s}", paste(ob$values, collapse = ", "))))
+  }
+  invisible(ps)
+}
+
+spec_mape <- psvr_mape_rbf(cost = tune(), margin = tune(),
+                           rbf_sigma = tune(), sym_type = tune()) |>
+  set_engine("psvr")
+
+extract_parameter_set_dials(spec_mape) |> show_ranges()
+```
+
+For an ε-SVR (Models 1–2) only `rbf_sigma` really needs replacing; the `cost`
+and `margin` defaults are usable as they stand.
+
+```{r ranges-mape}
+extract_parameter_set_dials(spec_mape) |>
+  update(
+    cost      = cost_psvr(),                      # [-2, 10] log2 — fine for C
+    margin    = margin_percentage(),              # 1-20% of each target
+    rbf_sigma = rbf_sigma_psvr_data(X_tr),        # data-driven; see below
+    sym_type  = sym_type_param(c("even", "odd"))  # drops "none"; see below
+  ) |>
+  show_ranges()
+```
+
+For an LS-SVR (Models 3–4) `cost` is $\Gamma$, and there the registered default
+is **not** usable.
+
+```{r ranges-rmspe}
+spec_ls <- psvr_rmspe_rbf(cost = tune(), rbf_sigma = tune(),
+                          sym_type = tune()) |>
+  set_engine("psvr")
+
+extract_parameter_set_dials(spec_ls) |>
+  update(
+    cost      = cost_psvr_ls_data(y_tr),
+    rbf_sigma = rbf_sigma_psvr_data(X_tr),
+    sym_type  = sym_type_param(c("even", "odd"))
+  ) |>
+  show_ranges()
+```
+
+No single spec carries all four helpers: `margin` exists only on the MAPE specs,
+and `cost_psvr_ls_data()` applies only to the RMSPE ones.
+
+### `rbf_sigma` is a length scale, not a precision
+
+Of everything on this page, this is the one most likely to cost you a day.
+psvr's RBF kernel is
+
+$$K(\mathbf{x}_i, \mathbf{x}_j) =
+  \exp\left(-\frac{\|\mathbf{x}_i - \mathbf{x}_j\|^2}{2\sigma^2}\right)$$
+
+so `rbf_sigma` is a **length**, measured in the units of the preprocessed
+feature space, and *larger* means a *wider* kernel. `kernlab::rbfdot(sigma =)`,
+`e1071::svm(gamma =)` and `parsnip::svm_rbf(rbf_sigma =)` all use the
+reciprocal convention, $\exp(-\sigma\|\cdot\|^2)$, where larger means
+*narrower*. Carrying a tuned value across from one of those gives a silently
+wrong kernel width — no error, no warning, just a worse model.
+
+### `rbf_sigma_psvr_data()` needs preprocessed predictors
+
+`rbf_sigma_psvr_data(X)` centres its range on the median pairwise Euclidean
+distance between the rows of `X`, spanning one decade either side of it on the
+log10 scale. Being a distance-based heuristic, it means nothing except on the
+scale the model is actually fitted on: pass the standardised predictors (`X_tr`
+here, or the baked output of a recipe), never the raw ones.
+
+```{r ranges-sigma}
+sigma_heuristic(X_tr)   # the geometric centre of the range printed above
+```
+
+Above `sample_size` rows (default 500) the median is taken on a random
+subsample, so the centre becomes an estimate rather than the exact median — and
+a seed-dependent one. Pass `seed` if you need it reproducible.
+
+### LS-SVR needs `cost_psvr_ls_data()`, and it cannot be automated
+
+`cost` maps to `C` on the ε-SVR models and to $\Gamma$ on the LS-SVR ones, but
+both register the same default of $[-2, 10]$ on the log2 scale, i.e.
+$\Gamma \le 1024$. That is the ε-SVR range. The LS-SVR optimum scales with
+`var(y) * n`, which on Boston puts it near $10^5$, so a grid over the default is
+**boundary-trapped** — every candidate is legal, the search reports a plausible
+number, and the optimum was never inside the range. The
+[tidymodels workflow](tidymodels-workflow.html) article shows the size of the
+effect on a smaller dataset.
+
+`cost_psvr_ls_data(y)` sets the ceiling from `var(y) * n`. It has to be passed
+by hand: `tune` finalises parameters from the molded **predictors** alone and
+never passes the outcome to `dials::finalize()`, so no machinery could compute a
+`var(y)`-based bound on your behalf.
+
+### Tuning `sym_type` cannot answer "does symmetry help"
+
+`sym_type` registers all three levels, `{none, even, odd}`, and `"none"` *is*
+the asymmetric model. So `sym_type = tune()` puts Models 1 and 2 — or 3 and 4 —
+inside a single search space, and `select_best()` returns whichever candidate
+won. That is a selection, not a comparison. To contrast the two families, fix
+`sym_type` on two specs and compare their resampled metrics. Restricting to
+`c("even", "odd")`, as above, tunes *within* the symmetric family, which is a
+third question again.
+
+### The outcome stays in original units
+
+`recipes::step_normalize()` applies to predictors. Leave the outcome alone: the
+percentage-error losses divide by `y`, so they need `y > 0` on the original
+scale, and centring the outcome would destroy positivity and change what
+"percentage error" even refers to. This is a genuine departure from classical
+SVR, where rescaling the outcome is routine and harmless.
+
 ## References
 
 Harrison, D. & Rubinfeld, D. L. (1978). Hedonic prices and the demand
