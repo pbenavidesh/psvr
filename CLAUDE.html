@@ -168,7 +168,7 @@
 <li><p>Box constraints in Models 1 and 2 are per-sample: <code>|βk| ≤ 100C/yk</code>.</p></li>
 <li><p>Symmetric models build <code>Ωs = ½(Ω + a·Ω*)</code> via <code><a href="reference/sym_kernel_matrix.html">sym_kernel_matrix()</a></code> and pass <code>Ωs</code> straight to the solver — no extra <code>0.5 *</code> at the call site. Predictions use <code><a href="reference/sym_kernel_vector.html">sym_kernel_vector()</a></code>, which already returns <code>½ Ks(xk, x)</code>.</p></li>
 <li>
-<p><strong>NEVER use <code>$</code> to read a field on a fit object. Use <code>x[["name"]]</code>, or <code>"name" %in% names(x)</code> to test presence.</strong> <code>$</code> partial-matches on lists, so a field that does not exist on a class can silently return a <em>different</em> field. The four classes have different shapes, so this is a live hazard on every one of them, and it is invisible to <code>R CMD check</code>.</p>
+<p><strong>NEVER use <code>$</code> to read a field on a fit object. Use <code>x[["name"]]</code>, or <code>"name" %in% names(x)</code> to test presence.</strong> <code>$</code> partial-matches on lists, so a field that does not exist on a class can silently return a <em>different</em> field. The four classes have different shapes, so a read that is correct on one can be wrong on another — and the failure is silent, invisible to <code>R CMD check</code> and to the test suite.</p>
 <p>The case that proves it — <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> tested for symmetry with <code>!is.null(object$a)</code>:</p>
 <table class="table"><colgroup><col width="33%"><col width="33%"><col width="33%"></colgroup><thead><tr><th>class</th>
 <th>what <code>object$a</code> returns</th>
@@ -186,7 +186,12 @@
 <code>1L</code> / <code>-1L</code>
 </td>
 <td>exact match wins</td>
-</tr></tbody></table><p>Correct by luck in both directions: right answer on two classes for a reason that has nothing to do with the field being absent, wrong answer on the third. A later field named <code>a…</code> would silently flip <code>psvr_mape</code> too.</p>
+</tr></tbody></table><p>Correct by luck in both directions: right answer on two classes for a reason that has nothing to do with the field being absent, wrong answer on the third.</p>
+<p><strong>How big the hazard actually is — derived, not guessed (2026-08-11).</strong> Resolving all 21 field names against all four classes under <code><a href="https://rdrr.io/r/base/pmatch.html" class="external-link">pmatch()</a></code> semantics closes this structurally: the <strong>wrong-object surface is exactly one cell</strong> — <code>psvr_rmspe$a → alpha</code>, the row above. No other field name can produce the shape on any class. That derivation is over a finite vocabulary, so it covers read sites nobody has looked at.</p>
+<p>This does <strong>not</strong> make the rule optional. Two things it does not cover: <em>abbreviations</em> (<code>$conv</code>, <code>$fitt</code>) are outside the 21 names — 274 such strings resolve, all to the right field today, so they are a fragility hazard; and nothing here constrains code written against a <em>future</em> shape. Use <code>[["name"]]</code> and <code>%in% names()</code> regardless — the derivation is why the known surface is small, not a licence to skip the idiom.</p>
+<blockquote>
+<p><strong>CORRECTED 2026-08-11.</strong> This block previously ended: <em>“A later field named <code>a…</code> would silently flip <code>psvr_mape</code> too.”</em> <strong>That is false.</strong> An <code>a</code>-prefixed field <em>preserves</em> the ambiguity and cannot resolve it — <code>+ active_set</code>, <code>+ accel</code>, <code>+ a_scale</code>, <code>+ aux</code> all leave <code>$a</code> at <code>NULL</code>, and <code>+ a</code> exactly is an exact match, which is correct behaviour. All five tested. The <strong>only</strong> change that flips <code>psvr_mape</code> is <strong>removing <code>alpha_star</code></strong> (or <code>alpha</code>), leaving one <code>a</code>-prefixed field — and that is a breaking change against a documented <code>@return</code>, so it cannot happen quietly. The true fragility scope is far narrower than the sentence claimed.</p>
+</blockquote>
 </li>
 </ul></div>
 <div class="section level2">

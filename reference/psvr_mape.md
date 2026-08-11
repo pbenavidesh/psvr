@@ -50,10 +50,10 @@ psvr_mape(
   onto the symmetry parameter \\a\\ of the paper: `"none"` fits Model 1
   and imposes no symmetry constraint; `"even"` sets \\a = +1\\,
   enforcing \\f(x) = f(-x)\\; `"odd"` sets \\a = -1\\, enforcing \\f(x)
-  = -f(-x)\\. The fitted object stores the integer as `fit$a`. This is
-  the same vocabulary as the `sym_type` argument of the parsnip
-  specifications, so the two public surfaces agree. The symmetric
-  variants require a kernel satisfying Assumption 3 of the paper – see
+  = -f(-x)\\. This is the same vocabulary as the `sym_type` argument of
+  the parsnip specifications, so the two public surfaces agree. The
+  symmetric variants require a kernel satisfying Assumption 3 of the
+  paper – see
   [`make_kernel()`](https://pbenavidesh.github.io/psvr/reference/make_kernel.md).
 
 - kernel:

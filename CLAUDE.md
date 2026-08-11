@@ -127,9 +127,9 @@ degree satisfy both.
 - **NEVER use `$` to read a field on a fit object. Use `x[["name"]]`, or
   `"name" %in% names(x)` to test presence.** `$` partial-matches on
   lists, so a field that does not exist on a class can silently return a
-  *different* field. The four classes have different shapes, so this is
-  a live hazard on every one of them, and it is invisible to
-  `R CMD check`.
+  *different* field. The four classes have different shapes, so a read
+  that is correct on one can be wrong on another — and the failure is
+  silent, invisible to `R CMD check` and to the test suite.
 
   The case that proves it —
   [`summary()`](https://rdrr.io/r/base/summary.html) tested for symmetry
@@ -143,8 +143,34 @@ degree satisfy both.
 
   Correct by luck in both directions: right answer on two classes for a
   reason that has nothing to do with the field being absent, wrong
-  answer on the third. A later field named `a…` would silently flip
-  `psvr_mape` too.
+  answer on the third.
+
+  **How big the hazard actually is — derived, not guessed
+  (2026-08-11).** Resolving all 21 field names against all four classes
+  under [`pmatch()`](https://rdrr.io/r/base/pmatch.html) semantics
+  closes this structurally: the **wrong-object surface is exactly one
+  cell** — `psvr_rmspe$a → alpha`, the row above. No other field name
+  can produce the shape on any class. That derivation is over a finite
+  vocabulary, so it covers read sites nobody has looked at.
+
+  This does **not** make the rule optional. Two things it does not
+  cover: *abbreviations* (`$conv`, `$fitt`) are outside the 21 names —
+  274 such strings resolve, all to the right field today, so they are a
+  fragility hazard; and nothing here constrains code written against a
+  *future* shape. Use `[["name"]]` and `%in% names()` regardless — the
+  derivation is why the known surface is small, not a licence to skip
+  the idiom.
+
+  > **CORRECTED 2026-08-11.** This block previously ended: *“A later
+  > field named `a…` would silently flip `psvr_mape` too.”* **That is
+  > false.** An `a`-prefixed field *preserves* the ambiguity and cannot
+  > resolve it — `+ active_set`, `+ accel`, `+ a_scale`, `+ aux` all
+  > leave `$a` at `NULL`, and `+ a` exactly is an exact match, which is
+  > correct behaviour. All five tested. The **only** change that flips
+  > `psvr_mape` is **removing `alpha_star`** (or `alpha`), leaving one
+  > `a`-prefixed field — and that is a breaking change against a
+  > documented `@return`, so it cannot happen quietly. The true
+  > fragility scope is far narrower than the sentence claimed.
 
 ## Conventions
 
