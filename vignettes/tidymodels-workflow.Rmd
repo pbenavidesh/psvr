@@ -88,9 +88,26 @@ wf <- workflow() |>
 ## 5 — Tune with 5-fold CV
 
 We search over a 15-point Latin hypercube of `cost` and `rbf_sigma` values and
-evaluate each fold by MAPE.  The `rbf_sigma` search range is set data-adaptively
-using `rbf_sigma_psvr_data()`, centred on the median pairwise distance in the
-normalised feature space.  The RMSPE LS-SVR only solves an `(N+1) × (N+1)`
+evaluate each fold by MAPE.  Both search ranges are set from the data, and
+**neither happens automatically** — `dials` cannot finalize either one, so both
+have to be passed explicitly through `param_info`:
+
+- `rbf_sigma_psvr_data()` centres the bandwidth range on the median pairwise
+  distance, so it is computed on the **baked** predictors: the heuristic only
+  means anything on the scale the model is actually fitted on.
+- `cost_psvr_ls_data()` widens the `cost` range.  Here `cost` is $\Gamma$, and
+  its registered default of $[-2, 10]$ on the log2 scale ($\Gamma \le 1024$) is
+  the $\epsilon$-SVR range — far too low for LS-SVR, where the optimum scales
+  with `var(y) * n`.  Left at the default the grid tops out at $\Gamma = 1024$,
+  which on this dataset is an order of magnitude below the value selected once
+  the range is widened — compare the `cost` column printed below.  The search
+  is boundary-trapped: it cannot reach the optimum at all, and nothing warns
+  you, because every candidate it did evaluate was legal.
+  This one cannot be automated even in principle,
+  because `tune` finalizes parameters from the predictors alone and never passes
+  the outcome to `dials::finalize()`.
+
+The RMSPE LS-SVR only solves an `(N+1) × (N+1)`
 linear system — no iterative solver is involved — so 75
 fits complete in seconds.
 
@@ -103,7 +120,10 @@ train_baked      <- rec |> prep() |> bake(new_data = train)
 rbf_sigma_custom <- rbf_sigma_psvr_data(train_baked |> select(-y))
 
 wf_params <- extract_parameter_set_dials(wf) |>
-  update(rbf_sigma = rbf_sigma_custom)
+  update(
+    cost      = cost_psvr_ls_data(train$y),
+    rbf_sigma = rbf_sigma_custom
+  )
 
 tune_res <- tune_grid(
   wf,
