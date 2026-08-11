@@ -135,15 +135,53 @@ test_that("cost_psvr_ls_data() returns a quant_param with data-driven upper boun
   expect_gte(r$upper, log2(var(y) * length(y)))
 })
 
-test_that("cost_psvr_ls_data() upper bound covers Boston Housing Gamma_opt", {
-  skip_if_not_installed("mlbench")
-  data("BostonHousing", package = "mlbench")
-  y_full <- BostonHousing$medv
-  # 80/20 split used by run_seed(): N_train = floor(0.8 * 506) = 404
-  p <- cost_psvr_ls_data(y_full, n = 404L)
-  r <- dials::range_get(p, original = FALSE)
-  # Published Boston optimum: Gamma ~= 16962.54  ->  log2 ~= 14.05
-  expect_gte(r$upper, log2(16962.54))
+test_that("cost_psvr_ls_data() covers a real LS-SVR optimum that cost_psvr() misses", {
+  skip_if_not_installed("ggplot2")
+
+  # This is the only assertion that the data-driven upper bound actually
+  # reaches an optimum, so the optimum is SEARCHED FOR here rather than
+  # quoted. A hard-coded figure from some earlier run would assert nothing
+  # about today's code; this fails if `cost_psvr_ls_data()` stops tracking
+  # the data, and it fails if the LS-SVR optimum stops being where the
+  # var(y) * n heuristic says it is.
+  #
+  # Same data and split as vignettes/getting-started.Rmd. All 41 fits are
+  # single (N+1) x (N+1) linear solves at N = 163: ~1 s in total.
+  mpg <- ggplot2::mpg
+  y <- mpg$hwy
+  X <- as.matrix(mpg[, c("displ", "year", "cyl")])
+  set.seed(42)
+  tr <- sample(nrow(X), floor(0.7 * nrow(X)))
+  X_raw_tr <- X[tr, , drop = FALSE]
+  X_tr <- scale(X_raw_tr, colMeans(X_raw_tr), apply(X_raw_tr, 2, sd))
+  X_te <- scale(X[-tr, , drop = FALSE], attr(X_tr, "scaled:center"),
+                attr(X_tr, "scaled:scale"))
+  y_tr <- y[tr]
+  y_te <- y[-tr]
+
+  K <- make_kernel("rbf", sigma = sigma_heuristic(X_tr))
+  grid_log2 <- seq(0, 20, by = 0.5)
+  rmspe <- vapply(2^grid_log2, function(g) {
+    pred <- predict(psvr_rmspe(X_tr, y_tr, kernel = K, gamma = g), X_te)
+    sqrt(mean(((y_te - pred) / y_te)^2))
+  }, numeric(1))
+  opt_log2 <- grid_log2[which.min(rmspe)]
+
+  # The optimum is interior to the grid, so `which.min` found a minimum and
+  # not an endpoint. Without this the two assertions below could both pass
+  # on a monotone curve that never turns over.
+  expect_gt(opt_log2, min(grid_log2))
+  expect_lt(opt_log2, max(grid_log2))
+
+  # THE NEGATIVE HALF, and the reason the function exists: the static range
+  # does not reach the optimum.
+  r_static <- dials::range_get(cost_psvr(), original = FALSE)
+  expect_lt(r_static$upper, opt_log2)
+
+  # THE POSITIVE HALF: the data-driven range does, with headroom rather than
+  # by landing exactly on the boundary.
+  r_data <- dials::range_get(cost_psvr_ls_data(y_tr), original = FALSE)
+  expect_gt(r_data$upper, opt_log2)
 })
 
 test_that("cost_psvr_ls_data() rejects non-positive y or n", {

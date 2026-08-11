@@ -98,7 +98,7 @@ cat(sprintf("Model 1 (MAPE e-SVR):       MAPE = %.2f%%", mape(y_te, pred1)),
     sep = "\n")
 ```
 
-For a full worked example on the Boston Housing dataset — including a 70/30
+For a full worked example on `ggplot2::mpg` — including a 70/30
 train–test split, feature standardisation, and comparison against a linear
 baseline — see `vignette("getting-started", package = "psvr")`.
 

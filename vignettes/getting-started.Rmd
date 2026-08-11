@@ -48,33 +48,40 @@ either way behaves identically.
 All models require **strictly positive targets** (`y > 0`), which is the
 condition under which percentage residuals are well-defined.
 
-## Boston Housing data
+## Fuel-economy data
 
-We reproduce the experiments reported in Tables 1–2 of the paper using
-the Boston Housing dataset (Harrison & Rubinfeld, 1978). All 506
-observations have strictly positive median home values (MEDV, in
-thousands of USD), making MAPE well-defined throughout.
+This vignette **demonstrates** the package on a small public dataset. It does
+not reproduce the paper's experiments, and every number printed below is
+computed when the vignette is built.
+
+We use `ggplot2::mpg`: 234 records of US passenger vehicles. The target is
+`hwy`, highway fuel economy in miles per gallon. It is strictly positive on
+every observation, so the percentage residuals — and therefore MAPE and RMSPE —
+are well-defined throughout.
 
 ```{r data}
 library(psvr)
 library(ggplot2)
 
-# Boston Housing is available in the MASS package
-data("Boston", package = "MASS")
+# Target: highway fuel economy (all > 0)
+y_all <- mpg$hwy
 
-# Target: median home value (all > 0)
-y_all <- Boston$medv
-X_raw <- as.matrix(Boston[, setdiff(names(Boston), "medv")])
+# Predictors: engine displacement, model year, cylinder count.
+#
+# `cty` is deliberately EXCLUDED. City and highway fuel economy are two
+# measurements of the same property of the same vehicle (they correlate at
+# 0.96), so predicting one from the other is leakage rather than modelling.
+X_raw <- as.matrix(mpg[, c("displ", "year", "cyl")])
 
 stopifnot(all(y_all > 0))
 cat("N =", nrow(X_raw), "  p =", ncol(X_raw),
-    "  y range: [", round(min(y_all), 1), ",", round(max(y_all), 1), "]\n")
+    "  y range: [", min(y_all), ",", max(y_all), "]\n")
 ```
 
 ### 70 / 30 train–test split
 
 Features are standardised using training-set statistics so that the RBF
-kernel operates on a comparable scale across all 13 predictors.
+kernel operates on a comparable scale across all three predictors.
 
 ```{r split}
 set.seed(42)
@@ -125,10 +132,15 @@ $$
 where $Y_\Gamma = \operatorname{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)$.
 
 ```{r rmspe-lssvr}
-# make_kernel() returns a closure K(xi, xj) = exp(-||xi - xj||^2 / (2 sigma^2))
-K <- make_kernel("rbf", sigma = 1)
+# make_kernel() returns a closure K(xi, xj) = exp(-||xi - xj||^2 / (2 sigma^2)).
+# sigma is a LENGTH in the units of the preprocessed feature space, so it has
+# to be set on that scale -- sigma_heuristic() reads it off the data instead of
+# guessing. See "Hyperparameter search ranges" below.
+K <- make_kernel("rbf", sigma = sigma_heuristic(X_tr))
 
-# gamma = 5000: regularisation; larger gamma -> smaller Y_Gamma diagonal -> tighter fit
+# gamma = 5000: regularisation; larger gamma -> smaller Y_Gamma diagonal -> tighter fit.
+# This is roughly var(y_tr) * N, the scale cost_psvr_ls_data() computes -- and
+# already five times the ceiling of the registered `cost` default. See below.
 fit_ls <- psvr_rmspe(X_tr, y_tr, kernel = K, gamma = 5000)
 pred_ls <- predict(fit_ls, X_te)
 
@@ -144,7 +156,7 @@ data.frame(actual = y_te, predicted = pred_ls) |>
   geom_point(colour = "#2c7bb6", alpha = 0.65, size = 1.8) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey40") +
   coord_equal(xlim = lim, ylim = lim) +
-  labs(x = "Actual MEDV", y = "Predicted MEDV",
+  labs(x = "Actual hwy (mpg)", y = "Predicted hwy (mpg)",
        title = "Model 3: LS-SVR with RMSPE")
 ```
 
@@ -183,7 +195,7 @@ data.frame(actual = y_te, predicted = pred_ep) |>
   geom_point(colour = "#d7191c", alpha = 0.65, size = 1.8) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey40") +
   coord_equal(xlim = lim, ylim = lim) +
-  labs(x = "Actual MEDV", y = "Predicted MEDV",
+  labs(x = "Actual hwy (mpg)", y = "Predicted hwy (mpg)",
        title = "Model 1: \u03b5-SVR with MAPE")
 ```
 
@@ -220,18 +232,22 @@ results <- data.frame(
 results[, 2:4] <- round(results[, 2:4], 2)
 knitr::kable(results, col.names = c("Model", "MAPE (%)", "RMSPE (%)", "R²"),
              align = "lrrr",
-             caption = paste("Test-set performance on Boston Housing",
-                             "(70/30 split, RBF kernel, single run)."))
+             caption = paste("Test-set performance on ggplot2::mpg",
+                             "(70/30 split, RBF kernel, single run,",
+                             "untuned hyperparameters)."))
 ```
 
 Both psvr models improve on the linear baseline under their respective
-percentage-error objectives. The LS-SVR formulation (Model 3) minimises
-RMSPE directly and achieves the lowest squared-percentage error; the
-ε-SVR formulation (Model 1) targets MAPE through sample-dependent box
-constraints on the dual variables. These results are consistent with
-Tables 1–2 of Benavides-Herrera et al. (2026), where SVR-MAPE reduces
-test-set MAPE from 15.23% (classical ε-SVR) to around 10% relative to a
-linear baseline of 17.85%.
+percentage-error objectives. The LS-SVR formulation (Model 3) minimises RMSPE
+directly; the ε-SVR formulation (Model 1) targets MAPE through
+sample-dependent box constraints on the dual variables.
+
+Read the table for the ordering, not for the magnitudes. It is one split of one
+small dataset at hyperparameters nobody tuned, so the margins are not evidence
+about how these models perform in general — that is what the resampled
+comparison in the
+[When to Use Percentage-Error SVR](https://pbenavidesh.github.io/psvr/articles/when-to-use-psvr.html)
+article is for.
 
 ## Using psvr with tidymodels
 
@@ -341,7 +357,8 @@ scale the model is actually fitted on: pass the standardised predictors (`X_tr`
 here, or the baked output of a recipe), never the raw ones.
 
 ```{r ranges-sigma}
-sigma_heuristic(X_tr)   # the geometric centre of the range printed above
+sigma_heuristic(X_tr)   # the geometric centre of the range printed above,
+                        # and the value the fits at the top of this page used
 ```
 
 Above `sample_size` rows (default 500) the median is taken on a random
@@ -352,17 +369,37 @@ a seed-dependent one. Pass `seed` if you need it reproducible.
 
 `cost` maps to `C` on the ε-SVR models and to $\Gamma$ on the LS-SVR ones, but
 both register the same default of $[-2, 10]$ on the log2 scale, i.e.
-$\Gamma \le 1024$. That is the ε-SVR range. The LS-SVR optimum scales with
-`var(y) * n`, which on Boston puts it near $10^5$, so a grid over the default is
+$\Gamma \le 1024$. That is the ε-SVR range. $\Gamma$ enters the LS-SVR system
+only through the $y_k^2/\Gamma$ diagonal, so the value that balances that term
+against the kernel scales with `var(y) * n` — it is not a fixed magnitude, and
+it grows with both the spread of the outcome and the size of the training set.
+
+The fit at the top of this page is already past the default ceiling: it used
+`gamma = 5000`, and $[-2, 10]$ stops at 1024. A grid over the default would be
 **boundary-trapped** — every candidate is legal, the search reports a plausible
 number, and the optimum was never inside the range. The
 [tidymodels workflow](tidymodels-workflow.html) article shows the size of the
-effect on a smaller dataset.
+effect.
 
 `cost_psvr_ls_data(y)` sets the ceiling from `var(y) * n`. It has to be passed
 by hand: `tune` finalises parameters from the molded **predictors** alone and
 never passes the outcome to `dials::finalize()`, so no machinery could compute a
 `var(y)`-based bound on your behalf.
+
+### `cost` is not comparable across datasets either
+
+The same trap has a milder form on the ε-SVR side, and `cost_psvr()` does not
+protect you from it. The dual box constraint is
+
+$$|\beta_k| \le \frac{100\,C}{y_k}$$
+
+so the bound a given `C` imposes depends on the **magnitude of the outcome**. On
+data where `y` is of order $10^4$ rather than order $10$, the same `C` yields a
+box three decades tighter, every multiplier saturates against it, and the fit
+degenerates towards a constant. `cost_psvr()` returns a static $[-2, 10]$
+calibrated for outcomes of order 10, so on large-`y` data `C` has to be raised
+by hand to compensate — there is currently no `cost_psvr_data()` counterpart to
+`cost_psvr_ls_data()` for the ε-SVR family.
 
 ### Tuning `sym_type` cannot answer "does symmetry help"
 
@@ -383,10 +420,6 @@ scale, and centring the outcome would destroy positivity and change what
 SVR, where rescaling the outcome is routine and harmless.
 
 ## References
-
-Harrison, D. & Rubinfeld, D. L. (1978). Hedonic prices and the demand
-for clean air. *Journal of Environmental Economics and Management*,
-**5**(1), 81–102.
 
 Benavides-Herrera, P., Álvarez, G., Ruiz-Cruz, R., &
 Sánchez-Torres, J. D. (2026). A unified family of percentage-error
