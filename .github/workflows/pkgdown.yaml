@@ -38,6 +38,21 @@ jobs:
           extra-packages: any::pkgdown, any::quarto, local::.
           needs: website
 
+      # pkgdown renders every root-level .md that is not on its own hard-coded
+      # exclusion list (pkgdown:::package_mds) and offers no per-file opt-out,
+      # so the only way to keep CLAUDE.md off the published site is to keep it
+      # out of the build input. This checkout is disposable and CLAUDE.md is in
+      # .Rbuildignore, so nothing else in this job needs it; the tracked file in
+      # the repository is untouched.
+      #
+      # Removing it here rather than deleting docs/CLAUDE.html after the build
+      # is deliberate. A post-build delete would leave the page listed in
+      # sitemap.xml and its full text embedded in search.json, both of which are
+      # derived from the pages that were built. See PSVR_STATUS.md section 2.8.
+      - name: Keep CLAUDE.md out of the pkgdown build
+        run: rm -f CLAUDE.md
+        shell: bash
+
       - name: Build site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
