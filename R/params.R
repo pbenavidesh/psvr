@@ -213,9 +213,11 @@ psvr_option_add <- function(wf_set, X, width = 10, sample_size = 500L,
 #' accommodate the larger regularisation values typically needed by
 #' LS-SVR models.
 #'
-#' For LS-SVR (`m3`, `m4`) models, the static range may still be too
-#' narrow on benchmark datasets where the optimum exceeds \eqn{10^4}{10^4}.
-#' Prefer [cost_psvr_ls_data()] in that case.
+#' For LS-SVR (`m3`, `m4`) models the static range is still frequently too
+#' narrow, because \eqn{\Gamma}{Gamma} enters the LS-SVR system through the
+#' \eqn{y_k^2/\Gamma}{y_k^2/Gamma} diagonal and so scales with `var(y) * N`
+#' rather than sitting at a fixed magnitude.  Prefer [cost_psvr_ls_data()],
+#' whose range is computed from the training outcome.
 #'
 #' @param range Numeric vector of length 2 on the log2 scale.
 #'   Default `c(-2, 10)`.
@@ -251,17 +253,13 @@ cost_psvr <- function(range = c(-2, 10),
 #' is `-2` (i.e. \eqn{\Gamma \ge 0.25}{Gamma >= 0.25}) and the upper bound is
 #' `log2(var(y) * N) + width_log2`.
 #'
-#' With the default `width_log2 = 4`, the upper bound covers the
-#' typical optimum within ~2 orders of magnitude on benchmark
-#' datasets.  For Boston Housing (`var(medv)` about 84.6, `N_train = 404`
-#' under an 80/20 split), this gives an upper bound of
-#' \eqn{2^{19.06} \approx 5.4 \times 10^5}{2^19.06 ~= 5.4 x 10^5}, two
-#' decades above the published optimum
-#' \eqn{\Gamma \approx 1.7 \times 10^4}{Gamma ~= 1.7 x 10^4} — comfortable
-#' headroom for Bayesian optimisation
-#' without boundary trapping.  The static [cost_psvr()] range
-#' \[-2, 10\] (i.e. \eqn{\Gamma \le 1024}{Gamma <= 1024}) underestimates
-#' this by more than a decade.
+#' The default `width_log2 = 4` places the upper bound about 16 times above
+#' `var(y) * n`, which is headroom for a Bayesian or grid search to work in
+#' without pinning against the boundary.  Because the bound tracks
+#' `var(y) * n`, it moves with the outcome: the static [cost_psvr()] range
+#' \[-2, 10\] (i.e. \eqn{\Gamma \le 1024}{Gamma <= 1024}) is fixed, so it
+#' falls short whenever `var(y) * n` exceeds a few hundred — which is the
+#' usual case, not the exception.
 #'
 #' Use this function for `m3` (LS-SVR) and `m4` (symmetric LS-SVR)
 #' workflows.  Stick to [cost_psvr()] for `m1`/`m2`

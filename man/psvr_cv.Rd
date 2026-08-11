@@ -53,11 +53,16 @@ on the assessment set).}
 }
 }
 \description{
-Fits a \code{\link[=psvr_mape]{psvr_mape()}} model on each split in \code{splits}, carrying
-the converged \verb{(alpha, alpha_star)} from one fold into the next as the
-SMO warm-start (Theorem 5 of arXiv:2605.01446 v3, Algorithm 1). Folds
-are projected to feasibility before each solve. Returns a tibble with
-one row per fold.
+Fits a \code{\link[=psvr_mape]{psvr_mape()}} model on each split in \code{splits}, carrying the converged
+dual variables \verb{(alpha, alpha_star)} from one fold into the next as the SMO
+warm-start, so each solve starts from the previous fold's optimum instead of
+from zero. Because consecutive folds share most of their training rows, that
+starting point is already close to feasible; before each solve the carried
+vectors are projected back onto the constraint set (the equality
+\eqn{\sum_k \beta_k = 0}{sum_k beta_k = 0} and the per-sample box), with the
+residual violation absorbed by the rows that are new to this fold. The
+warm-start procedure is Algorithm 1 of arXiv:2605.01446 v3. Returns a tibble
+with one row per fold.
 }
 \details{
 This helper is \strong{MAPE-only}, and there is no \code{loss} argument. That is a

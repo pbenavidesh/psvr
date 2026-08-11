@@ -112,8 +112,10 @@ class \code{"psvr_mape"}: a list with \code{beta} (support-vector dual differenc
 starts), \code{b}, \code{X_sv}, \code{y_sv}, \code{y_train}, \code{fitted_values}, \code{kernel}, \code{C},
 \code{eps}, \code{n_train}, \code{p_train}, \code{iterations}, \code{converged}, and \code{block_k4}.
 With \code{sym_type = "even"} or \code{"odd"} they return class \code{"psvr_mape_sym"}:
-the same components plus \code{a} (the symmetry type) and \code{spectral}
-(Algorithm 2 diagnostics).
+the same components plus \code{a} (the symmetry type) and \code{spectral} (the
+estimated extreme eigenvalues of the symmetrized kernel matrix, and the
+diagonal shift applied to it if it was not numerically positive
+semi-definite).
 
 The RMSPE wrappers (\code{psvr_rmspe_rbf_fit()}, \code{psvr_rmspe_poly_fit()},
 \code{psvr_rmspe_linear_fit()}) with \code{sym_type = "none"} return class

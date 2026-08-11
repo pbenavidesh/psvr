@@ -136,7 +136,7 @@ summary.psvr_mape_sym <- function(object, ...)
 #' Summarize a fitted LS-SVR with RMSPE loss
 #'
 #' Prints the kernel, the training count, the hyperparameter, and whether the
-#' Remark-17 preconditioner fired. No support-vector count is reported: LS-SVR
+#' `diag(1/y)` preconditioner fired. No support-vector count is reported: LS-SVR
 #' performs no pruning, so every training point contributes to the prediction.
 #'
 #' @param object An object of class `"psvr_rmspe"`, from [psvr_rmspe()] with

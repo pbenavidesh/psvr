@@ -39,7 +39,15 @@ Larger values weight the squared percentage residuals more heavily against
 the norm penalty.}
 
 \item{precondition}{One of \code{"auto"} (default), \code{"always"}, \code{"never"}, or a
-positive numeric threshold. Controls the symmetric rescaling of Remark 17.
+positive numeric threshold. Controls a symmetric rescaling of the linear
+system by \eqn{P = \mathrm{diag}(1/y)}{P = diag(1/y)}. Unpreconditioned,
+the system carries the target-weighted diagonal
+\eqn{y_k^2/\Gamma}{y_k^2/Gamma}, whose entries span the square of the
+target range; solving \eqn{P \Omega P}{P Omega P} instead replaces it with
+the constant \eqn{1/\Gamma}{1/Gamma}, so the diagonal no longer inflates
+the condition number when the targets differ by orders of magnitude. The
+multipliers are rescaled back on the way out, leaving the solution
+unchanged in exact arithmetic.
 \code{"auto"} applies it when the target ratio
 \eqn{\max(y)/\min(y)}{max(y)/min(y)} exceeds 10; a numeric value sets that
 threshold explicitly. Whether it fired is reported in

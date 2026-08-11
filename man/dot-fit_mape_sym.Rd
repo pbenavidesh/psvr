@@ -31,8 +31,11 @@ integer; the public argument is \code{sym_type}, with \code{"even"} mapping to
 \code{a = 1} and \code{"odd"} to \code{a = -1}. Neither \code{\link[=psvr_mape]{psvr_mape()}} nor the parsnip
 specifications expose \code{a} directly.}
 
-\item{alpha_init, alpha_star_init}{Optional length-N numeric warm-start
-vectors (Theorem 5); \code{NULL} cold-starts.}
+\item{alpha_init, alpha_star_init}{Optional length-N numeric vectors of
+starting values for the two sets of SMO dual variables, typically the
+converged duals of a previous fit on overlapping data. They are projected
+back onto the constraint set before the solve (the warm-start procedure of
+Theorem 5 / Algorithm 1 in arXiv:2605.01446 v3). \code{NULL} cold-starts.}
 
 \item{warm_start_check}{Logical; if \code{TRUE}, validate the post-projection
 feasibility of the warm-start vectors. Default \code{TRUE}.}

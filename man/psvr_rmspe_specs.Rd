@@ -39,10 +39,14 @@ psvr_rmspe_linear(
 \item{cost}{Regularization parameter \eqn{\Gamma > 0}{Gamma > 0}.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
 Mapped to \code{\link[=cost_psvr]{cost_psvr()}}, whose default range \verb{[-2, 10]} on the log2 scale
 (\eqn{\Gamma \le 1024}{Gamma <= 1024}) is the
-\eqn{\epsilon}{epsilon}-SVR range and is \strong{too narrow for LS-SVR}.  On
-Boston Housing the tuned optimum is around
-\eqn{1.1 \times 10^5}{1.1 x 10^5} — roughly 100 times that ceiling — so a
-grid over the default is boundary-trapped.  Pass \code{\link[=cost_psvr_ls_data]{cost_psvr_ls_data()}}
+\eqn{\epsilon}{epsilon}-SVR range and is \strong{too narrow for LS-SVR}.
+\eqn{\Gamma}{Gamma} enters the LS-SVR system only through the
+\eqn{y_k^2/\Gamma}{y_k^2/Gamma} diagonal, so the value that balances that
+term against the kernel scales with the outcome's variance and with the
+sample size — the quantity \code{\link[=cost_psvr_ls_data]{cost_psvr_ls_data()}} computes.  The LS-SVR
+optimum is therefore routinely orders of magnitude above the static
+ceiling, and a grid over the default is boundary-trapped whenever it is.
+Pass \code{\link[=cost_psvr_ls_data]{cost_psvr_ls_data()}}
 built from the training outcome explicitly, via \code{update()} on the
 extracted parameter set or via \code{\link[=psvr_option_add_cost_ls]{psvr_option_add_cost_ls()}} for a workflow
 set.  This \strong{cannot} be automated: \code{tune} finalizes parameters from the

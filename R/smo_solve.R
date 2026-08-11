@@ -47,9 +47,10 @@
 #' once the Rcpp path has passed the snapshot and engine-equivalence
 #' tests for at least two release cycles.
 #'
-#' Warm-start projection (Algorithm 1) runs in R via `.warm_start_init()`
-#' BEFORE the core call, regardless of engine, so both paths see
-#' already-feasible alpha/alpha* on entry.
+#' Projection of any supplied warm-start duals back onto the constraint set
+#' runs in R via `.warm_start_init()` BEFORE the core call, regardless of
+#' engine, so both paths see already-feasible alpha/alpha* on entry. That
+#' projection is Algorithm 1 of arXiv:2605.01446 v3.
 #'
 #' @keywords internal
 .smo_solve <- function(K_acc, y, C, eps,

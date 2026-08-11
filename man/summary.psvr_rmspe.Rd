@@ -18,7 +18,7 @@
 }
 \description{
 Prints the kernel, the training count, the hyperparameter, and whether the
-Remark-17 preconditioner fired. No support-vector count is reported: LS-SVR
+\code{diag(1/y)} preconditioner fired. No support-vector count is reported: LS-SVR
 performs no pruning, so every training point contributes to the prediction.
 }
 \examples{

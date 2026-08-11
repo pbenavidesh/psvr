@@ -84,8 +84,10 @@ utils::globalVariables(c("object", "new_data"))
 #'   starts), `b`, `X_sv`, `y_sv`, `y_train`, `fitted_values`, `kernel`, `C`,
 #'   `eps`, `n_train`, `p_train`, `iterations`, `converged`, and `block_k4`.
 #'   With `sym_type = "even"` or `"odd"` they return class `"psvr_mape_sym"`:
-#'   the same components plus `a` (the symmetry type) and `spectral`
-#'   (Algorithm 2 diagnostics).
+#'   the same components plus `a` (the symmetry type) and `spectral` (the
+#'   estimated extreme eigenvalues of the symmetrized kernel matrix, and the
+#'   diagonal shift applied to it if it was not numerically positive
+#'   semi-definite).
 #'
 #'   The RMSPE wrappers (`psvr_rmspe_rbf_fit()`, `psvr_rmspe_poly_fit()`,
 #'   `psvr_rmspe_linear_fit()`) with `sym_type = "none"` return class
@@ -341,10 +343,14 @@ psvr_mape_linear <- function(mode = "regression", engine = "psvr",
 #' @param cost   Regularization parameter \eqn{\Gamma > 0}{Gamma > 0}.  Use [tune()] to optimize.
 #'   Mapped to [cost_psvr()], whose default range `[-2, 10]` on the log2 scale
 #'   (\eqn{\Gamma \le 1024}{Gamma <= 1024}) is the
-#'   \eqn{\epsilon}{epsilon}-SVR range and is **too narrow for LS-SVR**.  On
-#'   Boston Housing the tuned optimum is around
-#'   \eqn{1.1 \times 10^5}{1.1 x 10^5} — roughly 100 times that ceiling — so a
-#'   grid over the default is boundary-trapped.  Pass [cost_psvr_ls_data()]
+#'   \eqn{\epsilon}{epsilon}-SVR range and is **too narrow for LS-SVR**.
+#'   \eqn{\Gamma}{Gamma} enters the LS-SVR system only through the
+#'   \eqn{y_k^2/\Gamma}{y_k^2/Gamma} diagonal, so the value that balances that
+#'   term against the kernel scales with the outcome's variance and with the
+#'   sample size — the quantity [cost_psvr_ls_data()] computes.  The LS-SVR
+#'   optimum is therefore routinely orders of magnitude above the static
+#'   ceiling, and a grid over the default is boundary-trapped whenever it is.
+#'   Pass [cost_psvr_ls_data()]
 #'   built from the training outcome explicitly, via `update()` on the
 #'   extracted parameter set or via [psvr_option_add_cost_ls()] for a workflow
 #'   set.  This **cannot** be automated: `tune` finalizes parameters from the

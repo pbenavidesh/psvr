@@ -5,8 +5,11 @@
 #' engine fit wrappers both return.
 #'
 #' @param X,y,kernel,C,eps,solver,tol See [psvr_mape()].
-#' @param alpha_init,alpha_star_init Optional length-N numeric warm-start
-#'   vectors (Theorem 5); `NULL` cold-starts.
+#' @param alpha_init,alpha_star_init Optional length-N numeric vectors of
+#'   starting values for the two sets of SMO dual variables, typically the
+#'   converged duals of a previous fit on overlapping data. They are projected
+#'   back onto the constraint set before the solve (the warm-start procedure of
+#'   Theorem 5 / Algorithm 1 in arXiv:2605.01446 v3). `NULL` cold-starts.
 #' @param warm_start_check Logical; if `TRUE`, validate the post-projection
 #'   feasibility of the warm-start vectors. Default `TRUE`.
 #'

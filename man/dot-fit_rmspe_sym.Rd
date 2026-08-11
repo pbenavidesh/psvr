@@ -8,7 +8,8 @@
 }
 \arguments{
 \item{X, y, kernel, gamma, precondition}{See \code{\link[=psvr_rmspe]{psvr_rmspe()}} for the full
-semantics of each argument (including the Remark-17 preconditioner).}
+semantics of each argument, including the \code{diag(1/y)} preconditioner that
+flattens the target-weighted diagonal to a constant before the solve.}
 
 \item{a}{Symmetry type: \code{1} (even) or \code{-1} (odd). This is the internal
 integer; the public argument is \code{sym_type}, with \code{"even"} mapping to

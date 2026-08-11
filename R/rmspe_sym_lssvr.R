@@ -7,7 +7,8 @@
 #' satisfy Assumption 3 of the paper (kernel symmetry); see [make_kernel()].
 #'
 #' @param X,y,kernel,gamma,precondition See [psvr_rmspe()] for the full
-#'   semantics of each argument (including the Remark-17 preconditioner).
+#'   semantics of each argument, including the `diag(1/y)` preconditioner that
+#'   flattens the target-weighted diagonal to a constant before the solve.
 #' @param a Symmetry type: `1` (even) or `-1` (odd). This is the internal
 #'   integer; the public argument is `sym_type`, with `"even"` mapping to
 #'   `a = 1` and `"odd"` to `a = -1`. Neither [psvr_rmspe()] nor the parsnip

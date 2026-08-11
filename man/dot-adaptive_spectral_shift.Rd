@@ -36,10 +36,13 @@ executed in Pass 1 and Pass 2.}
 }
 }
 \description{
-Implements Theorem 2 of arXiv:2605.01446 v3 with corrected eigenvalue
-estimator. Adds a \code{mu * I} shift to \code{Omega_s} when its smallest
-eigenvalue is numerically negative, so the SMO Hessian is provably PSD
-(\verb{>= delta_stab * I}). Returns the matrix untouched when already PSD.
+Estimates the extreme eigenvalues of the symmetrized kernel matrix
+\code{Omega_s} by power iteration and, if the smallest is numerically negative,
+adds a \code{mu * I} shift large enough to make the SMO Hessian provably PSD
+(\verb{>= delta_stab * I}). Returns the matrix untouched when it is already PSD,
+which is the case for every kernel \code{make_kernel()} supplies. Implements
+Theorem 2 of arXiv:2605.01446 v3, with the eigenvalue estimator corrected;
+see below.
 }
 \section{Algorithm and paper deviation}{
 

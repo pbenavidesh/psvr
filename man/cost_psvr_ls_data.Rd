@@ -29,17 +29,13 @@ is \code{-2} (i.e. \eqn{\Gamma \ge 0.25}{Gamma >= 0.25}) and the upper bound is
 \code{log2(var(y) * N) + width_log2}.
 }
 \details{
-With the default \code{width_log2 = 4}, the upper bound covers the
-typical optimum within ~2 orders of magnitude on benchmark
-datasets.  For Boston Housing (\code{var(medv)} about 84.6, \code{N_train = 404}
-under an 80/20 split), this gives an upper bound of
-\eqn{2^{19.06} \approx 5.4 \times 10^5}{2^19.06 ~= 5.4 x 10^5}, two
-decades above the published optimum
-\eqn{\Gamma \approx 1.7 \times 10^4}{Gamma ~= 1.7 x 10^4} — comfortable
-headroom for Bayesian optimisation
-without boundary trapping.  The static \code{\link[=cost_psvr]{cost_psvr()}} range
-[-2, 10] (i.e. \eqn{\Gamma \le 1024}{Gamma <= 1024}) underestimates
-this by more than a decade.
+The default \code{width_log2 = 4} places the upper bound about 16 times above
+\code{var(y) * n}, which is headroom for a Bayesian or grid search to work in
+without pinning against the boundary.  Because the bound tracks
+\code{var(y) * n}, it moves with the outcome: the static \code{\link[=cost_psvr]{cost_psvr()}} range
+[-2, 10] (i.e. \eqn{\Gamma \le 1024}{Gamma <= 1024}) is fixed, so it
+falls short whenever \code{var(y) * n} exceeds a few hundred — which is the
+usual case, not the exception.
 
 Use this function for \code{m3} (LS-SVR) and \code{m4} (symmetric LS-SVR)
 workflows.  Stick to \code{\link[=cost_psvr]{cost_psvr()}} for \code{m1}/\code{m2}

@@ -5,7 +5,8 @@
 #' engine fit wrappers both return.
 #'
 #' @param X,y,kernel,gamma,precondition See [psvr_rmspe()] for the full
-#'   semantics of each argument (including the Remark-17 preconditioner).
+#'   semantics of each argument, including the `diag(1/y)` preconditioner that
+#'   flattens the target-weighted diagonal to a constant before the solve.
 #'
 #' @return A list of class `"psvr_rmspe"`.
 #'
