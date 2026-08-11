@@ -23,7 +23,8 @@ matches \code{"m3"} or \code{"m4"}), replacing the \code{cost} dials parameter
 with one built from \code{y} via \code{\link[=cost_psvr_ls_data]{cost_psvr_ls_data()}}.
 }
 \details{
-Workflows for \code{m1}/\code{m2} (\code{ε}-SVR) are intentionally skipped — for
+Workflows for \code{m1}/\code{m2} (\eqn{\epsilon}{epsilon}-SVR) are intentionally
+skipped — for
 those, \code{cost} maps to \code{C} and the static \code{\link[=cost_psvr]{cost_psvr()}} range is
 usually adequate.
 

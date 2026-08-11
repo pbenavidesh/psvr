@@ -2,7 +2,7 @@
 % Please edit documentation in R/kernel.R
 \name{sym_kernel_matrix}
 \alias{sym_kernel_matrix}
-\title{Compute the symmetrized kernel matrix Ωs = ½(Ω + a·Ω*)}
+\title{Compute the symmetrized kernel matrix Omega_s = (Omega + a Omega*) / 2}
 \usage{
 sym_kernel_matrix(K, X, a)
 }
@@ -14,10 +14,12 @@ sym_kernel_matrix(K, X, a)
 \item{a}{Symmetry parameter: \code{1} (even) or \code{-1} (odd).}
 }
 \value{
-Numeric N × N matrix \verb{Ωs = ½(Ω + a·Ω*)}.
+Numeric N × N matrix
+\eqn{\Omega_s = \frac{1}{2}(\Omega + a\Omega^*)}{Omega_s = (Omega + a Omega*) / 2}.
 }
 \description{
-Used by the symmetric LS-SVR model (Model 4). Entry \verb{[k, l]} of \verb{Ω*} is
-\code{K(xk, -xl)}, so negation is applied to the columns of X (i.e., to \code{X2}).
+Used by the symmetric LS-SVR model (Model 4). Entry \verb{[k, l]} of
+\eqn{\Omega^*}{Omega*} is \code{K(xk, -xl)}, so negation is applied to the
+columns of X (i.e., to \code{X2}).
 }
 \keyword{internal}

@@ -13,7 +13,7 @@ cost_psvr_ls_data(y, n = length(y), width_log2 = 4)
 
 \item{width_log2}{Scalar giving the half-width (in log2 units)
 added above \code{log2(var(y) * n)} to set the upper bound.
-Default \code{4} (≈16× headroom).  Negative values are accepted with
+Default \code{4} (about 16× headroom).  Negative values are accepted with
 a warning, since the resulting upper bound falls below the
 \code{var(y) * n} heuristic and is unlikely to be useful.}
 }
@@ -23,23 +23,27 @@ A \code{quant_param} dials object.
 \description{
 Returns a \code{quant_param} whose search range scales with
 \code{var(y) * N}, the standard heuristic for the LS-SVR regularisation
-parameter \code{Γ} (Suykens et al. 2002, \emph{Least Squares Support Vector
-Machines}, §3.1.3).  On the log2 scale, the lower bound is \code{-2}
-(i.e. \verb{Γ ≥ 0.25}) and the upper bound is
+parameter \eqn{\Gamma}{Gamma} (Suykens et al. 2002, \emph{Least Squares
+Support Vector Machines}, §3.1.3).  On the log2 scale, the lower bound
+is \code{-2} (i.e. \eqn{\Gamma \ge 0.25}{Gamma >= 0.25}) and the upper bound is
 \code{log2(var(y) * N) + width_log2}.
 }
 \details{
 With the default \code{width_log2 = 4}, the upper bound covers the
 typical optimum within ~2 orders of magnitude on benchmark
-datasets.  For Boston Housing (\verb{var(medv) ≈ 84.6}, \code{N_train = 404}
-under an 80/20 split), this gives an upper bound of \verb{2^19.06 ≈ 5.4 × 10⁵}, two decades above the published optimum
-\verb{Γ ≈ 1.7 × 10⁴} — comfortable headroom for Bayesian optimisation
+datasets.  For Boston Housing (\code{var(medv)} about 84.6, \code{N_train = 404}
+under an 80/20 split), this gives an upper bound of
+\eqn{2^{19.06} \approx 5.4 \times 10^5}{2^19.06 ~= 5.4 x 10^5}, two
+decades above the published optimum
+\eqn{\Gamma \approx 1.7 \times 10^4}{Gamma ~= 1.7 x 10^4} — comfortable
+headroom for Bayesian optimisation
 without boundary trapping.  The static \code{\link[=cost_psvr]{cost_psvr()}} range
-[-2, 10] (i.e. \verb{Γ ≤ 1024}) underestimates this by more than a
-decade.
+[-2, 10] (i.e. \eqn{\Gamma \le 1024}{Gamma <= 1024}) underestimates
+this by more than a decade.
 
 Use this function for \code{m3} (LS-SVR) and \code{m4} (symmetric LS-SVR)
-workflows.  Stick to \code{\link[=cost_psvr]{cost_psvr()}} for \code{m1}/\code{m2} (\code{ε}-SVR), where
+workflows.  Stick to \code{\link[=cost_psvr]{cost_psvr()}} for \code{m1}/\code{m2}
+(\eqn{\epsilon}{epsilon}-SVR), where
 \code{cost} maps to \code{C} and typical optima lie in [10, 100].
 }
 \examples{

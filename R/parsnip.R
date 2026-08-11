@@ -212,22 +212,24 @@ psvr_rmspe_linear_fit <- function(x, y, gamma, sym_type = "none",
 #' @param cost   Regularization parameter `C > 0`.  Use [tune()] to optimize.
 #'   Mapped to [cost_psvr()] with range `[-2, 10]` on the log2 scale — wider
 #'   than `dials::cost()` to cover the larger values needed by LS-SVR models.
-#' @param margin Epsilon tube half-width `ε ≥ 0` expressed as a percentage
+#' @param margin Epsilon tube half-width \eqn{\epsilon \ge 0}{epsilon >= 0} expressed
+#'   as a percentage
 #'   of each target value.  Use [tune()] to optimize.  Mapped to
 #'   [margin_percentage()] with default range `[1, 20]` (percentage units).
 #'   Named to match `parsnip::svm_rbf()`; note the units differ from
 #'   `dials::svm_margin()`, which is absolute rather than percentage.
-#' @param rbf_sigma RBF bandwidth σ > 0.  Use [tune()] to optimize.
+#' @param rbf_sigma RBF bandwidth \eqn{\sigma > 0}{sigma > 0}.  Use [tune()] to optimize.
 #'   Mapped to [rbf_sigma_psvr()]; the search range auto-finalizes using the
 #'   median-distance heuristic when training data are available.
 #'   (RBF specs only.)
-#' @param degree Polynomial degree ≥ 1.  Use [tune()] to optimize.
+#' @param degree Polynomial degree \eqn{\ge 1}{>= 1}.  Use [tune()] to optimize.
 #'   (Polynomial specs only.)
-#' @param scale_factor Polynomial constant term (coef₀).  Use [tune()] to
+#' @param scale_factor Polynomial constant term (`coef0`).  Use [tune()] to
 #'   optimize.  (Polynomial specs only.)
 #' @param sym_type Symmetry type: `"none"` (default) fits the non-symmetric
-#'   ε-SVR of Model 1; `"even"` (a = 1) and `"odd"` (a = -1) fit the
-#'   symmetric ε-SVR of Model 2.  Use [tune()] to optimise over the levels
+#'   \eqn{\epsilon}{epsilon}-SVR of Model 1; `"even"` (a = 1) and `"odd"`
+#'   (a = -1) fit the symmetric \eqn{\epsilon}{epsilon}-SVR of Model 2.
+#'   Use [tune()] to optimise over the levels
 #'   during CV; see [sym_type_param()] to restrict which levels are searched.
 #'
 #' @return A parsnip `model_spec` object of the corresponding class.
@@ -328,16 +330,16 @@ psvr_mape_linear <- function(mode = "regression", engine = "psvr",
 #'
 #' @param mode   Only `"regression"` is supported.
 #' @param engine Only `"psvr"` is available.
-#' @param cost   Regularization parameter `Γ > 0`.  Use [tune()] to optimize.
+#' @param cost   Regularization parameter \eqn{\Gamma > 0}{Gamma > 0}.  Use [tune()] to optimize.
 #'   Mapped to [cost_psvr()] with range `[-2, 10]` on the log2 scale — wider
 #'   than `dials::cost()` to cover the larger values needed by LS-SVR models.
-#' @param rbf_sigma RBF bandwidth σ > 0.  Use [tune()] to optimize.
+#' @param rbf_sigma RBF bandwidth \eqn{\sigma > 0}{sigma > 0}.  Use [tune()] to optimize.
 #'   Mapped to [rbf_sigma_psvr()]; the search range auto-finalizes using the
 #'   median-distance heuristic when training data are available.
 #'   (RBF specs only.)
-#' @param degree Polynomial degree ≥ 1.  Use [tune()] to optimize.
+#' @param degree Polynomial degree \eqn{\ge 1}{>= 1}.  Use [tune()] to optimize.
 #'   (Polynomial specs only.)
-#' @param scale_factor Polynomial constant term (coef₀).  Use [tune()] to
+#' @param scale_factor Polynomial constant term (`coef0`).  Use [tune()] to
 #'   optimize.  (Polynomial specs only.)
 #' @param sym_type Symmetry type: `"none"` (default) fits the non-symmetric
 #'   LS-SVR of Model 3; `"even"` (a = 1) and `"odd"` (a = -1) fit the

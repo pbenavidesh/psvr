@@ -82,7 +82,8 @@ make_kernel <- function(type = c("rbf", "linear", "polynomial"),
 #' @param K A kernel function from [make_kernel()].
 #' @param X1 Numeric matrix with one observation per row (n1 × p).
 #' @param X2 Numeric matrix with one observation per row (n2 × p).
-#'   Defaults to `X1`, giving the square training kernel matrix Ω.
+#'   Defaults to `X1`, giving the square training kernel matrix
+#'   \eqn{\Omega}{Omega}.
 #'
 #' @return Numeric matrix of size n1 × n2.
 #'
@@ -125,16 +126,18 @@ kernel_matrix <- function(K, X1, X2 = X1) {
   M
 }
 
-#' Compute the symmetrized kernel matrix Ωs = ½(Ω + a·Ω*)
+#' Compute the symmetrized kernel matrix Omega_s = (Omega + a Omega*) / 2
 #'
-#' Used by the symmetric LS-SVR model (Model 4). Entry `[k, l]` of `Ω*` is
-#' `K(xk, -xl)`, so negation is applied to the columns of X (i.e., to `X2`).
+#' Used by the symmetric LS-SVR model (Model 4). Entry `[k, l]` of
+#' \eqn{\Omega^*}{Omega*} is `K(xk, -xl)`, so negation is applied to the
+#' columns of X (i.e., to `X2`).
 #'
 #' @param K A kernel function from [make_kernel()].
 #' @param X Numeric training matrix (N × p).
 #' @param a Symmetry parameter: `1` (even) or `-1` (odd).
 #'
-#' @return Numeric N × N matrix `Ωs = ½(Ω + a·Ω*)`.
+#' @return Numeric N × N matrix
+#'   \eqn{\Omega_s = \frac{1}{2}(\Omega + a\Omega^*)}{Omega_s = (Omega + a Omega*) / 2}.
 #'
 #' @keywords internal
 sym_kernel_matrix <- function(K, X, a) {

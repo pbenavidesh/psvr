@@ -36,11 +36,11 @@ psvr_rmspe_linear(
 
 \item{engine}{Only \code{"psvr"} is available.}
 
-\item{cost}{Regularization parameter \code{Γ > 0}.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
+\item{cost}{Regularization parameter \eqn{\Gamma > 0}{Gamma > 0}.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
 Mapped to \code{\link[=cost_psvr]{cost_psvr()}} with range \verb{[-2, 10]} on the log2 scale — wider
 than \code{dials::cost()} to cover the larger values needed by LS-SVR models.}
 
-\item{rbf_sigma}{RBF bandwidth σ > 0.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
+\item{rbf_sigma}{RBF bandwidth \eqn{\sigma > 0}{sigma > 0}.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
 Mapped to \code{\link[=rbf_sigma_psvr]{rbf_sigma_psvr()}}; the search range auto-finalizes using the
 median-distance heuristic when training data are available.
 (RBF specs only.)}
@@ -50,10 +50,10 @@ LS-SVR of Model 3; \code{"even"} (a = 1) and \code{"odd"} (a = -1) fit the
 symmetric LS-SVR of Model 4.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimise over the levels
 during CV; see \code{\link[=sym_type_param]{sym_type_param()}} to restrict which levels are searched.}
 
-\item{degree}{Polynomial degree ≥ 1.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
+\item{degree}{Polynomial degree \eqn{\ge 1}{>= 1}.  Use \code{\link[hardhat:tune]{hardhat::tune()}} to optimize.
 (Polynomial specs only.)}
 
-\item{scale_factor}{Polynomial constant term (coef₀).  Use \code{\link[hardhat:tune]{hardhat::tune()}} to
+\item{scale_factor}{Polynomial constant term (\code{coef0}).  Use \code{\link[hardhat:tune]{hardhat::tune()}} to
 optimize.  (Polynomial specs only.)}
 }
 \value{

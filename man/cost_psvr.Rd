@@ -25,7 +25,7 @@ LS-SVR models.
 }
 \details{
 For LS-SVR (\code{m3}, \code{m4}) models, the static range may still be too
-narrow on benchmark datasets where the optimum exceeds 10⁴.
+narrow on benchmark datasets where the optimum exceeds \eqn{10^4}{10^4}.
 Prefer \code{\link[=cost_psvr_ls_data]{cost_psvr_ls_data()}} in that case.
 }
 \examples{

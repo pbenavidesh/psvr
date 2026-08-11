@@ -214,7 +214,7 @@ psvr_option_add <- function(wf_set, X, width = 10, sample_size = 500L,
 #' LS-SVR models.
 #'
 #' For LS-SVR (`m3`, `m4`) models, the static range may still be too
-#' narrow on benchmark datasets where the optimum exceeds 10⁴.
+#' narrow on benchmark datasets where the optimum exceeds \eqn{10^4}{10^4}.
 #' Prefer [cost_psvr_ls_data()] in that case.
 #'
 #' @param range Numeric vector of length 2 on the log2 scale.
@@ -246,30 +246,33 @@ cost_psvr <- function(range = c(-2, 10),
 #'
 #' Returns a `quant_param` whose search range scales with
 #' `var(y) * N`, the standard heuristic for the LS-SVR regularisation
-#' parameter `Γ` (Suykens et al. 2002, *Least Squares Support Vector
-#' Machines*, §3.1.3).  On the log2 scale, the lower bound is `-2`
-#' (i.e. `Γ ≥ 0.25`) and the upper bound is
+#' parameter \eqn{\Gamma}{Gamma} (Suykens et al. 2002, *Least Squares
+#' Support Vector Machines*, §3.1.3).  On the log2 scale, the lower bound
+#' is `-2` (i.e. \eqn{\Gamma \ge 0.25}{Gamma >= 0.25}) and the upper bound is
 #' `log2(var(y) * N) + width_log2`.
 #'
 #' With the default `width_log2 = 4`, the upper bound covers the
 #' typical optimum within ~2 orders of magnitude on benchmark
-#' datasets.  For Boston Housing (`var(medv) ≈ 84.6`, `N_train = 404`
-#' under an 80/20 split), this gives an upper bound of `2^19.06 ≈
-#' 5.4 × 10⁵`, two decades above the published optimum
-#' `Γ ≈ 1.7 × 10⁴` — comfortable headroom for Bayesian optimisation
+#' datasets.  For Boston Housing (`var(medv)` about 84.6, `N_train = 404`
+#' under an 80/20 split), this gives an upper bound of
+#' \eqn{2^{19.06} \approx 5.4 \times 10^5}{2^19.06 ~= 5.4 x 10^5}, two
+#' decades above the published optimum
+#' \eqn{\Gamma \approx 1.7 \times 10^4}{Gamma ~= 1.7 x 10^4} — comfortable
+#' headroom for Bayesian optimisation
 #' without boundary trapping.  The static [cost_psvr()] range
-#' \[-2, 10\] (i.e. `Γ ≤ 1024`) underestimates this by more than a
-#' decade.
+#' \[-2, 10\] (i.e. \eqn{\Gamma \le 1024}{Gamma <= 1024}) underestimates
+#' this by more than a decade.
 #'
 #' Use this function for `m3` (LS-SVR) and `m4` (symmetric LS-SVR)
-#' workflows.  Stick to [cost_psvr()] for `m1`/`m2` (`ε`-SVR), where
+#' workflows.  Stick to [cost_psvr()] for `m1`/`m2`
+#' (\eqn{\epsilon}{epsilon}-SVR), where
 #' `cost` maps to `C` and typical optima lie in \[10, 100\].
 #'
 #' @param y Numeric vector of strictly positive training targets.
 #' @param n Sample size.  Default `length(y)`.
 #' @param width_log2 Scalar giving the half-width (in log2 units)
 #'   added above `log2(var(y) * n)` to set the upper bound.
-#'   Default `4` (≈16× headroom).  Negative values are accepted with
+#'   Default `4` (about 16× headroom).  Negative values are accepted with
 #'   a warning, since the resulting upper bound falls below the
 #'   `var(y) * n` heuristic and is unlikely to be useful.
 #'
@@ -302,7 +305,8 @@ cost_psvr_ls_data <- function(y, n = length(y), width_log2 = 4) {
 #' matches `"m3"` or `"m4"`), replacing the `cost` dials parameter
 #' with one built from `y` via [cost_psvr_ls_data()].
 #'
-#' Workflows for `m1`/`m2` (`ε`-SVR) are intentionally skipped — for
+#' Workflows for `m1`/`m2` (\eqn{\epsilon}{epsilon}-SVR) are intentionally
+#' skipped — for
 #' those, `cost` maps to `C` and the static [cost_psvr()] range is
 #' usually adequate.
 #'

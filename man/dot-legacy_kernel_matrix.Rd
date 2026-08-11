@@ -12,7 +12,8 @@
 \item{X1}{Numeric matrix with one observation per row (n1 × p).}
 
 \item{X2}{Numeric matrix with one observation per row (n2 × p).
-Defaults to \code{X1}, giving the square training kernel matrix Ω.}
+Defaults to \code{X1}, giving the square training kernel matrix
+\eqn{\Omega}{Omega}.}
 }
 \value{
 Numeric matrix of size n1 × n2.
