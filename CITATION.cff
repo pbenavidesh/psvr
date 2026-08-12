@@ -3,12 +3,12 @@ message: >-
   If you use this software, please cite it using the metadata below.
   The preferred citation is the accompanying paper.
 title: "psvr: Percentage-Error Support Vector Regression"
-version: 0.0.0.9000
-date-released: "2026-04-18"
+version: 0.1.0
+date-released: "2026-08-12"
 license: MIT
 url: "https://github.com/pbenavidesh/psvr"
 repository-code: "https://github.com/pbenavidesh/psvr"
-doi: "10.5281/zenodo.19643526"
+doi: "10.5281/zenodo.19643525"
 authors:
   - family-names: Benavides-Herrera
     given-names: Pablo

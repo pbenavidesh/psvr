@@ -5,7 +5,7 @@
 
 <!-- badges: start -->
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19643526.svg)](https://doi.org/10.5281/zenodo.19643526)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19643525.svg)](https://doi.org/10.5281/zenodo.19643525)
 <!-- badges: end -->
 
 `psvr` implements four support vector regression models derived from a

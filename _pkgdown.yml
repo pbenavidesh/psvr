@@ -131,9 +131,19 @@ news:
 # sources, and the sitemap, the llm `.md` twins and the search index are all
 # derived from it:
 #
-#   - `<name>.html`  -> overwritten by `build_redirect()` with a 241-byte
+#   - `<name>.html`  -> overwritten by `build_redirect()` with a 254-byte
 #                       meta-refresh stub (the full page IS written first, by
 #                       `build_home()`; see the hazard note below)
+#                       254 B is MEASURED on the deployed blob at gh-pages
+#                       6055561 (`git cat-file -s`), identical for all three.
+#                       Earlier figures of 241 and 262 were both wrong.
+#
+# NOTE (2026-08-12): only `CLAUDE.html` was ever actually published — the two
+# PSVR_STATUS files are gitignored, so they are absent from the CI checkout and
+# `package_mds()` never saw them there. Their stubs therefore CREATE two URLs
+# that previously 404'd, rather than replacing a live page. That is accepted:
+# the redirects exist to cover the LOCAL build path, where the files do exist
+# and where the workflow's `rm -f CLAUDE.md` does not reach.
 #   - `<name>.md`    -> never written  (`build_llm_docs()` walks get_site_paths)
 #   - sitemap.xml    -> no entry        (`build_sitemap()`     likewise)
 #   - search.json    -> no entry, no page text (`build_search_index()` likewise)
