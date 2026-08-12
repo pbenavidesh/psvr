@@ -29,10 +29,10 @@ model family:
 
 | Model | Function | `sym_type` | Solver           |
 |-------|----------|------------|------------------|
-| 3     | `psvr_rmspe()` | `"none"` | linear system    |
-| 4     | `psvr_rmspe()` | `"even"` / `"odd"` | linear system |
 | 1     | `psvr_mape()`  | `"none"` | quadratic program |
 | 2     | `psvr_mape()`  | `"even"` / `"odd"` | quadratic program |
+| 3     | `psvr_rmspe()` | `"none"` | linear system    |
+| 4     | `psvr_rmspe()` | `"even"` / `"odd"` | linear system |
 
 `sym_type = "even"` enforces even symmetry `f(x) = f(-x)`; `"odd"` enforces
 odd symmetry. Use the symmetric variants only with kernels that satisfy
@@ -50,9 +50,7 @@ condition under which percentage residuals are well-defined.
 
 ## Fuel-economy data
 
-This vignette **demonstrates** the package on a small public dataset. It does
-not reproduce the paper's experiments, and every number printed below is
-computed when the vignette is built.
+This vignette demonstrates the package on a small public dataset.
 
 We use `ggplot2::mpg`: 234 records of US passenger vehicles. The target is
 `hwy`, highway fuel economy in miles per gallon. It is strictly positive on
@@ -118,59 +116,6 @@ cat(sprintf("Linear regression — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
             mape(y_te, lm_pred), rmspe(y_te, lm_pred), r2(y_te, lm_pred)))
 ```
 
-## Model 3: LS-SVR with RMSPE
-
-The LS-SVR formulation replaces the QP with a linear system by using a
-quadratic penalty on percentage residuals. The dual reduces to:
-
-$$
-\begin{bmatrix} 0 & \mathbf{1}^\top \\ \mathbf{1} & \Omega + Y_\Gamma \end{bmatrix}
-\begin{bmatrix} b \\ \boldsymbol{\alpha} \end{bmatrix}
-= \begin{bmatrix} 0 \\ \mathbf{y} \end{bmatrix}
-$$
-
-where $Y_\Gamma = \operatorname{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)$.
-
-```{r rmspe-lssvr}
-# make_kernel() returns a closure K(xi, xj) = exp(-||xi - xj||^2 / (2 sigma^2)).
-# sigma is a LENGTH in the units of the preprocessed feature space, so it has
-# to be set on that scale -- sigma_heuristic() reads it off the data instead of
-# guessing. See "Hyperparameter search ranges" below.
-K <- make_kernel("rbf", sigma = sigma_heuristic(X_tr))
-
-# gamma = 5000: regularisation; larger gamma -> smaller Y_Gamma diagonal -> tighter fit.
-# This is roughly var(y_tr) * N, the scale cost_psvr_ls_data() computes -- and
-# already five times the ceiling of the registered `cost` default. See below.
-fit_ls <- psvr_rmspe(X_tr, y_tr, kernel = K, gamma = 5000)
-pred_ls <- predict(fit_ls, X_te)
-
-cat(sprintf("LS-SVR RMSPE  — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
-            mape(y_te, pred_ls), rmspe(y_te, pred_ls), r2(y_te, pred_ls)))
-print(fit_ls)
-```
-
-```{r rmspe-plot, echo = FALSE}
-lim <- range(c(y_te, pred_ls))
-data.frame(actual = y_te, predicted = pred_ls) |>
-  ggplot(aes(actual, predicted)) +
-  geom_point(colour = "#2c7bb6", alpha = 0.65, size = 1.8) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey40") +
-  coord_equal(xlim = lim, ylim = lim) +
-  labs(x = "Actual hwy (mpg)", y = "Predicted hwy (mpg)",
-       title = "Model 3: LS-SVR with RMSPE")
-```
-
-```{r rmspe-coef}
-cf_ls <- coef(fit_ls)
-# alpha:        N dual variables; weight each training point's kernel
-#               contribution in f(x) = sum_k alpha_k K(x_k, x) + b
-#               (all N points, no sparsity)
-# b:            bias / intercept term
-# support_data: all N training inputs stored for prediction
-cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
-            cf_ls$b, min(cf_ls$alpha), max(cf_ls$alpha)))
-```
-
 ## Model 1: ε-SVR with MAPE
 
 The ε-SVR formulation optimises a QP with **sample-dependent box
@@ -178,6 +123,12 @@ constraints** $|\beta_k| \le 100C/y_k$: tighter bounds for small
 targets, concentrating model capacity on low-magnitude observations.
 
 ```{r mape-svr}
+# make_kernel() returns a closure K(xi, xj) = exp(-||xi - xj||^2 / (2 sigma^2)).
+# sigma is a LENGTH in the units of the preprocessed feature space, so it has
+# to be set on that scale -- sigma_heuristic() reads it off the data instead of
+# guessing. See "Hyperparameter search ranges" below.
+K <- make_kernel("rbf", sigma = sigma_heuristic(X_tr))
+
 # C = 10: per-sample box bound |beta_k| <= 100*C/y_k; eps = 1: tube width (% of y_k)
 fit_ep <- psvr_mape(X_tr, y_tr, kernel = K, C = 10, eps = 1)
 pred_ep <- predict(fit_ep, X_te)
@@ -213,21 +164,68 @@ cat(sprintf("b = %.4f  |  beta range: [%.4f, %.4f]\n",
             cf_ep$b, min(cf_ep$beta), max(cf_ep$beta)))
 ```
 
+## Model 3: LS-SVR with RMSPE
+
+The LS-SVR formulation replaces the QP with a linear system by using a
+quadratic penalty on percentage residuals. The dual reduces to:
+
+$$
+\begin{bmatrix} 0 & \mathbf{1}^\top \\ \mathbf{1} & \Omega + Y_\Gamma \end{bmatrix}
+\begin{bmatrix} b \\ \boldsymbol{\alpha} \end{bmatrix}
+= \begin{bmatrix} 0 \\ \mathbf{y} \end{bmatrix}
+$$
+
+where $Y_\Gamma = \operatorname{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)$.
+
+```{r rmspe-lssvr}
+# gamma = 5000: regularisation; larger gamma -> smaller Y_Gamma diagonal -> tighter fit.
+# This is roughly var(y_tr) * N, the scale cost_psvr_ls_data() computes -- and
+# already five times the ceiling of the registered `cost` default. See below.
+fit_ls <- psvr_rmspe(X_tr, y_tr, kernel = K, gamma = 5000)
+pred_ls <- predict(fit_ls, X_te)
+
+cat(sprintf("LS-SVR RMSPE  — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
+            mape(y_te, pred_ls), rmspe(y_te, pred_ls), r2(y_te, pred_ls)))
+print(fit_ls)
+```
+
+```{r rmspe-plot, echo = FALSE}
+lim <- range(c(y_te, pred_ls))
+data.frame(actual = y_te, predicted = pred_ls) |>
+  ggplot(aes(actual, predicted)) +
+  geom_point(colour = "#2c7bb6", alpha = 0.65, size = 1.8) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", colour = "grey40") +
+  coord_equal(xlim = lim, ylim = lim) +
+  labs(x = "Actual hwy (mpg)", y = "Predicted hwy (mpg)",
+       title = "Model 3: LS-SVR with RMSPE")
+```
+
+```{r rmspe-coef}
+cf_ls <- coef(fit_ls)
+# alpha:        N dual variables; weight each training point's kernel
+#               contribution in f(x) = sum_k alpha_k K(x_k, x) + b
+#               (all N points, no sparsity)
+# b:            bias / intercept term
+# support_data: all N training inputs stored for prediction
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_ls$b, min(cf_ls$alpha), max(cf_ls$alpha)))
+```
+
 ## Comparing objectives
 
 ```{r comparison}
 results <- data.frame(
-  Model = c("Linear regression", "LS-SVR RMSPE (Model 3)",
-            "\u03b5-SVR MAPE (Model 1)"),
+  Model = c("Linear regression", "\u03b5-SVR MAPE (Model 1)",
+            "LS-SVR RMSPE (Model 3)"),
   MAPE  = c(mape(y_te,  lm_pred),
-            mape(y_te,  pred_ls),
-            mape(y_te,  pred_ep)),
+            mape(y_te,  pred_ep),
+            mape(y_te,  pred_ls)),
   RMSPE = c(rmspe(y_te, lm_pred),
-            rmspe(y_te, pred_ls),
-            rmspe(y_te, pred_ep)),
+            rmspe(y_te, pred_ep),
+            rmspe(y_te, pred_ls)),
   R2    = c(r2(y_te,    lm_pred),
-            r2(y_te,    pred_ls),
-            r2(y_te,    pred_ep))
+            r2(y_te,    pred_ep),
+            r2(y_te,    pred_ls))
 )
 results[, 2:4] <- round(results[, 2:4], 2)
 knitr::kable(results, col.names = c("Model", "MAPE (%)", "RMSPE (%)", "R²"),
@@ -238,9 +236,9 @@ knitr::kable(results, col.names = c("Model", "MAPE (%)", "RMSPE (%)", "R²"),
 ```
 
 Both psvr models improve on the linear baseline under their respective
-percentage-error objectives. The LS-SVR formulation (Model 3) minimises RMSPE
-directly; the ε-SVR formulation (Model 1) targets MAPE through
-sample-dependent box constraints on the dual variables.
+percentage-error objectives. The ε-SVR formulation (Model 1) targets MAPE
+through sample-dependent box constraints on the dual variables; the LS-SVR
+formulation (Model 3) minimises RMSPE directly.
 
 Read the table for the ordering, not for the magnitudes. It is one split of one
 small dataset at hyperparameters nobody tuned, so the margins are not evidence
