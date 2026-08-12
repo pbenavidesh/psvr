@@ -25,7 +25,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">psvr</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.2.9012</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -92,20 +92,6 @@ accessed through one fitter per model family:</p>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td>3</td>
-<td><code><a href="../reference/psvr_rmspe.html">psvr_rmspe()</a></code></td>
-<td><code>"none"</code></td>
-<td>linear system</td>
-</tr>
-<tr class="even">
-<td>4</td>
-<td><code><a href="../reference/psvr_rmspe.html">psvr_rmspe()</a></code></td>
-<td>
-<code>"even"</code> / <code>"odd"</code>
-</td>
-<td>linear system</td>
-</tr>
-<tr class="odd">
 <td>1</td>
 <td><code><a href="../reference/psvr_mape.html">psvr_mape()</a></code></td>
 <td><code>"none"</code></td>
@@ -118,6 +104,20 @@ accessed through one fitter per model family:</p>
 <code>"even"</code> / <code>"odd"</code>
 </td>
 <td>quadratic program</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td><code><a href="../reference/psvr_rmspe.html">psvr_rmspe()</a></code></td>
+<td><code>"none"</code></td>
+<td>linear system</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td><code><a href="../reference/psvr_rmspe.html">psvr_rmspe()</a></code></td>
+<td>
+<code>"even"</code> / <code>"odd"</code>
+</td>
+<td>linear system</td>
 </tr>
 </tbody>
 </table>
@@ -139,9 +139,7 @@ residuals are well-defined.</p>
 <div class="section level2">
 <h2 id="fuel-economy-data">Fuel-economy data<a class="anchor" aria-label="anchor" href="#fuel-economy-data"></a>
 </h2>
-<p>This vignette <strong>demonstrates</strong> the package on a small
-public dataset. It does not reproduce the paper’s experiments, and every
-number printed below is computed when the vignette is built.</p>
+<p>This vignette demonstrates the package on a small public dataset.</p>
 <p>We use <code><a href="https://ggplot2.tidyverse.org/reference/mpg.html" class="external-link">ggplot2::mpg</a></code>: 234 records of US passenger
 vehicles. The target is <code>hwy</code>, highway fuel economy in miles
 per gallon. It is strictly positive on every observation, so the
@@ -208,53 +206,6 @@ predictors.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="model-3-ls-svr-with-rmspe">Model 3: LS-SVR with RMSPE<a class="anchor" aria-label="anchor" href="#model-3-ls-svr-with-rmspe"></a>
-</h2>
-<p>The LS-SVR formulation replaces the QP with a linear system by using
-a quadratic penalty on percentage residuals. The dual reduces to:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd><mtd columnalign="center" style="text-align: center"><msup><mn>𝟏</mn><mi>⊤</mi></msup></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>𝟏</mn></mtd><mtd columnalign="center" style="text-align: center"><mi mathvariant="normal">Ω</mi><mo>+</mo><msub><mi>Y</mi><mi mathvariant="normal">Γ</mi></msub></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mi>b</mi></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mi>𝛂</mi></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mi>𝐲</mi></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">
-\begin{bmatrix} 0 &amp; \mathbf{1}^\top \\ \mathbf{1} &amp; \Omega + Y_\Gamma \end{bmatrix}
-\begin{bmatrix} b \\ \boldsymbol{\alpha} \end{bmatrix}
-= \begin{bmatrix} 0 \\ \mathbf{y} \end{bmatrix}
-</annotation></semantics></math></p>
-<p>where
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mi mathvariant="normal">Γ</mi></msub><mo>=</mo><mrow><mi mathvariant="normal">diag</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msubsup><mi>y</mi><mn>1</mn><mn>2</mn></msubsup><mi>/</mi><mi mathvariant="normal">Γ</mi><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mi>y</mi><mi>N</mi><mn>2</mn></msubsup><mi>/</mi><mi mathvariant="normal">Γ</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">Y_\Gamma = \operatorname{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)</annotation></semantics></math>.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># make_kernel() returns a closure K(xi, xj) = exp(-||xi - xj||^2 / (2 sigma^2)).</span></span>
-<span><span class="co"># sigma is a LENGTH in the units of the preprocessed feature space, so it has</span></span>
-<span><span class="co"># to be set on that scale -- sigma_heuristic() reads it off the data instead of</span></span>
-<span><span class="co"># guessing. See "Hyperparameter search ranges" below.</span></span>
-<span><span class="va">K</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/make_kernel.html">make_kernel</a></span><span class="op">(</span><span class="st">"rbf"</span>, sigma <span class="op">=</span> <span class="fu"><a href="../reference/sigma_heuristic.html">sigma_heuristic</a></span><span class="op">(</span><span class="va">X_tr</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># gamma = 5000: regularisation; larger gamma -&gt; smaller Y_Gamma diagonal -&gt; tighter fit.</span></span>
-<span><span class="co"># This is roughly var(y_tr) * N, the scale cost_psvr_ls_data() computes -- and</span></span>
-<span><span class="co"># already five times the ceiling of the registered `cost` default. See below.</span></span>
-<span><span class="va">fit_ls</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr_rmspe.html">psvr_rmspe</a></span><span class="op">(</span><span class="va">X_tr</span>, <span class="va">y_tr</span>, kernel <span class="op">=</span> <span class="va">K</span>, gamma <span class="op">=</span> <span class="fl">5000</span><span class="op">)</span></span>
-<span><span class="va">pred_ls</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_ls</span>, <span class="va">X_te</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"LS-SVR RMSPE  — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n"</span>,</span>
-<span>            <span class="fu">mape</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ls</span><span class="op">)</span>, <span class="fu">rmspe</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ls</span><span class="op">)</span>, <span class="fu">r2</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ls</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; LS-SVR RMSPE  — MAPE: 11.43%  RMSPE: 14.48%  R²: 0.6845</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_ls</span><span class="op">)</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; LS-SVR with RMSPE loss  [psvr_rmspe]</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;   Kernel:        RBF (sigma = 2.1195)</span></span>
-<span><span class="co">#&gt;   Gamma:         5000</span></span>
-<span><span class="co">#&gt;   Training obs.: 163</span></span></code></pre></div>
-<p><img src="getting-started_files/figure-html/rmspe-plot-1.png" class="r-plt" alt="" width="576"></p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cf_ls</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_ls</span><span class="op">)</span></span>
-<span><span class="co"># alpha:        N dual variables; weight each training point's kernel</span></span>
-<span><span class="co">#               contribution in f(x) = sum_k alpha_k K(x_k, x) + b</span></span>
-<span><span class="co">#               (all N points, no sparsity)</span></span>
-<span><span class="co"># b:            bias / intercept term</span></span>
-<span><span class="co"># support_data: all N training inputs stored for prediction</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"b = %.4f  |  alpha range: [%.4f, %.4f]\n"</span>,</span>
-<span>            <span class="va">cf_ls</span><span class="op">$</span><span class="va">b</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">cf_ls</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">cf_ls</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="co">#&gt; b = 23.0976  |  alpha range: [-138.1332, 68.7725]</span></span></code></pre></div>
-</div>
-<div class="section level2">
 <h2 id="model-1-ε-svr-with-mape">Model 1: ε-SVR with MAPE<a class="anchor" aria-label="anchor" href="#model-1-%CE%B5-svr-with-mape"></a>
 </h2>
 <p>The ε-SVR formulation optimises a QP with <strong>sample-dependent
@@ -262,8 +213,14 @@ box constraints</strong>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">|</mo><msub><mi>β</mi><mi>k</mi></msub><mo stretchy="false" form="prefix">|</mo><mo>≤</mo><mn>100</mn><mi>C</mi><mi>/</mi><msub><mi>y</mi><mi>k</mi></msub></mrow><annotation encoding="application/x-tex">|\beta_k| \le 100C/y_k</annotation></semantics></math>:
 tighter bounds for small targets, concentrating model capacity on
 low-magnitude observations.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># C = 10: per-sample box bound |beta_k| &lt;= 100*C/y_k; eps = 1: tube width (% of y_k)</span></span>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># make_kernel() returns a closure K(xi, xj) = exp(-||xi - xj||^2 / (2 sigma^2)).</span></span>
+<span><span class="co"># sigma is a LENGTH in the units of the preprocessed feature space, so it has</span></span>
+<span><span class="co"># to be set on that scale -- sigma_heuristic() reads it off the data instead of</span></span>
+<span><span class="co"># guessing. See "Hyperparameter search ranges" below.</span></span>
+<span><span class="va">K</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/make_kernel.html">make_kernel</a></span><span class="op">(</span><span class="st">"rbf"</span>, sigma <span class="op">=</span> <span class="fu"><a href="../reference/sigma_heuristic.html">sigma_heuristic</a></span><span class="op">(</span><span class="va">X_tr</span><span class="op">)</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># C = 10: per-sample box bound |beta_k| &lt;= 100*C/y_k; eps = 1: tube width (% of y_k)</span></span>
 <span><span class="va">fit_ep</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr_mape.html">psvr_mape</a></span><span class="op">(</span><span class="va">X_tr</span>, <span class="va">y_tr</span>, kernel <span class="op">=</span> <span class="va">K</span>, C <span class="op">=</span> <span class="fl">10</span>, eps <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">pred_ep</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_ep</span>, <span class="va">X_te</span><span class="op">)</span></span>
 <span></span>
@@ -282,7 +239,7 @@ low-magnitude observations.</p>
 <span><span class="co">#&gt;   Training obs.:   163</span></span>
 <span><span class="co">#&gt;   Support vectors: 154 (94.5%)</span></span></code></pre></div>
 <p><img src="getting-started_files/figure-html/mape-plot-1.png" class="r-plt" alt="" width="576"></p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">cf_ep</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_ep</span><span class="op">)</span></span>
 <span><span class="co"># alpha, alpha_star: length-N dual variables (paired); the pre-pruning</span></span>
 <span><span class="co">#               solution.  Useful as a warm-start across CV folds; for</span></span>
@@ -297,21 +254,62 @@ low-magnitude observations.</p>
 <span><span class="co">#&gt; b = 22.2127  |  beta range: [-83.3333, 62.5000]</span></span></code></pre></div>
 </div>
 <div class="section level2">
+<h2 id="model-3-ls-svr-with-rmspe">Model 3: LS-SVR with RMSPE<a class="anchor" aria-label="anchor" href="#model-3-ls-svr-with-rmspe"></a>
+</h2>
+<p>The LS-SVR formulation replaces the QP with a linear system by using
+a quadratic penalty on percentage residuals. The dual reduces to:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd><mtd columnalign="center" style="text-align: center"><msup><mn>𝟏</mn><mi>⊤</mi></msup></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mn>𝟏</mn></mtd><mtd columnalign="center" style="text-align: center"><mi mathvariant="normal">Ω</mi><mo>+</mo><msub><mi>Y</mi><mi mathvariant="normal">Γ</mi></msub></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mi>b</mi></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mi>𝛂</mi></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow><mo>=</mo><mrow><mo stretchy="true" form="prefix">[</mo><mtable><mtr><mtd columnalign="center" style="text-align: center"><mn>0</mn></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><mi>𝐲</mi></mtd></mtr></mtable><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">
+\begin{bmatrix} 0 &amp; \mathbf{1}^\top \\ \mathbf{1} &amp; \Omega + Y_\Gamma \end{bmatrix}
+\begin{bmatrix} b \\ \boldsymbol{\alpha} \end{bmatrix}
+= \begin{bmatrix} 0 \\ \mathbf{y} \end{bmatrix}
+</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Y</mi><mi mathvariant="normal">Γ</mi></msub><mo>=</mo><mrow><mi mathvariant="normal">diag</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msubsup><mi>y</mi><mn>1</mn><mn>2</mn></msubsup><mi>/</mi><mi mathvariant="normal">Γ</mi><mo>,</mo><mi>…</mi><mo>,</mo><msubsup><mi>y</mi><mi>N</mi><mn>2</mn></msubsup><mi>/</mi><mi mathvariant="normal">Γ</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">Y_\Gamma = \operatorname{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)</annotation></semantics></math>.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># gamma = 5000: regularisation; larger gamma -&gt; smaller Y_Gamma diagonal -&gt; tighter fit.</span></span>
+<span><span class="co"># This is roughly var(y_tr) * N, the scale cost_psvr_ls_data() computes -- and</span></span>
+<span><span class="co"># already five times the ceiling of the registered `cost` default. See below.</span></span>
+<span><span class="va">fit_ls</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/psvr_rmspe.html">psvr_rmspe</a></span><span class="op">(</span><span class="va">X_tr</span>, <span class="va">y_tr</span>, kernel <span class="op">=</span> <span class="va">K</span>, gamma <span class="op">=</span> <span class="fl">5000</span><span class="op">)</span></span>
+<span><span class="va">pred_ls</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">fit_ls</span>, <span class="va">X_te</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"LS-SVR RMSPE  — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n"</span>,</span>
+<span>            <span class="fu">mape</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ls</span><span class="op">)</span>, <span class="fu">rmspe</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ls</span><span class="op">)</span>, <span class="fu">r2</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ls</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; LS-SVR RMSPE  — MAPE: 11.43%  RMSPE: 14.48%  R²: 0.6845</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">fit_ls</span><span class="op">)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; LS-SVR with RMSPE loss  [psvr_rmspe]</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;   Kernel:        RBF (sigma = 2.1195)</span></span>
+<span><span class="co">#&gt;   Gamma:         5000</span></span>
+<span><span class="co">#&gt;   Training obs.: 163</span></span></code></pre></div>
+<p><img src="getting-started_files/figure-html/rmspe-plot-1.png" class="r-plt" alt="" width="576"></p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">cf_ls</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit_ls</span><span class="op">)</span></span>
+<span><span class="co"># alpha:        N dual variables; weight each training point's kernel</span></span>
+<span><span class="co">#               contribution in f(x) = sum_k alpha_k K(x_k, x) + b</span></span>
+<span><span class="co">#               (all N points, no sparsity)</span></span>
+<span><span class="co"># b:            bias / intercept term</span></span>
+<span><span class="co"># support_data: all N training inputs stored for prediction</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sprintf.html" class="external-link">sprintf</a></span><span class="op">(</span><span class="st">"b = %.4f  |  alpha range: [%.4f, %.4f]\n"</span>,</span>
+<span>            <span class="va">cf_ls</span><span class="op">$</span><span class="va">b</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">cf_ls</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">cf_ls</span><span class="op">$</span><span class="va">alpha</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; b = 23.0976  |  alpha range: [-138.1332, 68.7725]</span></span></code></pre></div>
+</div>
+<div class="section level2">
 <h2 id="comparing-objectives">Comparing objectives<a class="anchor" aria-label="anchor" href="#comparing-objectives"></a>
 </h2>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  Model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Linear regression"</span>, <span class="st">"LS-SVR RMSPE (Model 3)"</span>,</span>
-<span>            <span class="st">"\u03b5-SVR MAPE (Model 1)"</span><span class="op">)</span>,</span>
+<span>  Model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Linear regression"</span>, <span class="st">"\u03b5-SVR MAPE (Model 1)"</span>,</span>
+<span>            <span class="st">"LS-SVR RMSPE (Model 3)"</span><span class="op">)</span>,</span>
 <span>  MAPE  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu">mape</span><span class="op">(</span><span class="va">y_te</span>,  <span class="va">lm_pred</span><span class="op">)</span>,</span>
-<span>            <span class="fu">mape</span><span class="op">(</span><span class="va">y_te</span>,  <span class="va">pred_ls</span><span class="op">)</span>,</span>
-<span>            <span class="fu">mape</span><span class="op">(</span><span class="va">y_te</span>,  <span class="va">pred_ep</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>            <span class="fu">mape</span><span class="op">(</span><span class="va">y_te</span>,  <span class="va">pred_ep</span><span class="op">)</span>,</span>
+<span>            <span class="fu">mape</span><span class="op">(</span><span class="va">y_te</span>,  <span class="va">pred_ls</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  RMSPE <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu">rmspe</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">lm_pred</span><span class="op">)</span>,</span>
-<span>            <span class="fu">rmspe</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ls</span><span class="op">)</span>,</span>
-<span>            <span class="fu">rmspe</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ep</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>            <span class="fu">rmspe</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ep</span><span class="op">)</span>,</span>
+<span>            <span class="fu">rmspe</span><span class="op">(</span><span class="va">y_te</span>, <span class="va">pred_ls</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  R2    <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu">r2</span><span class="op">(</span><span class="va">y_te</span>,    <span class="va">lm_pred</span><span class="op">)</span>,</span>
-<span>            <span class="fu">r2</span><span class="op">(</span><span class="va">y_te</span>,    <span class="va">pred_ls</span><span class="op">)</span>,</span>
-<span>            <span class="fu">r2</span><span class="op">(</span><span class="va">y_te</span>,    <span class="va">pred_ep</span><span class="op">)</span><span class="op">)</span></span>
+<span>            <span class="fu">r2</span><span class="op">(</span><span class="va">y_te</span>,    <span class="va">pred_ep</span><span class="op">)</span>,</span>
+<span>            <span class="fu">r2</span><span class="op">(</span><span class="va">y_te</span>,    <span class="va">pred_ls</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">results</span><span class="op">[</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">results</span><span class="op">[</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">4</span><span class="op">]</span>, <span class="fl">2</span><span class="op">)</span></span>
 <span><span class="fu">knitr</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/knitr/man/kable.html" class="external-link">kable</a></span><span class="op">(</span><span class="va">results</span>, col.names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Model"</span>, <span class="st">"MAPE (%)"</span>, <span class="st">"RMSPE (%)"</span>, <span class="st">"R²"</span><span class="op">)</span>,</span>
@@ -336,23 +334,24 @@ single run, untuned hyperparameters).</caption>
 <td align="right">0.64</td>
 </tr>
 <tr class="even">
-<td align="left">LS-SVR RMSPE (Model 3)</td>
-<td align="right">11.43</td>
-<td align="right">14.48</td>
-<td align="right">0.68</td>
-</tr>
-<tr class="odd">
 <td align="left">ε-SVR MAPE (Model 1)</td>
 <td align="right">11.11</td>
 <td align="right">14.68</td>
 <td align="right">0.69</td>
 </tr>
+<tr class="odd">
+<td align="left">LS-SVR RMSPE (Model 3)</td>
+<td align="right">11.43</td>
+<td align="right">14.48</td>
+<td align="right">0.68</td>
+</tr>
 </tbody>
 </table>
 <p>Both psvr models improve on the linear baseline under their
-respective percentage-error objectives. The LS-SVR formulation (Model 3)
-minimises RMSPE directly; the ε-SVR formulation (Model 1) targets MAPE
-through sample-dependent box constraints on the dual variables.</p>
+respective percentage-error objectives. The ε-SVR formulation (Model 1)
+targets MAPE through sample-dependent box constraints on the dual
+variables; the LS-SVR formulation (Model 3) minimises RMSPE
+directly.</p>
 <p>Read the table for the ordering, not for the magnitudes. It is one
 split of one small dataset at hyperparameters nobody tuned, so the
 margins are not evidence about how these models perform in general —

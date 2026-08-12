@@ -13,10 +13,10 @@ per model family:
 
 | Model | Function | `sym_type` | Solver |
 |----|----|----|----|
-| 3 | [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md) | `"none"` | linear system |
-| 4 | [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md) | `"even"` / `"odd"` | linear system |
 | 1 | [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md) | `"none"` | quadratic program |
 | 2 | [`psvr_mape()`](https://pbenavidesh.github.io/psvr/reference/psvr_mape.md) | `"even"` / `"odd"` | quadratic program |
+| 3 | [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md) | `"none"` | linear system |
+| 4 | [`psvr_rmspe()`](https://pbenavidesh.github.io/psvr/reference/psvr_rmspe.md) | `"even"` / `"odd"` | linear system |
 
 `sym_type = "even"` enforces even symmetry `f(x) = f(-x)`; `"odd"`
 enforces odd symmetry. Use the symmetric variants only with kernels that
@@ -38,9 +38,7 @@ condition under which percentage residuals are well-defined.
 
 ## Fuel-economy data
 
-This vignette **demonstrates** the package on a small public dataset. It
-does not reproduce the paper’s experiments, and every number printed
-below is computed when the vignette is built.
+This vignette demonstrates the package on a small public dataset.
 
 We use
 [`ggplot2::mpg`](https://ggplot2.tidyverse.org/reference/mpg.html): 234
@@ -114,19 +112,11 @@ cat(sprintf("Linear regression — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
 #> Linear regression — MAPE: 12.91%  RMSPE: 17.65%  R²: 0.6391
 ```
 
-## Model 3: LS-SVR with RMSPE
+## Model 1: ε-SVR with MAPE
 
-The LS-SVR formulation replaces the QP with a linear system by using a
-quadratic penalty on percentage residuals. The dual reduces to:
-
-``` math
-\begin{bmatrix} 0 & \mathbf{1}^\top \\ \mathbf{1} & \Omega + Y_\Gamma \end{bmatrix}
-\begin{bmatrix} b \\ \boldsymbol{\alpha} \end{bmatrix}
-= \begin{bmatrix} 0 \\ \mathbf{y} \end{bmatrix}
-```
-
-where
-$`Y_\Gamma = \operatorname{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)`$.
+The ε-SVR formulation optimises a QP with **sample-dependent box
+constraints** $`|\beta_k| \le 100C/y_k`$: tighter bounds for small
+targets, concentrating model capacity on low-magnitude observations.
 
 ``` r
 
@@ -135,47 +125,6 @@ $`Y_\Gamma = \operatorname{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)`$.
 # to be set on that scale -- sigma_heuristic() reads it off the data instead of
 # guessing. See "Hyperparameter search ranges" below.
 K <- make_kernel("rbf", sigma = sigma_heuristic(X_tr))
-
-# gamma = 5000: regularisation; larger gamma -> smaller Y_Gamma diagonal -> tighter fit.
-# This is roughly var(y_tr) * N, the scale cost_psvr_ls_data() computes -- and
-# already five times the ceiling of the registered `cost` default. See below.
-fit_ls <- psvr_rmspe(X_tr, y_tr, kernel = K, gamma = 5000)
-pred_ls <- predict(fit_ls, X_te)
-
-cat(sprintf("LS-SVR RMSPE  — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
-            mape(y_te, pred_ls), rmspe(y_te, pred_ls), r2(y_te, pred_ls)))
-#> LS-SVR RMSPE  — MAPE: 11.43%  RMSPE: 14.48%  R²: 0.6845
-print(fit_ls)
-#> 
-#> LS-SVR with RMSPE loss  [psvr_rmspe]
-#> 
-#>   Kernel:        RBF (sigma = 2.1195)
-#>   Gamma:         5000
-#>   Training obs.: 163
-```
-
-![](getting-started_files/figure-html/rmspe-plot-1.png)
-
-``` r
-
-cf_ls <- coef(fit_ls)
-# alpha:        N dual variables; weight each training point's kernel
-#               contribution in f(x) = sum_k alpha_k K(x_k, x) + b
-#               (all N points, no sparsity)
-# b:            bias / intercept term
-# support_data: all N training inputs stored for prediction
-cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
-            cf_ls$b, min(cf_ls$alpha), max(cf_ls$alpha)))
-#> b = 23.0976  |  alpha range: [-138.1332, 68.7725]
-```
-
-## Model 1: ε-SVR with MAPE
-
-The ε-SVR formulation optimises a QP with **sample-dependent box
-constraints** $`|\beta_k| \le 100C/y_k`$: tighter bounds for small
-targets, concentrating model capacity on low-magnitude observations.
-
-``` r
 
 # C = 10: per-sample box bound |beta_k| <= 100*C/y_k; eps = 1: tube width (% of y_k)
 fit_ep <- psvr_mape(X_tr, y_tr, kernel = K, C = 10, eps = 1)
@@ -215,22 +164,71 @@ cat(sprintf("b = %.4f  |  beta range: [%.4f, %.4f]\n",
 #> b = 22.2127  |  beta range: [-83.3333, 62.5000]
 ```
 
+## Model 3: LS-SVR with RMSPE
+
+The LS-SVR formulation replaces the QP with a linear system by using a
+quadratic penalty on percentage residuals. The dual reduces to:
+
+``` math
+\begin{bmatrix} 0 & \mathbf{1}^\top \\ \mathbf{1} & \Omega + Y_\Gamma \end{bmatrix}
+\begin{bmatrix} b \\ \boldsymbol{\alpha} \end{bmatrix}
+= \begin{bmatrix} 0 \\ \mathbf{y} \end{bmatrix}
+```
+
+where
+$`Y_\Gamma = \operatorname{diag}(y_1^2/\Gamma, \ldots, y_N^2/\Gamma)`$.
+
+``` r
+
+# gamma = 5000: regularisation; larger gamma -> smaller Y_Gamma diagonal -> tighter fit.
+# This is roughly var(y_tr) * N, the scale cost_psvr_ls_data() computes -- and
+# already five times the ceiling of the registered `cost` default. See below.
+fit_ls <- psvr_rmspe(X_tr, y_tr, kernel = K, gamma = 5000)
+pred_ls <- predict(fit_ls, X_te)
+
+cat(sprintf("LS-SVR RMSPE  — MAPE: %.2f%%  RMSPE: %.2f%%  R²: %.4f\n",
+            mape(y_te, pred_ls), rmspe(y_te, pred_ls), r2(y_te, pred_ls)))
+#> LS-SVR RMSPE  — MAPE: 11.43%  RMSPE: 14.48%  R²: 0.6845
+print(fit_ls)
+#> 
+#> LS-SVR with RMSPE loss  [psvr_rmspe]
+#> 
+#>   Kernel:        RBF (sigma = 2.1195)
+#>   Gamma:         5000
+#>   Training obs.: 163
+```
+
+![](getting-started_files/figure-html/rmspe-plot-1.png)
+
+``` r
+
+cf_ls <- coef(fit_ls)
+# alpha:        N dual variables; weight each training point's kernel
+#               contribution in f(x) = sum_k alpha_k K(x_k, x) + b
+#               (all N points, no sparsity)
+# b:            bias / intercept term
+# support_data: all N training inputs stored for prediction
+cat(sprintf("b = %.4f  |  alpha range: [%.4f, %.4f]\n",
+            cf_ls$b, min(cf_ls$alpha), max(cf_ls$alpha)))
+#> b = 23.0976  |  alpha range: [-138.1332, 68.7725]
+```
+
 ## Comparing objectives
 
 ``` r
 
 results <- data.frame(
-  Model = c("Linear regression", "LS-SVR RMSPE (Model 3)",
-            "\u03b5-SVR MAPE (Model 1)"),
+  Model = c("Linear regression", "\u03b5-SVR MAPE (Model 1)",
+            "LS-SVR RMSPE (Model 3)"),
   MAPE  = c(mape(y_te,  lm_pred),
-            mape(y_te,  pred_ls),
-            mape(y_te,  pred_ep)),
+            mape(y_te,  pred_ep),
+            mape(y_te,  pred_ls)),
   RMSPE = c(rmspe(y_te, lm_pred),
-            rmspe(y_te, pred_ls),
-            rmspe(y_te, pred_ep)),
+            rmspe(y_te, pred_ep),
+            rmspe(y_te, pred_ls)),
   R2    = c(r2(y_te,    lm_pred),
-            r2(y_te,    pred_ls),
-            r2(y_te,    pred_ep))
+            r2(y_te,    pred_ep),
+            r2(y_te,    pred_ls))
 )
 results[, 2:4] <- round(results[, 2:4], 2)
 knitr::kable(results, col.names = c("Model", "MAPE (%)", "RMSPE (%)", "R²"),
@@ -243,16 +241,16 @@ knitr::kable(results, col.names = c("Model", "MAPE (%)", "RMSPE (%)", "R²"),
 | Model                  | MAPE (%) | RMSPE (%) |   R² |
 |:-----------------------|---------:|----------:|-----:|
 | Linear regression      |    12.91 |     17.65 | 0.64 |
-| LS-SVR RMSPE (Model 3) |    11.43 |     14.48 | 0.68 |
 | ε-SVR MAPE (Model 1)   |    11.11 |     14.68 | 0.69 |
+| LS-SVR RMSPE (Model 3) |    11.43 |     14.48 | 0.68 |
 
 Test-set performance on ggplot2::mpg (70/30 split, RBF kernel, single
 run, untuned hyperparameters). {.table}
 
 Both psvr models improve on the linear baseline under their respective
-percentage-error objectives. The LS-SVR formulation (Model 3) minimises
-RMSPE directly; the ε-SVR formulation (Model 1) targets MAPE through
-sample-dependent box constraints on the dual variables.
+percentage-error objectives. The ε-SVR formulation (Model 1) targets
+MAPE through sample-dependent box constraints on the dual variables; the
+LS-SVR formulation (Model 3) minimises RMSPE directly.
 
 Read the table for the ordering, not for the magnitudes. It is one split
 of one small dataset at hyperparameters nobody tuned, so the margins are
