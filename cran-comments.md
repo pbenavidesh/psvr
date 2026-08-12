@@ -5,12 +5,18 @@
 * GitHub Actions, `R CMD check --as-cran`: macOS-latest (release),
   Windows-latest (release), Ubuntu-latest (devel, release, oldrel-1) —
   all five OK. These jobs run with `--no-manual`, so the PDF manual is
-  validated on win-builder rather than there.
-* R-hub (Linux, macOS) — PENDING; results not yet available.
+  validated on win-builder.
+* R-hub v2, `R CMD check --as-cran` — all three `Status: OK`:
+  Ubuntu 24.04, R-devel, x86_64 (GCC 13.3.0); Ubuntu 22.04,
+  R-devel r90393, x86_64 (clang 15.0.7); macOS 26, R-devel,
+  aarch64-apple-darwin23.
 
 ## R CMD check results
 
 0 errors | 0 warnings | 1 note
+
+The note is from win-builder. R-hub returned `Status: OK` on all three
+platforms, and the five GitHub Actions jobs are clean.
 
 * This is a new submission.
 
