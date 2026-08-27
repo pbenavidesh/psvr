@@ -1,15 +1,16 @@
 ## Test environments
 
-* win-builder, R-devel (2026-08-10 r90389 ucrt), Windows Server 2022 —
+* win-builder, R Under development (unstable) (2026-08-25 r90448 ucrt),
+  Windows Server 2022 x64 (build 20348), x86_64-w64-mingw32 —
   0 errors | 0 warnings | 1 note.
 * GitHub Actions, `R CMD check --as-cran`: macOS-latest (release),
   Windows-latest (release), Ubuntu-latest (devel, release, oldrel-1) —
-  all five OK. These jobs run with `--no-manual`, so the PDF manual is
-  validated on win-builder.
-* R-hub v2, `R CMD check --as-cran` — all three `Status: OK`:
-  Ubuntu 24.04, R-devel, x86_64 (GCC 13.3.0); Ubuntu 22.04,
-  R-devel r90393, x86_64 (clang 15.0.7); macOS 26, R-devel,
-  aarch64-apple-darwin23.
+  all five OK. These jobs run with `--no-manual`; the PDF manual is
+  validated on win-builder and on R-hub.
+* R-hub v2, `R CMD check --as-cran` — three platforms, each on its own
+  R-devel revision, all three `Status: OK`: x86_64-pc-linux-gnu,
+  R-devel r90185 (2026-06-21); x86_64-w64-mingw32, R-devel r90447
+  (2026-08-25); x86_64-apple-darwin20, R-devel r90449 (2026-08-27).
 
 ## R CMD check results
 
