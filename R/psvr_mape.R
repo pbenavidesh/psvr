@@ -23,10 +23,13 @@
 #'
 #' @section Choosing a solver:
 #' `solver = "smo"` (the default) uses the built-in sequential minimal
-#' optimisation loop. It does **not** reliably converge within `max_iter` on
-#' linear and polynomial kernels; `converged` is `FALSE` and `iterations`
-#' reaches the cap. The RBF kernel is unaffected. Prefer `solver = "osqp"`
-#' for linear and polynomial kernels when accuracy matters.
+#' optimisation loop. On some problems it does **not** converge within
+#' `max_iter`: it emits a `warning()`, `converged` is `FALSE` and `iterations`
+#' reaches the cap. This was first observed with linear and polynomial
+#' kernels, but it also occurs with the RBF kernel, so the kernel is **not**
+#' what determines it, and what does has not been established. Check
+#' `converged` on the returned fit, and refit with `solver = "osqp"` when it
+#' is `FALSE` and accuracy matters.
 #'
 #' @param X Numeric matrix of training inputs, one observation per row
 #'   (\eqn{N \times p}{N x p}).

@@ -207,10 +207,9 @@
       p_train    = ncol(X),
       iterations = iterations,
       converged  = converged,
-      # F3 — spectral diagnostics (Algorithm 2). psvr-main.R surfaces this
-      # on the fit object as $spectral; before API-redesign stage 5 psvr()
-      # surfaced it under solver_meta$spectral instead. Callers of the
-      # parsnip wrappers have always seen it here.
+      # F3 — spectral diagnostics (Algorithm 2). Surfaced on the returned
+      # fit as the top-level `spectral` field, which is where callers of
+      # psvr_mape() and of the parsnip wrappers have always read it.
       spectral   = spec[c("mu", "lambda_min_hat", "lambda_max_hat",
                           "branch_taken", "n_power_iterations")],
       block_k4   = block_k4       # F7 telemetry

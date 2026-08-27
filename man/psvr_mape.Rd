@@ -141,10 +141,13 @@ either.
 \section{Choosing a solver}{
 
 \code{solver = "smo"} (the default) uses the built-in sequential minimal
-optimisation loop. It does \strong{not} reliably converge within \code{max_iter} on
-linear and polynomial kernels; \code{converged} is \code{FALSE} and \code{iterations}
-reaches the cap. The RBF kernel is unaffected. Prefer \code{solver = "osqp"}
-for linear and polynomial kernels when accuracy matters.
+optimisation loop. On some problems it does \strong{not} converge within
+\code{max_iter}: it emits a \code{warning()}, \code{converged} is \code{FALSE} and \code{iterations}
+reaches the cap. This was first observed with linear and polynomial
+kernels, but it also occurs with the RBF kernel, so the kernel is \strong{not}
+what determines it, and what does has not been established. Check
+\code{converged} on the returned fit, and refit with \code{solver = "osqp"} when it
+is \code{FALSE} and accuracy matters.
 }
 
 \examples{

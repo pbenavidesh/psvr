@@ -197,11 +197,18 @@ The RBF kernel and polynomial kernels of even degree satisfy both.
 
 ## Known limitation
 
-The built-in SMO solver does not converge within `max_iter` on MAPE fits with
-**linear and polynomial** kernels (RBF is unaffected); `solver_meta$converged` is
-`FALSE` and `iterations` hits the cap. Several tests document this with
-"did not converge" warnings. Root cause is not yet established. Prefer
-`solver = "osqp"` for those kernel/loss combinations when accuracy matters.
+The built-in SMO solver reaches `max_iter` without converging on some MAPE
+fits: it warns, `converged` on the returned fit is `FALSE`, and `iterations`
+hits the cap. Several tests document this with "did not converge" warnings.
+Root cause is **not established**. Prefer `solver = "osqp"` when a fit does not
+converge and accuracy matters.
+
+**CORRECTED 2026-08-26** — the kernel attribution ("linear and polynomial;
+RBF is unaffected") was falsified, and the field is `converged`, not
+`solver_meta$converged`; see `PSVR_STATUS.md` §2.23. **Do not restate this
+limitation as a longer list of kernels** ("linear, polynomial, and RBF at
+high p") — the kernel is not the governing variable, so extending the
+taxonomy repeats the original error at a larger radius.
 
 ---
 

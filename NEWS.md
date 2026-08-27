@@ -33,9 +33,12 @@ derivations are in Benavides-Herrera et al. (2026)
 * `psvr_cv()` runs fold-wise MAPE fits, reusing the kernel matrix across folds
   and warm-starting each fold from the previous one.
 
-Known limitation: with the built-in SMO solver, MAPE fits on linear and
-polynomial kernels may reach `max_iter` without converging and warn; the RBF
-kernel is unaffected. Use `solver = "osqp"` for those combinations.
+Known limitation: on some problems the built-in SMO solver reaches `max_iter`
+without converging; it warns, and `converged` on the returned fit is `FALSE`.
+This was first observed with linear and polynomial kernels, but it also occurs
+with the RBF kernel, so the kernel does not determine the behaviour and no
+other predictor of it has been established. Check `converged` on the returned
+fit, and use `solver = "osqp"` where the SMO loop does not converge.
 
 ## Relationship to the archived v0.0.2
 
