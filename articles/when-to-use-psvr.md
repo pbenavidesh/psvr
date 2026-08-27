@@ -573,7 +573,7 @@ sessioninfo::session_info()
      collate  C.UTF-8
      ctype    C.UTF-8
      tz       UTC
-     date     2026-08-12
+     date     2026-08-27
      pandoc   3.8.3 @ /opt/hostedtoolcache/pandoc/3.8.3/x64/ (via rmarkdown)
      quarto   1.10.18 @ /usr/local/bin/quarto
 
@@ -586,7 +586,7 @@ sessioninfo::session_info()
      cli            3.6.6      2026-04-09 [1] RSPM
      codetools      0.2-20     2024-03-31 [3] CRAN (R 4.6.1)
      conflicted     1.2.0      2023-02-01 [1] RSPM
-     data.table     1.18.4     2026-05-06 [1] RSPM
+     data.table     1.18.6.1   2026-08-24 [1] RSPM
      dials        * 1.4.4      2026-06-22 [1] RSPM
      DiceDesign     1.10       2023-12-07 [1] RSPM
      digest         0.6.39     2025-11-19 [1] RSPM
@@ -609,12 +609,12 @@ sessioninfo::session_info()
      hms            1.1.4      2025-10-17 [1] RSPM
      htmltools      0.5.9      2025-12-04 [1] RSPM
      infer        * 1.1.0      2025-12-18 [1] RSPM
-     ipred          0.9-15     2024-07-18 [1] RSPM
+     ipred          0.9-16     2026-08-22 [1] RSPM
      jsonlite       2.0.0      2025-03-27 [1] RSPM
      knitr          1.51       2025-12-20 [1] RSPM
      labeling       0.4.3      2023-08-29 [1] RSPM
      lattice        0.22-9     2026-02-09 [3] CRAN (R 4.6.1)
-     lava           1.9.2      2026-06-30 [1] RSPM
+     lava           1.9.3      2026-08-20 [1] RSPM
      lifecycle      1.0.5      2026-01-08 [1] RSPM
      listenv        1.0.0      2026-06-22 [1] RSPM
      lubridate    * 1.9.5      2026-02-04 [1] RSPM
@@ -622,7 +622,7 @@ sessioninfo::session_info()
      MASS           7.3-65     2025-02-28 [3] CRAN (R 4.6.1)
      Matrix         1.7-5      2026-03-21 [3] CRAN (R 4.6.1)
      memoise        2.0.1      2021-11-26 [1] RSPM
-     modeldata    * 1.5.1      2025-08-22 [1] RSPM
+     modeldata    * 1.6.0      2026-08-21 [1] RSPM
      nnet           7.3-20     2025-01-01 [3] CRAN (R 4.6.1)
      otel           0.2.0      2025-08-29 [1] RSPM
      parallelly     1.48.0     2026-06-29 [1] RSPM
@@ -630,13 +630,13 @@ sessioninfo::session_info()
      pillar         1.11.1     2025-09-17 [1] RSPM
      pkgconfig      2.0.3      2019-09-22 [1] RSPM
      prodlim        2026.03.11 2026-03-11 [1] RSPM
-     psvr         * 0.1.0      2026-08-12 [1] local
+     psvr         * 0.1.0      2026-08-27 [1] local
      purrr        * 1.2.2      2026-04-10 [1] RSPM
      R6             2.6.1      2025-02-15 [1] RSPM
      RColorBrewer   1.1-3      2022-04-03 [1] RSPM
      Rcpp           1.1.2      2026-07-05 [1] RSPM
      readr        * 2.2.0      2026-02-19 [1] RSPM
-     recipes      * 1.3.3      2026-05-30 [1] RSPM
+     recipes      * 1.4.0      2026-08-24 [1] RSPM
      rlang          1.3.0      2026-07-05 [1] RSPM
      rmarkdown      2.31       2026-03-26 [1] RSPM
      rpart          4.1.27     2026-03-27 [3] CRAN (R 4.6.1)
@@ -644,7 +644,7 @@ sessioninfo::session_info()
      rstudioapi     0.19.0     2026-06-11 [1] RSPM
      S7             0.2.2      2026-04-22 [1] RSPM
      scales       * 1.4.0      2025-04-24 [1] RSPM
-     sessioninfo    1.2.4      2026-06-04 [1] any (@1.2.4)
+     sessioninfo    1.2.4      2026-06-04 [1] RSPM
      sparsevctrs    0.3.6      2026-01-27 [1] RSPM
      stringi        1.8.9      2026-08-04 [1] RSPM
      stringr      * 1.6.0      2025-11-04 [1] RSPM
