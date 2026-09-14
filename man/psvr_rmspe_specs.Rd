@@ -90,7 +90,6 @@ engine argument. Pass it via \code{\link[parsnip:set_engine]{parsnip::set_engine
 }
 
 \examples{
-\dontrun{
 library(parsnip)
 spec <- psvr_rmspe_rbf(cost = 1000, rbf_sigma = 1) |>
   set_engine("psvr")
@@ -105,6 +104,5 @@ spec_lin <- psvr_rmspe_linear(cost = 1000) |>
 spec_sym <- psvr_rmspe_rbf(cost = 1000, rbf_sigma = 1,
                            sym_type = "even") |>
   set_engine("psvr")
-}
 
 }

@@ -8,7 +8,7 @@
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Implements four support vector regression models derived from a unified mathematical framework for percentage-error loss functions: epsilon-SVR with MAPE, its symmetric kernel extension, LS-SVR with RMSPE, and its symmetric counterpart. All models require strictly positive targets. The epsilon-SVR models are solved via a built-in SMO algorithm (with 'osqp' available as an optional alternative backend) and the LS-SVR models via a linear system (base R). See Benavides-Herrera et al. (2026) \doi{10.3390/math14101679} for the mathematical derivations.
+Implements four support vector regression (SVR) models derived from a unified mathematical framework for percentage-error loss functions: epsilon-SVR minimizing the mean absolute percentage error (MAPE), its symmetric kernel extension, least-squares SVR (LS-SVR) minimizing the root mean square percentage error (RMSPE), and its symmetric counterpart. All models require strictly positive targets. The epsilon-SVR models are solved via a built-in sequential minimal optimization (SMO) algorithm (with 'osqp' available as an optional alternative backend) and the LS-SVR models via a linear system (base R). See Benavides-Herrera et al. (2026) \doi{10.3390/math14101679} for the mathematical derivations.
 }
 \seealso{
 Useful links:

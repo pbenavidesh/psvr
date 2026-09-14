@@ -245,7 +245,6 @@ psvr_rmspe_linear_fit <- function(x, y, gamma, sym_type = "none",
 #' @return A parsnip `model_spec` object of the corresponding class.
 #'
 #' @examples
-#' \dontrun{
 #' library(parsnip)
 #' spec <- psvr_mape_rbf(cost = 10, margin = 1, rbf_sigma = 1) |>
 #'   set_engine("psvr")
@@ -261,7 +260,6 @@ psvr_rmspe_linear_fit <- function(x, y, gamma, sym_type = "none",
 #' spec_sym <- psvr_mape_rbf(cost = 10, margin = 1, rbf_sigma = 1,
 #'                           sym_type = "even") |>
 #'   set_engine("psvr")
-#' }
 #'
 #' @name psvr_mape_specs
 #' @export
@@ -383,7 +381,6 @@ psvr_mape_linear <- function(mode = "regression", engine = "psvr",
 #' [psvr_rmspe()] for accepted values and semantics.
 #'
 #' @examples
-#' \dontrun{
 #' library(parsnip)
 #' spec <- psvr_rmspe_rbf(cost = 1000, rbf_sigma = 1) |>
 #'   set_engine("psvr")
@@ -398,7 +395,6 @@ psvr_mape_linear <- function(mode = "regression", engine = "psvr",
 #' spec_sym <- psvr_rmspe_rbf(cost = 1000, rbf_sigma = 1,
 #'                            sym_type = "even") |>
 #'   set_engine("psvr")
-#' }
 #'
 #' @name psvr_rmspe_specs
 #' @export

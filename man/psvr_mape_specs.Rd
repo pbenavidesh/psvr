@@ -85,7 +85,6 @@ parameter \code{a} and solver tolerance are engine arguments passed via
 \code{set_engine()}.
 }
 \examples{
-\dontrun{
 library(parsnip)
 spec <- psvr_mape_rbf(cost = 10, margin = 1, rbf_sigma = 1) |>
   set_engine("psvr")
@@ -101,6 +100,5 @@ spec_lin <- psvr_mape_linear(cost = 10, margin = 1) |>
 spec_sym <- psvr_mape_rbf(cost = 10, margin = 1, rbf_sigma = 1,
                           sym_type = "even") |>
   set_engine("psvr")
-}
 
 }
