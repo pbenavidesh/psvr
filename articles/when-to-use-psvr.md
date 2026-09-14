@@ -402,12 +402,12 @@ rank_res |>
 |-----:|:------------------|------:|-----:|------:|
 |    1 | base_xgb          | 10.18 | 0.27 |    10 |
 |    2 | base_rf           | 12.67 | 0.50 |    10 |
-|    3 | base_svm_rbf      | 14.70 | 0.57 |    10 |
-|    4 | base_m1_mape      | 22.24 | 0.70 |    10 |
-|    5 | base_m2_mape_sym  | 28.91 | 0.71 |    10 |
-|    6 | base_lm           | 30.82 | 0.75 |    10 |
-|    7 | base_m3_rmspe     | 50.66 | 1.30 |    10 |
-|    8 | base_m4_rmspe_sym | 51.51 | 1.17 |    10 |
+|    3 | base_m1_mape      | 13.83 | 0.61 |    10 |
+|    4 | base_svm_rbf      | 14.70 | 0.57 |    10 |
+|    5 | base_m2_mape_sym  | 15.42 | 0.64 |    10 |
+|    6 | base_m3_rmspe     | 20.72 | 0.44 |    10 |
+|    7 | base_m4_rmspe_sym | 27.24 | 0.71 |    10 |
+|    8 | base_lm           | 30.82 | 0.75 |    10 |
 
 Cross-validated MAPE — best configuration per workflow {.table
 .caption-top}
@@ -566,14 +566,14 @@ sessioninfo::session_info()
     ─ Session info ───────────────────────────────────────────────────────────────
      setting  value
      version  R version 4.6.1 (2026-06-24)
-     os       Ubuntu 24.04.4 LTS
+     os       Ubuntu 24.04.5 LTS
      system   x86_64, linux-gnu
      ui       X11
      language en
      collate  C.UTF-8
      ctype    C.UTF-8
      tz       UTC
-     date     2026-08-27
+     date     2026-09-14
      pandoc   3.8.3 @ /opt/hostedtoolcache/pandoc/3.8.3/x64/ (via rmarkdown)
      quarto   1.10.18 @ /usr/local/bin/quarto
 
@@ -590,11 +590,13 @@ sessioninfo::session_info()
      dials        * 1.4.4      2026-06-22 [1] RSPM
      DiceDesign     1.10       2023-12-07 [1] RSPM
      digest         0.6.39     2025-11-19 [1] RSPM
+     doParallel   * 1.0.17     2022-02-07 [1] RSPM
      dplyr        * 1.2.1      2026-04-03 [1] RSPM
      evaluate       1.0.5      2025-08-27 [1] RSPM
      farver         2.1.2      2024-05-13 [1] RSPM
      fastmap        1.2.0      2024-05-15 [1] RSPM
      forcats      * 1.0.1      2025-09-25 [1] RSPM
+     foreach      * 1.5.2      2022-02-02 [1] RSPM
      furrr          0.4.0      2026-03-31 [1] RSPM
      future       * 1.75.0     2026-07-20 [1] RSPM
      future.apply   1.20.2     2026-02-20 [1] RSPM
@@ -610,8 +612,10 @@ sessioninfo::session_info()
      htmltools      0.5.9      2025-12-04 [1] RSPM
      infer        * 1.1.0      2025-12-18 [1] RSPM
      ipred          0.9-16     2026-08-22 [1] RSPM
+     iterators    * 1.0.14     2022-02-05 [1] RSPM
      jsonlite       2.0.0      2025-03-27 [1] RSPM
-     knitr          1.51       2025-12-20 [1] RSPM
+     kernlab        0.9-33     2024-08-13 [1] RSPM
+     knitr          1.52       2026-09-06 [1] RSPM
      labeling       0.4.3      2023-08-29 [1] RSPM
      lattice        0.22-9     2026-02-09 [3] CRAN (R 4.6.1)
      lava           1.9.3      2026-08-20 [1] RSPM
@@ -630,21 +634,23 @@ sessioninfo::session_info()
      pillar         1.11.1     2025-09-17 [1] RSPM
      pkgconfig      2.0.3      2019-09-22 [1] RSPM
      prodlim        2026.03.11 2026-03-11 [1] RSPM
-     psvr         * 0.1.0      2026-08-27 [1] local
+     psvr         * 0.1.0      2026-09-14 [1] local
      purrr        * 1.2.2      2026-04-10 [1] RSPM
      R6             2.6.1      2025-02-15 [1] RSPM
+     ranger         0.18.0     2026-01-16 [1] RSPM
      RColorBrewer   1.1-3      2022-04-03 [1] RSPM
      Rcpp           1.1.2      2026-07-05 [1] RSPM
      readr        * 2.2.0      2026-02-19 [1] RSPM
      recipes      * 1.4.0      2026-08-24 [1] RSPM
      rlang          1.3.0      2026-07-05 [1] RSPM
-     rmarkdown      2.31       2026-03-26 [1] RSPM
+     rmarkdown      2.32       2026-09-01 [1] RSPM
      rpart          4.1.27     2026-03-27 [3] CRAN (R 4.6.1)
      rsample      * 1.3.2      2026-01-30 [1] RSPM
      rstudioapi     0.19.0     2026-06-11 [1] RSPM
      S7             0.2.2      2026-04-22 [1] RSPM
      scales       * 1.4.0      2025-04-24 [1] RSPM
-     sessioninfo    1.2.4      2026-06-04 [1] any (@1.2.4)
+     sessioninfo    1.2.4      2026-06-04 [1] RSPM
+     sfd            0.1.0      2024-01-08 [1] RSPM
      sparsevctrs    0.3.6      2026-01-27 [1] RSPM
      stringi        1.8.9      2026-08-04 [1] RSPM
      stringr      * 1.6.0      2025-11-04 [1] RSPM
